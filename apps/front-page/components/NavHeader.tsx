@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { SunIcon } from "@heroicons/react/24/outline";
+import { MoonIcon } from "@heroicons/react/24/outline";
 type NavItem = {
     name: string;
     link: string;
@@ -81,37 +83,47 @@ const getNavItems: Array<NavItem> = [
           "name": "Contact",
           "link": "/contact",
           "external": false 
-        }
+        },
       ]
     },
-    {
-      "name": "Dummy",
-      "link": "#",
-      "sub": [
-        {
-          "name": "Theme",
-          "link": "https://www.github.com/jammeryhq/gridsome-starter-liebling",
-          "external": true
-        }
-      ]
-    }
 ]
 
 export default function Header() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const setAppTheme = (theme: 'light' | 'dark') => {
+      const root = window.document.documentElement;
+      root.classList.remove(theme === 'light' ? 'dark' : 'light');
+      root.classList.add(theme);
+      localStorage.setItem('theme', theme);
+      setTheme(theme);
+    }
+
+    // set theme from local storage on load
+    useEffect(() => {
+      const theme = localStorage?.getItem('theme');
+      if (theme === 'dark') {
+        setAppTheme('dark');
+      } else {
+        setAppTheme('light');
+      }
+    }, []);
     return (
-      <nav className="flex items-center justify-between container mx-auto py-3">
-        <div className="flex items-center">
-          <span className="font-semibold text-xl tracking-tight mr-3">14 Trees Foundation</span>
-          <div>
-            <Image src={logo} height="40" width="40" alt="logo" />
-          </div>
+      <nav className="flex items-center justify-between mx-auto p-3">
+        <div className="inline-flex items-center font-semibold text-xl tracking-tight mx-3 whitespace-nowrap">
+            14 Trees Foundation
+            <Image className="mx-1" src={logo} height="32" width="32" alt="logo" />
         </div>
-        <div className="flex">
+        <div className="inline-flex">
           {getNavItems.map(navItem => (
-            <div key={navItem.name} className="px-4 py-1">
+            <div key={navItem.name} className="md:block hidden px-4 py-1">
               <Item navItem={navItem} />
             </div>
           ))}
+          {/* primary button: Contribute */}
+          <Link href={'/contribute'} className="btn-primary px-4 py-1" >Contribute</Link>
+          {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
+          </button> */}
         </div>
       </nav>
     );
@@ -119,20 +131,32 @@ export default function Header() {
 
 const Item = ({ navItem }: { navItem: NavItem}) => {
     return (
-        <>{ !(navItem.sub) ?
-            <Link href={navItem.link} title={navItem.name} className="py-1">{navItem.name}</Link>
-            : <div className="w-12">
-                <DropDown 
-                  main={<Link href={navItem.link}>{navItem.name}</Link>} 
-                  items={navItem.sub.map(subItem => 
-                    <li key={subItem.name}>
-                      <Link href={navItem.link}>{navItem.name}
-                      </Link>
-                    </li>)
-                  }
-                />
-              </div> 
-          }
-        </>
-    )
+      <>
+        {!navItem.sub ? (
+          <Link
+            href={navItem.link}
+            title={navItem.name}
+            className="header-link"
+          >
+            {navItem.name}
+          </Link>
+        ) : (
+          <div className="">
+            <DropDown
+              main={<span className="header-link">{navItem.name}</span>}
+              items={navItem.sub.map((subItem) => (
+                <li
+                  className="list-none"
+                  key={subItem.name}
+                >
+                  <div className="h-full w-full py-2 hover:bg-gray-50 hover:underline underline-offset-2 rounded-xl">
+                    <Link className="p-2" href={subItem.link}>{subItem.name}</Link>
+                  </div>
+                </li>
+              ))}
+            />
+          </div>
+        )}
+      </>
+    );
 }

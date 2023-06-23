@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @layer utilities {
 
   .aspect-1:after {
@@ -98,27 +99,6 @@
   }
   .btn-gray:hover {
     @apply bg-gray-500;
-  }
-  .card {
-    @apply border border-gray-100 dark:border-gray-600 bg-white dark:bg-dark-grey;
-    @apply shadow-md transition duration-300 ease-out transform cursor-pointer;
-  }
-
-  .input-field {
-    @apply w-full block;
-    @apply py-1 px-3 leading-8 text-base outline-none transition-colors duration-200 ease-in-out rounded border;
-    @apply bg-white border-gray-300 focus:border-green-600 focus:ring-green-500 focus:ring-2 text-gray-700;
-    @apply dark:bg-dark-grey dark:text-gray-100 dark:border-gray-700;
-    /* @apply dark:focus:border-indigo-500 dark:focus:ring-2 dark:focus:ring-indigo-900; */
-  }
-
-  .input-checkbox {
-    @apply h-4 w-4 text-green-600 border-gray-400 rounded focus:ring-green-700 transition-colors duration-200 ease-in-out;
-    @apply dark:text-green-300 dark:border-gray-600 dark:bg-darker-grey;
-  }
-
-  .header {
-    min-height: 500px;
   }
 
   .mobileSubnav {

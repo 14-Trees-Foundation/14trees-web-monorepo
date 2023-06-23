@@ -21,6 +21,7 @@ const theme = {
 }
 
 module.exports = {
+    darkMode: 'class',
     ...baseConfig,
     ...theme,
 }
