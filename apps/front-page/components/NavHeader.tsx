@@ -45,20 +45,6 @@ const getNavItems: Array<NavItem> = [
       "name": "Team",
       "link": "/team",
       "external": false,
-      "sub": [ {
-          "name": "Founder",
-          "link": "/team#founder",
-          "external": true 
-        },{
-          "name": "Board of Directions",
-          "link": "/team#board-of-directors",
-          "external": true 
-        },{
-          "name": "Volunteers",
-          "link": "/team#volunteers",
-          "external": true 
-        }  
-      ]
     },
      {
       "name": "About",

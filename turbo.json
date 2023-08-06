@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local", "**/.env"],
+  "globalDependencies": ["**/.env.*local", "**/.env", "**/.env.development"],
   "globalEnv": [
     "NODE_ENV", "NEXT_PUBLIC_API_URL", "SERVER_PORT",
     "NEXT_PUBLIC_RAZORPAY_KEY"
