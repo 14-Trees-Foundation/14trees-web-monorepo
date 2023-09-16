@@ -5,6 +5,7 @@
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
+    "shadcn:add": "yarn workspace ui shadcn:add",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
@@ -13,7 +14,7 @@
     "eslint-config-custom": "*",
     "prettier": "^2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.11",
-    "turbo": "latest"
+    "turbo": "1.10.4"
   },
   "packageManager": "yarn@1.22.17",
   "workspaces": ["apps/*", "packages/*"]

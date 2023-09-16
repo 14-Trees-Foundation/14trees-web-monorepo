@@ -28,17 +28,16 @@ app.use(function (req, res, next) {
 
 // Connect MongoDB
 const connectDB = async () => {
-    console.log("[server.ts:31]", "process.env", process.env)
     const mongo_connection_string = process.env.NODE_ENV === 'development' ?
             `mongodb://${process.env.LOCAL_MONGO_URL}` :
             `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PWD}@${process.env.MONGO_URL}`
     try {
         console.log('Connecting to MongoDB...', mongo_connection_string);
-        await mongoose.connect(mongo_connection_string + '?retryWrites=true&w=majority', { autoIndex: false, });
         const client = new MongoClient(mongo_connection_string);
+        await mongoose.connect(mongo_connection_string, { autoIndex: false, });
         console.log('MongoDB connected!!');
     } catch (err) {
-        console.log('Failed to connect to MongoDB', err);
+        console.error('Failed to connect to MongoDB', err);
     }
 };
 
