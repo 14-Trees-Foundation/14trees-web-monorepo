@@ -22,7 +22,7 @@ sleep 10
 # Run the init.js script inside mongosh to perform data migrations
 # mongosh --file ./scripts/migrate_db.js
 echo "Running migrations..."
-mongosh "mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@db:$DB_PORT" --eval "load('/scripts/migrate_db.js')"
+mongosh --host 'db' --port $DB_PORT --username $MONGO_INITDB_ROOT_USERNAME --password $MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --file /scripts/migrate_db.js
 
 # do not exit
 tail -f /dev/null

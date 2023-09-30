@@ -21,7 +21,6 @@ services:
       - ./db/data:/data_restore
     depends_on:
       - db
-    restart: always
     networks:
       - app-network
     environment:

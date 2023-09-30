@@ -1,7 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-async function migrate() {
-    const uri = 'mongodb://14trees-local:14trees123@localhost:27017';
+async function migrate(uri) {
     const client = new MongoClient(uri);
 
     try {
@@ -47,4 +46,6 @@ async function migrate() {
     }
 }
 
-migrate().catch(error => console.error(error));
+// take uri as a command line argument
+const uri = process.argv[2];
+migrate(uri).catch(error => console.error(error));
