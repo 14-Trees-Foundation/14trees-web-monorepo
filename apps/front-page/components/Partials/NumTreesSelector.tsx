@@ -60,7 +60,7 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
     }
   };
   return (
-    <div className="mx-auto mt-12 w-full sm:w-2/3">
+    <div className="mx-auto mt-12 w-full">
       <ul className="w-full" onChange={handleSelection}>
         <div className="flex flex-wrap gap-2">
           <li className="amount-selector-item">

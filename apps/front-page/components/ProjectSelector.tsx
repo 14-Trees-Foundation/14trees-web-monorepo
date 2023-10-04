@@ -13,7 +13,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   selectedProjectId,
   setProject,
 }) => {
-  const [selectedProject, setSelectedProject] = useState<Project>(null);
+  const [selectedProject, setSelectedProject] = useState<Project>(projects.find((project) => project.id === selectedProjectId));
 
   // Function to handle project selection
   const handleProjectSelection = (selectedProject: Project) => {
@@ -30,13 +30,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     <>
       {selectedProjectId ? (
         <>
-          <button
-            className="fixed bottom-4 right-4 rounded-md bg-blue-500 px-4 py-2 text-white"
-            onClick={handleGoBack}
-          >
-            Go Back
-          </button>
-          <div className="flex h-screen items-center justify-center">
+          <div className="">
             <ExpandedProjectPage {...selectedProject} />
           </div>
         </>
@@ -64,10 +58,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   return (
     <div
-      className="cursor-pointer rounded-md bg-white p-4 shadow-md"
+      className="w-full cursor-pointer rounded-md bg-white p-4 "
       onClick={onClick}
     >
-      <div className="flex items-center">
+      <div className="items-center">
         <Image
           height={64}
           width={64}
@@ -88,22 +82,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   );
 };
 
-type ExpandedProjectPageProps = {
-  title: string;
-  description: string;
-  // Add additional properties for the expanded project
-};
-
-const ExpandedProjectPage: React.FC<ExpandedProjectPageProps> = ({
+const ExpandedProjectPage: React.FC<Project> = ({
   title,
   description,
+  image,
+  price,
 }) => {
   return (
-    <div className="flex h-screen items-center justify-center">
-      <div className="rounded-md bg-white p-4 shadow-md">
+    <div className="font-serif mt-12">
         <h2 className="mb-4 text-2xl font-bold">{title}</h2>
         <p>{description}</p>
-      </div>
+        <p>{price}</p>
+        <Image src={image} alt={title} />
     </div>
   );
 };

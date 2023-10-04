@@ -118,16 +118,69 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
     },
   });
 
+  const OtherDetailsSection = () => {
+    return (
+      <>
+        <div className="mt-8 flex flex-row content-center justify-center gap-6">
+          <div className="mb-2 flex items-center">
+            <input
+              id="visit"
+              className="input-checkbox"
+              {...register("donor.comms.visit")}
+              type="checkbox"
+            />
+            <label
+              htmlFor="visit"
+              className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
+              Visit
+            </label>
+          </div>
+
+          <div className="mb-2 flex items-center">
+            <input
+              id="volunteer"
+              className="input-checkbox"
+              {...register("donor.comms.volunteer")}
+              type="checkbox"
+            />
+            <label
+              htmlFor="volunteer"
+              className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
+              Volunteer
+            </label>
+          </div>
+
+          <div className="mb-2 flex items-center">
+            <input
+              id="updates"
+              className="input-checkbox"
+              {...register("donor.comms.updates")}
+              type="checkbox"
+            />
+            <label
+              htmlFor="updates"
+              className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
+              Sign up for updates
+            </label>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   const UserDetailsPage = () => {
     return (
       <>
         <div className="border-b pb-8">
-          <h2 className="form-heading">Contact Details</h2>
-          <div className="grid-cols-2 gap-2 sm:grid">
+          <h2 className="form-heading text-center lg:text-left">Contact Details</h2>
+          <div className="">
             <div>
               {/* Donor Fields */}
               <label className="form-input-label">
-                First Name
+                <div className="form-input-label-text">First Name</div>
                 <input
                   className="form-input"
                   {...register("donor.first_name")}
@@ -140,7 +193,7 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
             </div>
             <div>
               <label className="form-input-label">
-                Last Name
+                <div className="form-input-label-text">Last Name</div>
                 <input
                   className="form-input"
                   {...register("donor.last_name")}
@@ -152,7 +205,7 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
             </div>
             <div>
               <label className="form-input-label">
-                Email
+                <div className="form-input-label-text">Email</div>
                 <input
                   className="form-input"
                   {...register("donor.email_id")}
@@ -163,14 +216,14 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
             </div>
             <div>
               <label className="form-input-label">
-                Phone
+                <div className="form-input-label-text">Phone</div>
                 <input className="form-input" {...register("donor.phone")} />
               </label>
               {errors.donor?.phone && <p>{errors.donor.phone.message}</p>}
             </div>
             <div>
               <label className="form-input-label">
-                Pan
+                <div className="form-input-label-text">Pan</div>
                 <input
                   className="form-input"
                   {...(register("donor.pan"),
@@ -181,57 +234,12 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
             </div>
             {/* <div>
               <label className="form-input-label">
-                  Currency
+                  <div className="form-input-label-text">Currency</div>
                   <input className="form-input" {...register('donor.currency')} />
               </label>
               {errors.donor?.currency && <p>{errors.donor.currency.message}</p>}
           </div> */}
-            <div className="mt-4 flex flex-col sm:flex-row sm:gap-6">
-              <div className="mb-2 flex items-center">
-                <input
-                  id="visit"
-                  className="input-checkbox"
-                  {...register("donor.comms.visit")}
-                  type="checkbox"
-                />
-                <label
-                  htmlFor="visit"
-                  className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                >
-                  Visit
-                </label>
-              </div>
 
-              <div className="mb-2 flex items-center">
-                <input
-                  id="volunteer"
-                  className="input-checkbox"
-                  {...register("donor.comms.volunteer")}
-                  type="checkbox"
-                />
-                <label
-                  htmlFor="volunteer"
-                  className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                >
-                  Volunteer
-                </label>
-              </div>
-
-              <div className="mb-2 flex items-center">
-                <input
-                  id="updates"
-                  className="input-checkbox"
-                  {...register("donor.comms.updates")}
-                  type="checkbox"
-                />
-                <label
-                  htmlFor="updates"
-                  className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                >
-                  Sign up for updates
-                </label>
-              </div>
-            </div>
           </div>
         </div>
       </>
