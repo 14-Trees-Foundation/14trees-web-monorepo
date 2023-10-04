@@ -9,7 +9,7 @@ export default function Testimonials({ testimonials }) {
       <Head>
         <title>Testimonials</title>
       </Head>
-      <h1 className="title-text"> Testimonials </h1>
+      <h1 className="title-text text-center"> Testimonials </h1>
       <div className="mx-4 md:pt-16">
         {testimonials.map((tm, index) => (
           <div key={index}>

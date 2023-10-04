@@ -10,7 +10,7 @@ type NavItem = {
     sub?: Array<NavItem>;
 }
 import logo from "~/assets/images/logo.png";
-import {  DropDown } from "ui";
+import { DropDown } from "ui";
 
 const getNavItems: Array<NavItem> = [
     {

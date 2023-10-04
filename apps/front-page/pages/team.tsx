@@ -2,46 +2,42 @@
 // import SEO from '../components/SEO';
 import ContentHeader from 'components/ContentHeading';
 import Layout from 'components/Layout';
+import notion from 'lib/notion';
 // import InfoSections from 'components/InfoSections';
 import Image from 'next/image';
 
-const MyComponent = () => {
-  // const imgSrc = (img) => {
-  //   return img.src;
-  // };
-  const DESCRIPTION="14 Trees Foundation is a charitable organization dedicated to building sustainable, carbon-footprint-neutral eco-systems through re-forestation"
+export const getStaticProps = async () => {
+  const teamDB = await notion.databases.query({
+    database_id: "b0961650e64842c7b9c72d88843d9554",
+  });
 
+  const team= [];
+  for (const vol of teamDB.results) {
+    const page = await notion.pages.retrieve({ page_id: vol.id });
+    console.log(page);
+    team.push({
+      // @ts-ignore
+      name: page.properties.Name
+    })
+  }
+
+  return {
+    props: {
+      team
+    },
+  };
+}
+
+const Team = ({team}) => {
   return (
     <Layout>
-      {/* <SEO title="14 Trees Foundation" description={DESCRITION}/> */}
-      <div className="container sm:pxi-0 mx-auto my-10 overflow-x-hidden text-gray-800 dark:text-gray-400">
-        <div className="md:mx-32 mx-4 md:pt-16">
-          <ContentHeader title="14 Trees Foundation" sub={DESCRIPTION} />
-          {/* {info.images && (
-            <div>
-              {info.images.map((img, index) => (
-                <div key={index} className="flex items-center justify-center pb-4 self-center w-full">
-                  {imgSrc(img) && (
-                    <div className="w-full">
-                      <Image src={imgSrc(img)} alt="" layout="responsive" objectFit="contain" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )} */}
+      {team.map((volunteer, index) => (
+        <div key={index} className="flex flex-col items-center justify-center">
+          {volunteer.name.title[0].plain_text}
         </div>
-      </div>
-
-      {/* <div className="flex justify-center md:mt-20 mt-12">
-        <span className="w-1/3 pb-4 mb-4 border-b-2 border-gray-300"></span>
-      </div> */}
-
-      {/* <div className="container mt-16 md:mt-24 mx-auto overflow-x-hidden text-gray-800 dark:text-gray-400">
-        {info && <InfoSections sections={info.sections} />}
-      </div> */}
+      ))}
     </Layout>
   );
 };
 
-export default MyComponent;
+export default Team;

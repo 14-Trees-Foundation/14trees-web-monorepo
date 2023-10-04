@@ -56,7 +56,7 @@ export interface Contribution {
   donor?: ObjectId;
 }
 
-export interface User {
+export interface ContributionUser {
   name: string;
   userid: string;
   phone: string;
@@ -75,10 +75,10 @@ export interface User {
 export interface Donor {
   first_name: string;
   last_name: string;
-  pan: User['pan'];
-  email_id: User['email'];
-  phone: User['phone'];
-  comms: User['comms'];
+  pan: ContributionUser['pan'];
+  email_id: ContributionUser['email'];
+  phone: ContributionUser['phone'];
+  comms: ContributionUser['comms'];
 }
 
 export interface VerificationResponse {
@@ -86,7 +86,7 @@ export interface VerificationResponse {
   message: string,
   emailSent: Contribution['emailSent'],
   orderId?: string,
-  userid?: User['userid'],
+  userid?: ContributionUser['userid'],
   paymentId?: string,
 }
 

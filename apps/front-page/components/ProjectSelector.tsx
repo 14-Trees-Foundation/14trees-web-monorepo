@@ -42,7 +42,9 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         </>
       ) : (
         <div className="grid grid-cols-3 gap-4">
-          {projects?.map(project => <ProjectCard {...project} key={project.id} onClick={handleGoBack}/>)}
+          {projects?.map((project) => (
+            <ProjectCard {...project} key={project.id} onClick={handleGoBack} />
+          ))}
         </div>
       )}
     </>
@@ -53,7 +55,13 @@ type ProjectCardProps = Project & {
   onClick: () => void;
 };
 
-const ProjectCard: React.FC<ProjectCardProps> = ({title, description, onClick, image, price}) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({
+  title,
+  description,
+  onClick,
+  image,
+  price,
+}) => {
   return (
     <div
       className="cursor-pointer rounded-md bg-white p-4 shadow-md"

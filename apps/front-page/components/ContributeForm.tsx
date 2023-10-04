@@ -4,25 +4,28 @@ import {
   ContributeRequest,
   PaymentOrder,
   VerificationResponse,
+  Project,
 } from "schema";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { Select } from "ui";
+import { Select, Modal } from "ui";
 import api from "~/api";
-import { Modal } from "./Modal";
 import NumTreesSelector from "./Partials/NumTreesSelector";
 import OrderSummary from "./OrderSummary";
 import { ThankYou } from "./Partials/ThankYou";
 import { useRouter } from "next/router";
 
-const campaigns = [
-  { name: "Reforestation Vetale", id: "reforestation-vetale" },
-  { name: "IITK Diamond Jubilee - 40000", id: "iitk-djc" },
-];
-
-const ContributeForm = ({orderId, project}: {orderId: string, project: Project}) => {
+const ContributeForm = ({
+  orderId,
+  project,
+}: {
+  orderId: string;
+  project: Project;
+}) => {
   const router = useRouter();
-  const [pageView, setPageView] = useState<"form" | "summary" | "thank-you">("form");
+  const [pageView, setPageView] = useState<"form" | "summary" | "thank-you">(
+    "form"
+  );
   const [order, setOrder] = useState<PaymentOrder>(null);
   const [verification, setVerification] = useState<VerificationResponse>(null);
 
@@ -57,20 +60,22 @@ const ContributeForm = ({orderId, project}: {orderId: string, project: Project})
         />
       </Modal>
       <Modal
-        title={<h1 className="text-2xl font-light">Thank you for your contribution</h1>}
+        title={
+          <h1 className="text-2xl font-light">
+            Thank you for your contribution
+          </h1>
+        }
         show={pageView === "thank-you"}
         onClose={() => router.push("/")}
-        panelClass="rounded-lg">
-        { pageView === "thank-you" && verification?.status === "success" &&
+        panelClass="rounded-lg"
+      >
+        {pageView === "thank-you" && verification?.status === "success" && (
           <div className="p-2">
             <ThankYou emailSent={verification?.emailSent} donor={order.donor} />
           </div>
-        }
+        )}
       </Modal>
-      <Form
-        onFormSubmit={onFormSubmit}
-        onPaymentComplete={onPaymentComplete}
-      />
+      <Form onFormSubmit={onFormSubmit} onPaymentComplete={onPaymentComplete} project={project?.id || "default"} />
     </>
   );
 };
@@ -78,10 +83,13 @@ const ContributeForm = ({orderId, project}: {orderId: string, project: Project})
 type FormProps = {
   onFormSubmit: (data: ContributeRequest) => void;
   onPaymentComplete: (response: VerificationResponse) => void;
+  project: Project["id"]
 };
 
-const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
-  const [page, setPage] = useState<"user-details" | "contribution" | "contribution-details">("user-details");
+const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
+  const [page, setPage] = useState<
+    "user-details" | "contribution" | "contribution-details"
+  >("user-details");
   const {
     register,
     handleSubmit,
@@ -92,7 +100,7 @@ const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
   } = useForm<{ contribution: Contribution; donor: Donor }>({
     defaultValues: {
       contribution: {
-        campaign: campaigns[0].id,
+        campaign: project,
         emailSent: false,
         plantation: "foundation",
         purpose: "reforestation",
@@ -182,7 +190,7 @@ const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
               <div className="mb-2 flex items-center">
                 <input
                   id="visit"
-                  className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                  className="input-checkbox"
                   {...register("donor.comms.visit")}
                   type="checkbox"
                 />
@@ -197,7 +205,7 @@ const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
               <div className="mb-2 flex items-center">
                 <input
                   id="volunteer"
-                  className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                  className="input-checkbox"
                   {...register("donor.comms.volunteer")}
                   type="checkbox"
                 />
@@ -212,7 +220,7 @@ const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
               <div className="mb-2 flex items-center">
                 <input
                   id="updates"
-                  className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
+                  className="input-checkbox"
                   {...register("donor.comms.updates")}
                   type="checkbox"
                 />
@@ -228,67 +236,67 @@ const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
         </div>
       </>
     );
-  }
+  };
 
   const ContributionPage = () => {
-    return (<>
-  {/* Contribution Fields */}
-    {/* <label className="form-input-label" htmlFor="orderId">
+    return (
+      <>
+        {/* Contribution Fields */}
+        {/* <label className="form-input-label" htmlFor="orderId">
       Order ID:
       <input className="form-input" {...register('contribution.orderId')} id="orderId" />
   </label>
   {errors.contribution?.orderId && <p>{errors.contribution.orderId.message}</p>} */}
-    <div className="mt-8">
-      <h2 className="form-heading">Contribution</h2>
-      <NumTreesSelector
-        onChange={(trees, type, notes) => {
-          setValue("contribution.order.trees", trees);
-          setValue("contribution.order.type", type);
-          setValue("contribution.order.notes", notes);
-        }}
-      />
-      <div className="grid-cols-2 gap-2 sm:grid">
-        <div>
-          {/* <label className="form-input-label" htmlFor="campaign">
+        <div className="mt-8">
+          <h2 className="form-heading">Contribution</h2>
+          <NumTreesSelector
+            onChange={(trees, type, notes) => {
+              setValue("contribution.order.trees", trees);
+              setValue("contribution.order.type", type);
+              setValue("contribution.order.notes", notes);
+            }}
+          />
+          <div className="grid-cols-2 gap-2 sm:grid">
+            <div>
+              {/* <label className="form-input-label" htmlFor="campaign">
                   Campaign:
                   <select className="form-input" {...register('contribution.campaign')} id="campaign">
                       {campaigns.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.name}</option>)}
                   </select>
               </label> */}
-          <Controller
-            control={control}
-            name="contribution.campaign"
-            render={({ field: { onChange, value } }) => (
-              <Select
-                options={campaigns}
-                value={value}
-                label="Campaign"
-                onChange={onChange}
+              {/* <Controller
+                control={control}
+                name="contribution.campaign"
+                render={({ field: { onChange, value } }) => (
+                  <Select
+                    options={campaigns}
+                    value={value}
+                    label="Campaign"
+                    onChange={onChange}
+                  />
+                )}
               />
-            )}
-          />
-          {errors.contribution?.campaign && (
-            <p>{errors.contribution.campaign.message}</p>
-          )}
-        </div>
+              {errors.contribution?.campaign && (
+                <p>{errors.contribution.campaign.message}</p>
+              )} */}
+            </div>
 
-        {/* <div>
+            {/* <div>
               <label className="form-input-label" htmlFor="assignment_names">
                   Assign to:
                   <input className="form-input" {...register('contribution.assignment_names.0')} id="assignment_names" />
               </label>
               {errors.contribution?.assignment_names && <p>{errors.contribution.assignment_names.message}</p>}
           </div> */}
-      </div>
-    </div>
-    </>
-    )
-  }
+          </div>
+        </div>
+      </>
+    );
+  };
 
   const ContributionDetailsPage = () => {
-    return (<>
-    </>)
-  }
+    return <></>;
+  };
 
   const contri_type = useWatch({
     control,
@@ -296,14 +304,19 @@ const Form = ({ onFormSubmit, onPaymentComplete }: FormProps) => {
   });
   return (
     <form onSubmit={handleSubmit(onFormSubmit)}>
-      {page === "user-details" && <UserDetailsPage />}
-      {page === "contribution" && <ContributionPage/>}
-      {page === "contribution-details" && <ContributionDetailsPage/>}
+      {/* {page === "user-details" && <UserDetailsPage />}
+      {page === "contribution" && <ContributionPage />}
+      {page === "contribution-details" && <ContributionDetailsPage />} */}
+      <UserDetailsPage/>
+      <ContributionPage/>
+      <ContributionDetailsPage/>
 
       <div className="mt-10 inline-flex w-full items-center">
-        <button type="submit"
-          className="btn-action mx-auto bg-green-700 text-white duration-300 hover:bg-green-600 dark:bg-green-800 sm:w-72">
-          Continue 
+        <button
+          type="submit"
+          className="btn-action mx-auto bg-green-700 text-white duration-300 hover:bg-green-600 dark:bg-green-800 sm:w-72"
+        >
+          Continue
         </button>
       </div>
     </form>

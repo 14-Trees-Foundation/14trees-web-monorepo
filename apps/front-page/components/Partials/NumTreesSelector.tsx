@@ -9,7 +9,7 @@ import { Contribution } from "schema";
 type SelectorProps = {
   onChange: (
     n: number,
-    t: Contribution["contribution"]["type"],
+    t: Contribution["order"]["type"],
     nn: string
   ) => void;
 };
@@ -26,7 +26,7 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
     notes: "",
   });
   useEffect(() => {
-    let type: Contribution["contribution"]["type"] = "one-time";
+    let type: Contribution["order"]["type"] = "one-time";
     if (state.type === "large") type = "large";
     if (state.type === "csr") type = "csr";
     onChange(state.numTrees, type, state.notes);
@@ -62,8 +62,8 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
   return (
     <div className="mx-auto mt-12 w-full sm:w-2/3">
       <ul className="w-full" onChange={handleSelection}>
-        <div className="flex flex-wrap gap-2 sm:h-24">
-          <li className="h-full flex-grow sm:w-20 sm:flex-grow-0">
+        <div className="flex flex-wrap gap-2">
+          <li className="amount-selector-item">
             <input
               type="radio"
               id="single"
@@ -80,7 +80,7 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
               </div>
             </label>
           </li>
-          <li className="h-full flex-grow sm:w-20 sm:flex-grow-0">
+          <li className="amount-selector-item">
             <input
               type="radio"
               id="fiver"
@@ -97,7 +97,7 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
               </div>
             </label>
           </li>
-          <li className="h-full flex-grow sm:w-20 sm:flex-grow-0">
+          <li className="amount-selector-item">
             <input
               type="radio"
               id="fourteen"
@@ -107,32 +107,32 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
               checked={state.type === "preset" && state.numTrees === 14}
             />
             <label htmlFor="fourteen" className="form-select-label">
-              <div className="block w-full">
+              <div className="block w-full my-auto">
                 <div className="w-full text-center text-lg font-semibold">
                   14
                 </div>
               </div>
             </label>
           </li>
-          <li className="h-full w-full flex-grow sm:w-min">
-            <input
-              type="radio"
-              id="other"
-              name="select-trees"
-              value="other"
-              className="peer hidden"
-              checked={state.type === "custom"}
-            />
-            <input
-              placeholder="other"
-              type="number"
-              onClick={handleSelection}
-              className={`form-select-label px-8 py-5 outline-none ${
-                state.type === "custom" && "border-green-600"
-              }`}
-            ></input>
-          </li>
         </div>
+        <li className="block w-full">
+          <input
+            type="radio"
+            id="other"
+            name="select-trees"
+            value="other"
+            className="peer hidden"
+            checked={state.type === "custom"}
+          />
+          <input
+            placeholder="other"
+            type="number"
+            onClick={handleSelection}
+            className={`form-input my-2 px-8 py-2 ${
+              state.type === "custom" && "border-green-600"
+            }`}
+          ></input>
+        </li>
         <div className="mt-2 inline-flex w-full gap-2">
           <li className="flex-grow">
             <input

@@ -1,4 +1,4 @@
-import { User, ContributeRequest, Contribution, Donor, PaymentOrder, RazorpayResponse, VerificationResponse } from "schema";
+import { ContributionUser, ContributeRequest, Contribution, Donor, PaymentOrder, RazorpayResponse, VerificationResponse } from "schema";
 import { getPaymentOrder } from "../services/getPaymentOrder";
 import { verifySignature } from "../services/razorpayService";
 import connect from "../services/mongo";
@@ -71,7 +71,7 @@ async function saveContribution(contribution: Contribution, donor: Donor) {
     async function getOrCreateDonor(): Promise<ObjectId> {
         const name = donor.first_name + " " + donor.last_name;
         const userid = donor.first_name + "_" + donor.email_id;
-        const newUser: User = {
+        const newUser: ContributionUser = {
             name,
             userid,
             pan: donor.pan,
@@ -80,7 +80,7 @@ async function saveContribution(contribution: Contribution, donor: Donor) {
             comms: donor.comms,
         }
 
-        const donorCollection = db.collection<User>("users");
+        const donorCollection = db.collection<ContributionUser>("users");
 
         // user already exists with the same userid ?
         let existingDonor = await donorCollection.findOne({ userid });

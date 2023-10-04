@@ -5,7 +5,7 @@
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
-    "shadcn:add": "yarn workspace ui shadcn:add",
+    "ui:add": "yarn workspace ui shadcn:add",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {

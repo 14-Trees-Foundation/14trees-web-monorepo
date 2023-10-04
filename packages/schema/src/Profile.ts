@@ -120,14 +120,17 @@
 }
 */
 
-export type User = {
-    _id: string,
+export interface BaseUser {
     name: string,
     userid: string,
-    phone: number,
+    phone: string,
     email: string,
     dob: string,
     date_added: string,
+}
+
+export interface DBUser extends BaseUser {
+    _id: string,
 }
 
 export type Org = {
@@ -176,9 +179,9 @@ export type UserTree = {
     plot: Plot,
     assignment: {
         organization: Org,
-        donated_by_user: User,
+        donated_by_user: DBUser,
     },
-    mapped_to_user: User,
+    mapped_to_user: DBUser,
 }
 
 export type ProfileUserInfo = {

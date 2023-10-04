@@ -1,6 +1,10 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { PaymentOrder, RazorpayResponse, VerificationResponse } from "schema";
+import {
+  PaymentOrder,
+  RazorpayResponse,
+  VerificationResponse,
+} from "schema";
 import { merge } from "lodash";
 import api from "~/api";
 import { useRouter } from "next/router";
@@ -103,15 +107,15 @@ export default function OrderSummary({
     };
     // @ts-ignore
     var rzp1 = new Razorpay(options);
-    rzp1.on('payment.failed', function (response){
-            // alert(response.error.code);
-        alert(response.error.description);
-        setProcessing(false);
-            // alert(response.error.source);
-            // alert(response.error.step);
-            // alert(response.error.reason);
-            // alert(response.error.metadata.order_id);
-            // alert(response.error.metadata.payment_id);
+    rzp1.on("payment.failed", function (response) {
+      // alert(response.error.code);
+      alert(response.error.description);
+      setProcessing(false);
+      // alert(response.error.source);
+      // alert(response.error.step);
+      // alert(response.error.reason);
+      // alert(response.error.metadata.order_id);
+      // alert(response.error.metadata.payment_id);
     });
     rzp1.open();
   };

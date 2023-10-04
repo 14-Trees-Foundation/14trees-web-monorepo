@@ -1,12 +1,14 @@
 {
   "extends": "tsconfig/react-library.json",
+  "strict": false,
   "include": ["."],
   "exclude": ["dist", "build", "node_modules"],
   "compilerOptions": {
+      "moduleResolution": "node",
       "baseUrl": ".",
       "paths": {
+        "@/*": ["src/shadcn/*"],
         "@ui/*": ["./*"],
-        "@ui/components/ui*": ["./components/ui*"]
       }
     }
 }
