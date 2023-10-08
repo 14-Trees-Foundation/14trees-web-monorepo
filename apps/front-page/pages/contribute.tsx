@@ -73,13 +73,13 @@ const Contribute = ({ projects }: { projects: Project[] }) => {
   return (
     <Layout>
       <div className="lg:mx-4">
-        <div className="fixed bottom-0 lg:right-1/4 w-full">
-          <div className="ml-auto lg:w-1/2">
+        <div className="fixed bottom-0 lg:right-1/4 2xl:right-1/3 w-full">
+          <div className="ml-auto w-3/5 lg:w-1/2 2xl:w-1/3">
             <Image src={tree_graphic} alt="Tree Graphic" className="w-full opacity-10 -rotate-45"/>
           </div>
         </div>
-        <div className="mx-auto lg:mt-10 lg:flex max-w-screen-xl relative">
-          <div className="w-full lg:w-3/5 px-12 my-12 lg:my-32 font-serif text-gray-700">
+        <div className="mx-auto px-4 lg:mt-10 lg:flex max-w-screen-xl 2xl:max-w-screen-2xl relative">
+          <div className="w-full lg:w-3/5 my-12 lg:my-32 lg:mr-8 font-serif text-gray-700">
             <h1 className="text-3xl">Contribute to 14 Trees</h1>
             <p>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed

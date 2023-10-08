@@ -2,40 +2,64 @@
 // import SEO from '../components/SEO';
 import ContentHeader from 'components/ContentHeading';
 import Layout from 'components/Layout';
-import notion from 'lib/notion';
-// import InfoSections from 'components/InfoSections';
 import Image from 'next/image';
 
 export const getStaticProps = async () => {
-  const teamDB = await notion.databases.query({
-    database_id: "b0961650e64842c7b9c72d88843d9554",
-  });
+  // const teamDB = await notion.databases.query({
+  //   database_id: "b0961650e64842c7b9c72d88843d9554",
+  // });
 
-  const team= [];
-  for (const vol of teamDB.results) {
-    const page = await notion.pages.retrieve({ page_id: vol.id });
-    console.log(page);
-    team.push({
-      // @ts-ignore
-      name: page.properties.Name
-    })
-  }
+  // const team = await Promise.all(teamDB.results.map(async (vol) => {
+  //   const page = await notion.pages.retrieve({ page_id: vol.id });
+  //     // @ts-ignore
+  //   if (page.properties.Status && page.properties.Status !== "Active") return null;
+  //   pages.push(page)
+  //   return {
+  //     // @ts-ignore
+  //     name: page.properties.Name,
+  //     // @ts-ignore
+  //     picture: page.properties.Picture.files[0]?.file?.url || "",
+  //     // @ts-ignore
+  //     content: page.content || null,
+  //   }
+  // }))
+
+  // console.log(team, JSON.stringify(pages[0]));
 
   return {
     props: {
-      team
+      team: []
     },
   };
 }
 
 const Team = ({team}) => {
+  const team_members = team.map(v => ({
+    name: v.name.title[0].plain_text,
+    bio: v.content,
+    picture: v.picture,
+  }))
+
   return (
     <Layout>
-      {team.map((volunteer, index) => (
-        <div key={index} className="flex flex-col items-center justify-center">
-          {volunteer.name.title[0].plain_text}
+      <div className="bg-white min-h-screen p-8">
+        <h1 className="text-3xl font-bold mb-8">Our Team</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+          {team_members.map((member, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <Image
+                src={member.picture}
+                alt={member.name}
+                width={160}
+                height={160}
+                className="w-40 h-40 rounded-full object-cover mb-4 border-2 border-green-500"
+              />
+              <h2 className="text-xl font-semibold text-gray-800">{member.name}</h2>
+              <p className="text-gray-600 mt-2">{member.bio}</p>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </Layout>
   );
 };
