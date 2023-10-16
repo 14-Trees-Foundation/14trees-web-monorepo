@@ -3,35 +3,7 @@
 import ContentHeader from 'components/ContentHeading';
 import Layout from 'components/Layout';
 import Image from 'next/image';
-
-export const getStaticProps = async () => {
-  // const teamDB = await notion.databases.query({
-  //   database_id: "b0961650e64842c7b9c72d88843d9554",
-  // });
-
-  // const team = await Promise.all(teamDB.results.map(async (vol) => {
-  //   const page = await notion.pages.retrieve({ page_id: vol.id });
-  //     // @ts-ignore
-  //   if (page.properties.Status && page.properties.Status !== "Active") return null;
-  //   pages.push(page)
-  //   return {
-  //     // @ts-ignore
-  //     name: page.properties.Name,
-  //     // @ts-ignore
-  //     picture: page.properties.Picture.files[0]?.file?.url || "",
-  //     // @ts-ignore
-  //     content: page.content || null,
-  //   }
-  // }))
-
-  // console.log(team, JSON.stringify(pages[0]));
-
-  return {
-    props: {
-      team: []
-    },
-  };
-}
+import TeamContent  from '../../../content/Team.json'
 
 const Team = ({team}) => {
   const team_members = team.map(v => ({

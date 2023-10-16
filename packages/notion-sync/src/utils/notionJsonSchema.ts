@@ -1,132 +1,217 @@
-import * as ts from 'typescript';
+import { PropertyValue, PropertyValueMap } from "../NotionModel";
+import { JSONSchema, JSONSchemaObject, JSONSchemaRoot, JSONSchemaString } from "../model/JSONSchema";
+import { info } from "./logging";
 
-export default function getJsonSchemaFromNotionDB(notionDescribe: any) {
-  const schema: any = {
-	"$schema": "https://json-schema.org/draft/2019-09/schema",
+const STRING_FIELD: JSONSchemaString = { "type": "string" }
+
+const ENUM_OPTIONS = (options: any[]) => {
+  return options.map((option: { name: any; }) => option.name)
+}
+
+/**
+ * @param notionDescribe object representing the schema of a Notion database
+ * @returns JSON schema for the database
+ */
+export default function getJsonSchemaFromNotionDB(notionDescribe: any): JSONSchema {
+  const schema: JSONSchemaObject & JSONSchemaRoot = {
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "type": "object",
-    "properties": {},
-    "required": []
+    "required": ['title']
   };
+
+  schema.properties = {};
 
   for (const key in notionDescribe) {
     const field = notionDescribe[key];
+    schema.properties[key] = getJSONSchemaFromNotionProperty(field);
+  }
+  return schema;
+} 
+
+function getJSONSchemaFromNotionProperty(field: any): JSONSchema {
     switch (field.type) {
       case 'rich_text':
       case 'phone_number':
       case 'email':
       case 'title':
-        schema.properties[key] = { "type": "string" };
-        break;
+        return STRING_FIELD;
       case 'url':
-        schema.properties[key] = { "type": "string", "format": "uri" };
-        break;
+        return { "type": "string", "format": "uri" };
       case 'multi_select':
-        schema.properties[key] = {
+        /**
+         * "Store availability": {
+              "id": "flsb",
+              "name": "Store availability",
+              "type": "multi_select",
+              "multi_select": {
+                "options": [
+                  {
+                    "id": "5de29601-9c24-4b04-8629-0bca891c5120",
+                    "name": "Duc Loi Market",
+                    "color": "blue"
+                  },
+                ]
+              }
+            }
+         */
+        return {
           "type": "array",
-          "items": {
-            "type": "string",
-            "enum": field.multi_select.options.map((option: { name: any; }) => option.name)
-          }
+          "items": ENUM_OPTIONS(field.multi_select.options) 
         };
-        break;
       case 'select':
-        schema.properties[key] = {
+        return {
           "type": "string",
-          "enum": field.select.options.map((option: { name: any; }) => option.name)
+          "enum": ENUM_OPTIONS(field.select.options)
         };
         break;
       case 'checkbox':
-        schema.properties[key] = { "type": "boolean" };
+        return { "type": "boolean" };
         break;
       case 'number':
-        schema.properties[key] = { "type": "number" };
+        return { "type": "number", "format": field.number?.format || undefined };
         break;
       case 'date':
-        schema.properties[key] = { "type": "string", "format": "date-time" };
+        return { "type": "string", "format": "date-time" };
         break;
+      case 'people':
+        return { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "object": STRING_FIELD,
+              "id": STRING_FIELD,
+              "type": STRING_FIELD,
+              "name": STRING_FIELD,
+              "avatar_url": STRING_FIELD,
+              "person": { "type": "object" },
+              "person_email": STRING_FIELD,
+            }
+          }
+        };
+      case 'relation':
+        /**
+         * "Projects": {
+            "id": "~pex",
+            "name": "Projects",
+            "type": "relation",
+            "relation": {
+              "database_id": "6c4240a9-a3ce-413e-9fd0-8a51a4d0a49b",
+              "synced_property_name": "Tasks",
+              "synced_property_id": "JU]K"
+            }
+          }
+         */
+      case 'rollup':  
+       return STRING_FIELD;
+        break;
+      case 'files':
+        return {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": STRING_FIELD,
+              "file": { "type": "object" }
+            }
+          }
+        };
       default:
-        console.warn(`Unsupported type ${field.type} for column ${key}`);
+        console.warn(`Unsupported type ${field.type} for column ${field.id}`);
+        return STRING_FIELD;
     }
-    // schema.required.push(key);
   }
 
-  return schema;
+/**
+ * @param notionPageProps object representing a row (ie. page) from a Notion database
+ * Returns a simplified version of the row, with only the properties that are relevant to the schema
+ * Guaranteed to conform to the types (json schema) generated by getJsonSchemaFromNotionDB
+ */
+export function simplifyProps(notionPageProps: PropertyValueMap, schema: JSONSchemaObject) {
+  const simplified: any = {};
+
+  for (const key in notionPageProps) {
+    const field = notionPageProps[key];
+    if (schema.properties?.hasOwnProperty(key)) {
+      const fieldOutType = schema.properties?.[key].type
+      info(`Field ${key} has type ${field.type} -> ${fieldOutType}`);
+      info(`Field ${key} has value ${JSON.stringify(notionPageProps[key])}`);
+
+      simplified[key] = simplifyField(field, fieldOutType);
+    }
+  }
+
+  return simplified;
 }
 
-export function changeCase(str: string, format: "camel" | "pascal" = "camel"): string {
-  return str
-    .replace(/[^a-zA-Z0-9 ]/g, '') // Remove special characters
-    .split(' ')
-    .map((word, index) => {
-      if (index === 0 && format === 'camel') {
-        return word.toLowerCase();
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join('');
-}
-
-export function jsonSchemaToTSInterfaces(schema: any, rootName: string = 'Root'): string {
-   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-  const sourceFile = ts.createSourceFile('temp.ts', '', ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
-  const typeAliases: ts.TypeAliasDeclaration[] = [];
-
-  function parseProperty(key: string, property: any): ts.PropertySignature {
-    let typeNode: ts.TypeNode;
-
-    switch (property.type) {
-      case 'string':
-        typeNode = ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
-        break;
+function simplifyField(field: PropertyValue, fieldOutType: string) {
+    switch (field.type) {
+      case 'title':
+        return field.title.map((title: { plain_text: string; }) => title.plain_text).join(' ')
+      case 'rich_text':
+        return field.rich_text.map((text: { plain_text: string; }) => text.plain_text).join(' ')
+      case 'phone_number':
+        return field.phone_number;
+      case 'email':
+        return field.email;
+      case 'url':
+        return field.url;
+      case 'multi_select':
+        return field.multi_select.map((option: { name: string; }) => option.name);
+      case 'select':
+        return field.select?.name;
+      case 'checkbox':
+        return field.checkbox;
       case 'number':
-        typeNode = ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
-        break;
-      case 'boolean':
-        typeNode = ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
-        break;
-      case 'array':
-        if (property.items && property.items.enum) {
-          const typeName = changeCase(key, "pascal") + 'Type';
-          const unionType = ts.factory.createUnionTypeNode(property.items.enum.map((e: string) => ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(e))));
-          typeAliases.push(ts.factory.createTypeAliasDeclaration([ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)], typeName, undefined, unionType));
-          typeNode = ts.factory.createArrayTypeNode(ts.factory.createTypeReferenceNode(typeName, undefined));
-        } else if (property.items && property.items.type) {
-          typeNode = ts.factory.createArrayTypeNode(parseProperty('', property.items).type!);
-        } else {
-          typeNode = ts.factory.createArrayTypeNode(ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword));
-        }
-        break;
-      case 'object':
-        const typeElements: ts.TypeElement[] = [];
-        for (const subKey in property.properties) {
-          typeElements.push(parseProperty(subKey, property.properties[subKey]));
-        }
-        typeNode = ts.factory.createTypeLiteralNode(typeElements);
-        break;
+        return field.number;
+      case 'date':
+        return field.date?.start;
+      case 'people':
+        // { 
+        //   "type": "object",
+        //   "properties": {
+        //     "object": STRING_FIELD,
+        //     "id": STRING_FIELD,
+        //     "type": STRING_FIELD,
+        //     "name": STRING_FIELD,
+        //     "avatar_url": STRING_FIELD,
+        //     "person": { "type": "object" },
+        //     "person_email": STRING_FIELD,
+        //   }
+        // };
+        return field.people?.map((person: any) => {
+          return {
+            "object": person.object,
+            "id": person.id,
+            "type": person.type,
+            "name": person.name,
+            "avatar_url": person.avatar_url,
+            "person": person.person,
+            "person_email": person.person_email,
+          }
+        })
+      case 'files':
+        return field.files?.map((file: any) => {
+          return {
+            "type": file.type,
+            "file": file.file
+          }
+        })
+      case 'relation':
+        /**
+         * "Projects": {
+            "id": "~pex",
+            "name": "Projects",
+            "type": "relation",
+            "relation": {
+              "database_id": "6c4240a9-a3ce-413e-9fd0-8a51a4d0a49b",
+              "synced_property_name": "Tasks",
+              "synced_property_id": "JU]K"
+            }
+          }
+        */
       default:
-        typeNode = ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
+        console.warn(`Unsupported type ${field.type} for ${field}`);
+        return "NOT_SUPPORTED"
     }
-
-    return ts.factory.createPropertySignature(undefined, changeCase(key), undefined, typeNode);
-  }
-
-  const typeElements: ts.TypeElement[] = [];
-  for (const key in schema.properties) {
-    typeElements.push(parseProperty(key, schema.properties[key]));
-  }
-
-  const interfaceDeclaration = ts.factory.createInterfaceDeclaration(
-    [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-    rootName,
-    undefined,
-    undefined,
-    typeElements
-  );
-
-  const result = [
-    ...typeAliases.map(alias => printer.printNode(ts.EmitHint.Unspecified, alias, sourceFile)),
-    printer.printNode(ts.EmitHint.Unspecified, interfaceDeclaration, sourceFile)
-  ].join('\n\n');
-
-  return result;
 }

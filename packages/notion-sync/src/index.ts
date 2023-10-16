@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import fetchData from './fetch-content';
 import { parseArgs } from "node:util";
-import { error, log, warn } from './logging';
+import { error, log, warn } from './utils/logging';
 
 const args = parseArgs({
     options: {
@@ -45,9 +45,8 @@ const fetch = async (apiKey: string, outDir: string) => {
     const data = await fetchData(apiKey, dbs);
     for (const db of data) {
         fs.writeFileSync(path.join(outDir, `${db.name}.json`), JSON.stringify(db.data, null, 2));
-
-        fs.writeFileSync(path.join(outDir, `${db.name}.types.ts`), db.types);
-
+        fs.writeFileSync(path.join(outDir, `${db.name}.describe.json`), db.describe);
+        fs.writeFileSync(path.join(outDir, `${db.name}.d.ts`), db.types);
         log(`Wrote ${db.name} to ${outDir}/${db.name}.json`);
     }
 }

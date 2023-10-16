@@ -1,36 +1,7 @@
 import { Client } from "@notionhq/client";
-import { log } from "./logging";
-// import {
-//     quicktype,
-//     InputData,
-//     JSONSchemaInput,
-//     FetchingJSONSchemaStore
-// } from "quicktype-core";
-import { get } from "http";
-import getJsonSchemaFromNotionDB, { jsonSchemaToTSInterfaces } from "./utils/notionJsonSchema";
-
-// async function quicktypeJSONSchema(targetLanguage: string, typeName: string, jsonSchemaString: string) {
-//     const schemaInput = new JSONSchemaInput(new FetchingJSONSchemaStore());
-
-//     // We could add multiple schemas for multiple types,
-//     // but here we're just making one type from JSON schema.
-//     await schemaInput.addSource({ name: typeName, schema: jsonSchemaString });
-
-//     const inputData = new InputData();
-//     inputData.addInput(schemaInput);
-
-//     return await quicktype({
-//         inputData,
-//         lang: targetLanguage
-//     });
-// }
-
-// async function main() {
-//     const { lines: pythonPerson } = ;
-//     console.log(pythonPerson.join("\n"));
-// }
-
-// main();
+import { log } from "./utils/logging";
+import getJsonSchemaFromNotionDB, { simplifyProps } from "./utils/notionJsonSchema";
+import jsonSchemaToTSInterfaces from "./utils/schemaToTS";
 
 let notion: Client;
 
@@ -46,25 +17,23 @@ export interface SiteContent {
 async function fetchDB(name: string, database_id: string, filter: any = undefined) {
     const DB_description = await notion.databases.retrieve({ database_id });
     log(`Description: ${JSON.stringify(DB_description)}`);
-    const jsonSchemaString = getJsonSchemaFromNotionDB(DB_description.properties);
-    log(`JSON Schema: ${JSON.stringify(jsonSchemaString)}`);
-    const types = jsonSchemaToTSInterfaces(jsonSchemaString, "team")
-    // const types = await quicktypeJSONSchema("typescript", name, jsonSchemaString)
-    // const DB = await notion.databases.query({
-    //     database_id, 
-    //     filter
-    // });
+    const jsonSchema = getJsonSchemaFromNotionDB(DB_description.properties);
+    log(`JSON Schema: ${JSON.stringify(jsonSchema)}`);
+    const types = jsonSchemaToTSInterfaces(jsonSchema, name + "Row")
 
-    // const pages = [];
-    // const collectedFields = await Promise.all(DB.results.map(async (vol) => {
-    //   const page = await notion.pages.retrieve({ page_id: vol.id });
-    //   // @ts-ignore
-    //   return page.properties
-    // }))
+    const DB = await notion.databases.query({ database_id, filter });
+    const collectedPages = await Promise.all(DB.results.map(async (dbPage) => {
+      const page = await notion.pages.retrieve({ page_id: dbPage.id });
+      if (page){
+        // @ts-ignore
+        return simplifyProps(page.properties, jsonSchema)
+      }
+    }))
 
     return {
       // data : collectedFields.filter((field) => field !== null);
-      data: [],
+      data: collectedPages,
+      describe: JSON.stringify(DB_description),
       types
     }
 }
@@ -75,13 +44,14 @@ const fetchData = async (NOTION_API_KEY: string, databases: NotionDatabase[]) =>
         auth: NOTION_API_KEY,
     }); 
 
-    const output: {name: string, data: any, types: any}[] =  
+    const output: {name: string, data: any, types: any, describe: any}[] =  
       await Promise.all(databases.map(async (db) => {
-        const { data, types } = await fetchDB(db.name, db.id)
+        const { data, types, describe } = await fetchDB(db.name, db.id)
         return {
           name: db.name,
           data,
-          types
+          types,
+          describe
         }
       }));
     return  output;
