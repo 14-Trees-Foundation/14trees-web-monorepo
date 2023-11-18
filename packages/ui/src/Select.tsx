@@ -58,9 +58,9 @@ export function Select({options, label, value, onChange}: {
                     className="max-h-60 rounded-md py-1 text-base leading-6 shadow-xs overflow-auto focus:outline-none sm:text-sm sm:leading-5" >
                     {options.map((option) => (
                       <Listbox.Option key={option.id} value={option.id}>
-                        { ({ selected, active }) => <ListBoxOption 
-                              selected={selected} 
-                              active={active} 
+                        { (opt) => <ListBoxOption 
+                              selected={opt.selected} 
+                              active={opt.active} 
                               option={option}/>
                         }
                       </Listbox.Option>

@@ -3,13 +3,23 @@
 import ContentHeader from 'components/ContentHeading';
 import Layout from 'components/Layout';
 import Image from 'next/image';
-import TeamContent  from '../../../content/Team.json'
+import TeamContent from '../../../content/Team.json';
+import {TeamRow} from '../../../content/Team';
 
-const Team = ({team}) => {
+function getStaticProps() {
+  return {
+    props: {
+      team: TeamContent,
+    },
+  };
+}
+
+const Team = ({team}: {team: TeamRow[]}) => {
   const team_members = team.map(v => ({
-    name: v.name.title[0].plain_text,
-    bio: v.content,
-    picture: v.picture,
+    name: v.name,
+    bio: v.aboutMe,
+    
+    picture: v.picture[0]?.file?.url || "",
   }))
 
   return (

@@ -1,8 +1,10 @@
 import { PropertyValue, PropertyValueMap } from "../NotionModel";
 import { JSONSchema, JSONSchemaObject, JSONSchemaRoot, JSONSchemaString } from "../model/JSONSchema";
+import { changeCase } from "./helpers";
 import { info } from "./logging";
 
 const STRING_FIELD: JSONSchemaString = { "type": "string" }
+const DATE_FIELD: JSONSchemaString = { "type": "string", "format": "date-time" }
 
 const ENUM_OPTIONS = (options: any[]) => {
   return options.map((option: { name: any; }) => option.name)
@@ -112,7 +114,13 @@ function getJSONSchemaFromNotionProperty(field: any): JSONSchema {
             "type": "object",
             "properties": {
               "type": STRING_FIELD,
-              "file": { "type": "object" }
+              "file": { 
+                "type": "object" ,
+                "properties": {
+                  "url": STRING_FIELD,
+                  "expiry_time": DATE_FIELD,
+                }
+              }
             }
           }
         };
@@ -133,11 +141,12 @@ export function simplifyProps(notionPageProps: PropertyValueMap, schema: JSONSch
   for (const key in notionPageProps) {
     const field = notionPageProps[key];
     if (schema.properties?.hasOwnProperty(key)) {
+      const camelKey = changeCase(key, "camel");
       const fieldOutType = schema.properties?.[key].type
-      info(`Field ${key} has type ${field.type} -> ${fieldOutType}`);
-      info(`Field ${key} has value ${JSON.stringify(notionPageProps[key])}`);
+      info(`Field ${camelKey} has type ${field.type} -> ${fieldOutType}`);
+      info(`Field ${camelKey} has value ${JSON.stringify(notionPageProps[key])}`);
 
-      simplified[key] = simplifyField(field, fieldOutType);
+      simplified[camelKey] = simplifyField(field, fieldOutType);
     }
   }
 
@@ -167,18 +176,6 @@ function simplifyField(field: PropertyValue, fieldOutType: string) {
       case 'date':
         return field.date?.start;
       case 'people':
-        // { 
-        //   "type": "object",
-        //   "properties": {
-        //     "object": STRING_FIELD,
-        //     "id": STRING_FIELD,
-        //     "type": STRING_FIELD,
-        //     "name": STRING_FIELD,
-        //     "avatar_url": STRING_FIELD,
-        //     "person": { "type": "object" },
-        //     "person_email": STRING_FIELD,
-        //   }
-        // };
         return field.people?.map((person: any) => {
           return {
             "object": person.object,

@@ -6,7 +6,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import Image from "next/image";
 import ProjectSelector from "components/ProjectSelector";
 import { Project } from "schema";
-import notion from "lib/notion";
+// import notion from "lib/notion";
 import tree_graphic from "../src/assets/images/tree_graphic.jpg"
 
 const getFirst = (obj: string | string[]) => {
@@ -15,10 +15,9 @@ const getFirst = (obj: string | string[]) => {
 };
 
 export const getStaticProps = async () => {
-
-  const projectsDB = await notion.databases.query({
-    database_id: "dfbdb25925cc45dba7eda2a1fc635824",
-  });
+  // const projectsDB = await notion.databases.query({
+  //   database_id: "dfbdb25925cc45dba7eda2a1fc635824",
+  // });
 
   // const projects = [];
   // for (const project of projectsDB.results) {
