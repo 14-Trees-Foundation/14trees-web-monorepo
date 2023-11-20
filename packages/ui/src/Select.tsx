@@ -4,7 +4,7 @@ import { Listbox, Transition } from '@headlessui/react'
 type ListOption = {name: string, id: string, unavailable?: boolean}
 
 export function Select({options, label, value, onChange}: {
-    options: Array<ListOption>, label: string, value: string, onChange: (e: string) => void}) {
+  options: Array<ListOption>, label: string, value: string, onChange: (e: string) => void}) {
   const [selectedItem, setSelectedItem] = useState(options[0]);
 
   useEffect(() => {
@@ -57,6 +57,7 @@ export function Select({options, label, value, onChange}: {
                   <Listbox.Options static
                     className="max-h-60 rounded-md py-1 text-base leading-6 shadow-xs overflow-auto focus:outline-none sm:text-sm sm:leading-5" >
                     {options.map((option) => (
+                      // @ts-ignore
                       <Listbox.Option key={option.id} value={option.id}>
                         { (opt) => <ListBoxOption 
                               selected={opt.selected} 
