@@ -15,7 +15,7 @@ import QRCode from "qrcode";
 import { getTreeTemplateImage } from "./utils";
 
 const MARGIN = 20;
-const QR_WIDTH = 128
+const QR_WIDTH = 128;
 const FONT_COLOUR = "#472d12ee";
 
 const opts = {
@@ -24,7 +24,7 @@ const opts = {
   scale: 4,
   margin: 0,
   color: {
-    dark: "#434f3abb",
+    dark: "#434f3add",
     light: "#FFF",
   },
   correctLevel: "Q",
@@ -47,21 +47,24 @@ type EditorProps = {
   message: string;
   treeImage: StaticImageData;
   logoFiles: File[];
-  cardRef: Ref<HTMLDivElement>;
+  canvasRef: any;
   handleSave?: () => void;
 };
 
 const EditorContainer = forwardRef(
-  ({ template_id, cardRef, ...props }: EditorProps) => {
+  ({ ...props }: EditorProps) => {
     const [reset, setReset] = useState(false);
     return (
-      <div className="mx-auto w-[1448px]" style={{fontFamily: "Poppins"}}>
+      <div
+        className="mx-auto w-[1448px]"
+        style={{ fontFamily: "Noto Sans, Poppins, sans-serif" }}
+      >
         <div
           // ref={cardRef}
           className="relative my-8 w-[1448px] rounded-md bg-white p-1 font-serif shadow-lg"
           style={{ aspectRatio: "3/2" }}
         >
-          <CanvasEditor fabricRef={cardRef} reset={reset} template_id={template_id} {...props} />
+          <CanvasEditor reset={reset} {...props} />
         </div>
         <button
           onClick={() => setReset(!reset)}
@@ -76,15 +79,29 @@ const EditorContainer = forwardRef(
 
 EditorContainer.displayName = "GiftCard";
 
-const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, message, logoFiles, donor_name, ...props }) => {
+interface CanvasEditorProps extends EditorProps {
+  reset: boolean;
+}
+
+const CanvasEditor = ({
+  treeName,
+  reset,
+  canvasRef,
+  template_id,
+  tree_id,
+  message,
+  logoFiles,
+  donor_name,
+  ...props
+}: CanvasEditorProps) => {
   const dashboard_link = `https://dashboard.14trees.org/profile/${tree_id}`;
-  const canvasRef = useRef(null);
+  const htmlCanvasRef = useRef(null);
 
   const initFabric = () => {
-    fabricRef.current = new fabric.Canvas(canvasRef.current, {
+    canvasRef.current = new fabric.Canvas(htmlCanvasRef.current, {
       width: 1440,
       height: 1080,
-      backgroundColor : "#fff",
+      backgroundColor: "#fff",
     });
   };
 
@@ -94,25 +111,25 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
       top: 0,
       selectable: false,
       evented: false,
-      scaleX: fabricRef.current.width / img.width,
-      scaleY: fabricRef.current.height / img.height,
+      scaleX: canvasRef.current.width / img.width,
+      scaleY: canvasRef.current.height / img.height,
     });
     // Load an image and add it to the canvas
     fabric.Image.fromURL(getTreeTemplateImage(treeName), (img) => {
-      fabricRef.current.setBackgroundImage(
+      canvasRef.current.setBackgroundImage(
         img,
-        fabricRef.current.renderAll.bind(fabricRef.current),
+        canvasRef.current.renderAll.bind(canvasRef.current),
         imageOpts(img)
       );
 
-      fabricRef.current.sendToBack(img);
+      canvasRef.current.sendToBack(img);
     });
 
     fabric.Image.fromURL(logo.src, (img) => {
       // Set image dimensions to cover the right half of the canvas
       const LOGO_SIZE = 128;
       img.set({
-        left: fabricRef.current.width - LOGO_SIZE - MARGIN,
+        left: canvasRef.current.width - LOGO_SIZE - MARGIN,
         top: MARGIN,
         scaleX: LOGO_SIZE / img.width,
         scaleY: LOGO_SIZE / img.height,
@@ -120,19 +137,21 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
         evented: false,
       });
 
-      fabricRef.current.add(img);
+      canvasRef.current.add(img);
     });
   };
 
   const addQRCode = async () => {
-    const QR_TOP = fabricRef.current.height - QR_WIDTH - MARGIN;
+    const QR_TOP = canvasRef.current.height - QR_WIDTH - MARGIN;
     // hr
-    fabricRef.current.add(new fabric.Line([MARGIN,QR_TOP - 40,MARGIN + 500,QR_TOP - 40], {
-      stroke: '#434f3abb',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false,
-    }));
+    canvasRef.current.add(
+      new fabric.Line([MARGIN, QR_TOP - 60, MARGIN + 500, QR_TOP - 60], {
+        stroke: "#434f3abb",
+        strokeWidth: 2,
+        selectable: false,
+        evented: false,
+      })
+    );
     fabric.Image.fromURL(await getQRCode(dashboard_link), (img) => {
       // Set image dimensions to cover the right half of the canvas
       img.set({
@@ -140,12 +159,11 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
         top: QR_TOP,
       });
 
-      fabricRef.current.add(img);
-
+      canvasRef.current.add(img);
     });
-    fabricRef.current.add(
+    canvasRef.current.add(
       new fabric.Textbox(`Watch your tree grow!`, {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: "bold",
         fontFamily: "Poppins",
         fill: FONT_COLOUR,
@@ -157,16 +175,16 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
         textAlign: "left",
       })
     );
-    fabricRef.current.add(
-      new fabric.Textbox(`\nTree Id: ${tree_id}`, {
-        fontSize: 22,
-        fontWeight: "bold",
+    canvasRef.current.add(
+      new fabric.Textbox(`Tree ID: ${tree_id}`, {
+        fontSize: 18,
+        // fontWeight: "bold",
         fontFamily: "Poppins",
         fill: FONT_COLOUR,
         opacity: 0.6,
-        left: MARGIN + QR_WIDTH + 10,
+        left: MARGIN,
         width: 300,
-        top: QR_TOP + 75,
+        top: canvasRef.current.height - 25 - MARGIN -  QR_WIDTH,
         padding: 10,
         textAlign: "left",
       })
@@ -174,29 +192,29 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
   };
 
   const addText = () => {
-    fabricRef.current.add(
-      new fabric.Textbox(`Dear ${donor_name}`, {
-        fontSize: 36,
-        fontFamily: "Poppins",
+    canvasRef.current.add(
+      new fabric.Textbox(`Dear ${donor_name},`, {
+        fontSize: 34,
+        fontFamily: "Noto Sans",
         fontWeight: "bold",
         fill: FONT_COLOUR,
         left: MARGIN,
-        width: fabricRef.current.width / 2,
-        top: fabricRef.current.height / 2 - 70,
+        width: canvasRef.current.width / 2,
+        top: canvasRef.current.height / 2 - 70,
         padding: 10,
         textAlign: "left",
       })
     );
-    fabricRef.current.add(
+    canvasRef.current.add(
       new fabric.Textbox(message, {
         fontSize: 32,
         fontWeight: 200,
-        fontFamily: "Poppins",
+        fontFamily: "Noto Sans",
         fill: FONT_COLOUR,
-        shadow: "rgba(0,0,0,0.2) 0px 0px 10px",
+        shadow: "rgba(0,0,0,0.1) 0px 0px 10px",
         left: MARGIN,
-        width: fabricRef.current.width / 2.2,
-        top: fabricRef.current.height / 2 - 10,
+        width: canvasRef.current.width / 2.4,
+        top: canvasRef.current.height / 2 - 10,
         padding: 10,
         textAlign: "left",
       })
@@ -204,27 +222,46 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
   };
 
   const addLogos = async () => {
+    const LOGO_WIDTH = 192;
+    const LOGO_LEFT = getTemplateLogoLeft(
+      canvasRef.current.width,
+      LOGO_WIDTH,
+      template_id
+    );
+    canvasRef.current.add(
+      new fabric.Textbox(`Planted By`, {
+        fontSize: 20,
+        fontWeight: "bold",
+        fontFamily: "Poppins",
+        fill: FONT_COLOUR,
+        opacity: 0.6,
+        left: LOGO_LEFT + 10,
+        width: 150,
+        top: canvasRef.current.height - MARGIN - 25 - QR_WIDTH,
+        padding: 10,
+        textAlign: "left",
+      })
+    );
     const logoImgs = await Promise.all(logoFiles?.map(readImageToURL));
     logoImgs.forEach((logoImg, index) => {
-      fabric.Image.fromURL(logoImg, (img) => {
+      fabric.Image.fromURL(logoImg.toString(), (img) => {
         // Set image dimensions to cover the right half of the canvas
-        const LOGO_WIDTH = 192;
         const LOGO_HEIGHT = QR_WIDTH / 2;
         const scale = LOGO_HEIGHT / img.height;
         img.set({
-          left: getTemplateLogoLeft(fabricRef.current.width, LOGO_WIDTH, template_id),
-          top: fabricRef.current.height - LOGO_HEIGHT * (index +1) - MARGIN,
+          left: LOGO_LEFT,
+          top: canvasRef.current.height - LOGO_HEIGHT * (index + 1) - MARGIN,
           scaleX: scale,
           scaleY: scale,
         });
 
-        fabricRef.current.add(img);
+        canvasRef.current.add(img);
       });
-    })
+    });
   };
 
   const disposeFabric = () => {
-    fabricRef.current.dispose();
+    canvasRef.current.dispose();
   };
 
   const renderFabric = useCallback(async () => {
@@ -232,11 +269,11 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
     await addQRCode();
     addTemplateImages();
     addText();
-    addLogos();
+    logoFiles.length && addLogos();
   }, [logoFiles]);
 
   useEffect(() => {
-    if (fabricRef.current) {
+    if (canvasRef.current) {
       disposeFabric();
       renderFabric();
     } else {
@@ -244,7 +281,7 @@ const CanvasEditor = ({ treeName, reset, fabricRef, template_id, tree_id, messag
     }
   }, [reset, renderFabric, template_id]);
 
-  return <canvas ref={canvasRef} />;
+  return <canvas ref={htmlCanvasRef} />;
 };
 
 async function readImageToURL(file: File): Promise<String> {
@@ -258,10 +295,14 @@ async function readImageToURL(file: File): Promise<String> {
   });
 }
 
-function getTemplateLogoLeft(canvasWidth: number, logoWidth: number, template_id: number): number {
-  const left1 = canvasWidth - logoWidth - MARGIN
-  const left2 = MARGIN + QR_WIDTH + MARGIN + 200
-  return template_id === 2 ? left2 : left1
+function getTemplateLogoLeft(
+  canvasWidth: number,
+  logoWidth: number,
+  template_id: number
+): number {
+  const left1 = canvasWidth - logoWidth - MARGIN;
+  const left2 = MARGIN + QR_WIDTH + MARGIN + 200;
+  return template_id === 2 ? left2 : left1;
 }
 
 export default EditorContainer;

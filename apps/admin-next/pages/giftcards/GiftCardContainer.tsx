@@ -40,7 +40,7 @@ export default function GiftCardsContainer({
   const messageEdit =
     message ||
     `We have planted this tree in your name at 14 Trees Foundation.
-\nFor many years, this tree will help rejuvenate local ecosystems, support local biodiversity, and offset the harmful effects of climate chang and global warming.`
+\nFor many years, this tree will help rejuvenate local ecosystems, support local biodiversity, and offset the harmful effects of climate change and global warming.`;
   // const saveGiftCard = (saveHandler) => saveHandler();
   const [template_id, setTemplate_id] = React.useState(1);
   const selectTemplate = useCallback((e: any) => {
@@ -72,7 +72,7 @@ export default function GiftCardsContainer({
     const link = document.createElement("a");
     link.download = `${name}_card.png`;
     link.href = url;
-    link.click()
+    link.click();
   };
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function GiftCardsContainer({
   }, [ref]);
 
   return (
-    <div className="">
+    <div className="" style={{ fontFamily: "Noto Sans, Poppins, sans-serif" }}>
       <div className="mx-auto flex max-w-screen-md justify-between p-4">
         <div className="flex">
           <button
@@ -114,10 +114,14 @@ export default function GiftCardsContainer({
           <option value="2">Logo 2</option>
         </select> */}
         {/* multi select logos */}
-        <MultiSelectCheckbox options={logos.map(l => ({
-          label: l.name,
-          value: l.name,
-        }))} selected={selectedLogos} toggleSelection={toggleSelectedLogos}/>
+        <MultiSelectCheckbox
+          options={logos.map((l) => ({
+            label: l.name,
+            value: l.name,
+          }))}
+          selected={selectedLogos}
+          toggleSelection={toggleSelectedLogos}
+        />
         <button
           className="flex rounded-md bg-[#434f3a] py-2 pl-2 pr-4 text-white"
           onClick={onDownload}
@@ -128,20 +132,19 @@ export default function GiftCardsContainer({
       </div>
       <div className="mx-auto w-screen overflow-scroll bg-gray-100 p-12">
         <EditorContainer
-          cardRef={ref}
+          canvasRef={ref}
           template_id={template_id}
           tree_id={treeId}
           treeName={treeName}
           donor_name={name}
           message={messageEdit}
           treeImage={tree}
-          logoFiles={logos.filter(l => selectedLogos.includes(l.name))}
+          logoFiles={logos.filter((l) => selectedLogos.includes(l.name))}
         />
       </div>
     </div>
   );
 }
-
 
 const download = (image, { name = "img", extension = "jpg" } = {}) => {
   const a = document.createElement("a");
@@ -149,7 +152,6 @@ const download = (image, { name = "img", extension = "jpg" } = {}) => {
   a.download = createFileName(extension, name);
   a.click();
 };
-
 
 export const ImageUpload = ({
   title,
@@ -176,7 +178,9 @@ export const ImageUpload = ({
   );
   return (
     <div>
-      <h3 className="text-lg text-gray-600 mb-2 font-semibold">Files: {title}</h3>
+      <h3 className="mb-2 text-lg font-semibold text-gray-600">
+        Files: {title}
+      </h3>
       <ul>
         {files.map((file: any) => (
           <div key={file.name} className="my-2 flex text-lg font-thin">
@@ -214,7 +218,11 @@ type OptionProps = {
   toggleSelection: (value: string) => void;
 };
 
-const MultiSelectCheckbox = ({ options, selected, toggleSelection }: OptionProps) => {
+const MultiSelectCheckbox = ({
+  options,
+  selected,
+  toggleSelection,
+}: OptionProps) => {
   return (
     <div className="flex space-x-2">
       {options.map((option) => (
@@ -232,4 +240,3 @@ const MultiSelectCheckbox = ({ options, selected, toggleSelection }: OptionProps
     </div>
   );
 };
-

@@ -11,7 +11,7 @@ import Palas from "../../src/assets/images/Palas.png";
 import Pimpal from "../../src/assets/images/Pimpal.png";
 import Sheesham from "../../src/assets/images/Sheesham.png";
 import Sisu from "../../src/assets/images/Sisu.png";
-import Valwa from "../../src/assets/images/Valwa.png";
+import Vavla from "../../src/assets/images/Vavla.png";
 
 export const templateImages = {
   Apta,
@@ -27,7 +27,7 @@ export const templateImages = {
   Pimpal,
   Sheesham,
   Sisu,
-  Valwa,
+  Vavla,
 };
 
 export const treeList = [
@@ -44,15 +44,25 @@ export const treeList = [
   "Pimpal",
   "Sheesham",
   "Sisu",
-  "Valwa",
+  "Vavla",
+
+  // alt names
+  "Amla",
+  "Awla",
+  "Chincha",
+  "Tamarind",
 ];
 
 export const treeListWithImages = {
     Apta: Apta,
     Awala: Awala,
+    Amla: Awala,
+    Awla: Awala,
     Behada: Behada,
     Bibba: Bibba,
     Chinch: Chinch,
+    Chincha: Chinch,
+    Tamarind: Chinch,
     Kanchan: Kanchan,
     Karanj: Karanj,
     Kawath: Kawath,
@@ -61,7 +71,7 @@ export const treeListWithImages = {
     Pimpal: Pimpal,
     Sheesham: Sheesham,
     Sisu: Sisu,
-    Valwa: Valwa,
+    Vavla: Vavla,
 }
 
 export function getTreeTemplateName(nameLike: string) {
@@ -69,7 +79,7 @@ export function getTreeTemplateName(nameLike: string) {
     // namelike could have more text than just tree name
     // so we are doing a contains search
     const treeName = treeList.find((tree) => nameLike.includes(tree));
-    return treeName || null;
+    return treeName || `${nameLike} not found` ;
 }
 
 export function getTreeTemplateImage(treeName: typeof treeList[number]) {
