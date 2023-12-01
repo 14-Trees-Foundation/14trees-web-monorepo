@@ -3,3 +3,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .table-input {
+        /* minimal input with no focus decorations */
+        @apply block w-full px-0.5 py-0.5 border-0 border-b border-gray-300 focus:ring-0 focus:border-gray-300;
+        @apply active:outline-none;
+    }
+
+}

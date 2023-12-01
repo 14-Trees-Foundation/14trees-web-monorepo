@@ -1,15 +1,4 @@
-import React, {
-  Ref,
-  createRef,
-  forwardRef,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import Image, { StaticImageData } from "next/image";
-import tree from "../../src/assets/images/tree_card.png";
-import { QRCode } from "react-qrcode-logo";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Dropzone, { Accept, useDropzone } from "react-dropzone";
 import {
   DocumentArrowUpIcon,
@@ -17,10 +6,14 @@ import {
   ArrowRightCircleIcon,
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
-import { CardData, logosAtom } from ".";
+import { CardData, logosAtom } from "../../pages/giftcards";
 import { useScreenshot, createFileName } from "use-react-screenshot";
 import EditorContainer from "./CardEditor";
 import { useAtom } from "jotai";
+import { treeNamesMain } from "./utils";
+
+const DEFAULT_MESSAGE = `We have planted this tree in your name at 14 Trees Foundation.
+\nFor many years, this tree will help rejuvenate local ecosystems, support local biodiversity, and offset the harmful effects of climate change and global warming.`;
 
 interface GiftCardEditorProps extends CardData {
   handleClick?: () => void;
@@ -28,25 +21,10 @@ interface GiftCardEditorProps extends CardData {
 }
 
 export default function GiftCardsContainer({
-  id,
-  treeId,
-  name,
-  treeName,
-  message,
-  treeImage,
-  handleClick,
   setActiveCardId,
+  ...props
 }: GiftCardEditorProps) {
-  const messageEdit =
-    message ||
-    `We have planted this tree in your name at 14 Trees Foundation.
-\nFor many years, this tree will help rejuvenate local ecosystems, support local biodiversity, and offset the harmful effects of climate change and global warming.`;
-  // const saveGiftCard = (saveHandler) => saveHandler();
-  const [template_id, setTemplate_id] = React.useState(1);
-  const selectTemplate = useCallback((e: any) => {
-    console.log(e.target.value);
-    setTemplate_id(Number(e.target.value));
-  }, []);
+  const [template_data, setTemplate_data] = React.useState<CardData>(props);
 
   const [logos, _setLogos] = useAtom(logosAtom);
   const [selectedLogos, setSelectedLogos] = useState<string[]>([]);
@@ -59,15 +37,9 @@ export default function GiftCardsContainer({
     );
   };
 
-  const [image, takeScreenshot] = useScreenshot();
   const ref = useRef<HTMLCanvasElement>(null);
 
   const onDownload = () => {
-    console.log(ref, "downl");
-    // if (ref.current === null) {
-    //   return;
-    // }
-    // takeScreenshot(ref.current).then(download);
     const url = ref.current.toDataURL("image/png");
     const link = document.createElement("a");
     link.download = `${name}_card.png`;
@@ -81,39 +53,64 @@ export default function GiftCardsContainer({
 
   return (
     <div className="" style={{ fontFamily: "Noto Sans, Poppins, sans-serif" }}>
-      <div className="mx-auto flex max-w-screen-md justify-between p-4">
+      <div className="mx-auto flex max-w-screen-xl justify-center gap-4 p-4">
         <div className="flex">
           <button
             className="px-2 py-1 text-gray-800"
-            onClick={() => setActiveCardId(id - 1)}
+            onClick={() => setActiveCardId(template_data.id - 1)}
           >
             <ArrowLeftCircleIcon className="w-8" />
           </button>
-          <p className="mt-1 w-6 text-2xl">{id}</p>
+          <p className="mt-1 w-6 text-2xl">{template_data.id}</p>
           <button
             className="px-2 py-1 text-gray-800"
-            onClick={() => setActiveCardId(id + 1)}
+            onClick={() => setActiveCardId(template_data.id + 1)}
           >
             <ArrowRightCircleIcon className="w-8 " />
           </button>
         </div>
+        <button
+          className="flex rounded-md bg-[#434f3a] py-2 pl-2 pr-4 text-white"
+          onClick={onDownload}
+        >
+          <ArrowDownTrayIcon className="mr-2 mt-0.5 h-5 w-8" />
+          <span className="pb-0.5"> Download</span>
+        </button>
         <input
           type="text"
           placeholder="Tree ID"
-          className="w-12 underline"
-          value={treeId}
+          className="w-24 px-2 underline"
+          value={template_data.saplingId}
+          onChange={(e) =>
+            setTemplate_data({ ...template_data, saplingId: e.target.value })
+          }
         />
-        <select className="border-2 border-gray-200" onChange={selectTemplate}>
+        <select
+          className="w-24 border-2 border-gray-200"
+          onChange={(e) =>
+            setTemplate_data({ ...template_data, treeName: e.target.value })
+          }
+        >
+          <option value="_">Tree Type</option>
+          {treeNamesMain.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <select
+          className="w-24 border-2 border-gray-200"
+          onChange={(e) =>
+            setTemplate_data({
+              ...template_data,
+              template: Number(e.target.value),
+            })
+          }
+        >
           <option value="_">Select Template</option>
           <option value="1">Template 1</option>
           <option value="2">Template 2</option>
         </select>
-        {/* <select className="border-2 border-gray-200" onChange={selectLogo}>
-          <option value="_">Select Logo</option>
-          <option value="1">Logo 1</option>
-          <option value="2">Logo 2</option>
-        </select> */}
-        {/* multi select logos */}
         <MultiSelectCheckbox
           options={logos.map((l) => ({
             label: l.name,
@@ -122,23 +119,12 @@ export default function GiftCardsContainer({
           selected={selectedLogos}
           toggleSelection={toggleSelectedLogos}
         />
-        <button
-          className="flex rounded-md bg-[#434f3a] py-2 pl-2 pr-4 text-white"
-          onClick={onDownload}
-        >
-          <ArrowDownTrayIcon className="mr-2 mt-0.5 h-5 w-8" />
-          <span className="pb-0.5"> Download</span>
-        </button>
       </div>
       <div className="mx-auto w-screen overflow-scroll bg-gray-100 p-12">
         <EditorContainer
           canvasRef={ref}
-          template_id={template_id}
-          tree_id={treeId}
-          treeName={treeName}
-          donor_name={name}
-          message={messageEdit}
-          treeImage={tree}
+          {...template_data}
+          message={template_data.message || DEFAULT_MESSAGE}
           logoFiles={logos.filter((l) => selectedLogos.includes(l.name))}
         />
       </div>

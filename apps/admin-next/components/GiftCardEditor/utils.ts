@@ -30,7 +30,7 @@ export const templateImages = {
   Vavla,
 };
 
-export const treeList = [
+export const treeNamesMain =  [
   "Apta",
   "Awala",
   "Behada",
@@ -45,13 +45,17 @@ export const treeList = [
   "Sheesham",
   "Sisu",
   "Vavla",
+]
 
+export const treeNamesAlt = [
   // alt names
   "Amla",
   "Awla",
   "Chincha",
   "Tamarind",
 ];
+
+export const treeList = [...treeNamesMain, ...treeNamesAlt];
 
 export const treeListWithImages = {
     Apta: Apta,

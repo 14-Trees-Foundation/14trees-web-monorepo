@@ -13,6 +13,7 @@ import logo from "../../src/assets/images/logo.png";
 import { ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import QRCode from "qrcode";
 import { getTreeTemplateImage } from "./utils";
+import { CardData } from "pages/giftcards";
 
 const MARGIN = 20;
 const QR_WIDTH = 128;
@@ -40,42 +41,37 @@ const getQRCode = async (text: string): Promise<string> => {
 };
 
 type EditorProps = {
-  template_id: number;
-  tree_id: number;
-  treeName: string;
-  donor_name: string;
-  message: string;
-  treeImage: StaticImageData;
   logoFiles: File[];
   canvasRef: any;
   handleSave?: () => void;
-};
+} & CardData;
 
-const EditorContainer = forwardRef(
-  ({ ...props }: EditorProps) => {
-    const [reset, setReset] = useState(false);
-    return (
+const EditorContainer = forwardRef(({ ...props }: EditorProps) => {
+  const [reset, setReset] = useState(true);
+  useEffect(() => {
+    setReset(true);
+  }, [props.saplingId]);
+  return (
+    <div
+      className="mx-auto w-[1928px]"
+      style={{ fontFamily: "Noto Sans, Poppins, sans-serif" }}
+    >
       <div
-        className="mx-auto w-[1448px]"
-        style={{ fontFamily: "Noto Sans, Poppins, sans-serif" }}
+        // ref={cardRef}
+        className="relative my-8 w-[1928px] rounded-md bg-white p-1 font-serif shadow-lg"
+        style={{ aspectRatio: "3/2" }}
       >
-        <div
-          // ref={cardRef}
-          className="relative my-8 w-[1448px] rounded-md bg-white p-1 font-serif shadow-lg"
-          style={{ aspectRatio: "3/2" }}
-        >
-          <CanvasEditor reset={reset} {...props} />
-        </div>
-        <button
-          onClick={() => setReset(!reset)}
-          className="mx-auto flex h-12 w-32 rounded-xl bg-white px-5 py-2 text-xl shadow-md"
-        >
-          Reset <ArrowUturnLeftIcon className="h-7 pl-2" />
-        </button>
+        <CanvasEditor reset={reset} {...props} />
       </div>
-    );
-  }
-);
+      <button
+        onClick={() => setReset(!reset)}
+        className="mx-auto flex h-12 w-32 rounded-xl bg-white px-5 py-2 text-xl shadow-md"
+      >
+        Reset <ArrowUturnLeftIcon className="h-7 pl-2" />
+      </button>
+    </div>
+  );
+});
 
 EditorContainer.displayName = "GiftCard";
 
@@ -87,20 +83,21 @@ const CanvasEditor = ({
   treeName,
   reset,
   canvasRef,
-  template_id,
-  tree_id,
+  template: template_id,
+  saplingId: tree_id,
   message,
   logoFiles,
-  donor_name,
+  name: donor_name,
   ...props
 }: CanvasEditorProps) => {
+  const WIDTH = 1920;
   const dashboard_link = `https://dashboard.14trees.org/profile/${tree_id}`;
   const htmlCanvasRef = useRef(null);
 
   const initFabric = () => {
     canvasRef.current = new fabric.Canvas(htmlCanvasRef.current, {
-      width: 1440,
-      height: 1080,
+      width: WIDTH,
+      height: WIDTH * (2 / 3),
       backgroundColor: "#fff",
     });
   };
@@ -165,7 +162,7 @@ const CanvasEditor = ({
       new fabric.Textbox(`Watch your tree grow!`, {
         fontSize: 20,
         fontWeight: "bold",
-        fontFamily: "Poppins",
+        fontFamily: "Noto Sans",
         fill: FONT_COLOUR,
         opacity: 0.6,
         left: MARGIN + QR_WIDTH + 10,
@@ -179,12 +176,12 @@ const CanvasEditor = ({
       new fabric.Textbox(`Tree ID: ${tree_id}`, {
         fontSize: 18,
         // fontWeight: "bold",
-        fontFamily: "Poppins",
+        fontFamily: "Noto Sans",
         fill: FONT_COLOUR,
         opacity: 0.6,
         left: MARGIN,
         width: 300,
-        top: canvasRef.current.height - 25 - MARGIN -  QR_WIDTH,
+        top: canvasRef.current.height - 25 - MARGIN - QR_WIDTH,
         padding: 10,
         textAlign: "left",
       })
@@ -222,42 +219,83 @@ const CanvasEditor = ({
   };
 
   const addLogos = async () => {
-    const LOGO_WIDTH = 192;
-    const LOGO_LEFT = getTemplateLogoLeft(
-      canvasRef.current.width,
-      LOGO_WIDTH,
-      template_id
-    );
-    canvasRef.current.add(
-      new fabric.Textbox(`Planted By`, {
-        fontSize: 20,
-        fontWeight: "bold",
-        fontFamily: "Poppins",
-        fill: FONT_COLOUR,
-        opacity: 0.6,
-        left: LOGO_LEFT + 10,
-        width: 150,
-        top: canvasRef.current.height - MARGIN - 25 - QR_WIDTH,
-        padding: 10,
-        textAlign: "left",
-      })
-    );
     const logoImgs = await Promise.all(logoFiles?.map(readImageToURL));
-    logoImgs.forEach((logoImg, index) => {
-      fabric.Image.fromURL(logoImg.toString(), (img) => {
+    if (logoImgs.length === 0) return;
+    if (logoImgs.length === 2) {
+      const LOGO_WIDTH = 320;
+      const LOGO_LEFT = getTemplateLogoLeft(
+        canvasRef.current.width,
+        LOGO_WIDTH,
+        template_id
+      );
+      canvasRef.current.add(
+        new fabric.Textbox(`Planted By`, {
+          fontSize: 20,
+          fontWeight: "bold",
+          fontFamily: "Sans",
+          fill: FONT_COLOUR,
+          opacity: 0.6,
+          left: LOGO_LEFT + 10,
+          width: 150,
+          top: canvasRef.current.height - MARGIN - 25 - QR_WIDTH,
+          padding: 10,
+          textAlign: "left",
+        })
+      );
+      logoImgs.forEach((logoImg, index) => {
+        fabric.Image.fromURL(logoImg.toString(), (img) => {
+          // Set image dimensions to cover the right half of the canvas
+          const LOGO_HEIGHT = QR_WIDTH / 2;
+          const scale = LOGO_HEIGHT / img.height;
+          img.set({
+            left: LOGO_LEFT,
+            top:
+              canvasRef.current.height -
+              LOGO_HEIGHT * (index + 1) -
+              LOGO_HEIGHT / 2 -
+              MARGIN,
+            scaleX: scale,
+            scaleY: scale,
+          });
+
+          canvasRef.current.add(img);
+        });
+      });
+    }
+    if (logoImgs.length === 1) {
+      const LOGO_WIDTH = 512;
+      const LOGO_LEFT = getTemplateLogoLeft(
+        canvasRef.current.width,
+        LOGO_WIDTH,
+        template_id
+      );
+      canvasRef.current.add(
+        new fabric.Textbox(`Planted By`, {
+          fontSize: 20,
+          fontWeight: "bold",
+          fontFamily: "Noto Sans",
+          fill: FONT_COLOUR,
+          opacity: 0.6,
+          left: LOGO_LEFT + 10,
+          width: 150,
+          top: canvasRef.current.height - MARGIN - 25 - QR_WIDTH,
+          padding: 10,
+          textAlign: "left",
+        })
+      );
+      fabric.Image.fromURL(logoImgs[0].toString(), (img) => {
         // Set image dimensions to cover the right half of the canvas
-        const LOGO_HEIGHT = QR_WIDTH / 2;
+        const LOGO_HEIGHT = QR_WIDTH;
         const scale = LOGO_HEIGHT / img.height;
         img.set({
-          left: LOGO_LEFT,
-          top: canvasRef.current.height - LOGO_HEIGHT * (index + 1) - MARGIN,
+          left: LOGO_LEFT - 20,
+          top: canvasRef.current.height - LOGO_HEIGHT - MARGIN,
           scaleX: scale,
           scaleY: scale,
         });
-
         canvasRef.current.add(img);
       });
-    });
+    }
   };
 
   const disposeFabric = () => {
