@@ -5,6 +5,7 @@
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
+    "fetch-content": "dotenv -- yarn workspace notion-sync fetch --out $PWD/content",
     "ui:add": "yarn workspace ui shadcn:add",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
@@ -17,5 +18,8 @@
     "turbo": "1.10.4"
   },
   "packageManager": "yarn@1.22.17",
-  "workspaces": ["apps/*", "packages/*"]
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

@@ -322,7 +322,7 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
       <div className="mt-10 inline-flex w-full items-center">
         <button
           type="submit"
-          className="btn-action mx-auto bg-green-700 text-white duration-300 hover:bg-green-600 dark:bg-green-800 sm:w-72"
+          className="btn-action mx-auto bg-green-700 text-white duration-300 hover:bg-green-600 dark:bg-green-800 w-full"
         >
           Continue
         </button>

@@ -3,9 +3,14 @@
   "globalDependencies": ["**/.env.*local", "**/.env", "**/.env.development"],
   "globalEnv": [
     "NODE_ENV", "NEXT_PUBLIC_API_URL", "SERVER_PORT",
-    "NEXT_PUBLIC_RAZORPAY_KEY"
+    "NEXT_PUBLIC_RAZORPAY_KEY", "NOTION_API_KEY"
   ],
   "pipeline": {
+    "fetchData": {
+      "dependsOn": [],
+      "outputs": ["data/fetchData.json"],
+      "cache": true
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
