@@ -13,6 +13,7 @@ module.exports = {
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
+    "../../packages/ui/**/*{.js,.ts,.jsx,.tsx}",
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
 	],
