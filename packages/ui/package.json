@@ -4,21 +4,16 @@
   "sideEffects": [
     "**/*.css"
   ],
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist",
-    "./styles.css": "./dist/index.css",
-    "./tailwind.config.js": "./tailwind.config.js"
+    "./globals.css": "./src/styles/globals.css",
+    "./tailwind.config": "./tailwind.config.ts",
+    "./lib/*": "./src/shadcn/lib/*.ts",
+    "./components/*": "./src/shadcn/components/ui/*.tsx",
+    ".": "./src/index.ts"
   },
   "license": "MIT",
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "check-types": "tsc --noEmit",
     "shadcn:add": "npx shadcn-ui@latest add"
-  },
-  "peerDependencies": {
-    "react": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
@@ -27,7 +22,7 @@
     "postcss": "^8.4.20",
     "tsconfig": "*",
     "tsup": "^6.1.3",
-    "typescript": "^5"
+    "typescript": "^5.3.3"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.13",

@@ -11,7 +11,8 @@
   "dependencies": {
     "@heroicons/react": "^2.0.16",
     "@notionhq/client": "^2.2.4",
-    "next": "^13.1.1",
+    "framer-motion": "^11.0.3",
+    "next": "^14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.8",
@@ -28,6 +29,6 @@
     "tailwind-config": "*",
     "tailwindcss": "^3.2.7",
     "tsconfig": "*",
-    "typescript": "^4.9.3"
+    "typescript": "^5.3.3"
   }
 }
