@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Contribution,
   Donor,
@@ -13,21 +15,20 @@ import api from "~/api";
 import NumTreesSelector from "./Partials/NumTreesSelector";
 import OrderSummary from "./OrderSummary";
 import { ThankYou } from "./Partials/ThankYou";
-import { useRouter } from "next/router";
 
 const ContributeForm = ({
   orderId,
   project,
 }: {
-  orderId: string;
-  project: Project;
+  orderId?: string;
+  project?: Project;
 }) => {
-  const router = useRouter();
   const [pageView, setPageView] = useState<"form" | "summary" | "thank-you">(
     "form"
   );
   const [order, setOrder] = useState<PaymentOrder>(null);
   const [verification, setVerification] = useState<VerificationResponse>(null);
+
 
   const onFormSubmit = async (data: ContributeRequest) => {
     if (order === null) {
@@ -66,7 +67,7 @@ const ContributeForm = ({
           </h1>
         }
         show={pageView === "thank-you"}
-        onClose={() => router.push("/")}
+        onClose={() => {}}
         panelClass="rounded-lg"
       >
         {pageView === "thank-you" && verification?.status === "success" && (

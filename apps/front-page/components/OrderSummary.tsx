@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
@@ -7,7 +9,6 @@ import {
 } from "schema";
 import { merge } from "lodash";
 import api from "~/api";
-import { useRouter } from "next/router";
 
 export default function OrderSummary({
   contributionOrder,
@@ -18,7 +19,6 @@ export default function OrderSummary({
 }) {
   const { contribution, order, donor } = contributionOrder;
   const [processing, setProcessing] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const script = document.createElement("script");

@@ -1,20 +1,17 @@
 import ContributeForm from "components/ContributeForm";
-import Layout from "components/Layout";
-import { Router, useRouter } from "next/router";
-import { useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import Image from "next/image";
 import ProjectSelector from "components/ProjectSelector";
 import { Project } from "schema";
 // import notion from "lib/notion";
-import tree_graphic from "../src/assets/images/tree_graphic.jpg"
+import tree_graphic from "~/assets/images/tree_graphic.jpg";
 
 const getFirst = (obj: string | string[]) => {
   if (!obj) return null;
   return Array.isArray(obj) ? obj[0] : obj;
 };
 
-export const getStaticProps = async () => {
+const getProjects = async () => {
   // const projectsDB = await notion.databases.query({
   //   database_id: "dfbdb25925cc45dba7eda2a1fc635824",
   // });
@@ -38,14 +35,16 @@ export const getStaticProps = async () => {
   //   })
   // }
 
-  const projects: Project[] = [{
-    // mock project
-    id: "mock",
-    title: "Mockkk Project",
-    description: "wow This is a mock project",
-    image: "",
-    price: 3500,
-  }]
+  const projects: Project[] = [
+    {
+      // mock project
+      id: "mock",
+      title: "Mockkk Project",
+      description: "wow This is a mock project",
+      image: "",
+      price: 3500,
+    },
+  ];
 
   return {
     props: {
@@ -55,30 +54,23 @@ export const getStaticProps = async () => {
 };
 
 const Contribute = ({ projects }: { projects: Project[] }) => {
-  const router = useRouter();
-  const [projectId, setProjectId] = useState<Project["id"]>(projects[0].id);
-  const [orderId, setOrderId] = useState<string>(null);
   console.log(projects);
   // get the order id from the url params (nextjs router)
-  useEffect(() => {
-    if (router.isReady) {
-      if (router.query.orderId)
-        setOrderId(getFirst(router.query.orderId));
-      if (router.query.project)
-        setProjectId(getFirst(router.query.project));
-    }
-  }, [router.isReady, router.query.orderId, router.query.project]);
 
   return (
-    <Layout>
+    <>
       <div className="lg:mx-4">
-        <div className="fixed bottom-0 lg:right-1/4 2xl:right-1/3 w-full">
+        <div className="fixed bottom-0 w-full lg:right-1/4 2xl:right-1/3">
           <div className="ml-auto w-3/5 lg:w-1/2 2xl:w-1/3">
-            <Image src={tree_graphic} alt="Tree Graphic" className="w-full opacity-10 -rotate-45"/>
+            <Image
+              src={tree_graphic}
+              alt="Tree Graphic"
+              className="w-full -rotate-45 opacity-10"
+            />
           </div>
         </div>
-        <div className="mx-auto px-4 lg:mt-10 lg:flex max-w-screen-xl 2xl:max-w-screen-2xl relative">
-          <div className="w-full lg:w-3/5 my-12 lg:my-32 lg:mr-8 font-serif text-gray-700">
+        <div className="relative mx-auto max-w-screen-xl px-4 lg:mt-10 lg:flex 2xl:max-w-screen-2xl">
+          <div className="my-12 w-full font-serif text-gray-700 lg:my-32 lg:mr-8 lg:w-3/5">
             <h1 className="text-3xl">Contribute to 14 Trees</h1>
             <p>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
@@ -86,23 +78,23 @@ const Contribute = ({ projects }: { projects: Project[] }) => {
               eget aliquam nunc nisl sit amet lorem. Sed euismod, nisl sit amet
               aliquam lacinia, nunc nisl aliquam tortor, eget
             </p>
-            <ProjectSelector
+            {/* <ProjectSelector
               projects={projects}
               selectedProjectId={projectId}
               setProject={setProjectId}
-            />
+            /> */}
           </div>
-          <div className="w-full lg:w-2/5 max-w-xl container shadow-2xl bg-white py-10 bg-opacity-80">
-                <ContributeForm
-                  orderId={orderId}
-                  project={
-                    projects.find((p: Project) => p.id === projectId) || null
-                  }
-                />
+          <div className="container w-full max-w-xl bg-white bg-opacity-80 py-10 shadow-2xl lg:w-2/5">
+            <ContributeForm
+              // orderId={orderId}
+              // project={
+                // projects.find((p: Project) => p.id === projectId) || null
+              // }
+            />
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 
