@@ -17,9 +17,9 @@ export default function HomeLayout({
     <html lang="en">
       <body className={inter.className}>
         <NavHeader />
-        {children}
+        <div className="mt-20">{children}</div>
         {/* footer */}
-        </body>
+      </body>
     </html>
   );
 }

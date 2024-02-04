@@ -15,6 +15,8 @@ import api from "~/api";
 import NumTreesSelector from "./Partials/NumTreesSelector";
 import OrderSummary from "./OrderSummary";
 import { ThankYou } from "./Partials/ThankYou";
+import MotionDiv from "./animation/MotionDiv";
+import { Variants } from "framer-motion";
 
 const ContributeForm = ({
   orderId,
@@ -28,7 +30,6 @@ const ContributeForm = ({
   );
   const [order, setOrder] = useState<PaymentOrder>(null);
   const [verification, setVerification] = useState<VerificationResponse>(null);
-
 
   const onFormSubmit = async (data: ContributeRequest) => {
     if (order === null) {
@@ -45,6 +46,16 @@ const ContributeForm = ({
     if (response.status === "success") {
       setPageView("thank-you");
     }
+  };
+
+  const formVariants = {
+    hidden: { opacity: 0, y: 10, scale: 1.05 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { duration: 0.5 },
+    },
   };
 
   return (
@@ -76,7 +87,13 @@ const ContributeForm = ({
           </div>
         )}
       </Modal>
-      <Form onFormSubmit={onFormSubmit} onPaymentComplete={onPaymentComplete} project={project?.id || "default"} />
+      <MotionDiv variants={formVariants}>
+        <Form
+          onFormSubmit={onFormSubmit}
+          onPaymentComplete={onPaymentComplete}
+          project={project?.id || "default"}
+        />
+      </MotionDiv>
     </>
   );
 };
@@ -84,7 +101,7 @@ const ContributeForm = ({
 type FormProps = {
   onFormSubmit: (data: ContributeRequest) => void;
   onPaymentComplete: (response: VerificationResponse) => void;
-  project: Project["id"]
+  project: Project["id"];
 };
 
 const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
@@ -176,7 +193,9 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
     return (
       <>
         <div className="border-b pb-8">
-          <h2 className="form-heading text-center lg:text-left">Contact Details</h2>
+          <h2 className="form-heading text-center lg:text-left">
+            Contact Details
+          </h2>
           <div className="">
             <div>
               {/* Donor Fields */}
@@ -240,7 +259,6 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
               </label>
               {errors.donor?.currency && <p>{errors.donor.currency.message}</p>}
           </div> */}
-
           </div>
         </div>
       </>
@@ -316,14 +334,14 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
       {/* {page === "user-details" && <UserDetailsPage />}
       {page === "contribution" && <ContributionPage />}
       {page === "contribution-details" && <ContributionDetailsPage />} */}
-      <UserDetailsPage/>
-      <ContributionPage/>
-      <ContributionDetailsPage/>
+      <UserDetailsPage />
+      <ContributionPage />
+      <ContributionDetailsPage />
 
       <div className="mt-10 inline-flex w-full items-center">
         <button
           type="submit"
-          className="btn-action mx-auto bg-green-700 text-white duration-300 hover:bg-green-600 dark:bg-green-800 w-full"
+          className="btn-action mx-auto w-full bg-green-700 text-white duration-300 hover:bg-green-600 dark:bg-green-800"
         >
           Continue
         </button>

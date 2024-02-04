@@ -18,15 +18,15 @@ export interface SiteContent {
 }
 
 async function getSchemaAndTypes(
-  database_id: string,
   name: string,
-  filter: any = undefined
+  database_id: string,
+  filter?: any
 ) {
   try {
     const DB_description = await notion.databases.retrieve({ database_id });
-    log(`Description: ${JSON.stringify(DB_description)}`);
+    log("Fetched description ✅");
     const jsonSchema = getJsonSchemaFromNotionDB(DB_description.properties);
-    log(`JSON Schema: ${JSON.stringify(jsonSchema)}`);
+    log("Created JSON Schema from Description ✅");
     const types = jsonSchemaToTSInterfaces(jsonSchema, name + "Row");
     return {
       jsonSchema,
@@ -47,10 +47,7 @@ async function fetchDB(
   database_id: string,
   filter: any = undefined
 ) {
-  const { jsonSchema, describe, types } = await getSchemaAndTypes(
-    database_id,
-    filter
-  );
+  const { jsonSchema, describe, types } = await getSchemaAndTypes(name, database_id, filter);
 
   const DB = await notion.databases.query({ database_id, filter });
   const collectedPages = await Promise.all(

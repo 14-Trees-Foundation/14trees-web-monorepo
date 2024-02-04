@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import fetchContent from "./fetch-content";
 import { parseArgs } from "node:util";
+import cliProgress from "cli-progress";
 import { error, log, warn } from "./utils/logging";
 import fetch from "node-fetch";
 
@@ -25,6 +26,10 @@ const dbs = [
     id: "b0961650e64842c7b9c72d88843d9554",
     name: "Team",
   },
+  // {
+  //   id: "5e57e7be0da44fc7a3c409925daf10a5",
+  //   name: "Testimonials"
+  // }
 ];
 
 const apiKey = args.values.apiKey || process.env.NOTION_API_KEY;
@@ -60,7 +65,7 @@ const fetchContentMain = async (apiKey: string, outDir: string) => {
       db.describe
     );
     fs.writeFileSync(path.join(outDir, `${db.name}.d.ts`), db.types);
-    log(`Wrote ${db.name} to ${dbOutDir}/${db.name}.json`);
+    log(`Wrote ${db.name} to ${dbOutDir}/${db.name}.json ✅`);
 
     if (db.files && db.files.length > 0) {
       await downloadAllFiles(db.files, dbOutDir);
@@ -84,6 +89,7 @@ async function downloadAllFiles(
   outDir: string
 ) {
   if (allFiles) {
+    log(`Downloading ${allFiles.length} files...`);
     const filesDir = path.join(outDir, "files");
     if (!fs.existsSync(filesDir)) {
       fs.mkdirSync(filesDir);

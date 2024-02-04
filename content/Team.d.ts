@@ -1,4 +1,4 @@
-export interface undefinedRow {
+export interface TeamRow {
     howDidYouGetEngagedWith14trees: string;
     phone: string;
     linkedin: string;
@@ -23,11 +23,10 @@ export interface undefinedRow {
     status: string;
     languages: any[];
     picture: {
+        url: string;
+        name: string;
         type: string;
-        file: {
-            url: string;
-            expirytime: string;
-        };
+        id: string;
     }[];
     dashboard: string;
     name: string;

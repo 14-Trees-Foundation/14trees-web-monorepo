@@ -1,0 +1,84 @@
+[
+  {
+    "name": "Home",
+    "link": "/",
+    "external": false
+  },
+  {
+    "name": "Projects",
+    "link": "#",
+    "sub": [{
+        "name": "Vetale Reforestation",
+        "link": "/vetale-reforestation",
+        "external": false
+    }, {
+        "name": "IITK Diamond Jubilee Campaign",
+        "link": "/iitk-djc",
+        "external": false
+    }
+]
+  },
+  {
+    "name": "Visitor's Corner",
+    "link": "/corner",
+    "external": false,
+    "sub": [
+      {
+        "name": "Blogs/Articles",
+        "link": "/blogs",
+        "external": false
+      },
+      {
+        "name": "Gallery",
+        "link": "/gallery",
+        "external": false
+      },
+      {
+        "name": "Testimonials",
+        "link": "/testimonials",
+        "external": false
+      }
+    ]
+  },
+  {
+    "name": "Team",
+    "link": "/team",
+    "external": false
+  },
+  {
+    "name": "About",
+    "link": "#",
+    "sub": [
+      {
+        "name": "Vision and Mission",
+        "link": "/mission",
+        "external": false
+      },
+      {
+        "name": "Financials and Legal",
+        "link": "/financials-and-legal",
+        "external": false
+      },
+      {
+        "name": "Annual Reports",
+        "link": "/annual-reports",
+        "external": false
+      },
+      {
+        "name": "Terms and Conditions",
+        "link": "https://docs.google.com/document/u/1/d/e/2PACX-1vRCEdAbIF8iwRrik54Ka_FpOCaO2DLRAgPiaLHUXlJoMVmkguOqdoc0C3rvgwG_vkixzG7XPKY3VFz1/pub#h.w3wa3of6nuhg",
+        "external": true
+      },
+      {
+        "name": "Privacy Policy",
+        "link": "https://docs.google.com/document/u/1/d/e/2PACX-1vRCEdAbIF8iwRrik54Ka_FpOCaO2DLRAgPiaLHUXlJoMVmkguOqdoc0C3rvgwG_vkixzG7XPKY3VFz1/pub#h.66xkb0x63zyn",
+        "external": true
+      },
+      {
+        "name": "Contact",
+        "link": "/contact",
+        "external": false
+      }
+    ]
+  }
+]

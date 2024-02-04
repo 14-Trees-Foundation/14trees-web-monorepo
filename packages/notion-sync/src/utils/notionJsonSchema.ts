@@ -7,7 +7,7 @@ import {
 } from "../model/JSONSchema";
 import { changeCase } from "./helpers";
 import { info } from "./logging";
-import snakeCase  from "lodash/snakeCase";
+import snakeCase from "lodash/snakeCase";
 
 const STRING_FIELD: JSONSchemaString = { type: "string" };
 const DATE_FIELD: JSONSchemaString = { type: "string", format: "date-time" };
@@ -121,19 +121,15 @@ function getJSONSchemaFromNotionProperty(field: any): JSONSchema {
         items: {
           type: "object",
           properties: {
+            url: STRING_FIELD,
+            name: STRING_FIELD,
             type: STRING_FIELD,
-            file: {
-              type: "object",
-              properties: {
-                url: STRING_FIELD,
-                expiry_time: DATE_FIELD,
-              },
-            },
+            id: STRING_FIELD,
           },
         },
       };
     default:
-      console.warn(`Unsupported type ${field.type} for column ${field.id}`);
+      // console.warn(`Unsupported type ${field.type} for column ${field.id}`);
       return STRING_FIELD;
   }
 }
@@ -148,7 +144,7 @@ export function extractNotionProperties(
   schema: JSONSchemaObject
 ) {
   const simplified: any = {};
-  const files = []
+  const files = [];
 
   for (const key in notionPageProps) {
     const field = notionPageProps[key];
@@ -161,27 +157,30 @@ export function extractNotionProperties(
       // );
 
       const fieldValue = simplifyField(field, fieldOutType);
-      if (field.type == "files" && fieldValue !== "NOT_SUPPORTED" && fieldValue.length > 0) {
+      if (
+        field.type == "files" &&
+        fieldValue !== "NOT_SUPPORTED" &&
+        fieldValue.length > 0
+      ) {
         for (const file of fieldValue as fieldFiles) {
-          const splits = file.name.split('.')
-          const extension = splits[splits.length - 1]
-          const name = splits.slice(0, -1).join('.')
-          const id = snakeCase(`${camelKey}-${name}`) + '.' + extension
-          file.id = id
+          const splits = file.name.split(".");
+          const extension = splits[splits.length - 1];
+          const name = splits.slice(0, -1).join(".");
+          const id = snakeCase(`${camelKey}-${name}`) + "." + extension;
+          file.id = id;
           files.push({
             id,
-            url: file.url
-          })
-        } 
+            url: file.url,
+          });
+        }
         simplified[camelKey] = fieldValue;
-      }
-      else if (fieldValue !== "NOT_SUPPORTED") {
+      } else if (fieldValue !== "NOT_SUPPORTED") {
         simplified[camelKey] = fieldValue;
       }
     }
   }
 
-  return {props: simplified, files};
+  return { props: simplified, files };
 }
 
 function simplifyField(field: PropertyValue, fieldOutType: string) {
@@ -258,10 +257,10 @@ function getFileUrl(
         name: string;
         type?: "file" | undefined;
       }
-    | { 
+    | {
         external: { url: string };
-        name: string; 
-        type?: "external" | undefined 
+        name: string;
+        type?: "external" | undefined;
       }
 ) {
   if ("file" in file) {

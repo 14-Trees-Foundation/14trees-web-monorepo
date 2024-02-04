@@ -7,21 +7,23 @@ import MotionDiv from "components/animation/MotionDiv";
 
 const HomePage = () => {
   const containerVariants = {
-    hidden: { opacity: 0.8, y: 100, scale: 1.5 },
+    hidden: { opacity: 0, y: 10, scale: 1.05 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { delay: 0.5, duration: 0.5 },
+      transition: { duration: 0.5 },
     },
   };
 
   const imageVariants = {
-    hidden: { opacity: 0, scale: 0.9 },
+    hidden: { opacity: 0, scale: 1.05, x: 0, y: 20 },
     visible: {
       opacity: 0.1,
       scale: 1,
-      transition: { delay: 0.5, duration: 0.5 },
+      x: 50,
+      y: 0,
+      transition: { delay: 0.1, duration: 0.4 },
     },
   };
 
@@ -34,7 +36,7 @@ const HomePage = () => {
       <div className="relative h-screen w-full">
         {/* Image Background */}
         <MotionDiv
-          className="absolute left-0 top-0 -z-10 h-full w-full"
+          className="fixed right-0 top-0 -z-10 h-full w-2/3"
           initial="hidden"
           animate="visible"
           variants={imageVariants}
@@ -49,12 +51,12 @@ const HomePage = () => {
         </MotionDiv>
         {/* Text Content */}
         <MotionDiv
-          className="container mx-auto my-10 overflow-x-hidden text-gray-800 dark:text-gray-400"
+          className="container z-0 mx-auto my-10 overflow-x-hidden text-gray-800 dark:text-gray-400"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
-          <div className="relative z-10 mx-4 md:mx-32 md:pt-16">
+          <div className="z-0 mx-4 md:mx-32 md:pt-16">
             <ContentHeader
               title={labels.site.title}
               sub={labels.site.description}
