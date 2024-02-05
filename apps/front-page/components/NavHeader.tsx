@@ -38,7 +38,7 @@ export default function Header() {
   return (
     <div className="fixed top-0 z-20 w-full">
       <nav className="mx-auto flex items-center justify-between bg-white p-3 shadow-sm shadow-slate-100">
-        <div className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight">
+        <Link href={'/'} className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight">
           14 Trees Foundation
           <Image
             className="mx-1"
@@ -47,7 +47,7 @@ export default function Header() {
             width="32"
             alt="logo"
           />
-        </div>
+        </Link>
         <div className="inline-flex">
           {navItems.map((navItem) => (
             <div key={navItem.name} className="hidden px-4 py-1 md:block">
@@ -80,11 +80,11 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
             items={navItem.sub.map((subItem, index) => (
               <Fragment key={index}>
                 <li className="list-none">
-                  <div className="h-full w-full rounded-xl py-2 transition-colors duration-300 ease-in-out hover:bg-gray-100">
-                    <Link className="p-2" href={subItem.link}>
+                  <Link href={subItem.link} className="h-full w-full py-2">
+                    <div className="p-2 transition-colors duration-300 ease-in-out hover:bg-gray-100 rounded-xl ">
                       {subItem.name}
-                    </Link>
-                  </div>
+                    </div>
+                  </Link>
                 </li>
               </Fragment>
             ))}
