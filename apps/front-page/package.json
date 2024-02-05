@@ -4,9 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3011",
-    "clear-content": "rm -rf $PWD/content/*",
-    "fetch-content": "dotenv -- yarn workspace notion-sync fetch --out $PWD/src/data/content --databases $PWD/src/assets/notion-databases.json",
-    "copy-content": "cp -r $PWD/src/data/content/*/files $PWD/public/content/",
+    "clear-content": "rm -rf $PWD/content/*; rm -rf $PWD/public/content",
+    "fetch-content": "dotenv -- ts-node -P tsconfig.node.json src/scripts/fetchContent.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -33,6 +32,7 @@
     "schema": "*",
     "tailwind-config": "*",
     "tailwindcss": "^3.2.7",
-    "tsconfig": "*"
+    "tsconfig": "*",
+    "notion-sync": "*"
   }
 }

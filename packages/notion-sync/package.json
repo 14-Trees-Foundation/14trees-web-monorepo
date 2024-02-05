@@ -2,10 +2,17 @@
   "name": "notion-sync",
   "version": "1.0.0",
   "description": "Utility to sync data from Notion Databases and cache as a JSON object",
+  "module": "module",
   "types": "index.d.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "fetch": "ts-node --esm src/index.ts"
+    "fetch": "ts-node --esm src/index.ts",
+    "build": "tsc"
+  },
+  "bin": {
+    "notion-fetch": "dist/index.js"
   },
   "author": "",
   "license": "ISC",
