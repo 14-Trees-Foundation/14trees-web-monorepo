@@ -2,23 +2,39 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", "**/.env", "**/.env.development"],
   "globalEnv": [
-    "NODE_ENV", "NEXT_PUBLIC_API_URL", "SERVER_PORT",
-    "NEXT_PUBLIC_RAZORPAY_KEY", "NOTION_API_KEY"
+    "NODE_ENV",
+    "NEXT_PUBLIC_API_URL",
+    "SERVER_PORT",
+    "NEXT_PUBLIC_RAZORPAY_KEY",
+    "NOTION_API_KEY"
+  ],
+  "globalDotEnv": [
+    ".env.local",
+    ".env.development",
+    ".env"
   ],
   "pipeline": {
-    "fetchData": {
-      "dependsOn": [],
-      "outputs": ["data/fetchData.json"],
-      "cache": true
+    "clear-content": {
+      "outputs": ["content/**"]
+    },
+    "fetch-content": {
+      "dotEnv": [".env"],
+      "inputs": ["src/assets/notion-databases.json"],
+      "outputs": ["src/data/content/**"]
+    },
+    "copy-content": {
+      "dependsOn": ["fetch-content"],
+      "outputs": ["public/content/**"]
     },
     "build": {
-      "dependsOn": ["^build"],
+      "cache": false,
+      "dependsOn": ["^build", "copy-content"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "lint": {},
     "check-types": {},
     "dev": {
-      "cache": false, 
+      "cache": false,
       "persistent": true
     },
     "clean": {

@@ -1,3 +1,5 @@
 # gitignore for nextjs 14
 
 public
+src/data/content/**/*
+!src/data/content/*.d.ts

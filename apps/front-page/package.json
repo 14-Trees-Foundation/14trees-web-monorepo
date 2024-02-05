@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3011",
+    "clear-content": "rm -rf $PWD/content/*",
+    "fetch-content": "dotenv -- yarn workspace notion-sync fetch --out $PWD/src/data/content --databases $PWD/src/assets/notion-databases.json",
+    "copy-content": "cp -r $PWD/src/data/content/*/files $PWD/public/content/",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

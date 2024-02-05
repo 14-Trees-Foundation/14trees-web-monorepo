@@ -5,7 +5,6 @@
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
-    "fetch-content": "dotenv -- yarn workspace notion-sync fetch --out $PWD/content",
     "ui:add": "yarn workspace ui shadcn:add",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },

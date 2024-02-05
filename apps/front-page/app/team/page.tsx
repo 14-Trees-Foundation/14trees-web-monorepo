@@ -1,5 +1,5 @@
-import { TeamRow } from "../../../../content/Team";
-import TeamContent from "../../../../content/Team/Team.json";
+import { TeamRow } from "~/data/content/Team";
+import TeamContent from "~/data/content/Team/Team.json";
 import Person from "components/Person";
 
 const TeamList = TeamContent as TeamRow[];
@@ -8,7 +8,7 @@ const Team = () => {
   const team_members = TeamList.map((v) => ({
     name: v.name,
     bio: v.aboutMe,
-    picture: v.picture[0]?.id ? `/team/${v.picture[0]?.id}` : null,
+    picture: v.picture[0]?.id ? `/content/${v.picture[0]?.id}` : null,
   }));
 
   return (

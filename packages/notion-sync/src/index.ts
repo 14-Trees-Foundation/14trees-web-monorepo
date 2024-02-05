@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import fetchContent from "./fetch-content";
+import fetchContent, { NotionDatabase } from "./fetch-content";
 import { parseArgs } from "node:util";
 import cliProgress from "cli-progress";
 import { error, log, warn } from "./utils/logging";
@@ -13,6 +13,11 @@ const args = parseArgs({
       alias: "k",
       description: "Notion API Key",
     },
+    databases: {
+      type: "string",
+      alias: "d",
+      description: "Path to Notion databases config file (JSON)",
+    },
     out: {
       type: "string",
       alias: "o",
@@ -20,17 +25,6 @@ const args = parseArgs({
     },
   },
 });
-
-const dbs = [
-  {
-    id: "b0961650e64842c7b9c72d88843d9554",
-    name: "Team",
-  },
-  // {
-  //   id: "5e57e7be0da44fc7a3c409925daf10a5",
-  //   name: "Testimonials"
-  // }
-];
 
 const apiKey = args.values.apiKey || process.env.NOTION_API_KEY;
 
@@ -43,13 +37,34 @@ function getOutputDirectory() {
       warn(`No output directory provided, using ${outDir}`);
       fs.mkdirSync(outDir);
     }
+  } else if (!fs.existsSync(outDir)) {
+    warn(`Directory doesn't exist: Creating output directory ${outDir}`);
+    fs.mkdirSync(outDir);
   } else if (!fs.statSync(outDir).isDirectory()) {
     throw new Error(`${outDir} is not a directory`);
   }
   return outDir;
 }
 
-const fetchContentMain = async (apiKey: string, outDir: string) => {
+function getDBConfigs() {
+  // const dbs = args.values.databases || path.join(__dirname, "databases.json");
+  let dbs;
+  if (args.values.databases) {
+    dbs = args.values.databases;
+  } else {
+    warn("No databases file provided, using databases.json");
+    dbs = path.join(__dirname, "databases.json");
+  }
+
+  const dbsPath = path.resolve(dbs);
+  if (!fs.existsSync(dbsPath)) {
+    throw new Error(`Databases file not found at ${dbsPath}`);
+  }
+  const dbsContent = fs.readFileSync(dbsPath, "utf-8");
+  return dbsContent ? JSON.parse(dbsContent) : [];
+}
+
+const fetchContentMain = async (apiKey: string, outDir: string, dbs: NotionDatabase[]) => {
   const data = await fetchContent(apiKey, dbs);
   for (const db of data) {
     const dbOutDir = path.join(outDir, db.name);
@@ -79,7 +94,8 @@ try {
   }
 
   let outDir = getOutputDirectory();
-  fetchContentMain(apiKey, outDir);
+  let dbs = getDBConfigs();
+  fetchContentMain(apiKey, outDir, dbs);
 } catch (e) {
   error(e);
 }

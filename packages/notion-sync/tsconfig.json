@@ -9,7 +9,7 @@
     "sourceMap": true,
     "strict": true,
     "esModuleInterop": true,
-    "module": "CommonJS",
+    "module": "NodeNext",
     "composite": true,
     "declarationMap": true
   }
