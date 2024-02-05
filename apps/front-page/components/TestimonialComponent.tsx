@@ -1,8 +1,5 @@
 import React from "react";
-
-function Person({ image, name, linkedIn, title }) {
-  // Your implementation of Person component
-}
+import Person from "./Person";
 
 function Testimonial({ title, person, content, pictures }) {
   const [picturesToDisplay, setPicturesToDisplay] = React.useState(

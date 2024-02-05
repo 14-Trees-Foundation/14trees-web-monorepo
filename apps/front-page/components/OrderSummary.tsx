@@ -216,7 +216,7 @@ export default function OrderSummary({
         {Object.entries(data).map(([key, value]) => (
           <div key={key} className="flex justify-between py-4">
             <dt className="text-sm font-medium text-gray-500">{key}</dt>
-            <dd className="text-sm text-gray-900">{value}</dd>
+            <dd className="text-sm text-gray-900">{new String(value) || <></>}</dd>
           </div>
         ))}
       </div>

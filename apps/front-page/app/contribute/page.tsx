@@ -12,29 +12,6 @@ const getFirst = (obj: string | string[]) => {
 };
 
 const getProjects = async () => {
-  // const projectsDB = await notion.databases.query({
-  //   database_id: "dfbdb25925cc45dba7eda2a1fc635824",
-  // });
-
-  // const projects = [];
-  // for (const project of projectsDB.results) {
-  //   const page = await notion.pages.retrieve({ page_id: project.id });
-  //   console.log(page);
-  //   projects.push({
-  //       id: page.id,
-  //       // @ts-ignore
-  //       name: page.properties.Name.title[0].plain_text,
-  //       // @ts-ignore
-  //       description: page.properties.Description.rich_text[0].plain_text,
-  //       // @ts-ignore
-  //       image: page.properties.Image.files[0].file.url,
-  //       // @ts-ignore
-  //       goal: page.properties.Goal.number,
-  //       // @ts-ignore
-  //       raised: page.properties.Raised.number,
-  //   })
-  // }
-
   const projects: Project[] = [
     {
       // mock project
@@ -53,7 +30,8 @@ const getProjects = async () => {
   };
 };
 
-const Contribute = ({ projects }: { projects: Project[] }) => {
+const Contribute = () => {
+  const projects = []
   console.log(projects);
   // get the order id from the url params (nextjs router)
 
