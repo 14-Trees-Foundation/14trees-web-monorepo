@@ -1,6 +1,3 @@
-import ContentHeader from "components/ContentHeading";
-import Image from "next/image";
-
 const MissionPage = () => {
   return (
     <div className="min-h-screen bg-white p-32">

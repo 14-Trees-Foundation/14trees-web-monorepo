@@ -68,7 +68,7 @@ function Testimonial({ title, person, content, pictures }) {
               <Person
                 image={person.image}
                 name={person.name}
-                linkedIn={person.linkedIn}
+                link={person.linkedIn}
                 title={person.title}
               />
             </div>

@@ -4,7 +4,6 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "../../scripts/notion.ts",
     "../admin-next/pages/giftcards/giftcard.tsx",
     ".next/types/**/*.ts"
   ],
@@ -12,11 +11,10 @@
     "node_modules"
   ],
   "compilerOptions": {
+    "strictNullChecks": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "src/*"
-      ]
+      "~/*": [ "src/*" ],
     },
     "plugins": [
       {

@@ -68,6 +68,11 @@
     @apply text-gray-800 dark:text-gray-300;
   }
 
+  .section-title {
+    @apply text-3xl md:text-5xl font-semibold;
+    @apply text-gray-800 dark:text-gray-300;
+  }
+
   .btn {
     @apply font-bold py-2 px-4 rounded;
   }
@@ -131,7 +136,7 @@
   }
 
   .amount-selector-item {
-    @apply h-full h-20 flex-grow flex flex-col justify-center;
+    @apply h-20 flex-grow flex flex-col justify-center;
     @apply border-2 border-green-600 rounded-md;
   }
 

@@ -1,4 +1,5 @@
 export interface TeamRow {
+    publicUrlLinkedinEtc: string;
     howDidYouGetEngagedWith14trees: string;
     phone: string;
     linkedin: string;
@@ -6,6 +7,7 @@ export interface TeamRow {
     tenure: string;
     engagedIn: any[];
     startDate: string;
+    publicBio: string;
     user: {
         object: string;
         id: string;
@@ -16,9 +18,11 @@ export interface TeamRow {
         personemail: string;
     }[];
     volunteeringFor: any[];
+    id: string;
     favouriteFruit: string;
     aboutMe: string;
     tshirtSize: string;
+    publicTitle: string;
     email: string;
     status: string;
     languages: any[];

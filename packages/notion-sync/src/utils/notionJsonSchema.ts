@@ -144,7 +144,7 @@ export function extractNotionProperties(
   schema: JSONSchemaObject
 ) {
   const simplified: any = {};
-  const files = [];
+  const files: any[] = [];
 
   for (const key in notionPageProps) {
     const field = notionPageProps[key];

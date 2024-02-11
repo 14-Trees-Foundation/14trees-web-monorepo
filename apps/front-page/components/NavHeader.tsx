@@ -15,6 +15,15 @@ import { DropDown } from "ui";
 import { Button } from "ui/components/button";
 import { Fragment } from "react";
 import navItems from "~/data/nav.json";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "ui/components/dropdown-menu";
+import { ArrowDownIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 
 export default function Header() {
   // const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -37,8 +46,10 @@ export default function Header() {
   // }, []);
   return (
     <div className="fixed top-0 z-20 w-full">
-      <nav className="mx-auto flex items-center justify-between bg-white p-3 shadow-sm shadow-slate-100">
-        <Link href={'/'} className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight">
+      <nav className="mx-auto flex items-center justify-between bg-white p-1 shadow-sm shadow-slate-100">
+        <Link
+          href={"/"}
+          className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight">
           14 Trees Foundation
           <Image
             className="mx-1"
@@ -48,13 +59,16 @@ export default function Header() {
             alt="logo"
           />
         </Link>
-        <div className="inline-flex">
+        <div className="inline-flex py-1 px-1">
           {navItems.map((navItem) => (
-            <div key={navItem.name} className="hidden px-4 py-1 md:block">
+            <div
+              key={navItem.name}
+              className="my-auto hidden border-r border-zinc-200 px-8 py-1 lg:block"
+            >
               <Item navItem={navItem} />
             </div>
           ))}
-          <Button>
+          <Button className="bg-green-800">
             <Link href={"/contribute"}>Contribute</Link>
           </Button>
           {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
@@ -75,7 +89,7 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
         </Link>
       ) : (
         <div className="">
-          <DropDown
+          {/* <DropDown
             main={<span className="header-link">{navItem.name}</span>}
             items={navItem.sub.map((subItem, index) => (
               <Fragment key={index}>
@@ -88,7 +102,23 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
                 </li>
               </Fragment>
             ))}
-          />
+          /> */}
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger className="whitespace-nowrap">
+              {navItem.name} <ChevronDownIcon className="inline h-6 w-6" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {navItem.sub.map((subItem, index) => (
+                <Fragment key={index}>
+                  <DropdownMenuItem>
+                    <Link href={subItem.link} className="">
+                      <div className="px-2 py-1 text-base">{subItem.name}</div>
+                    </Link>
+                  </DropdownMenuItem>
+                </Fragment>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </>

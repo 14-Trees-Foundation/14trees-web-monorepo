@@ -10,12 +10,13 @@ import {
 } from "schema";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { Select, Modal } from "ui";
+import { Modal } from "ui";
 import api from "~/api";
 import NumTreesSelector from "./Partials/NumTreesSelector";
 import OrderSummary from "./OrderSummary";
 import { ThankYou } from "./Partials/ThankYou";
 import MotionDiv from "./animation/MotionDiv";
+import FormImpl from "./Contribute2";
 import { Variants } from "framer-motion";
 
 const ContributeForm = ({
@@ -28,8 +29,8 @@ const ContributeForm = ({
   const [pageView, setPageView] = useState<"form" | "summary" | "thank-you">(
     "form"
   );
-  const [order, setOrder] = useState<PaymentOrder>(null);
-  const [verification, setVerification] = useState<VerificationResponse>(null);
+  const [order, setOrder] = useState<PaymentOrder | null>(null);
+  const [verification, setVerification] = useState<VerificationResponse | null>(null);
 
   const onFormSubmit = async (data: ContributeRequest) => {
     if (order === null) {
@@ -66,10 +67,10 @@ const ContributeForm = ({
         onClose={() => setPageView("form")}
         panelClass="rounded-lg"
       >
-        <OrderSummary
+        {order && <OrderSummary
           contributionOrder={order}
           onPaymentComplete={onPaymentComplete}
-        />
+        />}
       </Modal>
       <Modal
         title={
@@ -83,16 +84,17 @@ const ContributeForm = ({
       >
         {pageView === "thank-you" && verification?.status === "success" && (
           <div className="p-2">
-            <ThankYou emailSent={verification?.emailSent} donor={order.donor} />
+            { order && <ThankYou emailSent={verification?.emailSent} donor={order.donor} /> }
           </div>
         )}
       </Modal>
       <MotionDiv variants={formVariants}>
-        <Form
+        <FormImpl onSubmit={onFormSubmit}/>
+        {/* <FormComponent
           onFormSubmit={onFormSubmit}
           onPaymentComplete={onPaymentComplete}
           project={project?.id || "default"}
-        />
+        /> */}
       </MotionDiv>
     </>
   );
@@ -104,7 +106,7 @@ type FormProps = {
   project: Project["id"];
 };
 
-const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
+const FormComponent = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
   const [page, setPage] = useState<
     "user-details" | "contribution" | "contribution-details"
   >("user-details");
@@ -188,7 +190,6 @@ const Form = ({ onFormSubmit, onPaymentComplete, project }: FormProps) => {
       </>
     );
   };
-
   const UserDetailsPage = () => {
     return (
       <>

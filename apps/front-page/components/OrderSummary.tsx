@@ -30,7 +30,7 @@ export default function OrderSummary({
     };
   }, []);
 
-  if (contribution.order.type !== "one-time") {
+  if (contribution.order?.type !== "one-time") {
     return <></>;
   }
 
@@ -71,14 +71,14 @@ export default function OrderSummary({
   const collectPayment = (e) => {
     setProcessing(true);
     e.preventDefault();
-    if (contribution.order.type !== "one-time") {
+    if (contribution.order?.type !== "one-time") {
       return;
     }
 
     // Handle collect paym<button id="rzp-button1">Pay</button>
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
-      amount: String(contribution.order.amount), // Amount is in currency subunits. Default currency is INR.
+      amount: String(contribution?.order?.amount || 3000), // Amount is in currency subunits. Default currency is INR.
       currency: "INR",
       name: "14 Trees Foundation", //your business name
       description: "Contribute to 14 Trees Foundation",
@@ -160,7 +160,7 @@ export default function OrderSummary({
         <div className="col-span-1 text-lg">
           <div className="inline-block align-middle">Trees:</div>
         </div>
-        {contribution.order.type === "one-time" ? (
+        {contribution.order?.type === "one-time" ? (
           <>
             <div className="col-span-1 flex-grow text-right text-3xl font-light">
               {contribution.order.trees}
@@ -252,8 +252,8 @@ export default function OrderSummary({
     Email: contributionOrder.donor.email_id,
     Phone: contributionOrder.donor.phone,
     Campaign: contributionOrder.contribution.campaign,
-    Trees: contribution.order.trees + " Trees",
-    Amount: contribution.order.currency + " " + contribution.order.amount / 100,
+    Trees: contribution.order?.trees + " Trees",
+    Amount: contribution.order?.currency + " " + contribution.order?.amount / 100,
   };
 
   return (

@@ -1,5 +1,3 @@
-import ContentHeader from "components/ContentHeading";
-import Image from "next/image";
 
 const MissionPage = () => {
   return (

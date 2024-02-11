@@ -43,7 +43,7 @@ type BaseOrder = {
   status: 'created' | 'captured';
 }
 
-type ContributionType = OneTimeContribution | RecurringContribution | LargeContribution | CsrContribution;
+export type ContributionType = OneTimeContribution | RecurringContribution | LargeContribution | CsrContribution;
 
 export interface Contribution {
   campaign: string;
@@ -52,7 +52,7 @@ export interface Contribution {
   purpose: string;
   emailSent: boolean;
   assignment_names?: string[];
-  order: ContributionType & BaseOrder;
+  order: ContributionType & BaseOrder | null;
   donor?: ObjectId;
 }
 

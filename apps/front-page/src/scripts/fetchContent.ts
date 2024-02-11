@@ -12,4 +12,7 @@ const config = {
   filesDir: "public/content",
 };
 
+if (!config.token) {
+  throw new Error("No NOTION_API_KEY provided");
+}
 notionFetch(config.token, config.databases, config.contentDir, config.filesDir);

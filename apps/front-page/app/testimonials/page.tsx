@@ -3,7 +3,7 @@ import Testimonial from "components/TestimonialComponent";
 import Head from "next/head";
 
 export default function Testimonials() {
-  const testimonials = []
+  const testimonials: any[] = []
   return (
     <div className="full-page-generic container">
       <Head>

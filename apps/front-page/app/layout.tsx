@@ -2,9 +2,8 @@ import "ui/globals.css";
 import "~/index.css";
 
 import { Inter } from "next/font/google";
-import type { Metadata } from "next";
-import labels from "~/assets/labels.json";
 import NavHeader from "components/NavHeader";
+import Footer from "components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,8 +16,8 @@ export default function HomeLayout({
     <html lang="en">
       <body className={inter.className}>
         <NavHeader />
-        <div className="mt-20">{children}</div>
-        {/* footer */}
+        <div className="mt-18">{children}</div>
+        <Footer/>
       </body>
     </html>
   );
