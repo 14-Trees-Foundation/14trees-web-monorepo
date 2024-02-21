@@ -7,16 +7,18 @@
   {
     "name": "Projects",
     "link": "#",
-    "sub": [{
+    "sub": [
+      {
         "name": "Vetale Reforestation",
         "link": "/vetale-reforestation",
         "external": false
-    }, {
+      },
+      {
         "name": "IITK Diamond Jubilee Campaign",
         "link": "/iitk-djc",
         "external": false
-    }
-]
+      }
+    ]
   },
   {
     "name": "Visitor's Corner",
@@ -55,24 +57,14 @@
         "external": false
       },
       {
-        "name": "Financials and Legal",
-        "link": "/financials-and-legal",
-        "external": false
+        "name": "Policies",
+        "link": "https://14trees.notion.site/Policies-11fffaa9fd5f4a249dab45d3a3172951",
+        "external": true
       },
       {
         "name": "Annual Reports",
         "link": "/annual-reports",
         "external": false
-      },
-      {
-        "name": "Terms and Conditions",
-        "link": "https://docs.google.com/document/u/1/d/e/2PACX-1vRCEdAbIF8iwRrik54Ka_FpOCaO2DLRAgPiaLHUXlJoMVmkguOqdoc0C3rvgwG_vkixzG7XPKY3VFz1/pub#h.w3wa3of6nuhg",
-        "external": true
-      },
-      {
-        "name": "Privacy Policy",
-        "link": "https://docs.google.com/document/u/1/d/e/2PACX-1vRCEdAbIF8iwRrik54Ka_FpOCaO2DLRAgPiaLHUXlJoMVmkguOqdoc0C3rvgwG_vkixzG7XPKY3VFz1/pub#h.66xkb0x63zyn",
-        "external": true
       },
       {
         "name": "Contact",
