@@ -31,14 +31,14 @@ const getProjects = async () => {
 };
 
 const Contribute = () => {
-  const projects = []
+  const projects = [];
   console.log(projects);
   // get the order id from the url params (nextjs router)
 
   return (
     <>
-      <div className="lg:mx-4">
-        <div className="relative mx-auto max-w-screen-xl px-4 lg:mt-40 mb-10 lg:flex 2xl:max-w-screen-2xl">
+      <div className="min-h-screen py-32 lg:mx-4">
+        <div className="relative mx-auto mb-10 max-w-screen-xl px-4 lg:mt-40 lg:flex 2xl:max-w-screen-2xl">
           <div className="my-12 w-full font-serif text-gray-700 lg:my-32 lg:mr-8 lg:w-3/5">
             <h1 className="text-3xl">Contribute to 14 Trees</h1>
             <p>
@@ -55,10 +55,10 @@ const Contribute = () => {
           </div>
           <div className="container w-full max-w-xl bg-white bg-opacity-80 py-10 shadow-2xl lg:w-2/5">
             <ContributeForm
-              // orderId={orderId}
-              // project={
-                // projects.find((p: Project) => p.id === projectId) || null
-              // }
+            // orderId={orderId}
+            // project={
+            // projects.find((p: Project) => p.id === projectId) || null
+            // }
             />
           </div>
         </div>

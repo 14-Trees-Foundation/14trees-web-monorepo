@@ -1,15 +1,17 @@
-import Link from 'next/link';
-import labels from '~/assets/labels.json';
+import Link from "next/link";
+import labels from "~/assets/labels.json";
 export default function Footer() {
   return (
-    <footer className="bg-gray-800 py-8 text-gray-200 md:py-12">
+    <footer className="bg-[#363e39] py-8 text-gray-300 md:py-12">
       <div className="mx-auto max-w-6xl px-4">
         <div className="flex flex-wrap items-start justify-between">
           <div className="mb-8 w-full md:mb-0 md:w-auto">
             <Link href="/" className="text-xl font-bold md:text-2xl">
               {labels.site.title}
             </Link>
-            <p className="mt-2">© {new Date().getFullYear()} {labels.site.title}.  </p>
+            <p className="mt-2">
+              © {new Date().getFullYear()} {labels.site.title}.{" "}
+            </p>
             <p> All rights reserved.</p>
           </div>
 
@@ -125,7 +127,7 @@ export default function Footer() {
                   Privacy Policy
                 </Link>
               </li>
-              </ul>
+            </ul>
           </div>
         </div>
       </div>

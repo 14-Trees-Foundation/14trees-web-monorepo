@@ -5,33 +5,43 @@ import logo from "~/assets/images/logo.png";
 
 const MissionPage = () => {
   const reports = [
-    "/documents/annual-reports/2020-21.pdf",
-    "/documents/annual-reports/2021-22.pdf",
-    "/documents/annual-reports/2022-23.pdf",
+    {
+      href: "/documents/annual-reports/2020-21.pdf",
+      title: "Annual Report FY 2020-21",
+    },
+    {
+      href: "/documents/annual-reports/2021-22.pdf",
+      title: "Annual Report FY 2021-22",
+    },
+    {
+      href: "/documents/annual-reports/2022-23.pdf",
+      title: "Annual Report FY 2022-23",
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-white p-32">
+    <div className="container min-h-screen max-w-screen-md bg-white py-32">
       <h1 className="title-text mb-24 text-center">Reports</h1>
       <div>
         {reports.map((report, index) => (
           <DocCard
             key={index}
-            title={`Annual Report ${2020 + index}`}
-            href={report}
+            title={report.title}
+            href={report.href}
             image={logo}
-          />))}
+          />
+        ))}
       </div>
     </div>
   );
 };
 
-function DocCard({ title, href, image}) {
+function DocCard({ title, href, image }) {
   return (
-     <Link href={href}>
-      <div className="w-full cursor-pointer rounded-md bg-white p-4 border-2 my-3">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl text-gray-700 font-medium">{title}</h1>
+    <Link href={href}>
+      <div className="my-3 w-full cursor-pointer rounded-md border-2 bg-white p-4 transition-colors duration-300 hover:bg-slate-100">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-medium text-gray-700">{title}</h1>
           <Image
             height={64}
             width={64}
@@ -39,7 +49,7 @@ function DocCard({ title, href, image}) {
             src={image}
             alt={title}
           />
-          </div>
+        </div>
       </div>
     </Link>
   );
