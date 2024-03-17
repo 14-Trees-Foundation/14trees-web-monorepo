@@ -9,6 +9,7 @@
     "./tailwind.config": "./tailwind.config.ts",
     "./lib/*": "./src/shadcn/lib/*.ts",
     "./components/*": "./src/shadcn/components/ui/*.tsx",
+    "./common/*": "./src/common/*.tsx",
     ".": "./src/index.ts"
   },
   "license": "MIT",
@@ -25,6 +26,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@contentful/rich-text-html-renderer": "^16.3.5",
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
     "@hookform/resolvers": "^3.3.4",

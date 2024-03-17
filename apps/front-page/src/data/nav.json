@@ -10,12 +10,12 @@
     "sub": [
       {
         "name": "Vetale Reforestation",
-        "link": "/vetale-reforestation",
+        "link": "/projects/reforestation-vetale",
         "external": false
       },
       {
         "name": "IITK Diamond Jubilee Campaign",
-        "link": "/iitk-djc",
+        "link": "/projects/iitk-djc",
         "external": false
       }
     ]

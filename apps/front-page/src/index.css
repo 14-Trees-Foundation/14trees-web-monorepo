@@ -59,6 +59,9 @@
 }
 
 @layer components {
+  .external-link {
+    @apply text-teal-800 hover:border-b border-teal-700 hover:text-teal-700;
+  }
   .green-text {
     @apply text-green-500;
   }

@@ -6,7 +6,10 @@
     "NEXT_PUBLIC_API_URL",
     "SERVER_PORT",
     "NEXT_PUBLIC_RAZORPAY_KEY",
-    "NOTION_API_KEY"
+    "NOTION_API_KEY", 
+    "CONTENTFUL_SPACE_ID",
+    "CONTENTFUL_ACCESS_TOKEN",
+    "CONTENTFUL_PREVIEW_ACCESS_TOKEN"
   ],
   "globalDotEnv": [
     ".env.local",

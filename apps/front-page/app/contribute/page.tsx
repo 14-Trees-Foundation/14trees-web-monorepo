@@ -3,7 +3,6 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import Image from "next/image";
 import ProjectSelector from "components/ProjectSelector";
 import { Project } from "schema";
-// import notion from "lib/notion";
 // import tree_graphic from "~/assets/images/tree_graphic.jpg";
 
 const getFirst = (obj: string | string[]) => {
@@ -32,7 +31,6 @@ const getProjects = async () => {
 
 const Contribute = () => {
   const projects = [];
-  console.log(projects);
   // get the order id from the url params (nextjs router)
 
   return (

@@ -17,17 +17,17 @@ const Team = () => {
   function SectionComponent({ title, names }) {
     const members = team_members.filter((v) => names.includes(v.name));
     return (
-      <div className="mt-12 w-full">
+      <div className="container mt-12 w-full">
         <div className="text-center text-4xl">{title}</div>
         <div className="flex w-full flex-wrap justify-center">
           {members.length > 0 &&
             members.map((member, i) => (
               <div
-                className="my-4 mt-20 min-h-[30vh] w-1/3 py-4"
+                className="my-4 mt-20 min-h-[30vh] w-full py-4 md:w-1/3"
                 key={member.name}
               >
                 <Person
-                  image={member.picture}
+                  image={member.picture || undefined}
                   title={member.title}
                   link={member.link || undefined}
                   name={member.name}
@@ -42,7 +42,12 @@ const Team = () => {
 
   const founders = ["Pravin Bhagwat"];
   const board_members = ["Pravin Bhagwat", "Kiran Deshpande"];
-  const advisory_members = ["C.K.Pradeep"];
+  const advisory_members = [
+    "C.K.Pradeep",
+    "Girish Sohoni",
+    "Shirish Deodhar",
+    "Ajay Phatak",
+  ];
   const backoffice_members = [
     "Sanjeev Jagtap",
     "Shivangi Datar",
@@ -67,7 +72,7 @@ const Team = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white p-32">
+    <div className="min-h-screen bg-white py-32">
       <h1 className="title-text mb-24 text-center">Our Team</h1>
       <div className="my-12">
         <SectionComponent title="Founder" names={founders} />

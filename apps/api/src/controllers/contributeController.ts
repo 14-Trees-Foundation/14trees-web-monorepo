@@ -8,6 +8,15 @@ import { ObjectId } from "mongodb";
 export async function verifyPayment(req: { body: { donor: Donor, contribution: Contribution, razorpayResponse: RazorpayResponse}}, res: any) {
     const {donor, contribution, razorpayResponse} = req.body;
     console.log(req.body)
+    if (!contribution || !donor || !razorpayResponse) {
+        return res.status(400).json({ status: "invalid", message: "Invalid request", emailSent: false });
+    }
+    if (!(contribution.order?.type === "one-time")) {
+        return res.status(400).json({ status: "invalid", message: "Invalid contribution type", emailSent: false });
+    }
+    if (!contribution?.order?.orderId) {
+        return res.status(500).json({ status: "failed", message: "Error updating payment. Please contact support.", emailSent: false });
+    }
     if (contribution.order.type !== "one-time") {
         return res.status(400).json({ status: "invalid", message: "Invalid contribution type", emailSent: false });
     }
@@ -41,6 +50,18 @@ export async function verifyPayment(req: { body: { donor: Donor, contribution: C
 
 export async function createContribution(req: { body: ContributeRequest}, res: any) {
     const { contribution, donor } = req.body;
+    if (!contribution || !donor ) {
+        return res.status(400).json({ status: "invalid", message: "Invalid request", emailSent: false });
+    }
+    if (!(contribution.order?.type === "one-time")) {
+        return res.status(400).json({ status: "invalid", message: "Invalid contribution type", emailSent: false });
+    }
+    if (!contribution?.order?.orderId) {
+        return res.status(500).json({ status: "failed", message: "Error updating payment. Please contact support.", emailSent: false });
+    }
+    if (contribution.order.type !== "one-time") {
+        return res.status(400).json({ status: "invalid", message: "Invalid contribution type", emailSent: false });
+    }
     try {
         // generate a payment order if contribution is one-time
         if (contribution.order.type === "one-time") {
@@ -92,6 +113,7 @@ async function saveContribution(contribution: Contribution, donor: Donor) {
 
         // id/name is different? -> create a new user, and set parent to existingDonor
         if (existingDonor && existingDonor.name !== name) {
+            // @ts-ignore
             const donorResult = await donorCollection.insertOne({ ...newUser, parent: existingDonor._id });
             return donorResult.insertedId;
         }
@@ -101,6 +123,7 @@ async function saveContribution(contribution: Contribution, donor: Donor) {
         return donorResult.insertedId;
     }
 
+    // @ts-ignore
     contribution.donor = await getOrCreateDonor();
     
     // save contribution to DB
@@ -129,6 +152,12 @@ async function updatePaid(contribution_order_Id: string): Promise<boolean> {
 }
 
 async function sendEmail(donor: Donor, contribution: Contribution): Promise<boolean> {
+    if (!contribution || !donor ) {
+        throw new Error("Invalid request");
+    }
+    if (!contribution?.order) {
+        throw new Error("Invalid contribution");
+    }
     try {
         // send email to donor
         // wait 200ms, and log email sent to console, and return true

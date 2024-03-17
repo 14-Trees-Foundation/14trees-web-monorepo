@@ -1,9 +1,25 @@
-import { Client } from "@notionhq/client";
-import Testimonial from "components/TestimonialComponent";
+import { TestimonialCollection } from "components/TestimonialComponent";
 import Head from "next/head";
+import contentful from "contentful-fetch";
+import type { Testimonial } from "contentful-fetch/models/testimonials";
 
-export default function Testimonials() {
-  const testimonials: any[] = []
+async function getData() {
+  try {
+    const testimonialsResponse: any = await contentful("testimonials");
+    const testimonials = testimonialsResponse.testimonialCollection
+      .items as Testimonial[];
+    return testimonials;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export default async function Testimonials() {
+  const testimonials = await getData();
+  if (!testimonials) {
+    return <div className="p-40">Loading...</div>;
+  }
   return (
     <div className="full-page-generic container">
       <Head>
@@ -11,16 +27,7 @@ export default function Testimonials() {
       </Head>
       <h1 className="title-text text-center"> Testimonials </h1>
       <div className="mx-4 md:pt-16">
-        {testimonials.map((tm, index) => (
-          <div key={index}>
-            {/* <Testimonial {...tm} /> */}
-            <h2 className="text-3xl my-2">{tm.author}</h2>
-            {tm.content.map((t,i) => <div className="mt-2 " key={i}>{t}</div>)}
-            <div className="flex justify-center">
-              <span className="mb-4 w-1/3 border-b-2 border-gray-300 pb-4"></span>
-            </div>
-          </div>
-        ))}
+        <TestimonialCollection testimonials={testimonials} />
       </div>
     </div>
   );

@@ -11,9 +11,8 @@ type NavItem = {
   sub?: Array<NavItem>;
 };
 import logo from "~/assets/images/logo.png";
-import { DropDown } from "ui";
 import { Button } from "ui/components/button";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import navItems from "~/data/nav.json";
 import {
   DropdownMenu,
@@ -24,6 +23,7 @@ import {
   DropdownMenuItem,
 } from "ui/components/dropdown-menu";
 import { ArrowDownIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
+import { DropDown } from "ui";
 
 export default function Header() {
   // const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -33,6 +33,11 @@ export default function Header() {
     root.classList.add(theme);
     localStorage.setItem("theme", theme);
     // setTheme(theme);
+  };
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   // set theme from local storage on load
@@ -46,10 +51,11 @@ export default function Header() {
   // }, []);
   return (
     <div className="fixed top-0 z-20 w-full">
-      <nav className="mx-auto flex items-center justify-between bg-white p-1 shadow-sm shadow-slate-100">
+      <nav className="mx-auto flex items-center justify-between bg-[#ffffffdf] p-1 shadow-md shadow-[#48484826] backdrop-blur-lg">
         <Link
           href={"/"}
-          className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight">
+          className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight"
+        >
           14 Trees Foundation
           <Image
             className="mx-1"
@@ -58,16 +64,10 @@ export default function Header() {
             width="32"
             alt="logo"
           />
+          <ChevronDownIcon className="h-6 w-6" onClick={toggleMobileMenu} />
         </Link>
-        <div className="inline-flex py-1 px-1">
-          {navItems.map((navItem) => (
-            <div
-              key={navItem.name}
-              className="my-auto hidden border-r border-zinc-200 px-8 py-1 lg:block"
-            >
-              <Item navItem={navItem} />
-            </div>
-          ))}
+        <div className="inline-flex px-1 py-1">
+          <NavItemsDesktop items={navItems} />
           <Button className="bg-green-800">
             <Link href={"/contribute"}>Contribute</Link>
           </Button>
@@ -76,9 +76,38 @@ export default function Header() {
           </button> */}
         </div>
       </nav>
+      <nav
+        className={`grid w-full grid-cols-2 bg-[#ffffffdf] shadow-md shadow-[#48484826] backdrop-blur-lg ${
+          mobileMenuOpen ? "block" : "hidden"
+        }`}
+      >
+        <NavItemsMobile items={navItems} />
+      </nav>
     </div>
   );
 }
+
+const NavItemsMobile = ({ items }: { items: Array<NavItem> }) => {
+  return items.map((navItem) => (
+    <div
+      key={navItem.name}
+      className="my-auto border-r border-zinc-200 px-8 py-1 lg:hidden"
+    >
+      <Item navItem={navItem} />
+    </div>
+  ));
+};
+
+const NavItemsDesktop = ({ items }: { items: Array<NavItem> }) => {
+  return items.map((navItem) => (
+    <div
+      key={navItem.name}
+      className="my-auto hidden border-zinc-200 px-8 py-1 lg:block"
+    >
+      <Item navItem={navItem} />
+    </div>
+  ));
+};
 
 const Item = ({ navItem }: { navItem: NavItem }) => {
   return (

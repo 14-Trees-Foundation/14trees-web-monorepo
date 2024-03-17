@@ -1,110 +1,153 @@
 import { Orders } from "razorpay/dist/types/orders";
-import { ObjectId } from "mongodb";
+import { z } from "zod";
 
-export type Project = {
-  id: string;
-  image: string;
-  title: string;
-  description: string;
-  price: number;
-};
+// Assuming ObjectId can be treated as a string for simplicity.
+const ObjectIdSchema = z.string();
 
-type OneTimeContribution = {
-  captured: boolean;
-  orderId: string;
-  type: 'one-time';
-  amount: number;
-  trees: number;
-};
+const ProjectSchema = z.object({
+  id: z.string(),
+  image: z.string(),
+  title: z.string(),
+  description: z.string(),
+  price: z.number(),
+});
 
-type RecurringContribution = {
-  captured: boolean;
-  orderId: string;
-  type: 'recurring';
-  amount: number;
-  trees: number;
-};
+const OneTimeContributionSchema = z.object({
+  captured: z.boolean(),
+  orderId: z.string(),
+  type: z.literal("one-time"),
+  amount: z.number(),
+  trees: z.number(),
+});
 
-type LargeContribution = {
-  captured: boolean;
-  type: 'large';
-  notes: string;
-  trees: number;
-};
+const RecurringContributionSchema = z.object({
+  captured: z.boolean(),
+  orderId: z.string(),
+  type: z.literal("recurring"),
+  amount: z.number(),
+  trees: z.number(),
+});
 
-type CsrContribution = {
-  type: 'csr';
-  notes: string;
-};
+const LargeContributionSchema = z.object({
+  captured: z.boolean(),
+  type: z.literal("large"),
+  notes: z.string(),
+  trees: z.number(),
+});
 
-type BaseOrder = {
-  currency: 'INR' | 'USD';
-  date: Date;
-  status: 'created' | 'captured';
-}
+const CsrContributionSchema = z.object({
+  type: z.literal("csr"),
+  notes: z.string(),
+});
 
-export type ContributionType = OneTimeContribution | RecurringContribution | LargeContribution | CsrContribution;
+const BaseOrderSchema = z.object({
+  currency: z.union([z.literal("INR"), z.literal("USD")]),
+  date: z.date(),
+  status: z.union([z.literal("created"), z.literal("captured")]),
+});
 
-export interface Contribution {
-  campaign: string;
-  source: string;
-  plantation: "foundation" | "public" | "farmland";
-  purpose: string;
-  emailSent: boolean;
-  assignment_names?: string[];
-  order: ContributionType & BaseOrder | null;
-  donor?: ObjectId;
-}
+const ContributionTypeSchema = z.union([
+  OneTimeContributionSchema,
+  RecurringContributionSchema,
+  LargeContributionSchema,
+  CsrContributionSchema,
+]);
 
-export interface ContributionUser {
-  name: string;
-  userid: string;
-  phone: string;
-  email: string;
-  pan: string;
-  org?: string;
-  dob?: Date;
-  comms: {
-    visit: boolean;
-    volunteer: boolean;
-    updates: boolean;
-  }
-  parent?: ObjectId;
-}
+const ContributionSchema = z.object({
+  campaign: z.string(),
+  source: z.string(),
+  plantation: z.union([
+    z.literal("foundation"),
+    z.literal("public"),
+    z.literal("farmland"),
+  ]),
+  purpose: z.string(),
+  emailSent: z.boolean(),
+  assignment_names: z.array(z.string()).optional(),
+  order: z.nullable(ContributionTypeSchema.and(BaseOrderSchema)),
+  donor: ObjectIdSchema.optional(),
+});
 
-export interface Donor {
-  first_name: string;
-  last_name: string;
-  pan: ContributionUser['pan'];
-  email_id: ContributionUser['email'];
-  phone: ContributionUser['phone'];
-  comms: ContributionUser['comms'];
-}
+const ContributionUserSchema = z.object({
+  name: z.string(),
+  userid: z.string(),
+  phone: z.string(),
+  email: z.string(),
+  pan: z.string(),
+  org: z.string().optional(),
+  dob: z.date().optional(),
+  comms: z.object({
+    visit: z.boolean(),
+    volunteer: z.boolean(),
+    updates: z.boolean(),
+  }),
+  parent: ObjectIdSchema.optional(),
+});
 
-export interface VerificationResponse {
-  status: "success" | "failed" | "invalid",
-  message: string,
-  emailSent: Contribution['emailSent'],
-  orderId?: string,
-  userid?: ContributionUser['userid'],
-  paymentId?: string,
-}
+const DonorSchema = z.object({
+  first_name: z.string(),
+  last_name: z.string(),
+  pan: ContributionUserSchema.shape.pan,
+  email_id: ContributionUserSchema.shape.email,
+  phone: ContributionUserSchema.shape.phone,
+  comms: ContributionUserSchema.shape.comms,
+});
 
-export interface ContributeRequest {
-    contribution: Contribution,
-    donor: Donor
-}
+const VerificationResponseSchema = z.object({
+  status: z.union([
+    z.literal("success"),
+    z.literal("failed"),
+    z.literal("invalid"),
+  ]),
+  message: z.string(),
+  emailSent: ContributionSchema.shape.emailSent,
+  orderId: z.string().optional(),
+  userid: ContributionUserSchema.shape.userid.optional(),
+  paymentId: z.string().optional(),
+});
 
-export interface PaymentOrder {
-    status: "created" | "captured" | "failed",
-    emailStatus: "sent" | "not sent",
-    order: Orders.RazorpayOrder,
-    contribution: Contribution,
-    donor: Donor
-}
+const ContributeRequestSchema = z.object({
+  contribution: ContributionSchema,
+  donor: DonorSchema,
+});
 
-export type RazorpayResponse = {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
+// For PaymentOrder, assuming Orders.RazorpayOrder can be represented or validated separately.
+const PaymentOrderSchema = z.object({
+  status: z.union([
+    z.literal("created"),
+    z.literal("captured"),
+    z.literal("failed"),
+  ]),
+  emailStatus: z.union([z.literal("sent"), z.literal("not sent")]),
+  order: z.any(), // You might need a specific schema or validation for RazorpayOrder.
+  contribution: ContributionSchema,
+  donor: DonorSchema,
+});
+
+const RazorpayResponseSchema = z.object({
+  razorpay_payment_id: z.string(),
+  razorpay_order_id: z.string(),
+  razorpay_signature: z.string(),
+});
+
+type ContributeRequest = z.infer<typeof ContributeRequestSchema>;
+type ContributionUser = z.infer<typeof ContributionUserSchema>;
+type Contribution = z.infer<typeof ContributionSchema>;
+type PaymentOrder = z.infer<typeof PaymentOrderSchema>;
+type VerificationResponse = z.infer<typeof VerificationResponseSchema>;
+type RazorpayResponse = z.infer<typeof RazorpayResponseSchema>;
+type Donor = z.infer<typeof DonorSchema>;
+type Project = z.infer<typeof ProjectSchema>;
+type ContributionType = z.infer<typeof ContributionTypeSchema>;
+
+export type {
+  Donor,
+  Project,
+  Contribution,
+  ContributionType,
+  ContributeRequest,
+  ContributionUser,
+  VerificationResponse,
+  PaymentOrder,
+  RazorpayResponse,
 };

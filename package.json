@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "NODE_ENV=production dotenv -- turbo run build",
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
@@ -18,7 +18,7 @@
   },
   "packageManager": "yarn@1.22.19",
   "engines": {
-      "node": ">=18"
+    "node": ">=18"
   },
   "workspaces": [
     "apps/*",
