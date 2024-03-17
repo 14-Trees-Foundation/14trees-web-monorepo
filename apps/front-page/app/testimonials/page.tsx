@@ -1,7 +1,11 @@
 import { TestimonialCollection } from "components/TestimonialComponent";
-import Head from "next/head";
+import { Metadata } from "next";
 import contentful from "contentful-fetch";
 import type { Testimonial } from "contentful-fetch/models/testimonials";
+
+export const metadata: Metadata = {
+  title: "Testimonials",
+}
 
 async function getData() {
   try {
@@ -22,9 +26,6 @@ export default async function Testimonials() {
   }
   return (
     <div className="full-page-generic container">
-      <Head>
-        <title>Testimonials</title>
-      </Head>
       <h1 className="title-text text-center"> Testimonials </h1>
       <div className="mx-4 md:pt-16">
         <TestimonialCollection testimonials={testimonials} />

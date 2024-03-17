@@ -48,7 +48,7 @@ const MobileLayout: React.FC<{ sections: Section[] }> = ({ sections }) => {
   return (
     <>
       <Carousel
-        className="sm:mx-6 mt-20"
+        className="mt-20 sm:mx-6"
         plugins={[
           Autoplay({
             delay: 10000,
