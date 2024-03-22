@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import Image from "next/image"; // Import Next.js Image component
 import person_placeholder from "~/assets/images/person_placeholder.jpeg"; // Import placeholder image
 import Link from "next/link";
+import { Modal } from "ui";
 
 // Define TypeScript interfaces for props
 interface PersonProps {
@@ -27,15 +30,31 @@ const Person: React.FC<PersonProps> = ({
   title,
   variant = "large",
 }) => {
+  const [open, setOpen] = React.useState(false);
+
   const InnerPerson = () => (
-        <div className="text-center md:m-4">
+    <div className="text-center md:m-4">
+      <Image
+        src={image || person_placeholder}
+        alt=""
+        className="mx-auto mb-4 aspect-square rounded-full border-2 object-cover shadow-lg"
+        {...imageDimensions[variant]} // Spread the dimensions based on the variant
+      />{" "}
+      <div className="md:w-full">
+        <p className="text-xl text-gray-600 lg:text-2xl dark:text-gray-200">
+          {name}
+          {title && (
+            <span className="block text-lg text-gray-500">{title}</span>
+          )}
+        </p>
+        <Modal title={name} show={open} onClose={() => setOpen(false)}>
           <Image
             src={image || person_placeholder}
             alt=""
             className="mx-auto mb-4 aspect-square rounded-full border-2 object-cover shadow-lg"
             {...imageDimensions[variant]} // Spread the dimensions based on the variant
-          />{" "}
-          <div className="md:w-full">
+          />
+          <div className="p-4">
             <p className="text-xl text-gray-600 lg:text-2xl dark:text-gray-200">
               {name}
               {title && (
@@ -44,16 +63,28 @@ const Person: React.FC<PersonProps> = ({
             </p>
             {bio && <p className="text-md mt-2 text-gray-500">{bio}</p>}
           </div>
-        </div>
-  )
-  return (link ? 
+        </Modal>
+        <button
+          className="text-xs text-gray-500 hover:text-gray-700"
+          onClick={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
+          Read More
+        </button>
+      </div>
+    </div>
+  );
+  return link ? (
     <section>
       <Link href={link || "#"}>
         <InnerPerson />
       </Link>
       {/* Repeat for other variants with corresponding JSX and Next.js Image components */}
     </section>
-    : <section>
+  ) : (
+    <section>
       <InnerPerson />
     </section>
   );

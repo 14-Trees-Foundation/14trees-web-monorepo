@@ -68,9 +68,22 @@ export default function Header() {
         </Link>
         <div className="inline-flex px-1 py-1">
           <NavItemsDesktop items={navItems} />
-          <Button className="bg-green-800">
-            <Link href={"/contribute"}>Contribute</Link>
-          </Button>
+          <Link
+            href={
+              "https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
+            }
+          >
+            <Button className="mr-3 border-2 border-gray-300 bg-white text-gray-600 hover:bg-gray-300">
+              Volunteer
+            </Button>
+          </Link>
+          <Link
+            href={
+              "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform"
+            }
+          >
+            <Button className="bg-green-800">Contribute</Button>
+          </Link>
           {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
             {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
           </button> */}

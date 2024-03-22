@@ -10,7 +10,14 @@ type ModalProps = {
   panelClass?: string;
 };
 
-export function Modal({ title, show, onClose, children, showCloseButton, panelClass }: ModalProps) {
+export function Modal({
+  title,
+  show,
+  onClose,
+  children,
+  showCloseButton,
+  panelClass,
+}: ModalProps) {
   return (
     <Dialog
       open={show}
@@ -23,7 +30,11 @@ export function Modal({ title, show, onClose, children, showCloseButton, panelCl
       {/* Full-screen container to center the panel */}
       <div className="flex min-h-screen items-center justify-center px-4">
         {/* The actual dialog panel  */}
-        <Dialog.Panel className={panelClass + " relative mx-auto w-full max-w-lg bg-white shadow-lg"}>
+        <Dialog.Panel
+          className={
+            panelClass + " relative mx-auto w-full max-w-lg bg-white shadow-lg"
+          }
+        >
           <div className="flex items-center justify-between rounded-t-lg bg-gray-50 px-4 py-2 dark:bg-gray-800">
             <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
               {title}
@@ -50,14 +61,16 @@ export function Modal({ title, show, onClose, children, showCloseButton, panelCl
             </button>
           </div>
           <div className="">{children}</div>
-          { showCloseButton && <div className="flex items-center justify-end rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-800">
-            <button
-              className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              onClick={() => onClose()}
-            >
-              Close
-            </button>
-          </div>}
+          {showCloseButton && (
+            <div className="flex items-center justify-end rounded-b-lg bg-gray-50 px-4 py-2 dark:bg-gray-800">
+              <button
+                className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                onClick={() => onClose()}
+              >
+                Close
+              </button>
+            </div>
+          )}
         </Dialog.Panel>
       </div>
     </Dialog>

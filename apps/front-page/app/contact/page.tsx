@@ -14,9 +14,11 @@ const ContactPage: React.FC = () => {
         <div className="px-4">
           <h2 className="mb-2 text-xl font-bold text-gray-700">Address</h2>
           <p className="mb-4 text-gray-600">
-            14 Trees Foundation
+            14 Trees Foundation 
             <br />
-            A-502, Swojas Anand, Anand Park, Aundh, Pune 411007
+            Shinde dara, Village Vetale
+            <br />
+            Taluka Khed, Pune 
             <br />
             Maharashtra
             <br />
