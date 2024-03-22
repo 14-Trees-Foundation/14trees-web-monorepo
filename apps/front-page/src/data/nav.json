@@ -58,8 +58,8 @@
       },
       {
         "name": "Policies",
-        "link": "https://14trees.notion.site/Policies-11fffaa9fd5f4a249dab45d3a3172951",
-        "external": true
+        "link": "/policies",
+        "external": false
       },
       {
         "name": "Annual Reports",
