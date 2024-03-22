@@ -39,11 +39,11 @@ export default async function ReforestationVetale() {
       ></iframe>
       <p className="md:my-10">
         <div className="my-2">{text}</div>
-        <ExternalLink href="https://drive.google.com/file/d/196mm2SkYTsy3AOFdYvzFhTdekCiZCuOZ/view">
+        <ExternalLink href="https://drive.google.com/file/d/1Dlsh6UQFMbk8uiiwQ9h52z9dAq_l9NCJ/view?usp=share_link">
           <span>About 14 Trees (presentation)</span>
         </ExternalLink>
         <br />
-        <ExternalLink href="https://drive.google.com/file/d/1ziQUJx9ErCX0J9Sh8jnqCgdk1DD5bUvI/view">
+        <ExternalLink href="https://drive.google.com/file/d/1aArCbhATAkIRoJl-IxbG4I8Ewp5uqqvy/view?usp=sharing">
           <span>How you can help</span>
         </ExternalLink>
       </p>
