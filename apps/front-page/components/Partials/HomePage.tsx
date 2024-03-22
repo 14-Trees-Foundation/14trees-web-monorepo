@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import labels from "~/assets/labels.json";
 import Image from "next/image";
@@ -10,7 +10,6 @@ import { Button } from "ui/components/button";
 import Link from "next/link";
 
 export const HomePage = () => {
-
   const { scrollYProgress } = useScroll();
 
   const containerVariants = {
@@ -71,12 +70,12 @@ export const HomePage = () => {
                 {labels.site.description}
               </h3>
               <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row md:justify-start">
-                <Link href="#about">
+                <Link href="/#about" scroll={false}>
                   <Button className="bg-gray-200 text-black" size="xl">
                     Learn More
                   </Button>
                 </Link>
-                <Link href="/contribute">
+                <Link href="https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform">
                   <Button className="bg-green-800 text-white" size="xl">
                     Contribute
                   </Button>
@@ -120,4 +119,3 @@ export const HomePage = () => {
     </>
   );
 };
-

@@ -62,6 +62,11 @@
         "external": false
       },
       {
+        "name": "Financial and Legal",
+        "link": "/financial-and-legal",
+        "external": false
+      },
+      {
         "name": "Annual Reports",
         "link": "/annual-reports",
         "external": false

@@ -20,6 +20,26 @@ export default function Page() {
             Financial and Legal
           </ExternalLink>
         </li>
+        <li className="my-2">
+          <ExternalLink href="https://14trees.notion.site/14-Trees-Foundation-Policies-11fffaa9fd5f4a249dab45d3a3172951">
+            Anti-Fraud
+          </ExternalLink>
+        </li>
+        <li className="my-2">
+          <ExternalLink href="https://14trees.notion.site/14-Trees-Foundation-Policies-11fffaa9fd5f4a249dab45d3a3172951">
+            Anti-Bribery
+          </ExternalLink>
+        </li>
+        <li className="my-2">
+          <ExternalLink href="https://14trees.notion.site/14-Trees-Foundation-Policies-11fffaa9fd5f4a249dab45d3a3172951">
+            Anti-Corruption
+          </ExternalLink>
+        </li>
+        <li className="my-2">
+          <ExternalLink href="https://14trees.notion.site/14-Trees-Foundation-Policies-11fffaa9fd5f4a249dab45d3a3172951">
+            Child Protection
+          </ExternalLink>
+        </li>
       </ul>
     </div>
   );
