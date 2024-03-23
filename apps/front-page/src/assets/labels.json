@@ -31,5 +31,23 @@
         "content": "We aim to create a future where humans live in harmony with nature, securing a healthy planet for future generations through ambitious goals and global collaborations. Our community work with schools and partnerships with universities are designed to inspire and educate the next generation of environmental stewards."
       }
     ]
-  }
+  },
+  "gallery": [{
+      "album_name": "Tata Elxsi visit",
+      "link": "https://photos.google.com/share/AF1QipODZMbB55eKstRu11rryNVtqGhht_mwMvrFoZYMVMDMcY4wii8cL0i-R4tcmxKePA?key=ZVZhTWFMUTBza2ZRTDhwRzZFX080eTRyOVA3Q0RR"
+    },
+    {
+      "album_name": "Skoda VW visit",
+      "link": "https://photos.google.com/share/AF1QipMm49WtD3y0vWRwWZvtwFoQJpPXfobv_ASNZJSpb8YnQaaYgHThumiuQOaNpmSOpw?key=X3hVbjM4d1ZIMzFxemVJajFTOVoycGxNUTZyZzBB"
+    }, {
+      "album_name": "KPIT team visit",
+      "link": "https://photos.google.com/share/AF1QipOaHtlAcZu_Tis94YZuHQpdM6tlEkvqo88W5YELJzMvTtEg0nYwXchbF4iLmawlXQ?key=WE9qUm8xQ3RpTFMyT2FwN1VaaXJPRlRKWUMxVWFR"
+    }, {
+      "album_name": "Enpro and Rotary visit",
+      "link" : "https://photos.google.com/share/AF1QipOl0N7lbFAdhPIg9ZieocO2EQzNMZNn2-f_KHgHRlUffOTprijeklMB71RTZW6BfA?key=ZUZZTjhRYUMzTHF6ZTFiY2k1d2VpZW5BUWhsdW13"
+    }, {
+      "link": "https://photos.google.com/share/AF1QipNFlEHcPGgso03WWPGq58KhM8nZX5XrbJplMYuSyrlsNykNe0tRZ9IMJj4gQ5jUSg?key=SE5CRFFTWklrX2V4VFo4ZE9DUnR4NU9ZZzI3QUdB",
+      "album_name": "IIT Bombay CTARA visit"
+    }
+  ]
 }

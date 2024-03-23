@@ -30,7 +30,7 @@ const TestimonialFC: React.FC<{
   pictures: any;
 }> = ({ title, person, content, pictures }) => {
   return (
-    <section className="body-font text-gray-700">
+    <section className="body-font mt-12 text-gray-700">
       <div className="mx-4 py-16 md:py-4">
         <div className="grid grid-cols-8">
           <div className="col-span-8 md:col-span-6 md:col-start-2">
@@ -48,6 +48,17 @@ const TestimonialFC: React.FC<{
                     />
                   ))}
               </div> */}
+
+              <Person
+                image={person.image.url}
+                name={person.name}
+                link={person.linkedIn}
+                title={person.title}
+                variant="profile"
+              />
+              <div className="text-md leading-relaxed sm:mx-6 dark:text-gray-400">
+                <ContentfulRichText content={content} />
+              </div>
               <div className="mb-4">
                 <Carousel className="mt-20 sm:mx-6">
                   <CarouselContent>
@@ -69,10 +80,7 @@ const TestimonialFC: React.FC<{
                   </div>
                 </Carousel>
               </div>
-              <div className="text-md leading-relaxed sm:mx-6 dark:text-gray-400">
-                <ContentfulRichText content={content} />
-              </div>
-              <div className="my-4 flex justify-center">
+              {/* <div className="my-4 flex justify-center">
                 <Link
                   href={`/testimonials/${slug(title)}`}
                   className="mb-1 mr-1 rounded border-2
@@ -82,14 +90,7 @@ const TestimonialFC: React.FC<{
                   Read
                   <ArrowRightIcon className="ml-1 inline-block h-3 w-3" />
                 </Link>
-              </div>
-              <Person
-                image={person.image.url}
-                name={person.name}
-                link={person.linkedIn}
-                title={person.title}
-                variant="profile"
-              />
+              </div> */}
             </div>
           </div>
         </div>

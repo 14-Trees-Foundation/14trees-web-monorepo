@@ -1,10 +1,18 @@
 import ExternalLink from "components/ExternalLink";
+import labels from "~/assets/labels.json";
 
 const Gallery = () => {
   return (
     <div className="min-h-screen bg-white p-32">
       <h1 className="title-text mb-24 text-center">Gallery</h1>
       <ul className="list-disc">
+        {labels.gallery.map((gallery, index) => (
+          <li key={index}>
+            <ExternalLink href={gallery.link}>
+              {gallery.album_name}
+            </ExternalLink>
+          </li>
+        ))}
         <li>
           <ExternalLink href="https://photos.app.goo.gl/qPist2oCY3X2AzbHA">
             26 Mar, 2021 - Donde Rd plantation - STL-ES-14T
