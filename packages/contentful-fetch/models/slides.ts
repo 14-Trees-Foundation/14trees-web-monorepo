@@ -22,9 +22,9 @@ export const vetaleSlidesQuery = `
         presentations: presentationsCollection {
         items {
             slides: slidesCollection {
-            items {
-                url 
-            }
+              items {
+                  url 
+              }
             }
         }
         }

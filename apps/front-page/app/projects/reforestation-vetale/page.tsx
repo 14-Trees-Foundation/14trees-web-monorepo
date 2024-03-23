@@ -18,8 +18,8 @@ async function getData() {
       ) as Testimonial[];
     const slidesResponse = await contentful("vetale-slides");
     console.log(slidesResponse);
-    const slides = slidesResponse.campaign.presentations.items[0].slides
-      .items as CampaignSlide[];
+    const slides = slidesResponse?.campaign?.presentations?.items[0]?.slides
+      ?.items as CampaignSlide[];
     return { testimonials, slides };
   } catch (error) {
     console.error(error);
@@ -56,15 +56,17 @@ export default async function ReforestationVetale() {
           <span>How you can help</span>
         </ExternalLink>
       </p>
-      <div className="flex justify-center">
-        <span className="my-20 mt-8 inline-block h-0.5 w-40 rounded bg-teal-800 text-center"></span>
-      </div>
       {slides && slides.length ? (
-        <div className="mb-20">
-          <SlideShow
-            slides={slides.map((s, i) => ({ title: i, url: s.url }))}
-          />
-        </div>
+        <>
+          <div className="flex justify-center">
+            <span className="my-20 mt-8 inline-block h-0.5 w-40 rounded bg-teal-800 text-center"></span>
+          </div>
+          <div className="mb-10">
+            <SlideShow
+              slides={slides.map((s, i) => ({ title: i, url: s.url }))}
+            />
+          </div>
+        </>
       ) : (
         <></>
       )}

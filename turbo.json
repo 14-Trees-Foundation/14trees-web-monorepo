@@ -22,8 +22,7 @@
     },
     "fetch-content": {
       "dotEnv": [".env"],
-      "inputs": ["src/scripts/fetchContent.ts"],
-      "outputs": ["src/data/content/**", "public/content/**"]
+      "inputs": ["src/scripts/fetchContent.ts"]
     },
     "build": {
       "cache": false,
