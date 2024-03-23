@@ -2,7 +2,7 @@ import ExternalLink from "components/ExternalLink";
 
 export default function Page() {
   return (
-    <div className="container min-h-screen bg-white p-32">
+    <div className="container min-h-screen max-w-screen-sm bg-white py-32">
       <h1 className="title-text mb-24 text-center">Policies</h1>
       <ul className="list-none">
         <li className="my-2">

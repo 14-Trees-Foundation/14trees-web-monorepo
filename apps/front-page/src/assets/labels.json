@@ -24,7 +24,8 @@
       {
         "title": "Innovative Technologies for Greater Impact",
         "link": "/projects/reforestation-vetale",
-        "content": "At 14Trees, we use technology to drive our operations and help us stay accountable to our donors. Our mission extends beyond localised reforestation - 14 Trees is a hotbed of innovation in green ventures. We have seen a number of successful projects that have been developed by the people within our community."},
+        "content": "At 14Trees, we use technology to drive our operations and help us stay accountable to our donors. Our mission extends beyond localised reforestation - 14 Trees is a hotbed of innovation in green ventures. We have seen a number of successful projects that have been developed by the people within our community."
+      },
       {
         "title": "Inspiring Generations for a Greener Tomorrow",
         "link": "/projects/reforestation-vetale",
@@ -32,22 +33,34 @@
       }
     ]
   },
-  "gallery": [{
+  "gallery": [
+    {
       "album_name": "Tata Elxsi visit",
       "link": "https://photos.google.com/share/AF1QipODZMbB55eKstRu11rryNVtqGhht_mwMvrFoZYMVMDMcY4wii8cL0i-R4tcmxKePA?key=ZVZhTWFMUTBza2ZRTDhwRzZFX080eTRyOVA3Q0RR"
     },
     {
       "album_name": "Skoda VW visit",
       "link": "https://photos.google.com/share/AF1QipMm49WtD3y0vWRwWZvtwFoQJpPXfobv_ASNZJSpb8YnQaaYgHThumiuQOaNpmSOpw?key=X3hVbjM4d1ZIMzFxemVJajFTOVoycGxNUTZyZzBB"
-    }, {
+    },
+    {
       "album_name": "KPIT team visit",
       "link": "https://photos.google.com/share/AF1QipOaHtlAcZu_Tis94YZuHQpdM6tlEkvqo88W5YELJzMvTtEg0nYwXchbF4iLmawlXQ?key=WE9qUm8xQ3RpTFMyT2FwN1VaaXJPRlRKWUMxVWFR"
-    }, {
+    },
+    {
       "album_name": "Enpro and Rotary visit",
-      "link" : "https://photos.google.com/share/AF1QipOl0N7lbFAdhPIg9ZieocO2EQzNMZNn2-f_KHgHRlUffOTprijeklMB71RTZW6BfA?key=ZUZZTjhRYUMzTHF6ZTFiY2k1d2VpZW5BUWhsdW13"
-    }, {
+      "link": "https://photos.google.com/share/AF1QipOl0N7lbFAdhPIg9ZieocO2EQzNMZNn2-f_KHgHRlUffOTprijeklMB71RTZW6BfA?key=ZUZZTjhRYUMzTHF6ZTFiY2k1d2VpZW5BUWhsdW13"
+    },
+    {
       "link": "https://photos.google.com/share/AF1QipNFlEHcPGgso03WWPGq58KhM8nZX5XrbJplMYuSyrlsNykNe0tRZ9IMJj4gQ5jUSg?key=SE5CRFFTWklrX2V4VFo4ZE9DUnR4NU9ZZzI3QUdB",
       "album_name": "IIT Bombay CTARA visit"
+    },
+    {
+      "link": "https://photos.google.com/share/AF1QipPNzzJA6eXTR5-3Xe8kGbR0iT_9kHxYrK0OP2LRN4y7TxDmoH8djjve0xI6SD-bEQ?key=akRZSnFlRk1iMWtjbTl1Mkd2SF9faEhTQk42SFp3",
+      "album_name": "Forest team"
+    },
+    {
+      "link": "https://photos.google.com/share/AF1QipN_DHc8hDj4WvRQ_GloWpQ0_F0IgM-xPid9NwZLxkLwJaPuC9XqPe7QoAQs-BOb5w?key=SnVfX0xRdmVlNDVDdl9vV0pxUHVLX2YtTzlRTzhn",
+      "album_name": "Ramadorai visit"
     }
   ]
 }

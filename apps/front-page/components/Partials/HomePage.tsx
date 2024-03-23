@@ -70,9 +70,12 @@ export const HomePage = () => {
                 {labels.site.description}
               </h3>
               <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row md:justify-start">
-                <Link href="/#about" scroll={false}>
+                <Link
+                  href="https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
+                  scroll={false}
+                >
                   <Button className="bg-gray-200 text-black" size="xl">
-                    Learn More
+                    Volunteer
                   </Button>
                 </Link>
                 <Link href="https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform">

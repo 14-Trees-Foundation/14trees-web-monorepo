@@ -155,7 +155,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
               >
                 <div className="pl-9 pr-2">
                   <p>{section.content}</p>
-                  {section.link && (
+                  {/* {section.link && (
                     <Link
                       href={section.link}
                       className="inline-flex border-b border-gray-500 text-sm text-gray-500"
@@ -163,7 +163,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
                       <span className="">Learn More</span>
                       <ArrowUpRightIcon className="mb-0.5 h-5 w-5" />
                     </Link>
-                  )}
+                  )} */}
                 </div>
               </motion.div>
             </motion.div>

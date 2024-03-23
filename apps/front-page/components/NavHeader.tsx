@@ -18,12 +18,10 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuItem,
 } from "ui/components/dropdown-menu";
-import { ArrowDownIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
-import { DropDown } from "ui";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+// import { DropDown } from "ui";
 
 export default function Header() {
   // const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -64,16 +62,20 @@ export default function Header() {
             width="32"
             alt="logo"
           />
-          <ChevronDownIcon className="h-6 w-6" onClick={toggleMobileMenu} />
         </Link>
+        <div className="flex-grow md:hidden">
+          <ChevronDownIcon className="h-6 w-6" onClick={toggleMobileMenu} />
+        </div>
         <div className="inline-flex px-1 py-1">
-          <NavItemsDesktop items={navItems} />
+          <div className="ml-2 hidden md:inline-flex">
+            <NavItemsDesktop items={navItems} />
+          </div>
           <Link
             href={
               "https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
             }
           >
-            <Button className="mr-3 border-2 border-gray-300 bg-white text-gray-600 hover:bg-gray-300">
+            <Button className="mr-3 hidden border-2 border-gray-300 bg-white text-gray-600 hover:bg-gray-300 md:block">
               Volunteer
             </Button>
           </Link>
@@ -82,7 +84,7 @@ export default function Header() {
               "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform"
             }
           >
-            <Button className="bg-green-800">Contribute</Button>
+            <Button className="bg-green-800">Donate</Button>
           </Link>
           {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
             {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
@@ -94,28 +96,56 @@ export default function Header() {
           mobileMenuOpen ? "block" : "hidden"
         }`}
       >
-        <NavItemsMobile items={navItems} />
+        <NavItemsMobile items={navItems} onClick={toggleMobileMenu} />
       </nav>
     </div>
   );
 }
 
-const NavItemsMobile = ({ items }: { items: Array<NavItem> }) => {
-  return items.map((navItem) => (
-    <div
-      key={navItem.name}
-      className="my-auto border-r border-zinc-200 px-8 py-1 lg:hidden"
-    >
-      <Item navItem={navItem} />
-    </div>
-  ));
+const NavItemsMobile = ({
+  items,
+  onClick,
+}: {
+  items: Array<NavItem>;
+  onClick: any;
+}) => {
+  return (
+    <>
+      {items.map((navItem) => (
+        <div
+          key={navItem.name}
+          className="my-auto border-r border-zinc-200 px-4 py-1 md:px-8"
+        >
+          <Item navItem={navItem} />
+        </div>
+      ))}
+      <div className="my-auto border-r border-zinc-200 px-4 py-1 md:px-8">
+        <Item
+          navItem={{
+            name: "Donate",
+            link: "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform",
+            external: true,
+          }}
+        />
+      </div>
+      <div className="my-auto border-r border-zinc-200 px-4 py-1 md:px-8">
+        <Item
+          navItem={{
+            name: "Volunteer",
+            link: "https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit",
+            external: true,
+          }}
+        />
+      </div>
+    </>
+  );
 };
 
 const NavItemsDesktop = ({ items }: { items: Array<NavItem> }) => {
   return items.map((navItem) => (
     <div
       key={navItem.name}
-      className="my-auto hidden border-zinc-200 px-8 py-1 lg:block"
+      className="my-auto border-zinc-200 px-2 py-1 text-xs md:text-sm lg:px-6"
     >
       <Item navItem={navItem} />
     </div>
