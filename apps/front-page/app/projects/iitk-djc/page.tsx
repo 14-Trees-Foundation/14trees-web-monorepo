@@ -3,7 +3,7 @@ import SlideShow from "components/Partials/SlideShow";
 import { TestimonialCollection } from "components/TestimonialComponent";
 
 import contentful from "contentful-fetch";
-import { IitkSlide } from "contentful-fetch/models/iitk-slides";
+import { CampaignSlide } from "contentful-fetch/models/slides";
 import type { Testimonial } from "contentful-fetch/models/testimonials";
 
 async function getData() {
@@ -18,7 +18,7 @@ async function getData() {
 
     const slidesResponse = await contentful("iitk-slides");
     const slides = slidesResponse.campaign.presentations.items[0].slides
-      .items as IitkSlide[];
+      .items as CampaignSlide[];
     return { testimonials, slides };
   } catch (error) {
     console.error(error);

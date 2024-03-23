@@ -1,8 +1,10 @@
 import ExternalLink from "components/ExternalLink";
+import SlideShow from "components/Partials/SlideShow";
 
 import { TestimonialCollection } from "components/TestimonialComponent";
 
 import contentful from "contentful-fetch";
+import { CampaignSlide } from "contentful-fetch/models/slides";
 import type { Testimonial } from "contentful-fetch/models/testimonials";
 
 async function getData() {
@@ -14,10 +16,17 @@ async function getData() {
           i.campaign.heading !==
           "Plant 40,000 Trees to celebrate IIT Kanpur Diamond Jubilee"
       ) as Testimonial[];
-    return testimonials;
+    const slidesResponse = await contentful("vetale-slides");
+    console.log(slidesResponse);
+    const slides = slidesResponse.campaign.presentations.items[0].slides
+      .items as CampaignSlide[];
+    return { testimonials, slides };
   } catch (error) {
     console.error(error);
-    return null;
+    return {
+      testimonials: null,
+      slides: null,
+    };
   }
 }
 
@@ -25,7 +34,7 @@ const text = `Village Vetale is located ~65Km North of Pune. Barely 40-50 years 
 In the last six years, through a small scale forestation initiative, we have successfully begun transformation of 25 acres of barren land into a thriving jungle. Enthused by our early success, we are now aiming to expand our eco-restoration work in three neighbouring villages. In the long term, we wish to create a grassroots, sustainable and replicable model for reforestation and continue expanding our efforts to other barren regions all over the world.`;
 
 export default async function ReforestationVetale() {
-  const testimonials = await getData();
+  const { testimonials, slides } = await getData();
   return (
     <div className="container min-h-screen bg-white px-32 py-48">
       <h1 className="title-text mb-24 text-center">Vetale Reforestation</h1>
@@ -47,6 +56,18 @@ export default async function ReforestationVetale() {
           <span>How you can help</span>
         </ExternalLink>
       </p>
+      <div className="flex justify-center">
+        <span className="my-20 mt-8 inline-block h-0.5 w-40 rounded bg-teal-800 text-center"></span>
+      </div>
+      {slides && slides.length ? (
+        <div className="mb-20">
+          <SlideShow
+            slides={slides.map((s, i) => ({ title: i, url: s.url }))}
+          />
+        </div>
+      ) : (
+        <></>
+      )}
       <div className="flex justify-center">
         <span className="my-20 mt-8 inline-block h-0.5 w-40 rounded bg-teal-800 text-center"></span>
       </div>

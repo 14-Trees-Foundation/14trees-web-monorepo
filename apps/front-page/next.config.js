@@ -34,4 +34,9 @@ module.exports = {
   env: {
     NEXT_PUBLIC_RAZORPAY_KEY: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
   },
-};
+  // canvas false
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    return config;
+  }
+}

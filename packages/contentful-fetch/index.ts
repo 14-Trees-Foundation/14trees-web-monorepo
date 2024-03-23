@@ -1,9 +1,10 @@
 import { testimonialsQuery } from "./models/testimonials";
-import { iitkSlidesQuery } from "./models/iitk-slides";
+import { iitkSlidesQuery, vetaleSlidesQuery } from "./models/slides";
 
 export const queries = {
   testimonials: testimonialsQuery,
   "iitk-slides": iitkSlidesQuery,
+  "vetale-slides": vetaleSlidesQuery
 };
 
 type Queries = typeof queries;
