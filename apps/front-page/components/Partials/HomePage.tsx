@@ -74,12 +74,18 @@ export const HomePage = () => {
                   href="https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
                   scroll={false}
                 >
-                  <Button className="bg-gray-200 text-black" size="xl">
+                  <Button
+                    className="bg-[#c2cdc7] text-black hover:bg-[#929f98]"
+                    size="xl"
+                  >
                     Volunteer
                   </Button>
                 </Link>
                 <Link href="https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform">
-                  <Button className="bg-green-800 text-white" size="xl">
+                  <Button
+                    className="bg-green-800 text-white hover:bg-green-900"
+                    size="xl"
+                  >
                     Contribute
                   </Button>
                 </Link>

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import logo from "~/assets/images/logo.png";
 
-const MissionPage = () => {
+const AnnualReports = () => {
   const reports = [
     {
       href: "/documents/annual-reports/2020-21.pdf",
@@ -55,4 +55,4 @@ function DocCard({ title, href, image }) {
   );
 }
 
-export default MissionPage;
+export default AnnualReports;

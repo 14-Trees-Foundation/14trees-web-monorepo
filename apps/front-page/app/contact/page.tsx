@@ -16,9 +16,9 @@ const ContactPage: React.FC = () => {
           <p className="mb-4 text-gray-600">
             14 Trees Foundation 
             <br />
-            Shinde dara, Village Vetale
-            <br />
-            Taluka Khed, Pune 
+            A-502, Swojas Anand, Anand Park
+            <br/>
+            Aundh, Pune 411007
             <br />
             Maharashtra
             <br />

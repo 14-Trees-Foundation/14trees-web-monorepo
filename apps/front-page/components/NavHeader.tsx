@@ -67,7 +67,7 @@ export default function Header() {
           <ChevronDownIcon className="h-6 w-6" onClick={toggleMobileMenu} />
         </div>
         <div className="inline-flex px-1 py-1">
-          <div className="ml-2 hidden md:inline-flex">
+          <div className="mx-4 hidden items-center overflow-hidden md:inline-flex">
             <NavItemsDesktop items={navItems} />
           </div>
           <Link
@@ -114,7 +114,7 @@ const NavItemsMobile = ({
       {items.map((navItem) => (
         <div
           key={navItem.name}
-          className="my-auto border-r border-zinc-200 px-4 py-1 md:px-8"
+          className="my-auto border-r border-zinc-200 px-4 py-2 md:px-8"
         >
           <Item navItem={navItem} />
         </div>
@@ -145,7 +145,7 @@ const NavItemsDesktop = ({ items }: { items: Array<NavItem> }) => {
   return items.map((navItem) => (
     <div
       key={navItem.name}
-      className="my-auto border-zinc-200 px-2 py-1 text-xs md:text-sm lg:px-6"
+      className="my-2 border-zinc-200 px-2 text-xs md:text-sm lg:px-6"
     >
       <Item navItem={navItem} />
     </div>
@@ -161,32 +161,18 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
         </Link>
       ) : (
         <div className="">
-          {/* <DropDown
-            main={<span className="header-link">{navItem.name}</span>}
-            items={navItem.sub.map((subItem, index) => (
-              <Fragment key={index}>
-                <li className="list-none">
-                  <Link href={subItem.link} className="h-full w-full py-2">
-                    <div className="p-2 transition-colors duration-300 ease-in-out hover:bg-gray-100 rounded-xl ">
-                      {subItem.name}
-                    </div>
-                  </Link>
-                </li>
-              </Fragment>
-            ))}
-          /> */}
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="whitespace-nowrap">
-              {navItem.name} <ChevronDownIcon className="inline h-6 w-6" />
+            <DropdownMenuTrigger className="inline-flex whitespace-nowrap">
+              {navItem.name} <ChevronDownIcon className="inline h-5 w-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {navItem.sub.map((subItem, index) => (
                 <Fragment key={index}>
+                    <Link href={subItem.link} className="header-link">
                   <DropdownMenuItem>
-                    <Link href={subItem.link} className="">
-                      <div className="px-2 py-1 text-base">{subItem.name}</div>
-                    </Link>
+                      {subItem.name}
                   </DropdownMenuItem>
+                    </Link>
                 </Fragment>
               ))}
             </DropdownMenuContent>
