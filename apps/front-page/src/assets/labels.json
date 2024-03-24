@@ -62,5 +62,29 @@
       "link": "https://photos.google.com/share/AF1QipN_DHc8hDj4WvRQ_GloWpQ0_F0IgM-xPid9NwZLxkLwJaPuC9XqPe7QoAQs-BOb5w?key=SnVfX0xRdmVlNDVDdl9vV0pxUHVLX2YtTzlRTzhn",
       "album_name": "Ramadorai visit"
     }
+  ],
+  "policies": [
+    {
+      "name": "Procurement Policy",
+      "link": "https://docs.google.com/document/d/1jXhUavmHPMV1L569g_UzRuYDEF5ec0Jm/edit?usp=drive_link"
+    }, {
+      "name": "HR Policy",
+      "link": "https://docs.google.com/document/d/1L9BlCgkTukNc4fa0Mfaalkp2Ky-rHeGr/edit?usp=drive_link"
+    }, {
+      "name": "Finance Policy", 
+      "link": "https://docs.google.com/document/d/1zCUSsY33pkmEhroXys2nSMzJjPXQiCl1/edit?usp=drive_link"
+    }, {
+      "name": "Child Protection Policy",
+      "link": "https://docs.google.com/document/d/1I2kgkMfyLQ4FYX-FxPqdWLmCsKZef9iC/edit?usp=sharing&ouid=113283731185302055929&rtpof=true&sd=true"
+    }, {
+      "name": "Anti-Fraud Policy",
+      "link": "https://docs.google.com/document/d/14wFDLXeHYZ2MskTwuHSjqybKrh9EsNpV/edit?usp=drive_link"
+    }, {
+      "name": "Anti-Corruption Policy",
+      "link": "https://docs.google.com/document/d/1HjAqYSjIuHAgZxrG2xPWWOmwLgRzPGDY/edit?usp=drive_link"
+    }, {
+      "name": "Anti-Bribery Policy",
+      "link": "https://docs.google.com/document/d/1WUEIW7OpN-_3GG6QqJj_sGeRmmJjCKPW/edit?usp=drive_link"
+    }
   ]
 }
