@@ -1,10 +1,24 @@
 import { testimonialsQuery } from "./models/testimonials";
 import { iitkSlidesQuery, vetaleSlidesQuery } from "./models/slides";
+import { blogsQuery, mergeBlogPosts } from "./models/blogs";
 
 export const queries = {
-  testimonials: testimonialsQuery,
-  "iitk-slides": iitkSlidesQuery,
-  "vetale-slides": vetaleSlidesQuery
+  testimonials: {
+    query: testimonialsQuery,
+    transform: null,
+  },
+  "iitk-slides": {
+    query: iitkSlidesQuery,
+    transform: null,
+  },
+  "vetale-slides": {
+    query: vetaleSlidesQuery,
+    transform: null,
+  },
+  blogs: {
+    query: blogsQuery,
+    transform: mergeBlogPosts,
+  },
 };
 
 type Queries = typeof queries;
@@ -15,7 +29,7 @@ async function fetchGraphQL(
   queryName: QueryName,
   preview = false
 ): Promise<any> {
-  const query = queries[queryName];
+  const { query, transform } = queries[queryName];
   const contentfulUrl = `https://graphql.contentful.com/content/v1/spaces/${process.env.CONTENTFUL_SPACE_ID}`;
   const fetchOptions = {
     method: "POST",
@@ -35,9 +49,13 @@ async function fetchGraphQL(
       response.json()
     );
     if (data.errors) {
-      throw new Error(data.errors[0].message);
+      console.error(data.errors[0].message);
     }
-    return data;
+    if (!data.data) {
+      throw new Error("Could not fetch data from Contentful!", data.errors);
+    }
+    const result = transform ? transform(data) : data;
+    return result;
   } catch (error) {
     console.error(error);
     throw new Error("Could not fetch data from Contentful!");
