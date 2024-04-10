@@ -12,13 +12,13 @@ const ContactPage: React.FC = () => {
     <div className="">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="px-4">
-          <h2 className="mb-2 text-xl font-bold text-gray-700">Address</h2>
+          <h2 className="mb-2 text-xl font-bold text-gray-700">Site Address</h2>
           <p className="mb-4 text-gray-600">
             14 Trees Foundation 
             <br />
-            A-502, Swojas Anand, Anand Park
+            Vetale, Taluka Khed
             <br/>
-            Aundh, Pune 411007
+            Pune - 412404
             <br />
             Maharashtra
             <br />
@@ -29,6 +29,17 @@ const ContactPage: React.FC = () => {
           <p className="mb-4 text-gray-600">(+91) 9096531278</p>
         </div>
         <div className="px-4">
+          <h2 className="mb-2 text-xl font-bold text-gray-700">Pune Office</h2>
+          <p className="mb-4 text-gray-600">
+            14 Trees Foundation
+            <br />
+            Atal Incubation Centre (AIC)
+            <br />
+            IISER-Pune (411008)
+            <br />
+            Maharashtra
+          </p>
+
           <h2 className="mb-2 text-xl font-bold text-gray-700">
             Email Addresses
           </h2>

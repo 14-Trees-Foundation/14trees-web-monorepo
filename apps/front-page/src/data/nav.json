@@ -9,13 +9,23 @@
     "link": "#",
     "sub": [
       {
-        "name": "Vetale Reforestation",
-        "link": "/projects/reforestation-vetale",
+        "name": "Reforestation",
+        "link": "/projects/reforestation",
         "external": false
       },
       {
         "name": "IITK Diamond Jubilee Campaign",
         "link": "/projects/iitk-djc",
+        "external": false
+      },
+      {
+        "name": "Financial Reports",
+        "link": "/financial-reports",
+        "external": false
+      },
+      {
+        "name": "Activity Reports",
+        "link": "/activity-reports",
         "external": false
       }
     ]
@@ -59,16 +69,6 @@
       {
         "name": "Policies",
         "link": "/policies",
-        "external": false
-      },
-      {
-        "name": "Financial Reports",
-        "link": "/financial-reports",
-        "external": false
-      },
-      {
-        "name": "Annual Reports",
-        "link": "/annual-reports",
         "external": false
       },
       {

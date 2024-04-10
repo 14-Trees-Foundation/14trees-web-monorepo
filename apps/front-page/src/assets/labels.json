@@ -4,31 +4,52 @@
     "description": "14 Trees Foundation is a charitable organization dedicated to building sustainable, carbon-footprint-neutral eco-systems through re-forestation."
   },
   "about": {
-    "title": "Learn more about our unique approach to restore nature at scale",
+    "title": "Learn more about our unique approach to restoration",
     "sections": [
       {
         "title": "Restoration and Reforestation Initiatives",
+        "icon": "reforestation",
         "link": "/mission",
+        "image": {
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/GreenImpact.webp",
+          "caption": "Impact of Reforestation on the Environment"
+        },
         "content": "We believe in fighting ecological degradation through strategic reforestation, employing native species to enhance biodiversity and sustainability. Our projects leverage scientific research and traditional knowledge, ensuring resilience against climate change and fostering ecosystem recovery."
       },
       {
         "title": "Community Engagement and Empowerment",
-        "link": "/projects/reforestation-vetale",
+        "icon": "community",
+        "image": {
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/CommunityEngagement.JPG",
+          "caption": "A science workshop at a local school, part of 14 Trees' Community Initiatives"
+        },
         "content": "We prioritize local community upliftment, providing training, resources, and employment to turn conservation efforts into economic benefits. This approach promotes environmental stewardship, ensures project success, and fosters a sense of ownership among local populations."
       },
       {
         "title": "Transparency and Donor Engagement",
-        "link": "/projects/reforestation-vetale",
+        "icon": "transparency",
+        "image": {
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/TreesPlanted.png",
+          "caption": "A live counter of trees planted by 14 Trees Foundation"
+        },
         "content": "At 14 Trees, every contribution is the start of a shared adventure. We're dedicated to bringing you along for the ride, with transparent updates and real-world impacts. It is our mission to set a new standard for accountability and transparency. Let's make giving back a meaningful and rewarding experience."
       },
       {
         "title": "Innovative Technologies for Greater Impact",
-        "link": "/projects/reforestation-vetale",
+        "icon": "technology",
+        "image": {
+          "src":"https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/GreenTechTraining.png",
+          "caption": "Green Skills Training"
+        },
         "content": "At 14Trees, we use technology to drive our operations and help us stay accountable to our donors. Our mission extends beyond localised reforestation - 14 Trees is a hotbed of innovation in green ventures. We have seen a number of successful projects that have been developed by the people within our community."
       },
       {
         "title": "Inspiring Generations for a Greener Tomorrow",
-        "link": "/projects/reforestation-vetale",
+        "icon": "inspiration",
+        "image": { 
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/SiteIllustration.png",
+          "caption": "Our vision of a Community Driven Reforestation Project"
+        },
         "content": "We aim to create a future where humans live in harmony with nature, securing a healthy planet for future generations through ambitious goals and global collaborations. Our community work with schools and partnerships with universities are designed to inspire and educate the next generation of environmental stewards."
       }
     ]

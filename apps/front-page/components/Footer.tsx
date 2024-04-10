@@ -1,5 +1,6 @@
 import Link from "next/link";
 import labels from "~/assets/labels.json";
+import { IconsAttribution } from "./Partials/Icons";
 export default function Footer() {
   return (
     <footer className="bg-[#363e39] py-8 text-gray-300 md:py-12">
@@ -55,41 +56,8 @@ export default function Footer() {
           </div>
 
           <div className="mb-8 w-full md:mb-0 md:w-auto">
-            <h3 className="mb-4 text-lg font-semibold">Connect</h3>
-            <div className="flex space-x-4">
-              <Link
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-400"
-              >
-                FB
-              </Link>
-              <Link
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-400"
-              >
-                TW
-              </Link>
-              <Link
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-400"
-              >
-                IG
-              </Link>
-              <Link
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-400"
-              >
-                LI
-              </Link>
-            </div>
+            <h3 className="mb-4 text-lg font-semibold">Attribution</h3>
+            <IconsAttribution/>
           </div>
 
           <div className="w-full md:w-auto">

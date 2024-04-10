@@ -1,31 +1,32 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   images: {
-      // "images.unsplash.com",
-      // "s3.us-west-2.amazonaws.com",
-      // "prod-files-secure.s3.us-west-2.amazonaws.com",
-      // "images.ctfassets.net",
+    // "images.unsplash.com",
+    // "s3.us-west-2.amazonaws.com",
+    // "prod-files-secure.s3.us-west-2.amazonaws.com",
+    // "images.ctfassets.net",
     remotePatterns: [
       {
-          protocol: 'https',
-          hostname: 'images.unsplash.com',
-          port: ""
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        port: "",
       },
       {
-          protocol: 'https',
-          hostname: 's3.us-west-2.amazonaws.com',
-          port: ""
+        protocol: "https",
+        hostname:
+          "14trees-public-assets.s3.ap-south-1.amazonaws.com",
+        port: "",
       },
       {
-          protocol: 'https',
-          hostname: 'prod-files-secure.s3.us-west-2.amazonaws.com',
-          port: ""
+        protocol: "https",
+        hostname: "prod-files-secure.s3.us-west-2.amazonaws.com",
+        port: "",
       },
       {
-          protocol: 'https',
-          hostname: 'images.ctfassets.net',
-          port: ""
-      }
+        protocol: "https",
+        hostname: "images.ctfassets.net",
+        port: "",
+      },
     ],
   },
   reactStrictMode: true,
@@ -38,5 +39,5 @@ module.exports = {
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;
-  }
-}
+  },
+};

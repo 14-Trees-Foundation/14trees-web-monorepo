@@ -6,6 +6,10 @@ const colors = {
     'primary-green': {
         1 : '#1b1f23',
         2 : '#9acd9a',
+    },
+    'secondary-green': {
+        1 : '#d4dfd9',
+        2 : '#929f98', 
     }
 }
 module.exports = {

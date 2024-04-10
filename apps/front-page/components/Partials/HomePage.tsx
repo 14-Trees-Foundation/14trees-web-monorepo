@@ -75,7 +75,7 @@ export const HomePage = () => {
                   scroll={false}
                 >
                   <Button
-                    className="bg-[#c2cdc7] text-black hover:bg-[#929f98]"
+                    variant={"secondary"}
                     size="xl"
                   >
                     Volunteer
@@ -86,7 +86,7 @@ export const HomePage = () => {
                     className="bg-green-800 text-white hover:bg-green-900"
                     size="xl"
                   >
-                    Contribute
+                    Donate 
                   </Button>
                 </Link>
               </div>
@@ -97,21 +97,17 @@ export const HomePage = () => {
     );
   };
 
-  const page2Opacity = useTransform(scrollYProgress, [0.3, 0.6], [0, 1]);
+  const page2Opacity = useTransform(scrollYProgress, [0.2, 0.4], [0, 1]);
   const Page2 = () => {
     return (
       <motion.div style={{ opacity: page2Opacity }} className="w-full ">
-        <div className="h-40 bg-gradient-to-t from-gray-100 to-white dark:bg-gray-800"></div>
+        <div className="h-20 bg-gradient-to-t from-gray-100 to-white dark:bg-gray-800"></div>
         <div className="bg-gray-100 text-gray-800 dark:text-gray-400">
-          <div className="container z-0 mx-auto min-h-screen overflow-x-hidden bg-gray-100">
-            <h1 className="section-title mx-auto w-2/3 text-center">
+          <div className="container z-0 mx-auto min-h-[80vh] overflow-x-hidden bg-gray-100">
+            <h1 className="section-title mx-auto md:text-center mb-5">
               {labels.about.title}
             </h1>
             <SectionsCarousel autoScroll />
-            {/* <h1 className="text-center text-4xl font-bold">Page 2</h1> */}
-            {/* <p className="text-center">This is the second page</p> */}
-            {/* print scrollYprogress from framer motion */}
-            {/* <motion.div>{scrollYProgress}</motion.div> */}
           </div>
         </div>
       </motion.div>

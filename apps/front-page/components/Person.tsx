@@ -49,20 +49,22 @@ const Person: React.FC<PersonProps> = ({
           )}
         </p>
         <Modal title={name} show={open} onClose={() => setOpen(false)}>
-          <Image
-            src={image || person_placeholder}
-            alt=""
-            className="mx-auto mb-4 aspect-square rounded-full border-2 object-cover shadow-lg"
-            {...imageDimensions[variant]} // Spread the dimensions based on the variant
-          />
-          <div className="p-4">
-            <p className="text-xl text-gray-600 lg:text-2xl dark:text-gray-200">
-              {name}
-              {title && (
-                <span className="block text-lg text-gray-500">{title}</span>
-              )}
-            </p>
-            {bio && <p className="text-md mt-2 text-gray-500">{bio}</p>}
+          <div className="pb-1 pt-8">
+            <Image
+              src={image || person_placeholder}
+              alt=""
+              className="mx-auto mb-4 aspect-square rounded-full border-2 object-cover shadow-lg"
+              {...imageDimensions[variant]} // Spread the dimensions based on the variant
+            />
+            <div className="p-4">
+              <p className="text-xl text-gray-600 lg:text-2xl dark:text-gray-200">
+                {name}
+                {title && (
+                  <span className="block text-lg text-gray-500">{title}</span>
+                )}
+              </p>
+              {bio && <p className="text-md mt-2 text-gray-500">{bio}</p>}
+            </div>
           </div>
         </Modal>
         {bio && (

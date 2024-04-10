@@ -37,7 +37,7 @@ export default async function ReforestationVetale() {
   const { testimonials, slides } = await getData();
   return (
     <div className="container min-h-screen bg-white px-32 py-48">
-      <h1 className="title-text mb-24 text-center">Vetale Reforestation</h1>
+      <h1 className="title-text mb-24 text-center">Reforestation</h1>
       <iframe
         className="aspect-video w-full"
         src="https://www.youtube.com/embed/V-fZmDAyFVs?si=wawq0hCml80cPHM0"

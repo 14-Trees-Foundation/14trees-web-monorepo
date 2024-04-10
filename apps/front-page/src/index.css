@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 @layer utilities {
-
   .aspect-1:after {
     content: "";
     display: block;
@@ -66,14 +65,22 @@
     @apply text-green-500;
   }
 
-  .title-text {
-    @apply md:text-7xl text-5xl font-light;
+  .page-text {
     @apply text-gray-800 dark:text-gray-300;
+  }
+
+  .title-text {
+    @apply md:text-6xl text-4xl font-light;
+    @apply page-text;
+  }
+  .sub-header {
+    @apply text-xl md:text-2xl;
+    @apply page-text;
   }
 
   .section-title {
     @apply text-3xl md:text-5xl font-semibold;
-    @apply text-gray-800 dark:text-gray-300;
+    @apply page-text;
   }
 
   .btn {
@@ -82,13 +89,6 @@
 
   .btn-action {
     @apply inline-flex items-center justify-center py-4 px-2 md:px-5 border border-transparent text-base font-medium rounded-md hover:shadow-md;
-  }
-
-  .btn-blue {
-    @apply bg-blue-500 text-white;
-  }
-  .btn-blue:hover {
-    @apply bg-blue-700;
   }
 
   .btn-animate {

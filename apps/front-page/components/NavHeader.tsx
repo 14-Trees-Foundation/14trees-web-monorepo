@@ -75,7 +75,7 @@ export default function Header() {
               "https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
             }
           >
-            <Button className="mr-3 hidden border-2 border-gray-300 bg-white text-gray-600 hover:bg-gray-300 md:block">
+            <Button className="mr-3 hidden md:block" variant={"secondary"}>
               Volunteer
             </Button>
           </Link>

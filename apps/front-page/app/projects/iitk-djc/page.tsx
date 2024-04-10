@@ -33,7 +33,15 @@ export default async function IITKDJC() {
   const { testimonials, slides } = await getData();
   return (
     <div className="container min-h-screen bg-white py-48 sm:px-32">
-      <h1 className="title-text mb-24 text-center">Vetale Reforestation</h1>
+      <div className="text-center mb-24">
+        <h1 className="title-text mb-12">
+          Plant 40,000 Trees to celebrate IIT Kanpur Diamond Jubilee
+        </h1>
+        <h2 className="sub-header px-24">
+          Celebrate IIT Kanpur&apos;s Diamond Jubilee by planting 40,000 trees, one
+          tree in the name of each IITK alumnus and faculty member
+        </h2>
+      </div>
       <iframe
         className="aspect-video w-full"
         src="https://www.youtube.com/embed/YCVP3bon5Zs?si=HWoSIMcSCPn4CUy6"
