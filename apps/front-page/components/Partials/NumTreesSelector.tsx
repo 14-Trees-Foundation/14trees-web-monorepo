@@ -1,6 +1,6 @@
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
-import { Contribution } from "schema";
+import { Contribution, ContributionType } from "schema";
 /*
     inputs: react-hook-form register function
     outputs: number of trees value, contribution type
@@ -9,7 +9,7 @@ import { Contribution } from "schema";
 type SelectorProps = {
   onChange: (
     n: number,
-    t: Contribution["order"]["type"],
+    t: ContributionType["type"],
     nn: string
   ) => void;
 };
@@ -26,7 +26,7 @@ const NumTreesSelector = ({ onChange }: SelectorProps) => {
     notes: "",
   });
   useEffect(() => {
-    let type: Contribution["order"]["type"] = "one-time";
+    let type: ContributionType["type"] = "one-time";
     if (state.type === "large") type = "large";
     if (state.type === "csr") type = "csr";
     onChange(state.numTrees, type, state.notes);

@@ -1,0 +1,81 @@
+[
+  {
+    "name": "Home",
+    "link": "/",
+    "external": false
+  },
+  {
+    "name": "Projects",
+    "link": "#",
+    "sub": [
+      {
+        "name": "Reforestation",
+        "link": "/projects/reforestation",
+        "external": false
+      },
+      {
+        "name": "IITK Diamond Jubilee Campaign",
+        "link": "/projects/iitk-djc",
+        "external": false
+      },
+      {
+        "name": "Financial Reports",
+        "link": "/financial-reports",
+        "external": false
+      },
+      {
+        "name": "Activity Reports",
+        "link": "/activity-reports",
+        "external": false
+      }
+    ]
+  },
+  {
+    "name": "Visitor's Corner",
+    "link": "/corner",
+    "external": false,
+    "sub": [
+      {
+        "name": "Blogs/Articles",
+        "link": "/blogs",
+        "external": false
+      },
+      {
+        "name": "Gallery",
+        "link": "/gallery",
+        "external": false
+      },
+      {
+        "name": "Testimonials",
+        "link": "/testimonials",
+        "external": false
+      }
+    ]
+  },
+  {
+    "name": "Team",
+    "link": "/team",
+    "external": false
+  },
+  {
+    "name": "About",
+    "link": "#",
+    "sub": [
+      {
+        "name": "Vision and Mission",
+        "link": "/mission",
+        "external": false
+      },
+      {
+        "name": "Policies",
+        "link": "/policies",
+        "external": false
+      },
+      {
+        "name": "Contact",
+        "link": "/contact",
+        "external": false
+      }
+    ]
+  }
+]

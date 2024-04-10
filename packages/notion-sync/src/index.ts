@@ -1,63 +1,66 @@
-import fs from 'fs';
-import path from 'path';
-import fetchData from './fetch-content';
-import { parseArgs } from "node:util";
-import { error, log, warn } from './utils/logging';
+#!/usr/bin/env node
 
-const args = parseArgs({
-    options: {
-        apiKey: {
-            type: 'string',
-            alias: 'k',
-            description: 'Notion API Key',
-        },
-        out: {
-            type: "string",
-            alias: 'o',
-            description: 'Output directory',
-        },
-    },
-})
+import fs from "fs";
+import path from "path";
+import fetchContent, { NotionDatabase } from "./fetch-content";
+import { log } from "./utils/logging";
+import fetch from "node-fetch";
 
-const dbs = [{
-    id: "b0961650e64842c7b9c72d88843d9554",
-    name: "Team",
-}]
-
-const apiKey = args.values.apiKey || process.env.NOTION_API_KEY
-
-function getOutputDirectory() {
-    let outDir = args.values.out;
-    if (!outDir) {
-        outDir = path.join(__dirname || 'notion-content')
-        if (!fs.existsSync(outDir)) {
-            // create the directory if it doesn't exist
-            warn(`No output directory provided, using ${outDir}`);
-            fs.mkdirSync(outDir);
-        } 
-    } else if (!fs.statSync(outDir).isDirectory()) {
-        throw new Error(`${outDir} is not a directory`);
+const fetchContentMain = async (apiKey: string, dbs: NotionDatabase[], outDir: string, filesOutDir?: string) => {
+  log(`Fetching content from Notion with 
+    dbs: ${JSON.stringify(dbs, null, 2)}
+    outDir: ${outDir}
+    filesOutDir: ${filesOutDir}
+  `)
+  const data = await fetchContent(apiKey, dbs);
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir);
+  }
+  for (const db of data) {
+    const dbOutDir = path.join(outDir, db.name);
+    if (!fs.existsSync(dbOutDir)) {
+      fs.mkdirSync(dbOutDir);
     }
-    return outDir
-}
+    fs.writeFileSync(
+      path.join(dbOutDir, `${db.name}.json`),
+      JSON.stringify(db.data, null, 2)
+    );
+    fs.writeFileSync(
+      path.join(dbOutDir, `${db.name}.describe.json`),
+      db.describe
+    );
+    fs.writeFileSync(path.join(outDir, `${db.name}.d.ts`), db.types);
+    log(`Wrote ${db.name} to ${dbOutDir}/${db.name}.json ✅`);
 
-const fetch = async (apiKey: string, outDir: string) => {
-    const data = await fetchData(apiKey, dbs);
-    for (const db of data) {
-        fs.writeFileSync(path.join(outDir, `${db.name}.json`), JSON.stringify(db.data, null, 2));
-        fs.writeFileSync(path.join(outDir, `${db.name}.describe.json`), db.describe);
-        fs.writeFileSync(path.join(outDir, `${db.name}.d.ts`), db.types);
-        log(`Wrote ${db.name} to ${outDir}/${db.name}.json`);
+    if (db.files && db.files.length > 0) {
+      const filesDir = filesOutDir ? filesOutDir : path.join(outDir, "files");
+      if (!fs.existsSync(filesDir)) {
+        fs.mkdirSync(filesDir);
+      }
+      await downloadAllFiles(db.files, filesDir);
     }
+  }
+};
+
+async function downloadAllFiles(
+  allFiles: { id: string; url: string }[][],
+  filesDir: string
+) {
+  if (allFiles) {
+    log(`Downloading ${allFiles.length} files to ${filesDir}`);
+    const downloadFile = async (file: { id: string; url: string }) => {
+      const filePath = path.join(filesDir, file.id);
+      const fileStream = fs.createWriteStream(filePath);
+      const response = await fetch(file.url);
+      if (!response.ok || !response.body) {
+        log(`Failed to fetch file ${file.id}: ${response.statusText}`);
+      } else {
+        response.body.pipe(fileStream);
+      }
+    };
+    const files = allFiles.flat();
+    await Promise.all(files.map(downloadFile));
+  }
 }
 
-try {
-    if (!apiKey) {
-        throw new Error("No API key provided");
-    } 
-
-    let outDir = getOutputDirectory();
-    fetch(apiKey, outDir);
-} catch (e) {
-    error(e);
-}
+export default fetchContentMain;

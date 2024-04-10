@@ -41,4 +41,5 @@ dist/
 db/data
 db/mongodb
 
-content
+content/**/*
+!content/*.d.ts

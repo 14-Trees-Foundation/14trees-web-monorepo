@@ -1,24 +1,32 @@
 import { PropertyValue, PropertyValueMap } from "../NotionModel";
-import { JSONSchema, JSONSchemaObject, JSONSchemaRoot, JSONSchemaString } from "../model/JSONSchema";
+import {
+  JSONSchema,
+  JSONSchemaObject,
+  JSONSchemaRoot,
+  JSONSchemaString,
+} from "../model/JSONSchema";
 import { changeCase } from "./helpers";
 import { info } from "./logging";
+import snakeCase from "lodash/snakeCase";
 
-const STRING_FIELD: JSONSchemaString = { "type": "string" }
-const DATE_FIELD: JSONSchemaString = { "type": "string", "format": "date-time" }
+const STRING_FIELD: JSONSchemaString = { type: "string" };
+const DATE_FIELD: JSONSchemaString = { type: "string", format: "date-time" };
 
 const ENUM_OPTIONS = (options: any[]) => {
-  return options.map((option: { name: any; }) => option.name)
-}
+  return options.map((option: { name: any }) => option.name);
+};
 
 /**
  * @param notionDescribe object representing the schema of a Notion database
  * @returns JSON schema for the database
  */
-export default function getJsonSchemaFromNotionDB(notionDescribe: any): JSONSchema {
+export default function getJsonSchemaFromNotionDB(
+  notionDescribe: any
+): JSONSchema {
   const schema: JSONSchemaObject & JSONSchemaRoot = {
-    "$schema": "https://json-schema.org/draft/2019-09/schema",
-    "type": "object",
-    "required": ['title']
+    $schema: "https://json-schema.org/draft/2019-09/schema",
+    type: "object",
+    required: ["title"],
   };
 
   schema.properties = {};
@@ -28,19 +36,19 @@ export default function getJsonSchemaFromNotionDB(notionDescribe: any): JSONSche
     schema.properties[key] = getJSONSchemaFromNotionProperty(field);
   }
   return schema;
-} 
+}
 
 function getJSONSchemaFromNotionProperty(field: any): JSONSchema {
-    switch (field.type) {
-      case 'rich_text':
-      case 'phone_number':
-      case 'email':
-      case 'title':
-        return STRING_FIELD;
-      case 'url':
-        return { "type": "string", "format": "uri" };
-      case 'multi_select':
-        /**
+  switch (field.type) {
+    case "rich_text":
+    case "phone_number":
+    case "email":
+    case "title":
+      return STRING_FIELD;
+    case "url":
+      return { type: "string", format: "uri" };
+    case "multi_select":
+      /**
          * "Store availability": {
               "id": "flsb",
               "name": "Store availability",
@@ -56,43 +64,43 @@ function getJSONSchemaFromNotionProperty(field: any): JSONSchema {
               }
             }
          */
-        return {
-          "type": "array",
-          "items": ENUM_OPTIONS(field.multi_select.options) 
-        };
-      case 'select':
-        return {
-          "type": "string",
-          "enum": ENUM_OPTIONS(field.select.options)
-        };
-        break;
-      case 'checkbox':
-        return { "type": "boolean" };
-        break;
-      case 'number':
-        return { "type": "number", "format": field.number?.format || undefined };
-        break;
-      case 'date':
-        return { "type": "string", "format": "date-time" };
-        break;
-      case 'people':
-        return { 
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "object": STRING_FIELD,
-              "id": STRING_FIELD,
-              "type": STRING_FIELD,
-              "name": STRING_FIELD,
-              "avatar_url": STRING_FIELD,
-              "person": { "type": "object" },
-              "person_email": STRING_FIELD,
-            }
-          }
-        };
-      case 'relation':
-        /**
+      return {
+        type: "array",
+        items: ENUM_OPTIONS(field.multi_select.options),
+      };
+    case "select":
+      return {
+        type: "string",
+        enum: ENUM_OPTIONS(field.select.options),
+      };
+      break;
+    case "checkbox":
+      return { type: "boolean" };
+      break;
+    case "number":
+      return { type: "number", format: field.number?.format || undefined };
+      break;
+    case "date":
+      return { type: "string", format: "date-time" };
+      break;
+    case "people":
+      return {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            object: STRING_FIELD,
+            id: STRING_FIELD,
+            type: STRING_FIELD,
+            name: STRING_FIELD,
+            avatar_url: STRING_FIELD,
+            person: { type: "object" },
+            person_email: STRING_FIELD,
+          },
+        },
+      };
+    case "relation":
+    /**
          * "Projects": {
             "id": "~pex",
             "name": "Projects",
@@ -104,98 +112,127 @@ function getJSONSchemaFromNotionProperty(field: any): JSONSchema {
             }
           }
          */
-      case 'rollup':  
-       return STRING_FIELD;
-        break;
-      case 'files':
-        return {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "type": STRING_FIELD,
-              "file": { 
-                "type": "object" ,
-                "properties": {
-                  "url": STRING_FIELD,
-                  "expiry_time": DATE_FIELD,
-                }
-              }
-            }
-          }
-        };
-      default:
-        console.warn(`Unsupported type ${field.type} for column ${field.id}`);
-        return STRING_FIELD;
-    }
+    case "rollup":
+      return STRING_FIELD;
+      break;
+    case "files":
+      return {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            url: STRING_FIELD,
+            name: STRING_FIELD,
+            type: STRING_FIELD,
+            id: STRING_FIELD,
+          },
+        },
+      };
+    default:
+      // console.warn(`Unsupported type ${field.type} for column ${field.id}`);
+      return STRING_FIELD;
   }
+}
 
 /**
  * @param notionPageProps object representing a row (ie. page) from a Notion database
  * Returns a simplified version of the row, with only the properties that are relevant to the schema
  * Guaranteed to conform to the types (json schema) generated by getJsonSchemaFromNotionDB
  */
-export function simplifyProps(notionPageProps: PropertyValueMap, schema: JSONSchemaObject) {
+export function extractNotionProperties(
+  notionPageProps: PropertyValueMap,
+  schema: JSONSchemaObject
+) {
   const simplified: any = {};
+  const files: any[] = [];
 
   for (const key in notionPageProps) {
     const field = notionPageProps[key];
     if (schema.properties?.hasOwnProperty(key)) {
       const camelKey = changeCase(key, "camel");
-      const fieldOutType = schema.properties?.[key].type
-      info(`Field ${camelKey} has type ${field.type} -> ${fieldOutType}`);
-      info(`Field ${camelKey} has value ${JSON.stringify(notionPageProps[key])}`);
+      const fieldOutType = schema.properties?.[key].type;
+      // info(`Field ${camelKey} has type ${field.type} -> ${fieldOutType}`);
+      // info(
+      //   `Field ${camelKey} has value ${JSON.stringify(notionPageProps[key])}`
+      // );
 
-      simplified[camelKey] = simplifyField(field, fieldOutType);
+      const fieldValue = simplifyField(field, fieldOutType);
+      if (
+        field.type == "files" &&
+        fieldValue !== "NOT_SUPPORTED" &&
+        fieldValue.length > 0
+      ) {
+        for (const file of fieldValue as fieldFiles) {
+          const splits = file.name.split(".");
+          const extension = splits[splits.length - 1];
+          const name = splits.slice(0, -1).join(".");
+          const id = snakeCase(`${camelKey}-${name}`) + "." + extension;
+          file.id = id;
+          files.push({
+            id,
+            url: file.url,
+          });
+        }
+        simplified[camelKey] = fieldValue;
+      } else if (fieldValue !== "NOT_SUPPORTED") {
+        simplified[camelKey] = fieldValue;
+      }
     }
   }
 
-  return simplified;
+  return { props: simplified, files };
 }
 
 function simplifyField(field: PropertyValue, fieldOutType: string) {
-    switch (field.type) {
-      case 'title':
-        return field.title.map((title: { plain_text: string; }) => title.plain_text).join(' ')
-      case 'rich_text':
-        return field.rich_text.map((text: { plain_text: string; }) => text.plain_text).join(' ')
-      case 'phone_number':
-        return field.phone_number;
-      case 'email':
-        return field.email;
-      case 'url':
-        return field.url;
-      case 'multi_select':
-        return field.multi_select.map((option: { name: string; }) => option.name);
-      case 'select':
-        return field.select?.name;
-      case 'checkbox':
-        return field.checkbox;
-      case 'number':
-        return field.number;
-      case 'date':
-        return field.date?.start;
-      case 'people':
-        return field.people?.map((person: any) => {
-          return {
-            "object": person.object,
-            "id": person.id,
-            "type": person.type,
-            "name": person.name,
-            "avatar_url": person.avatar_url,
-            "person": person.person,
-            "person_email": person.person_email,
-          }
-        })
-      case 'files':
-        return field.files?.map((file: any) => {
-          return {
-            "type": file.type,
-            "file": file.file
-          }
-        })
-      case 'relation':
-        /**
+  switch (field.type) {
+    case "title":
+      return field.title
+        .map((title: { plain_text: string }) => title.plain_text)
+        .join(" ");
+    case "rich_text":
+      return field.rich_text
+        .map((text: { plain_text: string }) => text.plain_text)
+        .join(" ");
+    case "phone_number":
+      return field.phone_number;
+    case "email":
+      return field.email;
+    case "url":
+      return field.url;
+    case "multi_select":
+      // @ts-ignore
+      return field.multi_select.map((option: { name: string }) => option.name);
+    case "select":
+      // @ts-ignore
+      return field.select?.name;
+    case "checkbox":
+      return field.checkbox;
+    case "number":
+      return field.number;
+    case "date":
+      return field.date?.start;
+    case "people":
+      return field.people?.map((person: any) => {
+        return {
+          object: person.object,
+          id: person.id,
+          type: person.type,
+          name: person.name,
+          avatar_url: person.avatar_url,
+          person: person.person,
+          person_email: person.person_email,
+        };
+      });
+    case "files":
+      return field.files?.map((file) => {
+        return {
+          type: file.type,
+          name: file.name,
+          url: getFileUrl(file),
+        };
+      });
+    case "relation":
+    /**
          * "Projects": {
             "id": "~pex",
             "name": "Projects",
@@ -207,8 +244,35 @@ function simplifyField(field: PropertyValue, fieldOutType: string) {
             }
           }
         */
-      default:
-        console.warn(`Unsupported type ${field.type} for ${field}`);
-        return "NOT_SUPPORTED"
-    }
+    default:
+      console.warn(`Unsupported type ${field.type} for ${field}`);
+      return "NOT_SUPPORTED";
+  }
 }
+
+function getFileUrl(
+  file:
+    | {
+        file: { url: string; expiry_time: string };
+        name: string;
+        type?: "file" | undefined;
+      }
+    | {
+        external: { url: string };
+        name: string;
+        type?: "external" | undefined;
+      }
+) {
+  if ("file" in file) {
+    return file.file.url;
+  } else {
+    return file.external.url;
+  }
+}
+
+type fieldFiles = {
+  id?: string;
+  type: string;
+  name: string;
+  url: string;
+}[];

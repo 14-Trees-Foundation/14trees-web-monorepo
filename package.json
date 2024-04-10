@@ -1,23 +1,25 @@
 {
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "NODE_ENV=production dotenv -- turbo run build",
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
-    "fetch-content": "dotenv -- yarn workspace notion-sync fetch --out $PWD/content",
     "ui:add": "yarn workspace ui shadcn:add",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
     "dotenv-cli": "latest",
-    "eslint": "^7.32.0",
-    "eslint-config-custom": "*",
     "prettier": "^2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.11",
-    "turbo": "1.10.4"
+    "turbo": "latest",
+    "eslint-config-custom": "*",
+    "tsconfig": "*"
   },
-  "packageManager": "yarn@1.22.17",
+  "packageManager": "yarn@1.22.19",
+  "engines": {
+    "node": ">=18"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"

@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import { changeCase } from './helpers';
 
 export default function jsonSchemaToTSInterfaces(schema: any, rootName: string = 'Root'): string {
-   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+  const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
   const sourceFile = ts.createSourceFile('temp.ts', '', ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
   const typeAliases: ts.TypeAliasDeclaration[] = [];
 

@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer utilities {
-
   .aspect-1:after {
     content: "";
     display: block;
@@ -60,13 +58,29 @@
 }
 
 @layer components {
+  .external-link {
+    @apply text-teal-800 hover:border-b border-teal-700 hover:text-teal-700;
+  }
   .green-text {
     @apply text-green-500;
   }
 
-  .title-text {
-    @apply md:text-7xl text-5xl font-light;
+  .page-text {
     @apply text-gray-800 dark:text-gray-300;
+  }
+
+  .title-text {
+    @apply md:text-6xl text-4xl font-light;
+    @apply page-text;
+  }
+  .sub-header {
+    @apply text-xl md:text-2xl;
+    @apply page-text;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-5xl font-semibold;
+    @apply page-text;
   }
 
   .btn {
@@ -75,13 +89,6 @@
 
   .btn-action {
     @apply inline-flex items-center justify-center py-4 px-2 md:px-5 border border-transparent text-base font-medium rounded-md hover:shadow-md;
-  }
-
-  .btn-blue {
-    @apply bg-blue-500 text-white;
-  }
-  .btn-blue:hover {
-    @apply bg-blue-700;
   }
 
   .btn-animate {
@@ -132,7 +139,7 @@
   }
 
   .amount-selector-item {
-    @apply h-full h-20 flex-grow flex flex-col justify-center;
+    @apply h-20 flex-grow flex flex-col justify-center;
     @apply border-2 border-green-600 rounded-md;
   }
 

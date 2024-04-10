@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import Image from "next/image";
 import { Project } from "schema";
@@ -13,7 +15,9 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   selectedProjectId,
   setProject,
 }) => {
-  const [selectedProject, setSelectedProject] = useState<Project>(projects.find((project) => project.id === selectedProjectId));
+  const [selectedProject, setSelectedProject] = useState<Project | undefined>(
+    projects.find((project) => project.id === selectedProjectId)
+  );
 
   // Function to handle project selection
   const handleProjectSelection = (selectedProject: Project) => {
@@ -31,7 +35,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
       {selectedProjectId ? (
         <>
           <div className="">
-            <ExpandedProjectPage {...selectedProject} />
+            {selectedProject && <ExpandedProjectPage {...selectedProject} />}
           </div>
         </>
       ) : (
@@ -89,11 +93,11 @@ const ExpandedProjectPage: React.FC<Project> = ({
   price,
 }) => {
   return (
-    <div className="font-serif mt-12">
-        <h2 className="mb-4 text-2xl font-bold">{title}</h2>
-        <p>{description}</p>
-        <p>{price}</p>
-        <Image src={image} alt={title} />
+    <div className="mt-12 font-serif">
+      <h2 className="mb-4 text-2xl font-bold">{title}</h2>
+      <p>{description}</p>
+      <p>{price}</p>
+      <Image src={image} alt={title} />
     </div>
   );
 };

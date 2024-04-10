@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3011",
+    "clear-content": "rm -rf $PWD/content/*; rm -rf $PWD/public/content",
+    "fetch-content": "dotenv -- ts-node -P tsconfig.node.json src/scripts/fetchContent.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -11,13 +13,17 @@
   "dependencies": {
     "@heroicons/react": "^2.0.16",
     "@notionhq/client": "^2.2.4",
-    "next": "^13.1.1",
+    "framer-motion": "^11.0.3",
+    "next": "^14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.43.8",
+    "react-hook-form": "^7.50.1",
+    "contentful-fetch" : "*",
     "ui": "*"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
     "@babel/core": "^7.0.0",
     "@types/node": "^17.0.12",
     "autoprefixer": "^10.4.13",
@@ -28,6 +34,6 @@
     "tailwind-config": "*",
     "tailwindcss": "^3.2.7",
     "tsconfig": "*",
-    "typescript": "^4.9.3"
+    "notion-sync": "*"
   }
 }

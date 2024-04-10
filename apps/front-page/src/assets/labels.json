@@ -1,0 +1,111 @@
+{
+  "site": {
+    "title": "14 Trees Foundation",
+    "description": "14 Trees Foundation is a charitable organization dedicated to building sustainable, carbon-footprint-neutral eco-systems through re-forestation."
+  },
+  "about": {
+    "title": "Learn more about our unique approach to restoration",
+    "sections": [
+      {
+        "title": "Restoration and Reforestation Initiatives",
+        "icon": "reforestation",
+        "link": "/mission",
+        "image": {
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/GreenImpact.webp",
+          "caption": "Impact of Reforestation on the Environment"
+        },
+        "content": "We believe in fighting ecological degradation through strategic reforestation, employing native species to enhance biodiversity and sustainability. Our projects leverage scientific research and traditional knowledge, ensuring resilience against climate change and fostering ecosystem recovery."
+      },
+      {
+        "title": "Community Engagement and Empowerment",
+        "icon": "community",
+        "image": {
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/CommunityEngagement.JPG",
+          "caption": "A science workshop at a local school, part of 14 Trees' Community Initiatives"
+        },
+        "content": "We prioritize local community upliftment, providing training, resources, and employment to turn conservation efforts into economic benefits. This approach promotes environmental stewardship, ensures project success, and fosters a sense of ownership among local populations."
+      },
+      {
+        "title": "Transparency and Donor Engagement",
+        "icon": "transparency",
+        "image": {
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/TreesPlanted.png",
+          "caption": "A live counter of trees planted by 14 Trees Foundation"
+        },
+        "content": "At 14 Trees, every contribution is the start of a shared adventure. We're dedicated to bringing you along for the ride, with transparent updates and real-world impacts. It is our mission to set a new standard for accountability and transparency. Let's make giving back a meaningful and rewarding experience."
+      },
+      {
+        "title": "Innovative Technologies for Greater Impact",
+        "icon": "technology",
+        "image": {
+          "src":"https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/GreenTechTraining.png",
+          "caption": "Green Skills Training"
+        },
+        "content": "At 14Trees, we use technology to drive our operations and help us stay accountable to our donors. Our mission extends beyond localised reforestation - 14 Trees is a hotbed of innovation in green ventures. We have seen a number of successful projects that have been developed by the people within our community."
+      },
+      {
+        "title": "Inspiring Generations for a Greener Tomorrow",
+        "icon": "inspiration",
+        "image": { 
+          "src": "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/Pictures/SiteIllustration.png",
+          "caption": "Our vision of a Community Driven Reforestation Project"
+        },
+        "content": "We aim to create a future where humans live in harmony with nature, securing a healthy planet for future generations through ambitious goals and global collaborations. Our community work with schools and partnerships with universities are designed to inspire and educate the next generation of environmental stewards."
+      }
+    ]
+  },
+  "gallery": [
+    {
+      "album_name": "Tata Elxsi visit",
+      "link": "https://photos.google.com/share/AF1QipODZMbB55eKstRu11rryNVtqGhht_mwMvrFoZYMVMDMcY4wii8cL0i-R4tcmxKePA?key=ZVZhTWFMUTBza2ZRTDhwRzZFX080eTRyOVA3Q0RR"
+    },
+    {
+      "album_name": "Skoda VW visit",
+      "link": "https://photos.google.com/share/AF1QipMm49WtD3y0vWRwWZvtwFoQJpPXfobv_ASNZJSpb8YnQaaYgHThumiuQOaNpmSOpw?key=X3hVbjM4d1ZIMzFxemVJajFTOVoycGxNUTZyZzBB"
+    },
+    {
+      "album_name": "KPIT team visit",
+      "link": "https://photos.google.com/share/AF1QipOaHtlAcZu_Tis94YZuHQpdM6tlEkvqo88W5YELJzMvTtEg0nYwXchbF4iLmawlXQ?key=WE9qUm8xQ3RpTFMyT2FwN1VaaXJPRlRKWUMxVWFR"
+    },
+    {
+      "album_name": "Enpro and Rotary visit",
+      "link": "https://photos.google.com/share/AF1QipOl0N7lbFAdhPIg9ZieocO2EQzNMZNn2-f_KHgHRlUffOTprijeklMB71RTZW6BfA?key=ZUZZTjhRYUMzTHF6ZTFiY2k1d2VpZW5BUWhsdW13"
+    },
+    {
+      "link": "https://photos.google.com/share/AF1QipNFlEHcPGgso03WWPGq58KhM8nZX5XrbJplMYuSyrlsNykNe0tRZ9IMJj4gQ5jUSg?key=SE5CRFFTWklrX2V4VFo4ZE9DUnR4NU9ZZzI3QUdB",
+      "album_name": "IIT Bombay CTARA visit"
+    },
+    {
+      "link": "https://photos.google.com/share/AF1QipPNzzJA6eXTR5-3Xe8kGbR0iT_9kHxYrK0OP2LRN4y7TxDmoH8djjve0xI6SD-bEQ?key=akRZSnFlRk1iMWtjbTl1Mkd2SF9faEhTQk42SFp3",
+      "album_name": "Forest team"
+    },
+    {
+      "link": "https://photos.google.com/share/AF1QipN_DHc8hDj4WvRQ_GloWpQ0_F0IgM-xPid9NwZLxkLwJaPuC9XqPe7QoAQs-BOb5w?key=SnVfX0xRdmVlNDVDdl9vV0pxUHVLX2YtTzlRTzhn",
+      "album_name": "Ramadorai visit"
+    }
+  ],
+  "policies": [
+    {
+      "name": "Procurement Policy",
+      "link": "https://docs.google.com/document/d/1jXhUavmHPMV1L569g_UzRuYDEF5ec0Jm/edit?usp=drive_link"
+    }, {
+      "name": "HR Policy",
+      "link": "https://docs.google.com/document/d/1L9BlCgkTukNc4fa0Mfaalkp2Ky-rHeGr/edit?usp=drive_link"
+    }, {
+      "name": "Finance Policy", 
+      "link": "https://docs.google.com/document/d/1zCUSsY33pkmEhroXys2nSMzJjPXQiCl1/edit?usp=drive_link"
+    }, {
+      "name": "Child Protection Policy",
+      "link": "https://docs.google.com/document/d/1I2kgkMfyLQ4FYX-FxPqdWLmCsKZef9iC/edit?usp=sharing&ouid=113283731185302055929&rtpof=true&sd=true"
+    }, {
+      "name": "Anti-Fraud Policy",
+      "link": "https://docs.google.com/document/d/14wFDLXeHYZ2MskTwuHSjqybKrh9EsNpV/edit?usp=drive_link"
+    }, {
+      "name": "Anti-Corruption Policy",
+      "link": "https://docs.google.com/document/d/1HjAqYSjIuHAgZxrG2xPWWOmwLgRzPGDY/edit?usp=drive_link"
+    }, {
+      "name": "Anti-Bribery Policy",
+      "link": "https://docs.google.com/document/d/1WUEIW7OpN-_3GG6QqJj_sGeRmmJjCKPW/edit?usp=drive_link"
+    }
+  ]
+}
