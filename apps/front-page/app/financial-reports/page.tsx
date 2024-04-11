@@ -1,4 +1,4 @@
-import { DocCard } from "app/activity-reports/page";
+import { DocCard } from "components/Partials/DocCard";
 
 const FinancialReports = () => {
   const reports = [
