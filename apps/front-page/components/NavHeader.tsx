@@ -169,9 +169,9 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
               {navItem.sub.map((subItem, index) => (
                 <Fragment key={index}>
                     <Link href={subItem.link} className="header-link">
-                  <DropdownMenuItem>
-                      {subItem.name}
-                  </DropdownMenuItem>
+                      <DropdownMenuItem className="py-3 pr-5 pl-2">
+                          {subItem.name}
+                      </DropdownMenuItem>
                     </Link>
                 </Fragment>
               ))}

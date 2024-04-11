@@ -58,6 +58,9 @@
 }
 
 @layer components {
+  .header-link {
+    /* @apply my-4; */
+  }
   .external-link {
     @apply text-teal-800 hover:border-b border-teal-700 hover:text-teal-700;
   }

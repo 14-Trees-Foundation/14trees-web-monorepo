@@ -32,7 +32,7 @@ export function Modal({
         {/* The actual dialog panel  */}
         <Dialog.Panel
           className={
-            panelClass + " relative mx-auto w-full max-w-lg bg-white shadow-lg"
+            panelClass + " relative mx-auto w-full max-w-screen-md bg-white shadow-lg"
           }
         >
           <div className="flex items-center justify-between rounded-t-lg bg-gray-50 px-4 py-2 dark:bg-gray-800">
