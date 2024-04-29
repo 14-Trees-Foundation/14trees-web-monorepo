@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* @layer base {
+  font-family: "Roboto", sans-serif;
+} */
+
 @layer utilities {
   .aspect-1:after {
     content: "";
