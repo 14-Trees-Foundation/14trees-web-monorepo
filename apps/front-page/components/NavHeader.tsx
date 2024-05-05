@@ -70,20 +70,12 @@ export default function Header() {
           <div className="mx-4 hidden items-center overflow-hidden md:inline-flex">
             <NavItemsDesktop items={navItems} />
           </div>
-          <Link
-            href={
-              "https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
-            }
-          >
+          <Link href={"/volunteer"}>
             <Button className="mr-3 hidden md:block" variant={"secondary"}>
               Volunteer
             </Button>
           </Link>
-          <Link
-            href={
-              "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform"
-            }
-          >
+          <Link href={"/donate"}>
             <Button className="bg-green-800">Donate</Button>
           </Link>
           {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
@@ -168,11 +160,11 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
             <DropdownMenuContent>
               {navItem.sub.map((subItem, index) => (
                 <Fragment key={index}>
-                    <Link href={subItem.link} className="header-link">
-                      <DropdownMenuItem className="py-3 pr-5 pl-2">
-                          {subItem.name}
-                      </DropdownMenuItem>
-                    </Link>
+                  <Link href={subItem.link} className="header-link">
+                    <DropdownMenuItem className="py-3 pl-2 pr-5">
+                      {subItem.name}
+                    </DropdownMenuItem>
+                  </Link>
                 </Fragment>
               ))}
             </DropdownMenuContent>

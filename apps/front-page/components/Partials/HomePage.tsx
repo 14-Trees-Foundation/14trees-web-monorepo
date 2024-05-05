@@ -74,23 +74,14 @@ export const HomePage = () => {
                 {labels.site.description}
               </h3>
               <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row md:justify-start">
-                <Link
-                  href="https://docs.google.com/forms/d/1GMOqEe605KweKR2aLxPRJKrUtHGhbVdFm4B5GrCisnU/edit"
-                  scroll={false}
-                >
-                  <Button
-                    variant={"secondary"}
-                    className="w-full"
-                    size="xl"
-                  >
+                <Link href="/volunteer" scroll={false}>
+                  <Button variant={"secondary"} className="w-full" size="xl" >
                     Volunteer
                   </Button>
                 </Link>
-                <Link href="https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform">
-                  <Button
-                    className="bg-green-800 text-white hover:bg-green-900 w-full"
-                    size="xl"
-                  >
+
+                <Link href="/donate">
+                  <Button className="bg-green-800 text-white hover:bg-green-900 w-full" size="xl">
                     Donate 
                   </Button>
                 </Link>
