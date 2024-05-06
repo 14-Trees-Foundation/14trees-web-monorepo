@@ -114,7 +114,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
     if (autoScroll) {
       const interval = setInterval(() => {
         setSelectedSection(((i_selectedSection || 0) + 1) % sections.length);
-      }, 8000);
+      }, 13000);
       return () => clearInterval(interval);
     }
   }, [i_selectedSection, autoScroll, sections.length]);
@@ -128,8 +128,8 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex w-full md:p-4 space-x-1 md:space-x-4">
+    <section className="flex h-full flex-col">
+      <div className="flex w-full md:p-4 space-x-1 md:space-x-4 overflow-scroll">
         {sections.map((section, index) => (
           <motion.div
             className="flex-grow"
@@ -153,7 +153,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
                   className="mx-auto h-4 w-4 my-2 md:my-8 md:h-12 md:w-12"
                   iconName={section.icon}
                 />
-                <h2 className="my-2 hidden text-center text-sm font-light md:block md:text-xl xl:text-2xl">
+                <h2 className="my-2 hidden text-center text-sm font-light md:block md:text-md xl:text-xl">
                   {section.title}
                 </h2>
               </div>
@@ -196,7 +196,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
           </p>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

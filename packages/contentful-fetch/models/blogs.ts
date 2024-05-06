@@ -55,6 +55,7 @@ export function mergeBlogPosts(response: any): { data: BlogPost[] } {
         title: post.title,
         imageUrl: post.heroImage.url,
         content: post.body,
+        link: post.link,
         person: {
           name: post.author.name,
           title: "",
@@ -74,6 +75,7 @@ export function mergeBlogPosts(response: any): { data: BlogPost[] } {
         title: post.headline,
         imageUrl: post.previewImage?.url,
         content: post.content,
+        link: post.link,
         person: {
           name: post.author.name,
           title: "",
