@@ -5,7 +5,7 @@ import { ProfileUserInfo, UserTree } from "schema";
 
 const { errorMessage, successMessage, status } = require("../helpers/status");
 
-var mongoose = require("mongoose");
+const mongoose = require("mongoose");
 const TreeModel = require("../models/tree");
 const UserTreeModel = require("../models/userprofile");
 const DeletedProfile = require("../models/deleteduserprofile");
@@ -675,4 +675,3 @@ query {
   }
 }
 */
-

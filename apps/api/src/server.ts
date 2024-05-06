@@ -1,106 +1,123 @@
-import path from 'path';
-import express, {Request} from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import { MongoClient } from 'mongodb';
+import path from "path";
+import express, { Request } from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import { MongoClient } from "mongodb";
+import { getMongoDBConnectionString } from "./services/mongo";
 
-interface ResponseError extends  Error {
-    status?: number;
+// Routes
+import userRoutes from "./routes/userRoutes";
+import treeRoutes from "./routes/treeRoutes";
+import profileRoute from "./routes/profileRoutes";
+import analyticsRoutes from "./routes/analyticsRoutes";
+import plotRoutes from "./routes/plotRoutes";
+import activityRoutes from "./routes/activityRoutes";
+import searchRoutes from "./routes/searchRoutes";
+import eventRoutes from "./routes/eventRoutes";
+import orgRoutes from "./routes/orgRoutes";
+import loginRoutes from "./routes/loginRoutes";
+import mytreesRoutes from "./routes/mytreesRoutes";
+import adminRoutes from "./routes/adminRoutes";
+import authRoutes from "./routes/authRoutes";
+import templateRoutes from "./routes/templateRoute";
+import contributionRoutes from "./routes/contributeRoutes";
+import pondsRoutes from "./routes/pondsRoutes";
+import imageRoutes from "./routes/imageRoutes";
+
+require("dotenv").config();
+
+interface ResponseError extends Error {
+  status?: number;
 }
 mongoose.Promise = global.Promise;
-// const { applicationDefault, initializeApp } = require('firebase-admin/app');
-
-const app = express();
-require('dotenv').config();
-
-app.use(express.static(path.join(__dirname, 'client/build')));
-
-app.use(cors<Request>());
-// Add middleware for parsing JSON and urlencoded data and populating `req.body`
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(function (req, res, next) {
-    // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    // Pass to next layer of middleware
-    next();
-});
 
 // Connect MongoDB
 const connectDB = async () => {
-    const mongo_connection_string = process.env.NODE_ENV === 'development' ?
-            `mongodb://${process.env.LOCAL_MONGO_URL}` :
-            `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PWD}@${process.env.MONGO_URL}`
-    try {
-        console.log('Connecting to MongoDB...', mongo_connection_string);
-        const client = new MongoClient(mongo_connection_string);
-        await mongoose.connect(mongo_connection_string, { autoIndex: false, });
-        console.log('MongoDB connected!!');
-    } catch (err) {
-        console.error('Failed to connect to MongoDB', err);
+  try {
+    const mongo_connection_string = getMongoDBConnectionString();
+    if (!mongo_connection_string) {
+      throw new Error("MongoDB connection string is not provided");
     }
+    const _client = new MongoClient(mongo_connection_string);
+    await mongoose.connect(mongo_connection_string, { autoIndex: false });
+  } catch (err: any) {
+    console.error("Failed to connect to MongoDB - exiting", err.message);
+    console.error(
+      "Check if the MongoDB server is running and the connection string is correct."
+    );
+    process.exit(1);
+  }
 };
 
-connectDB();
+const port = process.env.SERVER_PORT ?? 8088;
 
-import userRoutes from './routes/userRoutes';
-import treeRoutes from './routes/treeRoutes';
-import profileRoute from './routes/profileRoutes';
-import analyticsRoutes from './routes/analyticsRoutes';
-import plotRoutes from './routes/plotRoutes';
-import activityRoutes from './routes/activityRoutes';
-import searchRoutes from './routes/searchRoutes';
-import eventRoutes from './routes/eventRoutes';
-import orgRoutes from './routes/orgRoutes';
-import loginRoutes from './routes/loginRoutes';
-import mytreesRoutes from './routes/mytreesRoutes';
-import adminRoutes from './routes/adminRoutes';
-import authRoutes from './routes/authRoutes';
-import templateRoutes from './routes/templateRoute';
-import contributionRoutes from './routes/contributeRoutes';
-import pondsRoutes from './routes/pondsRoutes';
-import imageRoutes from './routes/imageRoutes';
+const initExpressApp = (app: express.Application) => {
+  console.log("Initializing Express App...");
 
-app.use('/api/templates', templateRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/trees', treeRoutes);
-app.use('/api/profile', profileRoute);
-app.use('/api/mytrees', mytreesRoutes);
-app.use('/api/plots', plotRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/organizations', orgRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/activity', activityRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/login', loginRoutes);
-app.use('/api/auth', authRoutes);
-// app.use('/api/donations', donationRoutes);
-app.use('/api/contributions', contributionRoutes);
-app.use('/api/ponds', pondsRoutes);
-app.use('/api/images', imageRoutes);
+  app.use(express.static(path.join(__dirname, "client/build")));
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-    const err: ResponseError = new Error('Not Found');
-    err['status'] = 404;
+  app.use(cors<Request>());
+  // Add middleware for parsing JSON and urlencoded data and populating `req.body`
+  app.use(express.urlencoded({ extended: false }));
+  app.use(express.json());
+  app.use(function (req, res, next) {
+    // Website you wish to allow to connect
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    // Pass to next layer of middleware
+    next();
+  });
+
+  app.use("/api/templates", templateRoutes);
+  app.use("/api/users", userRoutes);
+  app.use("/api/admin", adminRoutes);
+  app.use("/api/trees", treeRoutes);
+  app.use("/api/profile", profileRoute);
+  app.use("/api/mytrees", mytreesRoutes);
+  app.use("/api/plots", plotRoutes);
+  app.use("/api/events", eventRoutes);
+  app.use("/api/organizations", orgRoutes);
+  app.use("/api/analytics", analyticsRoutes);
+  app.use("/api/activity", activityRoutes);
+  app.use("/api/search", searchRoutes);
+  app.use("/api/login", loginRoutes);
+  app.use("/api/auth", authRoutes);
+  // app.use('/api/donations', donationRoutes);
+  app.use("/api/contributions", contributionRoutes);
+  app.use("/api/ponds", pondsRoutes);
+  app.use("/api/images", imageRoutes);
+
+  // catch 404 and forward to error handler
+  app.use(function (req, res, next) {
+    const err: ResponseError = new Error("Not Found");
+    err["status"] = 404;
     next(err);
-});
+  });
 
-// @ts-ignore
-app.use(function (err, req, res, next) {
+  // @ts-ignore
+  app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.json({
-        error: {
-            message: err.message,
-        },
+      error: {
+        message: err.message,
+      },
     });
-});
+  });
+  app.listen(port, function () {
+    console.log("API Server listening on port " + port + "!");
+  });
 
-var port = process.env.SERVER_PORT || 8088;
+  return app;
+};
 
-app.listen(port, function () {
-    console.log('API Server listening on port ' + port + '!');
-});
+const app = express();
+
+const initServer = async () => {
+  console.log("Connecting to MongoDB...");
+  await connectDB();
+  console.log("Connected to MongoDB");
+  initExpressApp(app);
+};
+
+initServer();
 
 export default app;
