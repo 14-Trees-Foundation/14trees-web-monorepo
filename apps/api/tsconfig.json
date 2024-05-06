@@ -7,6 +7,7 @@
     "target": "ES2020",
     "sourceMap": true,
     "module": "CommonJS",
+    "moduleResolution": "node",
     "allowJs": true,
   }
 }
