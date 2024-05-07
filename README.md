@@ -54,6 +54,10 @@ The project consists of the following main directories:
 ## Usage
 
 ### Development
+Start the local database
+```
+docker compose up -d
+```
 
 To start the development server for all apps, run:
 ```
