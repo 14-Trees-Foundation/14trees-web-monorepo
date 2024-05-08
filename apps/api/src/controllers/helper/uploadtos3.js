@@ -1,11 +1,16 @@
 const fs = require("fs");
 const AWS = require('aws-sdk');
+const { removeSpecialCharacters } = require("../../helpers/utils");
 const s3 = new AWS.S3({
     accessKeyId: process.env.ACCESS_KEY_ID_S3,
     secretAccessKey: process.env.SECRET_ACCESS_KEY_S3
 });
 
 var destImg = process.env.DEST_IMG_FOLDER;
+
+function getNewUploadObjectKey(objectName) {
+    return Date.now().toString() + "_" + removeSpecialCharacters(objectName);
+}
 
 module.exports.UploadFileToS3 = async (filename, type, folder_name = "") => {
     const readStream = fs.createReadStream(destImg + filename);
@@ -33,14 +38,15 @@ module.exports.UploadFileToS3 = async (filename, type, folder_name = "") => {
 
     const params = {
         Bucket: bucket,
-        Key: filename,
+        Key: getNewUploadObjectKey(filename),
         Body: readStream
     };
 
     try {
         let res = await s3.upload(params).promise();
-        console.log(res)
-    } catch (error) {
-        return error
+        return res.Location;
+    } catch (err) {
+        console.error("Failed to upload file to s3 bucket. ", err);
+        return ""
     }
 }

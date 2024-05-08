@@ -12,6 +12,7 @@ const csvhelper = require("./helper/uploadtocsv");
 const orgModel = require("../models/org");
 const corpEventModel = require("../models/corp_events");
 const userTreeModel = require("../models/userprofile");
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.getOverallOrgDashboard = async (req, res) => {
   try {
@@ -196,6 +197,11 @@ module.exports.getBirthdayEvent = async (req, res) => {
   }
 };
 
+/*
+    Model - Event
+    CRUD Operations for events collection
+*/
+
 module.exports.addEvents = async (req, res) => {
   const fields = req.body;
   let saplingids = fields.sapling_id.split(/[ ,]+/);
@@ -218,17 +224,16 @@ module.exports.addEvents = async (req, res) => {
       }
 
       // User Profile images
+      let userImageUrls = []
       if (req.body.userimages !== undefined && req.body.userimages.length > 0) {
         userimages = req.body.userimages.split(",");
         for (const image in userimages) {
-          await uploadHelper.UploadFileToS3(userimages[image], "users");
+          const location = await uploadHelper.UploadFileToS3(userimages[image], "users");
+          if (location !== "") {
+            userImageUrls.push(location);
+          }
         }
       }
-
-      const s3urlprofile =
-        "https://14treesplants.s3.ap-south-1.amazonaws.com/users/";
-      let uimageurl =
-        userimages !== undefined ? userimages.map((x) => s3urlprofile + x) : "";
 
       if (req.body.donor) {
         let dUser = await UserModel.findOne({ _id: req.body.donor });
@@ -240,7 +245,7 @@ module.exports.addEvents = async (req, res) => {
         let user_tree_data = new UserTreeModel({
           tree: tree.id,
           user: user.id,
-          profile_image: uimageurl,
+          profile_image: userImageUrls,
           memories: mimageurl,
           orgid: req.body.org
             ? mongoose.Types.ObjectId(req.body.org)
@@ -284,6 +289,39 @@ module.exports.addEvents = async (req, res) => {
   }
 };
 
+module.exports.getEvents = async (req, res) => {
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
+
+  try {
+      let result = await EventModel.find().skip(offset).limit(limit);
+      res.status(status.success).send(result);
+  } catch (error) {
+      res.status(status.error).json({
+          status: status.error,
+          message: error.message,
+      });
+  }
+}
+
+module.exports.deleteEvent = async (req, res) => {
+  try {
+      let resp = await EventModel.findByIdAndDelete(req.params.id).exec();
+      console.log("Delete event Response for id: %s", req.params.id, resp)
+
+      res.status(status.success).json({
+        message: "Event deleted successfully",
+      });
+  } catch (error) {
+      res.status(status.bad).send({ error: error.message });
+  }
+};
+
+
+/*
+    Model - corpEvent
+    CRUD Operations for corp_events collection
+*/
+
 module.exports.addCorpEvent = async (req, res) => {
   const fields = req.body;
   let saplingids = fields.sapling_ids.split(/[ ,]+/);
@@ -294,49 +332,47 @@ module.exports.addCorpEvent = async (req, res) => {
   }
   try {
     let tree_ids = [];
-
-    let logos;
+    let logoUrls = [];
     // Logo images
     if (req.body.logos !== undefined) {
       if (req.body.logos.length > 0) {
-        logos = req.body.logos.split(",");
+        let logos = req.body.logos.split(",");
         for (const image in logos) {
-          await uploadHelper.UploadFileToS3(logos[image], "logos");
+          const location = await uploadHelper.UploadFileToS3(logos[image], "logos");
+          if (location !== "" ) {
+            logoUrls.push(locations);
+          }
         }
       }
     }
 
-    let header_img;
+    let headerImageUrls = [];
     // Header Image
     if (req.body.header_img !== undefined) {
       if (req.body.header_img.length > 0) {
-        header_img = req.body.header_img.split(",");
-        for (const image in header_img) {
-          await uploadHelper.UploadFileToS3(header_img[image], "logos");
+        let headerImages = req.body.header_img.split(",");
+        for (const image in headerImages) {
+          const location = await uploadHelper.UploadFileToS3(headerImages[image], "logos");
+          if (location !== "") {
+            headerImageUrls.push(location);
+          }
         }
       }
     }
-    const s3logos = "https://14treesplants.s3.ap-south-1.amazonaws.com/logos/";
-    let logourl = logos !== undefined ? logos.map((x) => s3logos + x) : "";
-    let headerimgurl = header_img !== undefined ? s3logos + header_img[0] : "";
 
-    let memoryimages;
+    let memoryImageUrls = [];
     // Memories for the visit
     if (req.body.memoryimages !== undefined) {
       if (req.body.memoryimages.length > 0) {
-        memoryimages = req.body.memoryimages.split(",");
-        for (const image in memoryimages) {
-          await uploadHelper.UploadFileToS3(memoryimages[image], "memories");
+        let memoryImages = req.body.memoryimages.split(",");
+        for (const image in memoryImages) {
+          const location = await uploadHelper.UploadFileToS3(memoryImages[image], "memories");
+          if (location != "") {
+            memoryImageUrls.push(location);
+          }
         }
       }
     }
-
-    const s3urlmemories =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/memories/";
-    let mimageurl =
-      memoryimages !== undefined
-        ? memoryimages.map((x) => s3urlmemories + x)
-        : "";
 
     for (let i = 0; i < saplingids.length; i++) {
       let tree = await TreeModel.findOne({ sapling_id: saplingids[i] });
@@ -348,11 +384,11 @@ module.exports.addCorpEvent = async (req, res) => {
       tree_ids: tree_ids,
       plot_id: mongoose.Types.ObjectId(req.body.plot_id),
       title: req.body.title,
-      logo: logourl,
+      logo: logoUrls,
       short_desc: req.body.short_desc,
       long_desc: req.body.long_desc,
-      album: mimageurl,
-      header_img: headerimgurl,
+      album: memoryImageUrls,
+      header_img: headerImageUrls,
       num_people: req.body.num_people ? req.body.num_people : 1,
       date_added: req.body.date_org ? new Date(req.body.date_org) : new Date().toISOString(),
     });
@@ -470,5 +506,82 @@ module.exports.getCorpEvent = async (req, res) => {
   } catch (error) {
     res.status(status.bad).send({ error: error.message });
     return;
+  }
+};
+
+
+
+module.exports.updateCorpEvent = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const fields = req.body;
+
+    // Fetch existing event document
+    let event = await corpEventModel.findById(eventId);
+    if (!event) {
+      res.status(status.notFound).send({ error: "Event not found" });
+      return;
+    }
+
+    // Process image uploads to S3
+    let logoUrls = "";
+    if (fields.logos) {
+      const logos = fields.logos.split(",");
+      logoUrls = await uploadImagesToS3(logos, "logos");
+      event.logo = logoUrls;
+    }
+
+    let headerImgUrl = "";
+    if (fields.header_img) {
+      const headerImg = fields.header_img.split(",");
+      headerImgUrl = await uploadImagesToS3(headerImg, "logos");
+      event.header_img = headerImgUrl;
+    }
+
+    let memoryImgUrls = "";
+    if (fields.memoryimages) {
+      const memoryImages = fields.memoryimages.split(",");
+      memoryImgUrls = await uploadImagesToS3(memoryImages, "memories");
+      event.album = memoryImgUrls;
+    }
+
+    if (fields.event_link) event.event_link = fields.event_link;
+    if (fields.event_name) event.event_name = fields.event_name;
+    if (fields.sampling_ids){
+      const saplingIds = fields.sapling_ids.split(/[ ,]+/);
+      for (let i = 0; i < saplingIds.length; i++) {
+        let tree = await TreeModel.findOne({ sapling_id: saplingIds[i] });
+        tree_ids.push(tree._id);
+      }
+      event.tree_ids = fields.tree_ids;
+    }
+    if (fields.plot_id) event.plot_id = mongoose.Types.ObjectId(req.body.plot_id);
+    if (fields.title) event.title = fields.title;
+    if (fields.short_desc) event.short_desc = fields.short_desc;
+    if (fields.long_desc) event.long_desc = fields.long_desc;
+    if (fields.num_people) event.num_people = fields.num_people;
+
+
+    // Save the updated event document
+    const updatedEvent = await event.save();
+    res.status(status.success).send({ event: updatedEvent });
+  } catch (error) {
+    console.error("Corp event update error:", error);
+    res.status(status.error).send({ error: error.message });
+  }
+};
+
+
+
+module.exports.deleteCorpEvent = async (req, res) => {
+  try {
+      let resp = await corpEventModel.findByIdAndDelete(req.params.id).exec();
+      console.log("Delete corp event Response for id: %s", req.params.id, resp)
+
+      res.status(status.success).json({
+        message: "Corp event deleted successfully",
+      });
+  } catch (error) {
+      res.status(status.bad).send({ error: error.message });
   }
 };

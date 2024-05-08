@@ -1,6 +1,12 @@
 const PlotModel = require("../models/plot");
 const { errorMessage, successMessage, status } = require("../helpers/status");
 const csvhelper = require("./helper/uploadtocsv");
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
+
+/*
+    Model - Plot
+    CRUD Operations for plots collection
+*/
 
 module.exports.updatePlot = async (req, res) => {
     // Check if plot type exists
@@ -91,9 +97,9 @@ module.exports.addPlot = async (req, res) => {
 }
 
 module.exports.getPlots = async (req, res) => {
-
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
-        let result = await PlotModel.find();
+        let result = await PlotModel.find().skip(offset).limit(limit);;
         res.status(status.success).send(result);
     } catch (error) {
         res.status(status.error).json({
@@ -102,3 +108,15 @@ module.exports.getPlots = async (req, res) => {
         });
     }
 }
+
+module.exports.deletePlot = async (req, res) => {
+    try {
+        let resp = await PlotModel.findByIdAndDelete(req.params.id).exec();
+        console.log("Delete Plot Response for id: %s", req.params.id, resp)
+        res.status(status.success).json({
+          message: "Plot deleted successfully",
+        });
+    } catch (error) {
+        res.status(status.bad).send({ error: error.message });
+    }
+};

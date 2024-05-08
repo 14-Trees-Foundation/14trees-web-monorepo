@@ -1,9 +1,16 @@
 import { Router } from 'express';
-import { addUser, getUser } from '../controllers/usersController';
+import * as users from '../controllers/usersController';
+import uploadImages from "../helpers/multer";
 
 const routes = Router();
 
-routes.post('/add', addUser);
-routes.get('/', getUser);
+// @deprecated
+routes.post('/add', users.addUser);
+
+routes.get('/', users.getUser);
+routes.post('/', users.addUser);
+routes.post('/bulk', uploadImages.single('file'),users.addUsersBulk);
+routes.put('/:id', users.updateUser);
+routes.delete('/:id', users.deleteUser);
 
 export default routes;

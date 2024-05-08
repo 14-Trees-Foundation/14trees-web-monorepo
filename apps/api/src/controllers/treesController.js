@@ -1,4 +1,7 @@
 const { errorMessage, successMessage, status } = require("../helpers/status");
+const csvParser = require('csv-parser');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const fs = require('fs');
 require("dotenv").config();
 
 const TreeModel = require("../models/tree");
@@ -11,6 +14,29 @@ const treeUpdatePhotoModel = require("../models/tree_update_photos");
 const uploadHelper = require("./helper/uploadtos3");
 const csvhelper = require("./helper/uploadtocsv");
 var mongoose = require("mongoose");
+const { constants } =  require("../constants");
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
+const userModel = require("../models/user");
+
+
+/*
+  Model - TreeType
+  CRUD Operations for tree_types collection
+*/
+
+module.exports.getTreeTypes = async (req, res) => {
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
+
+  try {
+    let result = await TreeTypeModel.find().skip(offset).limit(limit);
+    res.status(status.success).send(result);
+  } catch (error) {
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
+  }
+};
 
 module.exports.addTreeType = async (req, res) => {
   try {
@@ -26,13 +52,9 @@ module.exports.addTreeType = async (req, res) => {
   }
 
   // Upload images to S3
-  let imageurls = "";
+  let imageUrl = "";
   if (req.files && req.files[0]) {
-    await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
-    // Save the urls with S3 location prefixed for each image
-    const s3url =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/treetypes/";
-    imageurls = s3url + req.files[0].filename;
+    imageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
   }
 
   // Tree type object to be saved
@@ -41,7 +63,7 @@ module.exports.addTreeType = async (req, res) => {
     tree_id: req.body.tree_id,
     desc: req.body.desc,
     scientific_name: req.body.scientific_name,
-    image: imageurls,
+    image: imageUrl,
     family: req.body.family,
     habit: req.body.habit,
     remarkable_char: req.body.remarkable_char,
@@ -75,104 +97,171 @@ module.exports.addTreeType = async (req, res) => {
   }
 };
 
-module.exports.addTree = async (req, res) => {
+
+module.exports.updateTreeType = async (req, res) => {
   try {
-    if (!req.body.sapling_id) {
-      throw new Error("Sapling ID required");
+    const treeType = await TreeTypeModel.findById(req.params.id);
+
+    if (!treeType) {
+      throw new Error("Tree type not found for given id");
     }
-    if (!req.body.tree_id) {
-      throw new Error("Tree Type ID required");
+
+    if (req.body.name) {
+      treeType.name = req.body.name;
     }
-    if (!req.body.plot_id) {
-      throw new Error("Plot ID required");
+    if (req.body.desc) {
+      treeType.desc = req.body.desc;
+    }
+    if (req.body.scientific_name) {
+      treeType.scientific_name = req.body.scientific_name;
+    }
+    // Update other fields similarly
+
+    // Upload images to S3
+    if (req.files && req.files[0]) {
+      const location = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
+      if (location != "") {
+        treeType.image = location; // Update image URL
+      }
+    }
+
+    // Save updated tree type
+    const updatedTreeType = await treeType.save();
+    res.status(status.success).send(updatedTreeType);
+  } catch (error) {
+    res.status(status.bad).send({ error: error.message });
+  }
+};
+
+
+module.exports.deleteTreeType = async (req, res) => {
+  try {
+    // Find the tree type by ID
+    const treeType = await TreeTypeModel.findById(req.params.id);
+
+    if (!treeType) {
+      throw new Error("Tree type not found for given id");
+    }
+
+    // Delete the tree type
+    await treeType.remove();
+
+    // Update the CSV file
+    try {
+      csvhelper.UpdateTreeTypeCsv(treeType, true); // Pass true to indicate deletion
+      res.status(status.success).json({
+        message: "Tree type deleted successfully",
+      });
+    } catch (error) {
+      res.status(status.error).json({
+        error: "Failed to update CSV file",
+      });
     }
   } catch (error) {
     res.status(status.bad).send({ error: error.message });
-    return;
+  }
+};
+
+
+/*
+  Model - Tree
+  CRUD Operations for trees collection
+*/
+
+const validateRequestAndGetTreeDocument = async (reqBody) => {
+
+  if (!reqBody.sapling_id) {
+    throw new Error("Sapling ID required");
+  }
+  if (!reqBody.tree_id) {
+    throw new Error("Tree Type ID required");
+  }
+  if (!reqBody.plot_id) {
+    throw new Error("Plot ID required");
   }
 
   // Check if tree type exists
-  let treetype = await TreeTypeModel.findOne({ tree_id: req.body.tree_id });
+  let treetype = await TreeTypeModel.findOne({ tree_id: reqBody.tree_id });
 
   // If tree type doesn't exists, return error
   if (treetype.length === 0) {
-    res.status(status.bad).send({ error: "Tree type ID doesn't exist" });
-    return;
+    throw new Error("Tree type ID doesn't exist" );
   }
 
   // Check if plot exists
-  let plot = await PlotModel.findOne({ plot_id: req.body.plot_id });
+  let plot = await PlotModel.findOne({ plot_id: reqBody.plot_id });
 
   // If plot type doesn't exists, return error
   if (!plot) {
-    res.status(status.bad).send({ error: "Plot ID doesn't exist" });
-    return;
+    throw new Error("Plot ID doesn't exist" );
   }
 
   // Check if sapling id exists
-  try {
-    let tree = await TreeModel.findOne({ sapling_id: req.body.sapling_id });
-    if (tree !== null) {
-      res
-        .status(status.duplicate)
-        .send({ error: "Sapling_id exists, please check!" });
-      return;
-    }
-  } catch (error) {
-    res.status(status.error).send({
-      error: error,
-    });
-    return;
-  }
+  let tree = await TreeModel.findOne({ sapling_id: reqBody.sapling_id });
+  // if (tree !== null) {
+  //   throw new Error("Sapling_id exists, please check!");
+  // }
 
   // get user
   let user = null;
   if (
-    req.body.user_id !== "" ||
-    req.body.user_id !== undefined ||
-    req.body.user_id !== null
+    reqBody.user_id !== "" ||
+    reqBody.user_id !== undefined ||
+    reqBody.user_id !== null
   ) {
-    user = await OnSiteStaff.findOne({ user_id: req.body.user_id });
+    user = await OnSiteStaff.findOne({ user_id: reqBody.user_id });
+  }
+
+  let mapped_to = null;
+  if (reqBody.mapped_to) {
+    mapped_to = await userModel.findOne({ user_id: reqBody.mapped_to });
   }
 
   // Upload images to S3
-  let imageurls = "";
-  if (req.body.images && req.body.images.length > 0) {
-    let images = req.body.images.split(",");
+  let imageUrls = [];
+  if (reqBody.images && reqBody.images.length > 0) {
+    let images = reqBody.images.split(",");
     for (const image in images) {
-      await uploadHelper.UploadFileToS3(images[image], "trees");
+      const location = await uploadHelper.UploadFileToS3(images[image], "trees");
+      if (location !== "") {
+        imageUrls.push(location);
+      }
     }
-    // Save the urls with S3 location prefixed for each image
-    const s3url = "https://14treesplants.s3.ap-south-1.amazonaws.com/trees/";
-    imageurls = images.map((x) => s3url + x);
   }
 
   let loc = null;
   // Tree object to be saved in database
-  if (req.body.lat) {
+  if (reqBody.lat) {
     loc = {
       type: "Point",
-      coordinates: [req.body.lat, req.body.lng],
+      coordinates: [reqBody.lat, reqBody.lng],
     };
   }
 
   let treeObj = {
-    sapling_id: req.body.sapling_id,
+    sapling_id: reqBody.sapling_id,
     tree_id: treetype.id,
     plot_id: plot.id,
-    image: imageurls,
+    image: imageUrls,
     location: loc,
     user_id: user === null ? null : user,
+    mapped_to: mapped_to === null ? null : mapped_to,
     date_added: new Date().toISOString(),
   };
-  const tree = new TreeModel(treeObj);
+  const treeDoc = new TreeModel(treeObj);
+
+  return treeDoc
+}
+
+module.exports.addTree = async (req, res) => {
 
   let treeRes;
   try {
+    let tree = await validateRequestAndGetTreeDocument(req.body);
     treeRes = await tree.save();
     res.status(status.created).send({
       treetype: treeRes,
-    });
+    })
   } catch (error) {
     console.log("Tree add error : ", error);
     res.status(status.error).send({
@@ -222,6 +311,181 @@ module.exports.getTree = async (req, res) => {
       status: status.error,
       message: error.message,
     });
+  }
+};
+
+module.exports.addTreesBulk = async (req, res) => {
+
+  try {
+    if (!req.files.csvFile || !req.files.csvFile[0]) {
+      throw new Error('No file uploaded. Bulk operation requires data as csv file.');
+    }
+
+    let csvData = [];
+    let failedRows = [];
+    fs.createReadStream(constants.DEST_FOLDER + req.files.csvFile[0].filename)
+      .pipe(csvParser())
+      .on('data', (row) => {
+        csvData.push(row);
+      })
+      .on('end', async () => {
+        try {
+
+          if (csvData.length > constants.MAX_BULK_ADD_LIMIT) {
+            throw new Error("Number of rows in csv file are more than allowed limit.")
+          }
+
+          let trees = [];
+          let batchRows = [];
+          for (const row of csvData) {
+            let tree = await validateRequestAndGetTreeDocument(row);
+            batchRows.push(row);
+            trees.push(tree);
+            if (trees.length === constants.ADD_DB_BATCH_SIZE) {
+              try {
+                await TreeModel.bulkSave(trees);
+              } catch (error) {
+                failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
+              }
+              trees = [];
+              batchRows = [];
+            }
+          }
+
+          if (trees.length !== 0) {
+            try {
+              await TreeModel.bulkSave(trees);
+            } catch (error) {
+              failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
+            }
+          }
+
+          // Prepare the response
+          let responseCsv = ''
+          const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_tree_records.csv'
+          if (failedRows.length > 0) {
+            // Generate CSV string for failed rows
+            const csvWriter = createCsvWriter({
+              path: filePath,
+              header: Object.keys(failedRows[0]).map(key => ({ id: key, title: key }))
+            });
+            await csvWriter.writeRecords(failedRows);
+            responseCsv = fs.readFileSync(filePath);
+          }
+
+          // Send the response with CSV content
+          res.setHeader('Content-Disposition', 'attachment; filename="failed_rows.csv"');
+          res.setHeader('Content-Type', 'text/csv');
+          res.send(responseCsv);
+        } catch (error) {
+          console.error('Error saving tree bulk data:', error);
+          res.status(500).json({ error: 'Error saving trees data.' });
+        }
+      });
+  } catch (error) {
+    console.log("Tree add error : ", error);
+    res.status(status.error).send({
+      error: error,
+    });
+  }
+
+};
+
+module.exports.updateTree = async (req, res) => {
+  try {
+    const treeId = req.params.id;
+
+    // Check if the tree exists
+    let tree = await TreeModel.findById(treeId);
+
+    if (!tree) {
+      res.status(status.notFound).send({ error: "Tree not found" });
+      return;
+    }
+
+    // Update tree fields
+    if (req.body.sapling_id && req.body.sapling_id != tree.sapling_id) {
+      let tree = await TreeModel.findOne({ sapling_id: req.body.sapling_id });
+      if (tree !== null) {
+        res
+          .status(status.duplicate)
+          .send({ error: "Sapling_id exists, please check!" });
+        return;
+      }
+      tree.sapling_id = req.body.sapling_id;
+    }
+    if (req.body.tree_id) {
+      // Check if tree type exists
+      const treetype = await TreeTypeModel.findOne({ tree_id: req.body.tree_id });
+      if (!treetype) {
+        res.status(status.bad).send({ error: "Tree type ID doesn't exist" });
+        return;
+      }
+      tree.tree_id = treetype.id;
+    }
+    if (req.body.plot_id) {
+      // Check if plot exists
+      const plot = await PlotModel.findOne({ plot_id: req.body.plot_id });
+      if (!plot) {
+        res.status(status.bad).send({ error: "Plot ID doesn't exist" });
+        return;
+      }
+      tree.plot_id = plot.id;
+    }
+
+
+    // Upload images to S3
+    let imageUrls = [];
+    if (req.body.images && req.body.images.length > 0) {
+      let images = req.body.images.split(",");
+      for (const image of images) {
+        const location = await uploadHelper.UploadFileToS3(image, "trees");
+        if (location !== "") {
+          imageUrls.push(location);
+        }
+      }
+      tree.image = imageUrls;
+    }
+
+    let loc = null;
+    if (req.body.lat) {
+      loc = {
+        type: "Point",
+        coordinates: [req.body.lat, req.body.lng],
+      };
+      tree.location = loc;
+    }
+
+    // Update user if provided
+    if (req.body.user_id) {
+      const user = await OnSiteStaff.findOne({ user_id: req.body.user_id });
+      if (!user) {
+        res.status(status.bad).send({ error: "User ID doesn't exist" });
+        return;
+      }
+      tree.user_id = user.id;
+    }
+
+    // Save updated tree
+    const updatedTree = await tree.save();
+    res.status(status.success).send({
+      tree: updatedTree,
+    });
+  } catch (error) {
+    console.error("Tree update error:", error);
+    res.status(status.error).send({ error: error.message });
+  }
+};
+
+
+module.exports.deleteTree = async (req, res) => {
+  try {
+    const resp = await TreeModel.findByIdAndDelete(req.params.id).exec();
+    console.log("Deleted tree with the id: %s", req.params.id, resp)
+    res.status(status.success).send({ message: "Tree deleted successfully" });
+  } catch (error) {
+    console.error("Tree delete error:", error);
+    res.status(status.error).send({ error: error.message });
   }
 };
 
@@ -363,18 +627,6 @@ module.exports.treeListByPlot = async (req, res) => {
         },
       },
     ]);
-    res.status(status.success).send(result);
-  } catch (error) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
-  }
-};
-
-module.exports.getTreeTypes = async (req, res) => {
-  try {
-    let result = await TreeTypeModel.find();
     res.status(status.success).send(result);
   } catch (error) {
     res.status(status.error).json({
@@ -671,13 +923,9 @@ module.exports.addPhotoUpdate = async (req, res) => {
   }
 
   // Upload images to S3
-  let imageurls = "";
+  let imageUrl = "";
   if (req.files[0]) {
-    await uploadHelper.UploadFileToS3(req.files[0].filename, "tree_update");
-    // Save the urls with S3 location prefixed for each image
-    const s3url =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/tree_update/";
-    imageurls = s3url + req.files[0].filename;
+    imageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "tree_update");
   }
 
   try {
@@ -696,7 +944,7 @@ module.exports.addPhotoUpdate = async (req, res) => {
           tree_id: tree._id,
           photo_update: [
             {
-              image: imageurls,
+              image: imageUrl,
               date_added: date,
             },
           ],
@@ -712,7 +960,7 @@ module.exports.addPhotoUpdate = async (req, res) => {
           {
             $push: {
               photo_update: {
-                image: imageurls,
+                image: imageUrl,
                 date_added: date,
               },
             },

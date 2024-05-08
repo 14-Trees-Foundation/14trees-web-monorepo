@@ -2,6 +2,12 @@ const { PondModel, pondUpdate } = require("../models/pond");
 const { status } = require("../helpers/status");
 const uploadHelper = require("./helper/uploadtos3");
 const OnSiteStaff = require("../models/onsitestaff");
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
+
+/*
+    Model - Pond
+    CRUD Operations for ponds collection
+*/
 
 module.exports.addPond = async (req, res) => {
   try {
@@ -58,6 +64,7 @@ module.exports.addPond = async (req, res) => {
 };
 
 module.exports.getPonds = async (req, res) => {
+  const {offset, limit } = getOffsetAndLimitFromRequest(req).skip(offset).limit(limit);
   try {
     let result = await PondModel.find({}, { updates: 0 });
     res.status(status.success).send(result);
@@ -86,19 +93,16 @@ module.exports.addUpdate = async (req, res) => {
     user = await OnSiteStaff.findOne({ user_id: req.body.user_id });
   }
 
-  let imageurls = "";
+  let pondImageUrl = "";
   if (req.files[0]) {
-    await uploadHelper.UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
-    // Save the urls with S3 location prefixed for each image
-    const s3url = "https://14treesplants.s3.ap-south-1.amazonaws.com/ponds/";
-    imageurls = s3url + req.body.pond_name + "/" + req.files[0].filename;
+    pondImageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
   }
 
   let obj = {
     date: req.body.date === null ? new Date().toISOString() : req.body.date,
     levelFt: req.body.levelFt,
     user: user === null ? null : user,
-    images: imageurls,
+    images: pondImageUrl,
   };
   try {
     let result = await PondModel.updateOne(
@@ -108,6 +112,19 @@ module.exports.addUpdate = async (req, res) => {
     res.status(status.success).send(result);
   } catch (error) {
     res.status(status.error).json({ error });
+  }
+};
+
+module.exports.deletePond = async (req, res) => {
+  try {
+      let resp = await PondModel.findByIdAndDelete(req.params.id).exec();
+      console.log("Delete Ponds Response for id: %s", req.params.id, resp);
+
+      res.status(status.success).json({
+        message: "Pond deleted successfully",
+      });
+  } catch (error) {
+      res.status(status.bad).send({ error: error.message });
   }
 };
 
