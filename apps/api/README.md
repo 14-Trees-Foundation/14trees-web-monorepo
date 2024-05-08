@@ -29,34 +29,10 @@ npm run swagger-autogen
 
 Run backend api server
 ```bash
-node server.js
+npm run dev
 ```
-
-### EC2 server
-ssh into ec2 instance
+or
 ```bash
-ssh -i $SSH_KEY_PEM_FILE ubuntu@<ip-address>
-```
-
-run below command to start running application. pm2 command with run `npm start` command. start command is mentioned in `package.json` file
-```bash
-cd 14trees-mern
-pm2 start npm -- start
-```
-
-List applications
-```bash
-pm2 list
-```
-
-
-Stop running application
-```bash
-pm2 stop <application-name>
-```
-
-
-delete application config from pm2
-```bash
-pm2 delete <application-name>
+npm run build
+npm run start
 ```
