@@ -935,6 +935,9 @@ module.exports.addPhotoUpdate = async (req, res) => {
       return;
     } else {
       let date = new Date().toISOString().slice(0, 10);
+      if (req.body.date_added) {
+        date = req.body.date_added;
+      }
       let tree_update = await treeUpdatePhotoModel.findOne({
         tree_id: tree._id,
       });
