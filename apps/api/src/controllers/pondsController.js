@@ -64,9 +64,9 @@ module.exports.addPond = async (req, res) => {
 };
 
 module.exports.getPonds = async (req, res) => {
-  const {offset, limit } = getOffsetAndLimitFromRequest(req).skip(offset).limit(limit);
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
-    let result = await PondModel.find({}, { updates: 0 });
+    let result = await PondModel.find({}, { updates: 0 }).skip(offset).limit(limit);
     res.status(status.success).send(result);
   } catch (error) {
     res.status(status.error).json({
