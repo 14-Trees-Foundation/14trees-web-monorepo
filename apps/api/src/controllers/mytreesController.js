@@ -7,6 +7,7 @@ const csvhelper = require("./helper/uploadtocsv");
 const uploadHelper = require("./helper/uploadtos3");
 const mongoose = require("mongoose");
 const { addUser } = require("./helper/users");
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.createAlbum = async (req, res) => {
   let email = req.params["email"];
@@ -322,6 +323,7 @@ module.exports.addTrees = async (req, res) => {
 };
 
 module.exports.getUserTreeCount = async (req, res) => {
+  const {offset, limit} = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -387,6 +389,8 @@ module.exports.getUserTreeCount = async (req, res) => {
       { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
       { $unwind: "$plot" },
       { $project: { _id: 0 } },
+      { $skip: offset },
+      { $limit: limit },
     ]);
 
     var defaultObj = result.reduce(
