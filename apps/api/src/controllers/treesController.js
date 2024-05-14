@@ -327,6 +327,22 @@ module.exports.getTree = async (req, res) => {
   }
 };
 
+module.exports.getTrees = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req); 
+  try {
+    let result = await TreeModel.find()
+      .skip(offset)
+      .limit(limit);
+    
+    res.status(status.success).send(result);
+  } catch (error) {
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
+  }
+};
+
 module.exports.addTreesBulk = async (req, res) => {
 
   try {
