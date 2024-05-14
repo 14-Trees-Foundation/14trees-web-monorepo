@@ -228,7 +228,12 @@ const validateRequestAndGetTreeDocument = async (reqBody) => {
     reqBody.user_id !== undefined ||
     reqBody.user_id !== null
   ) {
-    user = await OnSiteStaff.findOne({ user_id: reqBody.user_id });
+    user = await OnSiteStaff.findOne({
+      $or: [
+        { user_id: reqBody.user_id },
+        { _id: reqBody.user_id },
+      ]
+    });
   }
 
   let mapped_to = null;
