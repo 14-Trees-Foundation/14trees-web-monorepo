@@ -6,6 +6,7 @@ const userHelper = require("./helper/users");
 const csvParser = require('csv-parser');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const fs = require('fs');
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 /*
     Model - User
@@ -110,37 +111,46 @@ module.exports.addUsersBulk = async (req, res) => {
 
 module.exports.getUser = async (req, res) => {
   try {
-    if (!req.query.email || !req.query.name) {
-      throw new Error("Name and Email is required");
+    if (req.query.email && req.query.name) {
+      let userid = req.query.name.toLowerCase() + req.query.email.toLowerCase();
+      userid = userid.replace(/[^A-Z0-9@.]+/gi, "");
+
+      let result = await UserModel.findOne({ userid: userid });
+      if (result === null) {
+        res.status(status.notfound).send();
+      } else {
+        let lastProfile = await UserTreeModel.find(
+          { user: result._id },
+          { _id: 0 },
+        )
+          .populate({
+            path: "tree",
+            select: "sapling_id date_added -_id",
+            populate: { path: "tree_id", select: "name -_id" },
+          })
+          .select("tree");
+        res.status(status.success).json({
+          user: result,
+          tree: lastProfile,
+        });
+      }
+    } else {
+      const { offset, limit } = getOffsetAndLimitFromRequest(req);
+      let result = await UserModel.find().skip(offset).limit(limit);
+      res.status(status.success).json(result);
     }
+
   } catch (error) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
+};
 
-  let userid = req.query.name.toLowerCase() + req.query.email.toLowerCase();
-  userid = userid.replace(/[^A-Z0-9@.]+/gi, "");
-
+module.exports.getUsers = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
-    let result = await UserModel.findOne({ userid: userid });
-    if (result === null) {
-      res.status(status.notfound).send();
-    } else {
-      let lastProfile = await UserTreeModel.find(
-        { user: result._id },
-        { _id: 0 },
-      )
-        .populate({
-          path: "tree",
-          select: "sapling_id date_added -_id",
-          populate: { path: "tree_id", select: "name -_id" },
-        })
-        .select("tree");
-      res.status(status.success).json({
-        user: result,
-        tree: lastProfile,
-      });
-    }
+    let result = await UserModel.find().skip(offset).limit(limit);
+    res.status(status.success).json(result);
   } catch (error) {
     res.status(status.error).json({
       status: status.error,

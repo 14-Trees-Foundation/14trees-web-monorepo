@@ -5,7 +5,7 @@ module.exports.getUserDocumentFromRequestBody = (reqBody) => {
 
     return new User({
         name: reqBody.name,
-        phone: reqBody.contact !== "undefined" ? reqBody.contact : 0,
+        phone: reqBody.contact !== "undefined" ? reqBody.contact : reqBody.phone !== "undefined" ? reqBody.phone : 0,
         email: reqBody.email,
         userid: userId,
         dob: reqBody.dob,

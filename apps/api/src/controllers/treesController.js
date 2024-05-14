@@ -195,15 +195,21 @@ const validateRequestAndGetTreeDocument = async (reqBody) => {
 
   // Check if tree type exists
   let treetype = await TreeTypeModel.findOne({ tree_id: reqBody.tree_id });
-
+  if (!treetype) {
+    treetype = await TreeTypeModel.findOne({ _id: reqBody.tree_id })
+  }
   // If tree type doesn't exists, return error
-  if (treetype.length === 0) {
+  if (!treetype  || treetype.length === 0) {
     throw new Error("Tree type ID doesn't exist" );
   }
 
   // Check if plot exists
-  let plot = await PlotModel.findOne({ plot_id: reqBody.plot_id });
-
+  let plot = await PlotModel.findOne({
+    $or: [
+      { plot_id: reqBody.plot_id },
+      { _id: reqBody.plot_id }
+    ]
+  })
   // If plot type doesn't exists, return error
   if (!plot) {
     throw new Error("Plot ID doesn't exist" );
@@ -211,9 +217,9 @@ const validateRequestAndGetTreeDocument = async (reqBody) => {
 
   // Check if sapling id exists
   let tree = await TreeModel.findOne({ sapling_id: reqBody.sapling_id });
-  // if (tree !== null) {
-  //   throw new Error("Sapling_id exists, please check!");
-  // }
+  if (tree !== null) {
+    throw new Error("Sapling_id exists, please check!");
+  }
 
   // get user
   let user = null;
@@ -272,9 +278,7 @@ module.exports.addTree = async (req, res) => {
   try {
     let tree = await validateRequestAndGetTreeDocument(req.body);
     treeRes = await tree.save();
-    res.status(status.created).send({
-      treetype: treeRes,
-    })
+    res.status(status.created).send(treeRes)
   } catch (error) {
     console.log("Tree add error : ", error);
     res.status(status.error).send({
@@ -445,30 +449,29 @@ module.exports.updateTree = async (req, res) => {
     }
     if (req.body.tree_id) {
       // Check if tree type exists
-      const treetype = await TreeTypeModel.findOne({ tree_id: req.body.tree_id });
+      const treetype = await TreeTypeModel.findOne({ _id: req.body.tree_id });
       if (!treetype) {
         res.status(status.bad).send({ error: "Tree type ID doesn't exist" });
         return;
       }
-      tree.tree_id = treetype.id;
+      tree.tree_id = treetype._id;
     }
     if (req.body.plot_id) {
       // Check if plot exists
-      const plot = await PlotModel.findOne({ plot_id: req.body.plot_id });
+      const plot = await PlotModel.findOne({ _id: req.body.plot_id });
       if (!plot) {
         res.status(status.bad).send({ error: "Plot ID doesn't exist" });
         return;
       }
-      tree.plot_id = plot.id;
+      tree.plot_id = plot._id;
     }
 
 
     // Upload images to S3
     let imageUrls = [];
-    if (req.body.images && req.body.images.length > 0) {
-      let images = req.body.images.split(",");
-      for (const image of images) {
-        const location = await uploadHelper.UploadFileToS3(image, "trees");
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const location = await uploadHelper.UploadFileToS3(file.filename, "trees");
         if (location !== "") {
           imageUrls.push(location);
         }
@@ -497,9 +500,7 @@ module.exports.updateTree = async (req, res) => {
 
     // Save updated tree
     const updatedTree = await tree.save();
-    res.status(status.success).send({
-      tree: updatedTree,
-    });
+    res.status(status.success).send(updatedTree);
   } catch (error) {
     console.error("Tree update error:", error);
     res.status(status.error).send({ error: error.message });

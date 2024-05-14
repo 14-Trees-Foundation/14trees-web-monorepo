@@ -11,6 +11,10 @@ const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.addPond = async (req, res) => {
   try {
+    if (req.body.name) req.body.pond_name = req.body.name;
+    if (req.body.lengthFt) req.body.length = req.body.lengthFt;
+    if (req.body.widthFt) req.body.width = req.body.widthFt;
+    if (req.body.depthFt) req.body.depth = req.body.depthFt;
     if (!req.body.pond_name) {
       throw new Error("Pond name is required");
     } else if (!req.body.length && isNaN(parseFloat(req.body.length))) {
