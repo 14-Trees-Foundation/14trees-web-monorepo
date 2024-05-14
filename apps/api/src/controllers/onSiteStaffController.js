@@ -10,8 +10,21 @@ const { getUserId } = require("./helper/users");
 
 module.exports.getOnsiteStaffs = async (req, res) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    let filters = {}
+    if (req.query?.name) {
+        filters["name"] = new RegExp(req.query?.name, "i")
+    }
+    if (req.query?.phone) {
+        filters["phone"] = req.query?.phone
+    }
+    if (req.query?.email) {
+        filters["email"] = req.query?.email
+    }
+    if (req.query?.role) {
+        filters["role"] = { $in: req.query?.role.split(",")}
+    }
     try {
-        const result = await onSiteStaff.find().skip(offset, limit);
+        const result = await onSiteStaff.find(filters).skip(offset).limit(limit).exec();
         res.status(status.success).send(result);
     } catch {
         res.status(status.error).json({

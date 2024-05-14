@@ -38,10 +38,18 @@ module.exports.addPlot = async (req, res) => {
 
     try {
         if (!req.body.plot_name) {
-            throw new Error("Plot name is required");
+            if (!req.body.name) {
+                throw new Error("Plot name is required");
+            } else {
+                req.body["plot_name"] = req.body.name;
+            }
         }
         if (!req.body.plot_code) {
-            throw new Error("Short plot code is required");
+            if (!req.body.plot_id) {
+                throw new Error("Short plot code is required");
+            } else {
+                req.body["plot_code"] = req.body.plot_id;
+            }
         }
         if (!req.body.boundaries) {
             throw new Error("Boundaries Lat Lng required");
@@ -98,8 +106,12 @@ module.exports.addPlot = async (req, res) => {
 
 module.exports.getPlots = async (req, res) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    let filters = {}
+    if (req.query?.name) {
+        filters["name"] = new RegExp(req.query?.name, "i")
+    }
     try {
-        let result = await PlotModel.find().skip(offset).limit(limit);;
+        let result = await PlotModel.find(filters).skip(offset).limit(limit);;
         res.status(status.success).send(result);
     } catch (error) {
         res.status(status.error).json({

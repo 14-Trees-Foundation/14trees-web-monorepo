@@ -291,9 +291,15 @@ module.exports.addEvents = async (req, res) => {
 
 module.exports.getEvents = async (req, res) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
-
+  let filters = {}
+    if (req.query?.name) {
+        filters["name"] = new RegExp(req.query?.name, "i")
+    }
+    if (req.query?.type) {
+        filters["type"] = new RegExp(req.query?.type, "i")
+    }
   try {
-      let result = await EventModel.find().skip(offset).limit(limit);
+      let result = await EventModel.find(filters).skip(offset).limit(limit);
       res.status(status.success).send(result);
   } catch (error) {
       res.status(status.error).json({
@@ -403,6 +409,7 @@ module.exports.addCorpEvent = async (req, res) => {
 };
 
 module.exports.getCorpEvent = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   if (!req.query.event_id) {
     res.status(status.bad).send({ error: "Event ID required" });
     return;
@@ -497,6 +504,8 @@ module.exports.getCorpEvent = async (req, res) => {
       {
         $unwind: { path: "$plot" },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
 
   

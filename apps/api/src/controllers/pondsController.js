@@ -65,8 +65,15 @@ module.exports.addPond = async (req, res) => {
 
 module.exports.getPonds = async (req, res) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
+  let filters = {}
+    if (req.query?.name) {
+        filters["name"] = new RegExp(req.query?.name, "i")
+    }
+    if (req.query?.type) {
+        filters["type"] = new RegExp(req.query?.type, "i")
+    }
   try {
-    let result = await PondModel.find({}, { updates: 0 }).skip(offset).limit(limit);
+    let result = await PondModel.find(filters, { updates: 0 }).skip(offset).limit(limit);
     res.status(status.success).send(result);
   } catch (error) {
     res.status(status.error).json({

@@ -25,11 +25,7 @@ module.exports.addUser = async (req, res) => {
   try {
     let user = userHelper.getUserDocumentFromRequestBody(req.body);
     let result = await user.save();
-    res.status(status.created).json({
-      name: result.name,
-      contact: result.phone,
-      email: result.email,
-    });
+    res.status(status.created).json(result);
   } catch (error) {
     res.status(status.duplicate).json({
       status: status.duplicate,

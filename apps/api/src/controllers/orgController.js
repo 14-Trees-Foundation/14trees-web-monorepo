@@ -10,9 +10,15 @@ const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.getOrgs = async (req, res) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
-
+    let filters = {}
+    if (req.query?.name) {
+        filters["name"] = new RegExp(req.query?.name, "i")
+    }
+    if (req.query?.type) {
+        filters["type"] = new RegExp(req.query?.type, "i")
+    }
     try {
-        let result = await OrgModel.find().skip(offset).limit(limit);
+        let result = await OrgModel.find(filters).skip(offset).limit(limit);
         res.status(status.success).send(result);
     } catch (error) {
         res.status(status.error).json({

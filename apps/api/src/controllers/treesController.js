@@ -26,9 +26,22 @@ const userModel = require("../models/user");
 
 module.exports.getTreeTypes = async (req, res) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
+  let filters = {}
+  if (req.query?.name) {
+      filters["name"] = new RegExp(req.query?.name, "i")
+  }
+  if (req.query?.sci_name) {
+      filters["scientific_name"] = new RegExp(req.query?.sci_name, "i")
+  }
+  if (req.query?.med_use) {
+      filters["med_use"] = new RegExp(req.query?.med_use, "i")
+  }
+  if (req.query?.food) {
+      filters["food"] = new RegExp(req.query?.food, "i")
+  }
 
   try {
-    let result = await TreeTypeModel.find().skip(offset).limit(limit);
+    let result = await TreeTypeModel.find(filters).skip(offset).limit(limit).exec();
     res.status(status.success).send(result);
   } catch (error) {
     res.status(status.error).json({
@@ -490,6 +503,7 @@ module.exports.deleteTree = async (req, res) => {
 };
 
 module.exports.countByPlot = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   if (!req.query.id) {
     res.status(status.bad).send({ error: "Plot ID required" });
     return;
@@ -517,6 +531,8 @@ module.exports.countByPlot = async (req, res) => {
           preserveNullAndEmptyArrays: true,
         },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
 
     if (trees === null) {
@@ -535,6 +551,7 @@ module.exports.countByPlot = async (req, res) => {
 };
 
 module.exports.treeListByPlot = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     if (!req.query.plot_name) {
       res.status(status.bad).send({ error: "Plot name required" });
@@ -626,6 +643,8 @@ module.exports.treeListByPlot = async (req, res) => {
           planted_by: "$user_tree_reg.planted_by",
         },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {
@@ -651,6 +670,7 @@ module.exports.getTreeFromId = async (req, res) => {
 };
 
 module.exports.treeCountByPlot = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -676,6 +696,8 @@ module.exports.treeCountByPlot = async (req, res) => {
       {
         $sort: { count: -1 },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {
@@ -687,6 +709,7 @@ module.exports.treeCountByPlot = async (req, res) => {
 };
 
 module.exports.treeLoggedByDate = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -705,6 +728,8 @@ module.exports.treeLoggedByDate = async (req, res) => {
       {
         $sort: { _id: -1 },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {
@@ -716,6 +741,7 @@ module.exports.treeLoggedByDate = async (req, res) => {
 };
 
 module.exports.treeLogByUser = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -753,6 +779,8 @@ module.exports.treeLogByUser = async (req, res) => {
       {
         $sort: { "_id.date": -1 },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {
@@ -764,6 +792,7 @@ module.exports.treeLogByUser = async (req, res) => {
 };
 
 module.exports.treeLogByPlot = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -804,6 +833,8 @@ module.exports.treeLogByPlot = async (req, res) => {
       {
         $sort: { "_id.date": -1 },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {
@@ -815,6 +846,7 @@ module.exports.treeLogByPlot = async (req, res) => {
 };
 
 module.exports.treeCountTreeType = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -844,6 +876,8 @@ module.exports.treeCountTreeType = async (req, res) => {
       {
         $sort: { count: -1 },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {
@@ -855,6 +889,7 @@ module.exports.treeCountTreeType = async (req, res) => {
 };
 
 module.exports.treeTypeCountByPlot = async (req, res) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -899,6 +934,8 @@ module.exports.treeTypeCountByPlot = async (req, res) => {
       {
         $sort: { count: -1 },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
     res.status(status.success).send(result);
   } catch (error) {

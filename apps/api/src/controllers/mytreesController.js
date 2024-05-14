@@ -131,6 +131,7 @@ module.exports.getAlbums = async (req, res) => {
 };
 
 module.exports.getTrees = async (req, res) => {
+  const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
     let user = await UserModel.find({ email: email });
@@ -236,6 +237,8 @@ module.exports.getTrees = async (req, res) => {
           image: 1,
         },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
 
     res.status(status.success).send({

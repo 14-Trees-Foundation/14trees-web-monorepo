@@ -7,4 +7,4 @@ routes.get('/', onsitestaff.getOnsiteStaffs);
 routes.put('/:id', onsitestaff.updateOnsiteStaff);
 routes.delete('/:id', onsitestaff.deleteOnsiteStaff);
 
-module.exports = routes;
+export default routes;
