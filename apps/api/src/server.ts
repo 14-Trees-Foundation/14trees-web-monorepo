@@ -1,5 +1,6 @@
 import path from "path";
 import express, { Request } from "express";
+const morgan = require("morgan");
 import mongoose from "mongoose";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express"
@@ -64,6 +65,9 @@ const port = process.env.SERVER_PORT ?? 8088;
 
 const initExpressApp = (app: express.Application) => {
   console.log("Initializing Express App...");
+
+  // log requests
+  app.use(morgan("[:date[clf]] - :method :url - :status - :response-time ms"));
 
   app.use(express.static(path.join(__dirname, "client/build")));
 
