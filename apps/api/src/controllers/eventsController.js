@@ -11,7 +11,6 @@ const userHelper = require("./helper/users");
 const csvhelper = require("./helper/uploadtocsv");
 const orgModel = require("../models/org");
 const corpEventModel = require("../models/corp_events");
-const userTreeModel = require("../models/userprofile");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.getOverallOrgDashboard = async (req, res) => {
@@ -208,12 +207,17 @@ module.exports.addEvents = async (req, res) => {
   let mimageurl;
   let userimages;
   let donor;
+  
   try {
     if (fields.type === "1" || fields.type === "2" || fields.type === "3") {
       let user_tree_reg_ids = [];
 
       // Add user to the database if not exists
-      let user = await userHelper.addUser(req, res);
+      let userDoc = await userHelper.getUserDocumentFromRequestBody(req);
+      let user = UserModel.findOne({ userid: userDoc.userid});
+      if (!user) {
+        user = await userDoc.save();
+      }
 
       // Memory image urls
       if (
@@ -283,6 +287,36 @@ module.exports.addEvents = async (req, res) => {
         result: result,
       });
     }
+  } catch (error) {
+    console.log(error);
+    res.status(status.error).send();
+  }
+};
+
+
+module.exports.removeEventAndUnassignTree = async (req, res) => {
+  const fields = req.body;
+  let saplingIds = fields.sapling_id.split(/[ ,]+/);
+  
+  try {
+    
+      let treeIds = [];
+      let failedSaplingIds = [];
+
+      for (let i = 0; i < saplingIds.length; i++) {
+        let tree = await TreeModel.findOne({ sapling_id: saplingIds[i] });
+        if (tree) {
+          treeIds.push(tree._id);
+        }
+      }
+
+      let userTreeRegs = await UserTreeModel.find( {tree: { $in: treeIds}});
+      for (const userTreeReg in userTreeRegs) {
+        await userTreeReg.deleteOne();
+      }
+      
+      // delete event model for the same
+    
   } catch (error) {
     console.log(error);
     res.status(status.error).send();

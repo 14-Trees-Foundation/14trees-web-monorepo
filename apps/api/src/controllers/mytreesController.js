@@ -6,7 +6,7 @@ const UserModel = require("../models/user");
 const csvhelper = require("./helper/uploadtocsv");
 const uploadHelper = require("./helper/uploadtos3");
 const mongoose = require("mongoose");
-const { addUser } = require("./helper/users");
+const { getUserDocumentFromRequestBody } = require("./helper/users");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.createAlbum = async (req, res) => {
@@ -286,7 +286,8 @@ module.exports.addTrees = async (req, res) => {
   let user = await UserModel.findOne({ email: email_id });
   if (user === null) {
     try {
-      user = await addUser(req, res);
+      let userDoc = await getUserDocumentFromRequestBody(req);
+      user = await userDoc.save();
     } catch (error) {
       res.status(status.error).send(error);
     }
@@ -323,6 +324,39 @@ module.exports.addTrees = async (req, res) => {
       error: error,
     });
   }
+};
+
+module.exports.removeMappedToFromTrees = async (req, res) => {
+  const fields = req.body;
+  let saplingIds = fields.sapling_id.split(/[ ,]+/);
+
+  let failedSaplingIds = []
+  for (let i = 0; i < saplingIds.length; i++) {
+    try {
+      let result = await TreeModel.updateOne(
+        { sapling_id: saplingIds[i] },
+        {
+          $set: {
+            mapped_to: null,
+            date_assigned: null,
+          },
+        }
+      );
+      if (result.modifiedCount === 0) {
+        failedSaplingIds.push(saplingIds[i]);
+      }
+    } catch (error) {
+      res.status(status.error).send({
+        error: error,
+      });
+      return;
+    }
+  }
+  if (failedSaplingIds.length !== 0) {
+    res.status(status.error).send({error: "failed to remove mapping for sapling some sapling ids",  failed_sampling_ids: failedSaplingIds});
+    return;
+  }
+  res.status(status.created).send();
 };
 
 module.exports.getUserTreeCount = async (req, res) => {

@@ -190,7 +190,11 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     }
 
     // Get the user
-    let user = await userHelper.addUser(req, res);
+    let userDoc = await userHelper.getUserDocumentFromRequestBody(req);
+    let user = await userModel.findOne({userid: userDoc.userid});
+    if (!user) {
+      user = await userDoc.save();
+    }
 
     // Upload images to S3
     let userImageUrls = []

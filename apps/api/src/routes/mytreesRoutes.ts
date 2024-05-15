@@ -1,6 +1,7 @@
 import express from "express";
 import {
   addTrees,
+  removeMappedToFromTrees,
   updateTrees,
   getTrees,
   deleteAlbum,
@@ -13,6 +14,7 @@ import uploadImages from "../helpers/multer";
 const routes = express.Router();
 
 routes.post("/assign", addTrees);
+routes.post("/remove-mapped-to", removeMappedToFromTrees);
 routes.post("/update", updateTrees);
 routes.get("/:email", getTrees);
 routes.delete("/albums", deleteAlbum);

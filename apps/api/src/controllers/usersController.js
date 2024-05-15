@@ -146,6 +146,24 @@ module.exports.getUser = async (req, res) => {
   }
 };
 
+module.exports.getUsersByEmailIdPrefix = async (req, res) => {
+  try {
+    if (!req.params.email || req.params.email.length < 3) {
+      res.status(status.bad).send({ error: "Please provide at least 3 char of email"});
+      return;
+    }
+
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const regex = new RegExp(req.params.email, 'i');
+    const users = await UserModel.find({ email: { $regex: regex } }).skip(offset).limit(limit);
+    res.status(status.success).send(users);
+    return;
+  } catch (error) {
+    res.status(status.bad).send({ error: error.message });
+    return;
+  }
+};
+
 module.exports.getUsers = async (req, res) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {

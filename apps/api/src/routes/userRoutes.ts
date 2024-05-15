@@ -8,6 +8,7 @@ const routes = Router();
 routes.post('/add', users.addUser);
 
 routes.get('/', users.getUser);
+routes.get('/:email', users.getUsersByEmailIdPrefix);
 routes.post('/', users.addUser);
 routes.post('/bulk', uploadImages.single('file'),users.addUsersBulk);
 routes.put('/:id', users.updateUser);
