@@ -139,7 +139,7 @@ module.exports.addUpdate = async (req, res) => {
   }
 
   let pondImageUrl = "";
-  if (req.files[0]) {
+  if (req.files && req.files.length !== 0) {
     pondImageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
   }
 

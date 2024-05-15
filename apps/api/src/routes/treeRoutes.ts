@@ -11,12 +11,12 @@ routes.put('/treetypes/:id', uploadImages.array('files', 4), trees.updateTreeTyp
 routes.delete('/treetypes/:id', trees.deleteTreeType);
 
 // Trees
-// @deprecated
+
 routes.get('/gettree', trees.getTree);
 // @deprecated
 routes.post('/addtree', uploadImages.array('files', 1), trees.addTree);
 
-routes.get('/:sapling_id', trees.getTree);
+// routes.get('/:sapling_id', trees.getTree);
 routes.get('/', trees.getTrees);
 routes.post('/', uploadImages.array('files', 1), trees.addTree);
 routes.post('/bulk', uploadImages.fields([{name: 'files', maxCount: 1}, {name: 'csvFile', maxCount: 1}]), trees.addTreesBulk);
