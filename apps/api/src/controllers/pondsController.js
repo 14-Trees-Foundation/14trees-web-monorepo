@@ -67,6 +67,40 @@ module.exports.addPond = async (req, res) => {
   }
 };
 
+module.exports.updatePond = async (req, res) => {
+  
+  if (!req.params.id || req.params.id === "") {
+    res.status(status.bad).send({error: "pond id is required to update the pond"});
+    return;
+  }
+
+  try {
+    let pond = await PondModel.findById(req.params.id);
+    if(!pond) {
+      res.status(status.error).send({error: "pond not found for given id."});
+      return;
+    }
+
+    pond.name = req.body.name;
+    pond.tags = req.body.tags;
+    pond.desc = req.body.desc;
+    pond.type = req.body.type;
+    pond.boundaries = req.body.boundaries;
+    pond.date_added = req.body.date_added;
+    pond.images = req.body.images;
+    pond.lengthFt = req.body.lengthFt;
+    pond.widthFt = req.body.widthFt;
+    pond.depthFt = req.body.depthFt;
+    pond.updates = req.body.updates;
+
+
+    let pondRes = await pond.save();
+    res.status(status.success).json(pondRes);
+  } catch (error) {
+    res.status(status.error).json({ error });
+  }
+};
+
 module.exports.getPonds = async (req, res) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
   let filters = {}
