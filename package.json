@@ -25,6 +25,9 @@
     "packages/*"
   ],
   "dependencies": {
-    "@notionhq/client": "^2.2.15"
+    "@notionhq/client": "^2.2.15",
+    "pg": "^8.11.5",
+    "sequelize": "^6.37.3",
+    "sequelize-typescript": "^2.1.6"
   }
 }

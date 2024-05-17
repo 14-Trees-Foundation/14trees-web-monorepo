@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express"
 import { readFileSync } from "fs"
 import { MongoClient } from "mongodb";
 import { getMongoDBConnectionString } from "./services/mongo";
+import Database from "./config/postgreDB";
 
 // Routes
 import userRoutes from "./routes/userRoutes";
@@ -60,6 +61,8 @@ const connectDB = async () => {
   }
 };
 
+
+
 const port = process.env.SERVER_PORT ?? 8088;
 
 const initExpressApp = (app: express.Application) => {
@@ -83,6 +86,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/admin", adminRoutes);
   app.use("/api/trees", treeRoutes);
   app.use("/api/profile", profileRoute);
+
   app.use("/api/mytrees", mytreesRoutes);
   app.use("/api/plots", plotRoutes);
   app.use("/api/events", eventRoutes);

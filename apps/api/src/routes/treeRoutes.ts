@@ -1,12 +1,16 @@
 import { Router } from "express";
 import * as trees from "../controllers/treesController";
 import uploadImages from "../helpers/multer";
+import * as treeTypes from '../controllers/treetypecontroller'
 
 const routes = Router();
 
 // TreeTypes
 routes.get("/treetypes", trees.getTreeTypes);
 routes.post("/addtreetype", uploadImages.array("files", 4), trees.addTreeType);
+
+routes.post("/addtreetype2", treeTypes.createTreeType);  //function to create a tree type in postgres
+
 routes.put('/treetypes/:id', uploadImages.array('files', 4), trees.updateTreeType);
 routes.delete('/treetypes/:id', trees.deleteTreeType);
 
