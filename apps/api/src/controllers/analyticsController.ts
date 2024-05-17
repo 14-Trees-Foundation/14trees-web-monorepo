@@ -1,5 +1,5 @@
-import { Request, Response } from 'express'; // Assuming you're using Express
-import { status } from '../helpers/status'; // Assuming status is an object with status codes
+import { Request, Response } from 'express';
+import { status } from '../helpers/status'; 
 
 const TreeModel = require("../models/tree");
 const TreeTypeModel = require("../models/treetype");
@@ -7,19 +7,6 @@ const UserModel = require("../models/user");
 const PlotModel = require("../models/plot");
 const { PondModel, pondUpdate } = require("../models/pond");
 const UserTreeModel = require("../models/userprofile");
-
-interface SummaryResponse {
-  treeCount: number;
-  treeTypeCount: number;
-  userCount: number;
-  assignedTreeCount: number;
-  plotCount: number;
-  pondCount: number;
-}
-
-interface CountResponse {
-  count: number;
-}
 
 export const summary = async (req: Request, res: Response) => {
   try {
