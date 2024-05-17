@@ -9,6 +9,7 @@ const uploadHelper = require("./helper/uploadtos3");
 const mongoose = require("mongoose");
 const { getUserDocumentFromRequestBody } = require("./helper/users");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
+const { getQueryExpression } = require("./helper/filters");
 
 module.exports.createAlbum = async (req, res) => {
   let email = req.params["email"];
@@ -416,6 +417,16 @@ module.exports.unMapTrees = async (req, res) => {
 
 module.exports.getUserMappedTreesCount = async (req, res) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
+  const filterReq = req.body.filters;
+  let filters;
+  if (filterReq && filterReq.length != 0) {
+    if (filterReq[0].columnField === "name") {
+      filters = getQueryExpression("user.name", filterReq[0].operatorValue, filterReq[0].value)
+    } else if (filterReq[0].columnField === "plot") {
+      filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
+    }
+  }
+  console.log(filters);
   let pipeline = [
     {
       $group: {
@@ -479,16 +490,24 @@ module.exports.getUserMappedTreesCount = async (req, res) => {
     },
     { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
     { $unwind: "$plot" },
-    { $project: { _id: 0 } },
   ]
+
+  if (filters) {
+    pipeline.push({ $match: filters })
+  }
+  pipeline.push({ $project: { _id: 0 } })
   
   try {
-    let countDocPipeline = [...pipeline, {$count: "totalDocuments"}];
-    let countResult = await TreeModel.aggregate(countDocPipeline);
-    console.log(countResult);
+    // let time = Date.now()
+    // let countDocPipeline = [...pipeline, {$count: "totalDocuments"}];
+    // let countResult = await TreeModel.aggregate(countDocPipeline);
+    // console.log(Date.now() - time);
+    // console.log(countResult);
     
+    let time = Date.now()
     let getDocPipeline = [...pipeline, {$skip: offset}, {$limit: limit}];
     let result = await TreeModel.aggregate(getDocPipeline);
+    console.log(Date.now() - time);
 
     var defaultObj = result.reduce(
       (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),

@@ -2,6 +2,7 @@ const { errorMessage, successMessage, status } = require("../helpers/status");
 const OrgModel = require("../models/org");
 const csvhelper = require("./helper/uploadtocsv");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
+const { getQueryExpression } = require("./helper/filters");
 
 /*
     Model - Org
@@ -11,11 +12,11 @@ const { getOffsetAndLimitFromRequest } = require("./helper/request");
 module.exports.getOrgs = async (req, res) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
     let filters = {}
-    if (req.query?.name) {
-        filters["name"] = new RegExp(req.query?.name, "i")
-    }
-    if (req.query?.type) {
-        filters["type"] = new RegExp(req.query?.type, "i")
+    if (req.body.filters) {
+        req.body.filters.array.forEach(element => {
+            const filter = getQueryExpression(element.columnField, element.operatorValue, element.value)
+            filters = {...filters, ...filter};  
+        });
     }
     try {
         let result = await OrgModel.find(filters).skip(offset).limit(limit);
