@@ -348,6 +348,7 @@ export const unassignTree = async  (req: Request, res: Response) => {
 
     for (let i = 0; i < trees.length; i++) {
       let userTree = await UserTreeModel.findOne({ tree: trees[i] });
+      if (!userTree) { continue; }
       let deletedProfile = new DeletedProfile({
         tree: userTree.tree,
         user: userTree.user,
