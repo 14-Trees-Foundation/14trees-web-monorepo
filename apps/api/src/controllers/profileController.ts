@@ -305,7 +305,7 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
   }
 };
 
-export const regUserTree = async  (req: Request, res: Response) => {
+export const assignTreeToUser = async  (req: Request, res: Response) => {
   try {
     let user_tree_reg_res = await addUserTree(
       req.body.sapling_id,
@@ -321,7 +321,7 @@ export const regUserTree = async  (req: Request, res: Response) => {
   }
 };
 
-export const regMultiUserTree = async  (req: Request, res: Response) => {
+export const assignTreesToUser = async  (req: Request, res: Response) => {
   try {
     let saplingids = req.body.sapling_id.split(/[ ,]+/);
     let user_tree_reg_res;

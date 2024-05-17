@@ -121,7 +121,7 @@ module.exports.getPonds = async (req, res) => {
   }
 };
 
-module.exports.addUpdate = async (req, res) => {
+module.exports.addWaterLevelUpdate = async (req, res) => {
   try {
     if (!req.body.pond_name) {
       throw new Error("Pond name is required");

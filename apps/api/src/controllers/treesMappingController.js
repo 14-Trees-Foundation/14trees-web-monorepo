@@ -130,7 +130,7 @@ module.exports.getAlbums = async (req, res) => {
   }
 };
 
-module.exports.getTrees = async (req, res) => {
+module.exports.getMappedTrees = async (req, res) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
@@ -253,7 +253,7 @@ module.exports.getTrees = async (req, res) => {
   }
 };
 
-module.exports.updateTrees = async (req, res) => {
+module.exports.updateEventDataInTrees = async (req, res) => {
   const sapling_ids = req.body.sapling_ids;
 
   let link = req.body.link ? req.body.link : "";
@@ -274,7 +274,7 @@ module.exports.updateTrees = async (req, res) => {
   }
 };
 
-module.exports.addTrees = async (req, res) => {
+module.exports.mapTrees = async (req, res) => {
   const fields = req.body;
   let email_id = fields.email;
   let saplingids = fields.sapling_id.split(/[ ,]+/);
@@ -326,7 +326,7 @@ module.exports.addTrees = async (req, res) => {
   }
 };
 
-module.exports.removeMappedToFromTrees = async (req, res) => {
+module.exports.unMapTrees = async (req, res) => {
   const fields = req.body;
   let saplingIds = fields.sapling_id.split(/[ ,]+/);
 
@@ -359,7 +359,7 @@ module.exports.removeMappedToFromTrees = async (req, res) => {
   res.status(status.created).send();
 };
 
-module.exports.getUserTreeCount = async (req, res) => {
+module.exports.getUserMappedTreesCount = async (req, res) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([

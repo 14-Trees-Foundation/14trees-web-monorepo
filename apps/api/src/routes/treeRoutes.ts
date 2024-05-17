@@ -12,19 +12,20 @@ routes.delete('/treetypes/:id', trees.deleteTreeType);
 
 // Trees
 
-routes.get('/gettree', trees.getTree);
 // @deprecated
 routes.post('/addtree', uploadImages.array('files', 1), trees.addTree);
 
-// routes.get('/:sapling_id', trees.getTree);
 routes.get('/', trees.getTrees);
 routes.post('/', uploadImages.array('files', 1), trees.addTree);
 routes.post('/bulk', uploadImages.fields([{name: 'files', maxCount: 1}, {name: 'csvFile', maxCount: 1}]), trees.addTreesBulk);
 routes.put('/:id', uploadImages.array('files', 1), trees.updateTree);
 routes.delete('/:id', uploadImages.array('files', 1), trees.deleteTree);
 
-
+// the below route should be /get-tree-by-mongo-id or /get-tree-by-id
 routes.get("/getsaplingid", trees.getTreeFromId);
+
+// the below route should be /get-tree-by-sapling-id
+routes.get('/gettree', trees.getTree);
 routes.get("/groupbyplots", trees.treeCountByPlot);
 routes.get("/loggedbydate", trees.treeLoggedByDate);
 routes.get("/treelogbyuser", trees.treeLogByUser);

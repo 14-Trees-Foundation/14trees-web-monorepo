@@ -13,6 +13,7 @@ routes.delete('/:id', events.deleteEvent);
 routes.get("/birthday", events.getBirthdayEvent);
 routes.get("/org", events.getOverallOrgDashboard);
 routes.get("/plot", events.getOverallPlotDashboard);
+
 routes.post("/corp/add", uploadImages.array("files", 12), events.addCorpEvent);
 routes.get("/corp/", events.getCorpEvent);
 routes.put('/corp/:id', events.updateCorpEvent);
