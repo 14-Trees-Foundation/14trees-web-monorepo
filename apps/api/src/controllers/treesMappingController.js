@@ -2,6 +2,7 @@ const { status } = require("../helpers/status");
 const AlbumModel = require("../models/albums");
 const TreeModel = require("../models/tree");
 const UserModel = require("../models/user");
+const PlotModel = require("../models/plot");
 
 const csvhelper = require("./helper/uploadtocsv");
 const uploadHelper = require("./helper/uploadtos3");
@@ -326,9 +327,63 @@ module.exports.mapTrees = async (req, res) => {
   }
 };
 
+module.exports.mapTreesInPlot = async (req, res) => {
+  const fields = req.body;
+  let email_id = fields.email;
+  let plot_id = fields.plot_id;
+  let count = fields.count;
+
+  try {
+    let user = await UserModel.findOne({ email: email_id });
+    if (!user) {
+      res.status(status.error).send({error: "user with given email doesn't exists"});
+      return;
+    }
+
+    let plot = await PlotModel.findOne({ $or: [
+      {plot_id: plot_id},
+      {_id : plot_id}
+    ] });
+    if (!plot) {
+      res.status(status.error).send({error: "plot with given plot_id doesn't exists"});
+      return;
+    }
+
+    let trees = await TreeModel.find({
+      plot_id: plot._id, 
+      $and: [
+        {$or: [
+          {"mapped_to": {"$exists": false}},
+          {"mapped_to": {"$exists": true, "$eq": null}},
+        ]},
+        {$or: [
+          {"date_assigned": {"$exists": false}},
+          {"date_assigned": {"$exists": true, "$eq": null}},
+        ]}
+      ]
+    }).limit(count);
+
+    if (trees.length != count) {
+      res.status(status.error).send({error: "not enough trees to assign"});
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      trees[i]["mapped_to"] = user._id;
+    }
+
+    await TreeModel.bulkSave(trees);
+    res.status(status.success).send();
+  } catch (error) {
+    res.status(status.error).send({
+      error: error,
+    });
+  }
+};
+
 module.exports.unMapTrees = async (req, res) => {
   const fields = req.body;
-  let saplingIds = fields.sapling_id.split(/[ ,]+/);
+  let saplingIds = fields.sapling_ids;
 
   let failedSaplingIds = []
   for (let i = 0; i < saplingIds.length; i++) {
@@ -361,74 +416,79 @@ module.exports.unMapTrees = async (req, res) => {
 
 module.exports.getUserMappedTreesCount = async (req, res) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
-  try {
-    let result = await TreeModel.aggregate([
-      {
-        $group: {
-          _id: {
-            user: "$mapped_to",
-            plot: "$plot_id",
+  let pipeline = [
+    {
+      $group: {
+        _id: {
+          user: "$mapped_to",
+          plot: "$plot_id",
+        },
+        count: { $sum: 1 },
+        tree_id: { $push: "$_id" },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id.user",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              _id: 0,
+            },
           },
-          count: { $sum: 1 },
-          tree_id: { $push: "$_id" },
-        },
+        ],
+        as: "user",
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id.user",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $project: {
-                name: 1,
-                email: 1,
-                _id: 0,
-              },
+    },
+    { $unwind: "$user" },
+    {
+      $lookup: {
+        from: "plots",
+        localField: "_id.plot",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              plot_id: 1,
+              _id: 0,
             },
-          ],
-          as: "user",
-        },
+          },
+        ],
+        as: "plot",
       },
-      { $unwind: "$user" },
-      {
-        $lookup: {
-          from: "plots",
-          localField: "_id.plot",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $project: {
-                name: 1,
-                plot_id: 1,
-                _id: 0,
-              },
+    },
+    {
+      $lookup: {
+        from: "user_tree_regs",
+        let: { id: "$tree_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $in: ["$tree", "$$id"] },
             },
-          ],
-          as: "plot",
-        },
+          },
+          { $count: "count" },
+        ],
+        as: "matched",
       },
-      {
-        $lookup: {
-          from: "user_tree_regs",
-          let: { id: "$tree_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $in: ["$tree", "$$id"] },
-              },
-            },
-            { $count: "count" },
-          ],
-          as: "matched",
-        },
-      },
-      { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
-      { $unwind: "$plot" },
-      { $project: { _id: 0 } },
-      { $skip: offset },
-      { $limit: limit },
-    ]);
+    },
+    { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
+    { $unwind: "$plot" },
+    { $project: { _id: 0 } },
+  ]
+  
+  try {
+    let countDocPipeline = [...pipeline, {$count: "totalDocuments"}];
+    let countResult = await TreeModel.aggregate(countDocPipeline);
+    console.log(countResult);
+    
+    let getDocPipeline = [...pipeline, {$skip: offset}, {$limit: limit}];
+    let result = await TreeModel.aggregate(getDocPipeline);
 
     var defaultObj = result.reduce(
       (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),

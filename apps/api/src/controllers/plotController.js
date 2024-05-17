@@ -132,3 +132,21 @@ module.exports.deletePlot = async (req, res) => {
         res.status(status.bad).send({ error: error.message });
     }
 };
+
+module.exports.searchPlots = async (req, res) => {
+    try {
+      if (!req.params.search || req.params.search.length < 3) {
+        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+        return;
+      }
+  
+      const { offset, limit } = getOffsetAndLimitFromRequest(req);
+      const regex = new RegExp(req.params.search, 'i');
+      const plots = await PlotModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
+      res.status(status.success).send(plots);
+      return;
+    } catch (error) {
+      res.status(status.bad).send({ error: error.message });
+      return;
+    }
+};

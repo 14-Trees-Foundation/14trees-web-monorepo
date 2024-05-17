@@ -108,3 +108,22 @@ module.exports.deleteOrg = async (req, res) => {
         res.status(status.bad).send({ error: error.message });
     }
 }
+
+module.exports.searchOrgs = async (req, res) => {
+    try {
+      if (!req.params.search || req.params.search.length < 3) {
+        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+        return;
+      }
+  
+      const { offset, limit } = getOffsetAndLimitFromRequest(req);
+      const regex = new RegExp(req.params.search, 'i');
+      const orgs = await OrgModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
+      res.status(status.success).send(orgs);
+      return;
+    } catch (error) {
+      res.status(status.bad).send({ error: error.message });
+      return;
+    }
+};
+  

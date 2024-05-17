@@ -336,41 +336,35 @@ export const assignTreesToUser = async  (req: Request, res: Response) => {
   }
 };
 
-export const deleteProfile = async  (req: Request, res: Response) => {
-  if (!req.query.id) {
-    res.status(status.bad).send({ error: "Sapling ID required" });
+export const unassignTree = async  (req: Request, res: Response) => {
+  if (!req.body.sapling_ids && req.body.sapling_ids.length === 0) {
+    res.status(status.bad).send({ error: "Sapling IDs required" });
     return;
   }
 
-  let tree;
   try {
-    tree = await TreeModel.findOne({ sapling_id: req.query.id });
-    if (tree === null) {
-      throw new Error("Sapling ID not found");
+
+    let trees = await TreeModel.findOne({ sapling_id: {$in: req.body.sapling_ids} });
+
+    for (let i = 0; i < trees.length; i++) {
+      let userTree = await UserTreeModel.findOne({ tree: trees[i] });
+      let deletedProfile = new DeletedProfile({
+        tree: userTree.tree,
+        user: userTree.user,
+        profile_image: userTree.profile_image,
+        memories: userTree.memories,
+        orgid: userTree.orgid,
+        donated_by: userTree.donated_by,
+        plantation_type: userTree.plantation_type,
+        gifted_by: userTree.gifted_by,
+        planted_by: userTree.planted_by,
+        date_added: userTree.date_added,
+        date_deleted: new Date().toISOString()
+      });
+      await deletedProfile.save();
+      await UserTreeModel.deleteOne({ tree: trees[i] })
     }
 
-    let userTree = await UserTreeModel.findOne({ tree: tree });
-    let deletedProfile = new DeletedProfile({
-      tree: userTree.tree,
-      user: userTree.user,
-      profile_image: userTree.profile_image,
-      memories: userTree.memories,
-      orgid: userTree.orgid,
-      donated_by: userTree.donated_by,
-      plantation_type: userTree.plantation_type,
-      gifted_by: userTree.gifted_by,
-      planted_by: userTree.planted_by,
-      date_added: userTree.date_added,
-      date_deleted: new Date().toISOString()
-    });
-    await deletedProfile.save();
-  } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
-  }
-
-  try {
-    await UserTreeModel.deleteOne({ tree: tree })
     res.status(status.success).send();
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
