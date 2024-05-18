@@ -3,15 +3,14 @@ import { Model, Table, Column, DataType } from "sequelize-typescript";
 
 //Create a table in database
 @Table({
-  tableName: "Tree_Type"
+  tableName: "tree_type"
 })
 
 export class TreeType extends Model {
-  public static TableName = "Tree_Type" ;
-  public static ID = "id" ;
-  public static saplingID = "saplingid" ;
-  // public static TreeType_NAME = "name" ;
-  // public static TreeType_DESCRIPTION = "description" ;
+  public static TableName = "tree_type" ;
+ 
+  public static TreeType_NAME = "name" ;
+  public static TreeType_DESCRIPTION = "description" ;
   // public static TreeType_scientific_name = "scientific_name" ;
   // public static TreeType_treetype_id = "treetype_id" ;
   // public static TreeType_image = "image" ;
@@ -30,33 +29,33 @@ export class TreeType extends Model {
 
 
 
-  @Column({
-    type: DataType.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-    field: TreeType.ID,
-  })
-  id!: number;
+  // @Column({
+  //   type: DataType.INTEGER,
+  //   primaryKey: true,
+  //   autoIncrement: true,
+  //   field: TreeType.ID,
+  // })
+  // id!: number;
 
   
+  // @Column({
+  //   type: DataType.INTEGER,
+  //   allowNull: false,
+  //   field: TreeType.saplingID,
+  // })
+  // saplingid!: number;
+
   @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
-    field: TreeType.saplingID,
+    type: DataType.STRING(100),
+    field: TreeType.TreeType_NAME,
   })
-  saplingid!: number;
+  name!: string;
 
-//   @Column({
-//     type: DataType.STRING(100),
-//     field: TreeType.TreeType_NAME,
-//   })
-//   name!: string;
-
-//   @Column({
-//     type: DataType.STRING(255),
-//     field: TreeType.TreeType_DESCRIPTION,
-//   })
-//   description!: string;
+  @Column({
+    type: DataType.STRING(255),
+    field: TreeType.TreeType_DESCRIPTION,
+  })
+  description!: string;
 
 
 

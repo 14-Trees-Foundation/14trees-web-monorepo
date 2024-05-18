@@ -136,6 +136,8 @@ const initServer = async () => {
   console.log("Connecting to MongoDB...");
   await connectDB();
   console.log("Connected to MongoDB");
+
+   new Database()
   initExpressApp(app);
 };
 

@@ -6,8 +6,17 @@
     "outDir": "./dist",
     "target": "ES2020",
     "sourceMap": true,
-    "module": "CommonJS",
+   
     "moduleResolution": "node",
     "allowJs": true,
+    
+        "module": "commonjs",
+        "strict": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        // other options...
+      
+    
+    
   }
 }

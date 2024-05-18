@@ -10,9 +10,7 @@ export const createTreeType = async (req: Request, res: Response): Promise<void>
     if (!req.body.name) {
       throw new Error("Tree name is required");
     }
-    if (!req.body.tree_id) {
-      throw new Error("Tree ID required");
-    }
+   
 
     // let imageUrl = "";
     // if (req.files && req.files[0]) {
@@ -20,9 +18,9 @@ export const createTreeType = async (req: Request, res: Response): Promise<void>
     // }
 
     const treeTypeData = {
-      // name: req.body.name,
+      name: req.body.name,
       // tree_id: req.body.tree_id,
-      // desc: req.body.desc,
+      description: req.body.desc,
       // scientific_name: req.body.scientific_name,
       // // image: imageUrl,
       // family: req.body.family,
@@ -33,7 +31,7 @@ export const createTreeType = async (req: Request, res: Response): Promise<void>
       // food: req.body.food,
       // eco_value: req.body.eco_value,
       // parts_used: req.body.parts_used,
-      
+
     };
 
     await treeTypeRepository.create(treeTypeData);
