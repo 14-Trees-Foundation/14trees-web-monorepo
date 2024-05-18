@@ -1,15 +1,16 @@
-const { errorMessage, successMessage, status } = require("../helpers/status");
+import { errorMessage, successMessage, status } from "../helpers/status";
+import TreeType  from "../models/treetype"; // Assuming TreeType interface is defined in treetype.ts
+import User  from "../models/user"; // Assuming User interface is defined in user.ts
+import UserProfile  from "../models/userprofile"; // Assuming UserProfile interface is defined in userprofile.ts
+import { Request, Response } from "express";
 
-const TreeTypeModel = require("../models/treetype");
-const UserModel = require("../models/user");
-const UserTreeModel = require("../models/userprofile");
 
-module.exports.getAll = async (req, res) => {
+export const getAll = async (req: any, res: any): Promise<void> => {
 
     let count = 0;
-    let key = req.query.key;
+    let key = req.query?.key;
     console.log("Search key", key)
-    let result = await TreeTypeModel.aggregate([
+    let result = await TreeType.aggregate([
         {
             '$search': {
                 'index': 'treetypeindex',
@@ -55,7 +56,7 @@ module.exports.getAll = async (req, res) => {
     //     }
     // ])
 
-    let user_result = await UserModel.aggregate([
+    let user_result = await User.aggregate([
         {
             '$search': {
                 'index': 'usersindex',

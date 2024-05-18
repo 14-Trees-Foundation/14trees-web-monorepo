@@ -14,4 +14,5 @@ const user = new Schema({
 
 const userModel = mongoose.model("users", user);
 userModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
-module.exports = userModel;
+
+export default userModel

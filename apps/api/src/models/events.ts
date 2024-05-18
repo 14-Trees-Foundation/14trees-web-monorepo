@@ -20,4 +20,4 @@ const eventModel = mongoose.model("events", eventSchema);
 
 eventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = eventModel;
+export default eventModel;

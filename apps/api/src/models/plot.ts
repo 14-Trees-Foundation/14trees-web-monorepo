@@ -23,4 +23,4 @@ const plotModel = mongoose.model("plots", plotSchema);
 
 plotModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = plotModel;
+export default  plotModel;
