@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status';
-import uploadHelper from './helper/uploadtos3';
+import * as uploadHelper from './helper/uploadtos3';
 import UserTreeModel from '../models/userprofile';
 
 export const addMemories = async (req: Request, res: Response): Promise<void> => {

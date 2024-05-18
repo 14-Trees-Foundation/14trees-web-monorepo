@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import ActivityModel from '../models/activity';
-import uploadHelper from './helper/uploadtos3';
-import csvhelper from './helper/uploadtocsv';
+import * as uploadHelper from './helper/uploadtos3';
+import * as csvhelper from './helper/uploadtocsv';
 import { errorMessage, successMessage, status } from '../helpers/status';
 
 export const getActivity = async (req: Request, res: Response): Promise<void> => {
