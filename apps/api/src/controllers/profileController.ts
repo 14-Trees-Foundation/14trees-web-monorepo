@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import connect from "../services/mongo";
 import { ProfileUserInfo, UserTree } from "schema";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
 
 const { errorMessage, successMessage, status } = require("../helpers/status");
 
@@ -17,6 +18,7 @@ const csvhelper = require("./helper/uploadtocsv");
 const userModel = require("../models/user");
 
 export const getAllProfile = async (req: Request, res: Response) => {
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let profiles = await UserTreeModel.aggregate([
       {
@@ -87,6 +89,12 @@ export const getAllProfile = async (req: Request, res: Response) => {
           "tree.sapling_id": 1,
           "treetype.name": 1,
         },
+      },
+      {
+        $skip: offset
+      },
+      {
+        $limit: limit,
       },
     ]);
     res.status(status.success).json({
@@ -185,15 +193,18 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     let user = await userHelper.addUser(req, res);
 
     // Upload images to S3
-    let userimages;
-    let memoryimages;
+    let userImageUrls = []
+    let memoryImageUrls = []
 
     // User Profile images
     if (req.body.userimages !== undefined) {
       if (req.body.userimages.length > 0) {
-        userimages = req.body.userimages.split(",");
-        for (const image in userimages) {
-          await uploadHelper.UploadFileToS3(userimages[image], "users");
+        let userImages = req.body.userimages.split(",");
+        for (const image in userImages) {
+          const location = await uploadHelper.UploadFileToS3(userImages[image], "users");
+          if (location != "") {
+            userImageUrls.push(location);
+          }
         }
       }
     }
@@ -201,34 +212,25 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     // Memories for the visit
     if (req.body.memoryimages !== undefined) {
       if (req.body.memoryimages.length > 0) {
-        memoryimages = req.body.memoryimages.split(",");
-        for (const image in memoryimages) {
-          await uploadHelper.UploadFileToS3(memoryimages[image], "memories");
+        let memoryImages = req.body.memoryimages.split(",");
+        for (const image in memoryImages) {
+          const location = await uploadHelper.UploadFileToS3(memoryImages[image], "memories");
+          if (location != "") {
+            memoryImageUrls.push(location);
+          }
         }
       }
     }
 
-    // Save the urls with S3 location prefixed for each image
-    const s3urlprofile =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/users/";
-    let uimageurl =
-      userimages !== undefined ? userimages.map((x: string) => s3urlprofile + x) : "";
-    const s3urlmemories =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/memories/";
-    let mimageurl =
-      memoryimages !== undefined
-        ? memoryimages.map((x: string) => s3urlmemories + x)
-        : "";
-
-    if (req.body.albumimages !== undefined && req.body.albumimages.length > 0) {
-      mimageurl = req.body.albumimages.split(",");
-    }
+    // if (req.body.albumimages !== undefined && req.body.albumimages.length > 0) {
+    //   mimageurl = req.body.albumimages.split(",");
+    // }
 
     let user_tree_data = new UserTreeModel({
       tree: tree.id,
       user: user.id,
-      profile_image: uimageurl,
-      memories: mimageurl,
+      profile_image: userImageUrls,
+      memories: memoryImageUrls,
       orgid: req.body.org
         ? mongoose.Types.ObjectId(req.body.org)
         : mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
@@ -283,8 +285,8 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
         },
         regInfo,
         tree.sapling_id,
-        uimageurl,
-        mimageurl,
+        userImageUrls,
+        memoryImageUrls,
         org,
         donor
       );

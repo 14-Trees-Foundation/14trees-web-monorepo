@@ -7,6 +7,7 @@ const csvhelper = require("./helper/uploadtocsv");
 const uploadHelper = require("./helper/uploadtos3");
 const mongoose = require("mongoose");
 const { addUser } = require("./helper/users");
+const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
 module.exports.createAlbum = async (req, res) => {
   let email = req.params["email"];
@@ -28,32 +29,23 @@ module.exports.createAlbum = async (req, res) => {
     let album_name =
       req.body.name.split(" ")[0] + "/" + date + "/" + req.body.album_name;
 
-    let imagesAll;
-
+    let memoryImageUrls = [];
     if (req.body.files !== undefined) {
       if (req.body.files.length > 0) {
-        imagesAll = req.body.files.split(",");
+        let imagesAll = req.body.files.split(",");
         for (const image in imagesAll) {
-          await uploadHelper.UploadFileToS3(
-            imagesAll[image],
-            "albums",
-            album_name
-          );
+          const location = await uploadHelper.UploadFileToS3(imagesAll[image],"albums",album_name);
+          if (location !== "") {
+            memoryImageUrls.push(location);
+          }
         }
       }
     }
 
-    const s3urlmemories =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/memories/" +
-      album_name +
-      "/";
-    let mimageurl =
-      imagesAll !== undefined ? imagesAll.map((x) => s3urlmemories + x) : "";
-
     const album = new AlbumModel({
       user_id: user[0].id,
       album_name: album_name,
-      images: mimageurl,
+      images: memoryImageUrls,
       date_added: date,
       status: "active",
     });
@@ -139,6 +131,7 @@ module.exports.getAlbums = async (req, res) => {
 };
 
 module.exports.getTrees = async (req, res) => {
+  const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
     let user = await UserModel.find({ email: email });
@@ -244,6 +237,8 @@ module.exports.getTrees = async (req, res) => {
           image: 1,
         },
       },
+      { $skip: offset },
+      { $limit: limit },
     ]);
 
     res.status(status.success).send({
@@ -331,6 +326,7 @@ module.exports.addTrees = async (req, res) => {
 };
 
 module.exports.getUserTreeCount = async (req, res) => {
+  const {offset, limit} = getOffsetAndLimitFromRequest(req);
   try {
     let result = await TreeModel.aggregate([
       {
@@ -396,6 +392,8 @@ module.exports.getUserTreeCount = async (req, res) => {
       { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
       { $unwind: "$plot" },
       { $project: { _id: 0 } },
+      { $skip: offset },
+      { $limit: limit },
     ]);
 
     var defaultObj = result.reduce(

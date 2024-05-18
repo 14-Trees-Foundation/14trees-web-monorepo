@@ -42,11 +42,11 @@ module.exports.addActivity = async (req, res) => {
     if (req.body.images.length > 0) {
         images = req.body.images.split(',');
         for (const image in images) {
-            await uploadHelper.UploadFileToS3(images[image], 'activities')
+            const location = await uploadHelper.UploadFileToS3(images[image], 'activities');
+            if (location !== "") {
+                imageurls.push(location);
+            }
         }
-        // Save the urls with S3 location prefixed for each image
-        const s3url = "https://14treesplants.s3.ap-south-1.amazonaws.com/activities/";
-        imageurls = images.map(x => s3url + x);
     }
 
     // Activity object to be saved in database

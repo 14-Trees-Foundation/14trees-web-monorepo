@@ -24,24 +24,18 @@ module.exports.addMemories = async (req, res) => {
   }
 
   // Add memory images to album named by given date
+  let memoryImageUrls = []
   for (const image in memoryimages) {
-    await uploadHelper.UploadFileToS3(memoryimages[image], "albums", newdate);
+    const location = await uploadHelper.UploadFileToS3(memoryimages[image], "albums", newdate);
+    if (location !== "")  {
+      memoryImageUrls.push(location);
+    }
   }
-
-  // Memry image urls will be saved in each profile
-  const s3urlmemories =
-    "https://14treesplants.s3.ap-south-1.amazonaws.com/memories/" +
-    newdate +
-    "/";
-  let mimageurl =
-    memoryimages !== undefined
-      ? memoryimages.map((x) => s3urlmemories + x)
-      : "";
 
   try {
     let usertree = await UserTreeModel.updateMany(
       { date_added: { $gte: newdate, $lte: enddate }, plantation_type: 'onsite' },
-      { $set: { memories: mimageurl } }
+      { $set: { memories: memoryImageUrls } }
     );
     res.status(status.created).send()
   } catch (error) {
