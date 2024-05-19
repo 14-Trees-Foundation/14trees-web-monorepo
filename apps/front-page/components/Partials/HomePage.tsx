@@ -2,13 +2,10 @@
 
 import labels from "~/assets/labels.json";
 import Image from "next/image";
-import tree_graphic from "~/assets/images/tree_graphic.jpg";
 import MotionDiv from "components/animation/MotionDiv";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import SectionsCarousel from "components/Partials/SectionsCarousel";
-import { Button } from "ui/components/button";
-import Link from "next/link";
-import { Children, useRef } from "react";
+import { Children } from "react";
 import transformation_image from "~/assets/images/Transformation.jpeg";
 import pongs_image from "~/assets/images/Ponds.jpeg";
 import livelihood_image from "~/assets/images/Livelihood.jpeg";
@@ -143,8 +140,8 @@ export const HomePage = () => {
               </h2> */}
               <p className="mt-12 text-xl font-semibold text-gray-600">
                 We&apos;re planting native trees on barren hills - where currently
-                only grass grows, - which are burnt every year, - where trees do
-                not survive naturally, - where topsoil is eroded, and - where
+                only grass grows, which are burnt every year, where trees do
+                not survive naturally, where topsoil is eroded, and where
                 groundwater has completely depleted
               </p>
               <Image
