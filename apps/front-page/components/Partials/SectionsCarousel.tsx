@@ -51,8 +51,7 @@ const SectionsCarousel: React.FC<{ autoScroll: boolean }> = ({
 
 const MobileLayout: React.FC<{ sections: Section[] }> = ({ sections }) => {
   return (
-    <>
-      <Carousel
+    <Carousel
         className="mt-20 sm:mx-6"
         plugins={[
           Autoplay({
@@ -62,7 +61,7 @@ const MobileLayout: React.FC<{ sections: Section[] }> = ({ sections }) => {
       >
         <CarouselContent>
           {sections.map((section, index) => (
-            <CarouselItem key={index}>
+            <CarouselItem key={section.title}>
               <Card className="">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold">
@@ -72,8 +71,8 @@ const MobileLayout: React.FC<{ sections: Section[] }> = ({ sections }) => {
                 <CardContent className="py-6">
                   <p>{section.content}</p>
                   <Image
-                    src={section.image?.src || image}
-                    alt={section.image?.caption || section.title}
+                    src={section.image?.src ?? image}
+                    alt={section.image?.caption ?? section.title}
                     className="rounded-md"
                     objectFit="cover"
                     width={300}
@@ -94,7 +93,6 @@ const MobileLayout: React.FC<{ sections: Section[] }> = ({ sections }) => {
           <CarouselNext />
         </div>
       </Carousel>
-    </>
   );
 };
 
@@ -113,14 +111,14 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
   useEffect(() => {
     if (autoScroll) {
       const interval = setInterval(() => {
-        setSelectedSection(((i_selectedSection || 0) + 1) % sections.length);
+        setSelectedSection(((i_selectedSection ?? 0) + 1) % sections.length);
       }, 13000);
       return () => clearInterval(interval);
     }
   }, [i_selectedSection, autoScroll, sections.length]);
 
   useEffect(() => {
-    setActiveSection(sections[i_selectedSection || 0]);
+    setActiveSection(sections[i_selectedSection ?? 0]);
   }, [i_selectedSection, sections]);
 
   const toggleSection = (index: number) => {
@@ -129,7 +127,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
 
   return (
     <section className="flex h-full flex-col">
-      <div className="flex w-full md:p-4 space-x-1 md:space-x-4 overflow-scroll">
+      <div className="flex w-full md:p-4 space-x-1 md:space-x-4">
         {sections.map((section, index) => (
           <motion.div
             className="flex-grow"
@@ -138,7 +136,7 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
             initial={{ borderRadius: 10 }}
           >
             <motion.div
-              key={index}
+              key={section.title}
               initial={false}
               animate={{
                 backgroundColor:
@@ -182,8 +180,8 @@ const DesktopLayout: React.FC<{ sections: Section[]; autoScroll: boolean }> = ({
         <div className="mx-auto aspect-[3/2] w-full">
           <div className="relative h-full w-full">
             <Image
-              src={activeSection?.image?.src || image}
-              alt={activeSection?.image?.caption || activeSection.title}
+              src={activeSection?.image?.src ?? image}
+              alt={activeSection?.image?.caption ?? activeSection.title}
               layout="fill"
               objectFit="cover"
               className="rounded-md shadow-lg"

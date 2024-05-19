@@ -40,7 +40,7 @@ export const HomePage = () => {
 
   const Page1 = () => {
     return (
-      <div className="relative min-h-[45vh] w-full md:min-h-[85vh]">
+      <div className="relative min-h-[25vh] w-full md:min-h-[35vh]">
         {/* Image Background */}
         <motion.div
           className="absolute bottom-0 right-0 -z-10 w-full max-w-screen-2xl px-20"
@@ -49,31 +49,31 @@ export const HomePage = () => {
           style={{ opacity: imageOpacity }}
           variants={imageVariants}
         >
-          <Image
+          {/* <Image
             src={tree_graphic}
             alt="Eco-friendly reforestation"
             className="w-full"
             width={800}
             height={400}
             quality={100}
-          />
+          /> */}
         </motion.div>
         {/* Text Content */}
         <MotionDiv
-          className="container z-0 mx-auto my-10 overflow-hidden text-gray-800 dark:text-gray-400"
+          className="container z-0 mx-auto mt-10 overflow-hidden text-gray-800 dark:text-gray-400"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
-            <div className="md:mx-12 my-10 object-center text-center md:my-40 md:w-4/5 md:text-left">
-              <h2 className="leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl xl:text-6xl 2xl:text-7xl">
+            <div className="md:mx-12 mt-10 object-center text-center md:my-20 md:w-4/5 md:text-left">
+              <h2 className="leading-12 text-5xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl xl:text-6xl 2xl:text-7xl">
                 {labels.site.title}
               </h2>
-              <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl xl:text-4xl">
+              <h3 className="text-grey-600 mt-6 text-2xl font-light md:text-3xl xl:text-4xl">
                 {labels.site.description}
               </h3>
-              <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row md:justify-start">
+              {/* <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row md:justify-start">
                 <Link href="/volunteer" scroll={false}>
                   <Button variant={"secondary"} className="w-full" size="xl" >
                     Volunteer
@@ -85,7 +85,7 @@ export const HomePage = () => {
                     Donate 
                   </Button>
                 </Link>
-              </div>
+              </div> */}
             </div>
           </div>
         </MotionDiv>
@@ -97,15 +97,15 @@ export const HomePage = () => {
     return (
       <div className="text-gray-700 dark:text-gray-400">
         <div className="container z-0 mx-auto overflow-hidden">
-          <div className="mx-auto w-full md:w-2/3">
+          <div className="mx-auto w-full md:w-3/4">
             <ScrollReveal>
-              <h1 className="section-title mx-auto mb-5 md:text-center">
+              {/* <h1 className="section-title mx-auto mb-5 md:text-center">
                 Our Transformation Journey
-              </h1>
-              <h2 className="mx-auto mb-2 mt-6 md:mt-12 text-2xl">
+              </h1> */}
+              {/* <h2 className="mx-auto mb-2 mt-6 md:mt-12 text-2xl">
                 Restorating Green Cover
-              </h2>
-              <p className="text-xl font-light text-gray-600">
+              </h2> */}
+              <p className="mt-12 text-xl font-semibold text-gray-600">
                 We&apos;re restoring native green cover on ecologically degraded
                 patches of barren hills near Pune.
               </p>
@@ -120,10 +120,10 @@ export const HomePage = () => {
             </ScrollReveal>
 
             <ScrollReveal>
-              <h2 className="mx-auto mb-2 mt-16 text-2xl">
+              {/* <h2 className="mx-auto mb-2 mt-16 text-2xl">
                 Recharging Groundwater
-              </h2>
-              <p className="text-xl font-light text-gray-600">
+              </h2> */}
+              <p className="mt-12 text-xl font-semibold text-gray-600">
                 We are digging ponds to store rain water and trenches to recharge
                 ground water.
               </p>
@@ -138,10 +138,10 @@ export const HomePage = () => {
             </ScrollReveal>
 
             <ScrollReveal>
-              <h2 className="mx-auto mb-2 mt-16 text-2xl">
+              {/* <h2 className="mx-auto mb-2 mt-16 text-2xl">
                 Transforming barren hills into lush green forests
-              </h2>
-              <p className="text-xl font-light text-gray-600">
+              </h2> */}
+              <p className="mt-12 text-xl font-semibold text-gray-600">
                 We&apos;re planting native trees on barren hills - where currently
                 only grass grows, - which are burnt every year, - where trees do
                 not survive naturally, - where topsoil is eroded, and - where
@@ -158,10 +158,10 @@ export const HomePage = () => {
             </ScrollReveal>
 
             <ScrollReveal>
-              <h2 className="mx-auto mb-2 mt-16 text-2xl">
+              {/* <h2 className="mx-auto mb-2 mt-16 text-2xl">
                 Generating Livelihoods
-              </h2>
-              <p className="text-xl font-light text-gray-600">
+              </h2> */}
+              <p className="mt-12 text-xl font-semibold text-gray-600">
                 .. and we are generating livelihood for local tribals
               </p>
               <Image
@@ -184,7 +184,7 @@ export const HomePage = () => {
       <>
         <div className="h-20 bg-gradient-to-t from-gray-100 to-white dark:bg-gray-800"></div>
         <div className="bg-gray-100 text-gray-800 dark:text-gray-400">
-          <div className="container z-0 mx-auto min-h-[80vh] w-full overflow-x-hidden bg-gray-100 md:max-w-screen-lg">
+          <div className="container z-0 mx-auto w-full overflow-x-hidden bg-gray-100 md:max-w-screen-lg">
             <h1 className="section-title mx-auto mb-5 md:text-center">
               {labels.about.title}
             </h1>

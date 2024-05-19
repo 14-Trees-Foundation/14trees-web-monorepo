@@ -6,7 +6,6 @@ export interface TeamRow {
     myInterestshobbies: any[];
     tenure: string;
     engagedIn: any[];
-    targetDate: string;
     startDate: string;
     publicBio: string;
     user: {

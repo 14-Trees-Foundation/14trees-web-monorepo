@@ -22,7 +22,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="border-l h-[150px] border-gray-400 pr-6 self-center"></div>
+          <div className="hidden md:block border-l h-[150px] border-gray-400 pr-6 self-center"></div>
 
           <div className="px-8 mb-8 w-full md:mb-0 md:w-auto">
             <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
