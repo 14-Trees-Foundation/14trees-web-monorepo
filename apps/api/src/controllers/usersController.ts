@@ -3,7 +3,7 @@ import { constants } from "../constants";
 import { errorMessage, successMessage, status } from "../helpers/status";
 import UserModel from "../models/user";
 import UserTreeModel from "../models/userprofile";
-import userHelper from "./helper/users";
+import * as userHelper from "./helper/users";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import csvParser from 'csv-parser';
 import { createObjectCsvWriter } from 'csv-writer';
@@ -19,7 +19,7 @@ export const addUser = async (req: Request, res: Response) => {
     if (!req.body.name) {
       throw new Error("User name is required");
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
@@ -28,7 +28,7 @@ export const addUser = async (req: Request, res: Response) => {
     let user = userHelper.getUserDocumentFromRequestBody(req.body);
     let result = await user.save();
     res.status(status.created).json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.duplicate).json({
       status: status.duplicate,
       message: error.message,
@@ -43,7 +43,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
       throw new Error('No file uploaded. Bulk operation requires data as csv file.');
     }
 
-    let csvData = [];
+    let csvData : any[];
     let failedRows = [];
     fs.createReadStream(constants.DEST_FOLDER + req.file.filename)
       .pipe(csvParser())
@@ -65,7 +65,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
             if (users.length === constants.ADD_DB_BATCH_SIZE) {
               try {
                 await UserModel.bulkSave(users);
-              } catch (error) {
+              } catch (error:any) {
                 failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
               }
               batchRows = [];
@@ -76,7 +76,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
           if (users.length !== 0) {
             try {
               await UserModel.bulkSave(users);
-            } catch (error) {
+            } catch (error:any) {
               failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
             }
           }
@@ -104,7 +104,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
         }
       });
 
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error processing CSV:', error);
     res.status(500).json({ error: error.message });
   }
@@ -141,7 +141,7 @@ export const getUser = async (req: Request, res: Response) => {
       res.status(status.success).json(result);
     }
 
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
@@ -164,7 +164,7 @@ export const searchUsers = async (req: Request, res: Response) => {
     }).skip(offset).limit(limit);
     res.status(status.success).send(users);
     return;
-  } catch (error) {
+  } catch (error:any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
@@ -175,7 +175,7 @@ export const getUsers = async (req: Request, res: Response) => {
   try {
     let result = await UserModel.find().skip(offset).limit(limit);
     res.status(status.success).json(result);
-  } catch (error) {
+  } catch (error:any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -204,7 +204,7 @@ export const updateUser = async (req: Request, res: Response) => {
 
     let result = await user.save();
     res.status(status.success).json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -217,7 +217,7 @@ export const deleteUser = async (req: Request, res: Response) => {
       let resp = await UserModel.findByIdAndDelete(req.params.id).exec();
       console.log(`Deleted User with id: ${req.params.id}`, resp);
       res.status(status.success).json(resp);
-    } catch (error) {
+    } catch (error : any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
