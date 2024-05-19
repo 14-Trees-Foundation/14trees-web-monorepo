@@ -426,7 +426,7 @@ module.exports.getUserMappedTreesCount = async (req, res) => {
       filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
     }
   }
-  console.log(filters);
+
   let pipeline = [
     {
       $group: {
@@ -498,23 +498,32 @@ module.exports.getUserMappedTreesCount = async (req, res) => {
   pipeline.push({ $project: { _id: 0 } })
   
   try {
-    // let time = Date.now()
+    
     // let countDocPipeline = [...pipeline, {$count: "totalDocuments"}];
     // let countResult = await TreeModel.aggregate(countDocPipeline);
-    // console.log(Date.now() - time);
-    // console.log(countResult);
-    
-    let time = Date.now()
-    let getDocPipeline = [...pipeline, {$skip: offset}, {$limit: limit}];
+    let getDocPipeline = [...pipeline, {
+      $facet: {
+        paginatedResults: [{ $skip: offset }, { $limit: limit }],
+        totalCount: [
+          {
+            $count: 'count'
+          }
+        ]
+      }
+    }];
     let result = await TreeModel.aggregate(getDocPipeline);
-    console.log(Date.now() - time);
-
-    var defaultObj = result.reduce(
-      (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
-      {}
-    );
-    result = result.map((e) => Object.assign({}, defaultObj, e));
-    res.status(status.success).send(result);
+    
+    // var defaultObj = result.reduce(
+    //   (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
+    //   {}
+    // );
+    // result = result.map((e) => Object.assign({}, defaultObj, e));
+    res.status(status.success).send({
+      total: result[0].totalCount[0].count,
+      offset: offset,
+      result_count: result[0].paginatedResults.length,
+      result: result[0].paginatedResults,
+    });
   } catch (error) {
     res.status(status.error).json({
       message: error.message,
