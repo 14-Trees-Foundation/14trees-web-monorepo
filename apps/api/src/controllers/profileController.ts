@@ -336,7 +336,7 @@ export const assignTreesToUser = async  (req: Request, res: Response) => {
   }
 };
 
-export const unassignTree = async  (req: Request, res: Response) => {
+export const unassignTrees = async  (req: Request, res: Response) => {
   if (!req.body.sapling_ids && req.body.sapling_ids.length === 0) {
     res.status(status.bad).send({ error: "Sapling IDs required" });
     return;
