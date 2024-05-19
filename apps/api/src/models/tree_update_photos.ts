@@ -27,4 +27,4 @@ treeUpdatePhotoModel.createIndexes({
   maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT,
 }); //create index
 
-module.exports = treeUpdatePhotoModel;
+export default treeUpdatePhotoModel;
