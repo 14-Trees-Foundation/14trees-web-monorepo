@@ -65,8 +65,8 @@ export const HomePage = () => {
           animate="visible"
           variants={containerVariants}
         >
-          <div className="z-0 mx-4 pt-16 md:mx-12">
-            <div className="md:mx-12 mt-10 object-center text-center md:my-20 md:w-4/5 md:text-left">
+          <div className="z-0 pt-16 w-3/4 mx-auto">
+            <div className="mt-10 object-center text-center md:mt-20 md:text-left">
               <h2 className="leading-12 text-5xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl xl:text-6xl 2xl:text-7xl">
                 {labels.site.title}
               </h2>
@@ -105,7 +105,7 @@ export const HomePage = () => {
               {/* <h2 className="mx-auto mb-2 mt-6 md:mt-12 text-2xl">
                 Restorating Green Cover
               </h2> */}
-              <p className="mt-12 text-xl font-semibold text-gray-600">
+              <p className="text-xl font-semibold text-gray-600">
                 We&apos;re restoring native green cover on ecologically degraded
                 patches of barren hills near Pune.
               </p>
