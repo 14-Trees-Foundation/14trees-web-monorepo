@@ -80,7 +80,7 @@ export const updateOnsiteStaff = async (req: any, res: any) => {
         if (req.body.role && staff) staff.role = req.body.role;
         if (req.body.permissions && staff) staff.permissions = req.body.permissions;
         if(staff)
-        staff.user_id = getUserId(staff?.name, staff?.email);
+        staff.user_id = getUserId(staff?.name, staff.email? staff.email : '');
 
         const result = await staff?.save();
         res.status(status.success).send(result)

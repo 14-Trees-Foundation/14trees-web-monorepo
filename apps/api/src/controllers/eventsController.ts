@@ -6,9 +6,8 @@ import EventModel from "../models/events";
 import TreeModel from "../models/tree";
 import PlotModel from "../models/plot";
 import UserTreeModel from "../models/userprofile";
-import uploadHelper from "./helper/uploadtos3";
-import userHelper from "./helper/users";
-import csvhelper from "./helper/uploadtocsv";
+import * as uploadHelper from "./helper/uploadtos3";
+import * as userHelper from "./helper/users";
 import orgModel from "../models/org";
 import corpEventModel from "../models/corp_events";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
@@ -24,23 +23,23 @@ export const getOverallOrgDashboard = async (req: Request, res: Response) => {
     if (!req.query.org) {
       throw new Error("Invalid org!");
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
 
   try {
     let org = await orgModel.findOne(
-      { _id: mongoose.Types.ObjectId(`${req.query.org}`) },
+      { _id: new mongoose.Types.ObjectId(`${req.query.org}`) },
       { name: 1, _id: 0 }
     );
     let result = await UserTreeModel.aggregate([
       {
         $match: {
-          orgid: mongoose.Types.ObjectId(`${req.query.org}`),
+          orgid: new mongoose.Types.ObjectId(`${req.query.org}`),
           date_added: {
-            $gte: new Date(req.query.fromdate),
-            $lte: new Date(req.query.todate),
+            $gte: new Date(req.query.fromdate.toString()),
+            $lte: new Date(req.query.todate.toString()),
           },
         },
       },
@@ -76,7 +75,7 @@ export const getOverallOrgDashboard = async (req: Request, res: Response) => {
       result: result,
       org: org?.name,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).send();
   }
 };
@@ -92,14 +91,14 @@ export const getOverallPlotDashboard = async (req: Request, res: Response) => {
     if (!req.query.plot) {
       throw new Error("Invalid plot!");
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
 
   try {
     let plot = await PlotModel.findOne({
-      _id: mongoose.Types.ObjectId(`${req.query.plot}`),
+      _id: new mongoose.Types.ObjectId(`${req.query.plot}`),
     });
 
     let pipeline = [];
@@ -117,21 +116,21 @@ export const getOverallPlotDashboard = async (req: Request, res: Response) => {
     if (req.query.link) {
       pipeline.push({
         $match: {
-          "trees.plot_id": mongoose.Types.ObjectId(`${plot?._id}`),
+          "trees.plot_id": new mongoose.Types.ObjectId(`${plot?._id}`),
           "trees.link": req.query.link,
           date_added: {
-            $gte: new Date(req.query.fromdate),
-            $lte: new Date(req.query.todate),
+            $gte: new Date(req.query.fromdate.toString()),
+            $lte: new Date(req.query.todate.toString()),
           },
         },
       });
     } else {
       pipeline.push({
         $match: {
-          "trees.plot_id": mongoose.Types.ObjectId(`${plot?._id}`),
+          "trees.plot_id": new mongoose.Types.ObjectId(`${plot?._id}`),
           date_added: {
-            $gte: new Date(req.query.fromdate),
-            $lte: new Date(req.query.todate),
+            $gte: new Date(req.query.fromdate.toString()),
+            $lte: new Date(req.query.todate.toString()),
           },
         },
       });
@@ -164,7 +163,7 @@ export const getOverallPlotDashboard = async (req: Request, res: Response) => {
       result: result,
       plotname: plot?.name,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).send();
   }
 };
@@ -191,7 +190,7 @@ export const getBirthdayEvent = async (req: Request, res: Response) => {
     res.status(status.success).send({
       data: result,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.notfound).send();
   }
 };
@@ -205,7 +204,7 @@ export const addEvents = async (req: Request, res: Response) => {
     const fields = req.body;
     const saplingids = fields.sapling_id.split(/[ ,]+/);
     let mimageurl: string | undefined;
-    let userimages: string[] | undefined;
+    let userimages: string[];
     let donor: string | undefined;
   
     try {
@@ -256,10 +255,10 @@ export const addEvents = async (req: Request, res: Response) => {
             profile_image: userImageUrls,
             memories: mimageurl,
             orgid: req.body.org
-              ? mongoose.Types.ObjectId(req.body.org)
-              : mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
+              ? new mongoose.Types.ObjectId(req.body.org)
+              : new mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
             donated_by: req.body.donor
-              ? mongoose.Types.ObjectId(req.body.donor)
+              ? new mongoose.Types.ObjectId(req.body.donor)
               : null,
             gifted_by: req.body.gifted_by ? req.body.gifted_by : null,
             planted_by: req.body.planted_by ? req.body.planted_by : null,
@@ -291,7 +290,7 @@ export const addEvents = async (req: Request, res: Response) => {
           result: result,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       res.status(status.error).send();
     }
@@ -320,7 +319,7 @@ export const addEvents = async (req: Request, res: Response) => {
       }
   
       // delete event model for the same
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       res.status(status.error).send();
     }
@@ -330,15 +329,15 @@ export const addEvents = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     let filters: any = {};
     if (req.query?.name) {
-      filters["name"] = new RegExp(req.query?.name, "i");
+      filters["name"] = new RegExp(req.query?.name.toString(), "i");
     }
     if (req.query?.type) {
-      filters["type"] = new RegExp(req.query?.type, "i");
+      filters["type"] = new RegExp(req.query?.type.toString(), "i");
     }
     try {
       let result = await EventModel.find(filters).skip(offset).limit(limit);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -354,7 +353,7 @@ export const addEvents = async (req: Request, res: Response) => {
       res.status(status.success).json({
         message: "Event deleted successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
     }
   };
@@ -414,7 +413,7 @@ export const addEvents = async (req: Request, res: Response) => {
       for (let i = 0; i < saplingids.length; i++) {
         let tree = await TreeModel.findOne({ sapling_id: saplingids[i] });
         if (tree) {
-          tree_ids.push(tree._id);
+          tree_ids.push(tree._id.toString());
         }
       }
   
@@ -436,7 +435,7 @@ export const addEvents = async (req: Request, res: Response) => {
       res.status(status.created).send({
         result: result,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
       res.status(status.error).send();
     }
@@ -546,7 +545,7 @@ export const addEvents = async (req: Request, res: Response) => {
       res.status(status.success).json({
         event: corpEvent,
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
       return;
     }
@@ -560,7 +559,7 @@ export const addEvents = async (req: Request, res: Response) => {
       // Fetch existing event document
       let event = await corpEventModel.findById(eventId);
       if (!event) {
-        res.status(status.notFound).send({ error: "Event not found" });
+        res.status(status.notfound).send({ error: "Event not found" });
         return;
       }
   
@@ -568,22 +567,22 @@ export const addEvents = async (req: Request, res: Response) => {
       let logoUrls = "";
       if (fields.logos) {
         const logos = fields.logos.split(",");
-        logoUrls = await uploadImagesToS3(logos, "logos");
-        event.logo = logoUrls;
+        logoUrls = await uploadHelper.UploadFileToS3(logos, "logos");
+        event.logo = [logoUrls];
       }
   
       let headerImgUrl = "";
       if (fields.header_img) {
         const headerImg = fields.header_img.split(",");
-        headerImgUrl = await uploadImagesToS3(headerImg, "logos");
+        headerImgUrl = await uploadHelper.UploadFileToS3(headerImg, "logos");
         event.header_img = headerImgUrl;
       }
   
       let memoryImgUrls = "";
       if (fields.memoryimages) {
         const memoryImages = fields.memoryimages.split(",");
-        memoryImgUrls = await uploadImagesToS3(memoryImages, "memories");
-        event.album = memoryImgUrls;
+        memoryImgUrls = await uploadHelper.UploadFileToS3(memoryImages, "memories");
+        event.album = [memoryImgUrls];
       }
   
       if (fields.event_link) event.event_link = fields.event_link;
@@ -599,7 +598,7 @@ export const addEvents = async (req: Request, res: Response) => {
         }
         event.tree_ids = tree_ids;
       }
-      if (fields.plot_id) event.plot_id = mongoose.Types.ObjectId(fields.plot_id);
+      if (fields.plot_id) event.plot_id = new mongoose.Types.ObjectId(fields.plot_id);
       if (fields.title) event.title = fields.title;
       if (fields.short_desc) event.short_desc = fields.short_desc;
       if (fields.long_desc) event.long_desc = fields.long_desc;
@@ -608,7 +607,7 @@ export const addEvents = async (req: Request, res: Response) => {
       // Save the updated event document
       const updatedEvent = await event.save();
       res.status(status.success).send({ event: updatedEvent });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Corp event update error:", error);
       res.status(status.error).send({ error: error.message });
     }
@@ -622,7 +621,7 @@ export const addEvents = async (req: Request, res: Response) => {
       res.status(status.success).json({
         message: "Corp event deleted successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
     }
   };
