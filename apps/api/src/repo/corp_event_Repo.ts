@@ -1,10 +1,9 @@
 import { CorpEvent } from '../models/corp_events';
 
-// import uploadHelper from '../utils/uploadHelper'; // Assuming you have an upload helper
-// import { Tree } from '../models/Tree';
-// import { Plot } from '../models/Plot';
+import { UploadFileToS3} from '../controllers/helper/uploadtos3'; // Assuming you have an upload helper
+import { Tree } from '../models/tree';
+import { Plot } from '../models/plot';
 import { Request, Response } from 'express';
-import { Op } from 'sequelize';
 
 class CorpEventRepository {
   async addCorpEvent(req: Request, res: Response): Promise<void> {
@@ -17,57 +16,61 @@ class CorpEventRepository {
     }
 
     try {
-      // let treeIds: number[] = [];
+      let treeIds: number[] = [];
       let logoUrls: string[] = [];
 
       if (req.body.logos) {
         const logos = req.body.logos.split(",");
-        // for (const logo of logos) {
-        //   // const location = await uploadHelper.UploadFileToS3(logo, "logos");
-        //   if (location) logoUrls.push(location);
-        // }
+        for (const logo of logos) {
+          const location = await UploadFileToS3(logo, "logos");
+          if (location) logoUrls.push(location);
+        }
       }
 
       let headerImageUrls: string[] = [];
       if (req.body.header_img) {
         const headerImages = req.body.header_img.split(",");
-        // for (const headerImage of headerImages) {
-        //   const location = await uploadHelper.UploadFileToS3(headerImage, "logos");
-        //   if (location) headerImageUrls.push(location);
-        // }
+        for (const headerImage of headerImages) {
+          const location = await UploadFileToS3(headerImage, "logos");
+          if (location) headerImageUrls.push(location);
+        }
       }
 
       let memoryImageUrls: string[] = [];
       if (req.body.memoryimages) {
         const memoryImages = req.body.memoryimages.split(",");
-        // for (const memoryImage of memoryImages) {
-        //   const location = await uploadHelper.UploadFileToS3(memoryImage, "memories");
-        //   if (location) memoryImageUrls.push(location);
-        // }
+        for (const memoryImage of memoryImages) {
+          const location = await UploadFileToS3(memoryImage, "memories");
+          if (location) memoryImageUrls.push(location);
+        }
       }
 
       for (const saplingId of saplingIds) {
-        // const tree = await Tree.findOne({ where: { sapling_id: saplingId } });
-        // if (tree) treeIds.push(tree.id);
+        const tree = await Tree.findOne({ where: { sapling_id: saplingId } });
+        if (tree) treeIds.push(tree.id);
       }
 
-      const event = await CorpEvent.create()
-      //   event_link: req.body.event_link,
-      //   event_name: req.body.event_name,
-      //   // tree_ids: treeIds,
-      //   plot_id: req.body.plot_id,
-      //   title: req.body.title,
-      //   logo: logoUrls,
-      //   short_desc: req.body.short_desc,
-      //   long_desc: req.body.long_desc,
-      //   album: memoryImageUrls,
-      //   // header_img: headerImageUrls,
-      //   num_people: req.body.num_people || 1,
-      //   date_added: req.body.date_org ? new Date(req.body.date_org) : new Date(),
-      // });
+      const event = await CorpEvent.create({
+        
+        event_link: req.body.event_link,
+        event_name: req.body.event_name,
+        tree_ids: treeIds,
+        plot_id: req.body.plot_id,
+        title: req.body.title,
+        logo: logoUrls,
+        short_desc: req.body.short_desc,
+        long_desc: req.body.long_desc,
+        album: memoryImageUrls,
+        header_img: headerImageUrls,
+        num_people: req.body.num_people || 1,
+        date_added: req.body.date_org ? new Date(req.body.date_org) : new Date(),
+      
+      });
+        
+      
 
       res.status(201).send({ result: event });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       res.status(500).send(error);
     }
@@ -75,6 +78,8 @@ class CorpEventRepository {
 
   async getCorpEvent(req: Request, res: Response): Promise<void> {
     const { offset, limit } = req.query;
+    const event_id = req.query.event_id as string;
+    
     if (!req.query.event_id) {
       res.status(400).send({ error: "Event ID required" });
       return;
@@ -82,20 +87,20 @@ class CorpEventRepository {
 
     try {
       const corpEvent = await CorpEvent.findOne({
-        // where: { event_link: req.query.event_id },
-        // include: [
-        //   {
-        //     model: Tree,
-        //     include: [
-        //       {
-        //         model: Plot,
-        //         attributes: ['name'],
-        //       },
-        //     ],
-        //   },
-        // ],
-        // offset: Number(offset),
-        // limit: Number(limit),
+        where: { event_link: event_id },
+        include: [
+          {
+            model: Tree,
+            include: [
+              {
+                model: Plot,
+                attributes: ['name'],
+              },
+            ],
+          },
+        ],
+        offset: Number(offset),
+        limit: Number(limit),
       });
 
       if (!corpEvent) {
@@ -122,20 +127,21 @@ class CorpEventRepository {
 
       if (fields.logos) {
         const logos = fields.logos.split(",");
-        // const logoUrls = await uploadHelper.uploadImagesToS3(logos, "logos");
-        // event.logo = logoUrls;
+        const logoUrls = await UploadFileToS3(logos, "logos");
+        event.logo = Array.isArray(logoUrls) ? logoUrls : [logoUrls];
       }
 
       if (fields.header_img) {
         const headerImages = fields.header_img.split(",");
-        // const headerImgUrls = await uploadHelper.uploadImagesToS3(headerImages, "logos");
-        // event.header_img = headerImgUrls;
+        const headerImgUrls = await UploadFileToS3(headerImages, "logos");
+        event.header_img = headerImgUrls;
       }
 
       if (fields.memoryimages) {
         const memoryImages = fields.memoryimages.split(",");
-        // const memoryImgUrls = await uploadHelper.uploadImagesToS3(memoryImages, "memories");
-        // event.album = memoryImgUrls;
+        const memoryImgUrls = await UploadFileToS3(memoryImages, "memories");
+        event.album = Array.isArray(memoryImgUrls) ? memoryImgUrls : [memoryImgUrls];
+       
       }
 
       if (fields.event_link) event.event_link = fields.event_link;
@@ -143,11 +149,11 @@ class CorpEventRepository {
       if (fields.sampling_ids) {
         const saplingIds = fields.sapling_ids.split(/[ ,]+/);
         const treeIds: number[] = [];
-        // for (const saplingId of saplingIds) {
-        //   const tree = await Tree.findOne({ where: { sapling_id: saplingId } });
-        //   if (tree) treeIds.push(tree.id);
-        // }
-        // event.tree_ids = treeIds;
+        for (const saplingId of saplingIds) {
+          const tree = await Tree.findOne({ where: { sapling_id: saplingId } });
+          if (tree) treeIds.push(tree.id);
+        }
+        event.tree_ids = treeIds;
       }
       if (fields.plot_id) event.plot_id = fields.plot_id;
       if (fields.title) event.title = fields.title;
@@ -179,4 +185,4 @@ class CorpEventRepository {
   }
 }
 
-export default new CorpEventRepository();
+

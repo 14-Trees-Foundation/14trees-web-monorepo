@@ -1,5 +1,5 @@
 import { Activity } from '../models/activity';
-
+import  {UploadFileToS3} from '../controllers/helper/uploadtos3'
 
 export class ActivityRepository {
 
@@ -28,16 +28,16 @@ export class ActivityRepository {
       }
 
       // Upload images to S3
-      // const imageurls: string[] = [];
-      // if (activityData.images.length > 0) {
-      //   const images = activityData.images.split(',');
-      //   for (const image of images) {
-      //     const location = await this.uploadHelper.UploadFileToS3(image, 'activities');
-      //     if (location !== '') {
-      //       imageurls.push(location);
-      //     }
-      //   }
-      // }
+      const imageurls: string[] = [];
+      if (activityData.images.length && activityData.images.length > 0) {
+        const images = activityData.images.map(image=> image.split(','));
+        for (const image of images) {
+          const location = await UploadFileToS3(image, 'activities');
+          if (location !== '') {
+            imageurls.push(location);
+          }
+        }
+      }
 
       // Activity object to be saved in database
       const actObj = {
@@ -47,7 +47,7 @@ export class ActivityRepository {
         desc: activityData.desc,
         author: activityData.author,
         video: activityData.video ? activityData.video : null,   //this is the link for the video
-        // images: imageurls,
+        images: imageurls,
       };
       const activity = await Activity.create(actObj);
 

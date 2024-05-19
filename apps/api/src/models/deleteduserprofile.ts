@@ -25,30 +25,30 @@
 
 
 import { Table, Column, Model, ForeignKey, BelongsTo, DataType } from 'sequelize-typescript';
-// import { Tree } from './Tree';
-// import { User } from './User';
-// import { Organization } from './Organization';
+import { Tree } from './tree';
+import { User } from './user';
+import { Organization } from './org';
 
 @Table({
   tableName: 'deleted_user_tree_reg',
   timestamps: false,
 })
-export class UserTree extends Model<UserTree> {
-  // @ForeignKey(() => Tree)
-  // @Column(DataType.INTEGER)
-  // treeId!: number;
+export class DeletedProfileUserTree extends Model<DeletedProfileUserTree> {
+  @ForeignKey(() => Tree)
+  @Column(DataType.INTEGER)
+  treeId!: number;
 
-  // @ForeignKey(() => User)
-  // @Column(DataType.INTEGER)
-  // userId!: number;
+  @ForeignKey(() => User)
+  @Column(DataType.INTEGER)
+  userId!: number;
 
-  // @ForeignKey(() => Organization)
-  // @Column(DataType.INTEGER)
-  // orgId!: number;
+  @ForeignKey(() => Organization)
+  @Column(DataType.INTEGER)
+  orgId!: number;
 
-  // @ForeignKey(() => User)
-  // @Column(DataType.INTEGER)
-  // donatedById!: number;
+  @ForeignKey(() => User)
+  @Column(DataType.INTEGER)
+  donatedById!: number;
 
   @Column(DataType.ARRAY(DataType.STRING))
   profileImage!: string[];
@@ -71,16 +71,15 @@ export class UserTree extends Model<UserTree> {
   @Column(DataType.DATE)
   dateDeleted!: Date;
 
-//   @BelongsTo(() => Tree)
-//   tree!: Tree;
+  @BelongsTo(() => Tree)
+  tree!: Tree;
 
-//   @BelongsTo(() => User)
-//   user!: User;
+  @BelongsTo(() => User)
+  user!: User;
 
-//   @BelongsTo(() => Organization)
-//   organization!: Organization;
+  @BelongsTo(() => Organization)
+  organization!: Organization;
 
-//   @BelongsTo(() => User, { foreignKey: 'donatedById' })
-//   donatedBy!: User;
-// }
+  @BelongsTo(() => User, { foreignKey: 'donatedById' })
+  donatedBy!: User;
 }

@@ -27,8 +27,8 @@
 
 
 import { Table, Column, Model, ForeignKey, BelongsTo, BelongsToMany } from 'sequelize-typescript';
-// import { User } from './User';
-// import { Plot } from './Plot';
+import { User } from './user';
+import { Plot } from './plot';
 // import { UserTreeReg } from './UserTreeReg';
 
 
@@ -36,41 +36,41 @@ import { Table, Column, Model, ForeignKey, BelongsTo, BelongsToMany } from 'sequ
 //this table creates aggregations with other tables that is why all coloumns are comment
 @Table({ tableName: 'events' })
 export class Event extends Model<Event> {
-  // @Column
-  // name: string;
+  @Column
+  name!: string;
 
-  // @ForeignKey(() => User)
-  // @Column
-  // assigned_by: number;
+  @ForeignKey(() => User)
+  @Column
+  assigned_by!: number;
 
-  // @BelongsTo(() => User, 'assigned_by')
-  // assignedBy: User;
+  @BelongsTo(() => User, 'assigned_by')
+  assignedBy!: User;
 
-  // @BelongsToMany(() => User, 'event_users', 'event_id', 'user_id')
-  // assignedTo: User[];
+  @BelongsToMany(() => User, 'event_users', 'event_id', 'user_id')
+  assignedTo!: User[];
 
   // @BelongsToMany(() => UserTreeReg, 'event_user_trees', 'event_id', 'user_tree_id')
-  // userTrees: UserTreeReg[];
+  // userTrees!: UserTreeReg[];
 
-  // @ForeignKey(() => Plot)
-  // @Column
-  // plot_id: number;
+  @ForeignKey(() => Plot)
+  @Column
+  plot_id!: number;
 
-  // @BelongsTo(() => Plot, 'plot_id')
-  // plot: Plot;
+  @BelongsTo(() => Plot, 'plot_id')
+  plot!: Plot;
 
-  // @Column
-  // link: string;
+  @Column
+  link!: string;
 
-  // @Column
-  // type: string;
+  @Column
+  type!: string;
 
-  // @Column
-  // desc: string;
+  @Column
+  desc!: string;
 
-  // @Column
-  // tags: string[];
+  @Column
+  tags!: string[];
 
-  // @Column
-  // date: Date;
+  @Column
+  date!: Date;
 }

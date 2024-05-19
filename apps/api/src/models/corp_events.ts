@@ -32,8 +32,8 @@
 // Model in postgreSQL db
 
 import { Model, Table, Column, DataType, ForeignKey } from 'sequelize-typescript';
-// import { Tree } from './Tree';   //they can be used for foreign key purposes
-// import { Plot } from './Plot';
+import {Tree}  from './tree';   //they can be used for foreign key purposes
+import { Plot } from './plot';
 
 @Table({
   tableName: 'corp_events',
@@ -50,13 +50,13 @@ export class CorpEvent extends Model<CorpEvent> {
   })
   event_name!: string;
 
-  // @Column({
-  //   type: DataType.ARRAY(DataType.INTEGER), // assuming IDs are integers, change if needed
-  // })
-  // // @ForeignKey(() => Tree)
-  // // tree_ids!: number[];
+  @Column({
+    type: DataType.ARRAY(DataType.INTEGER), // assuming IDs are integers, change if needed
+  })
+  @ForeignKey(() => Tree)
+  tree_ids!: number[];
 
-  // // @ForeignKey(() => Plot)
+  @ForeignKey(() => Plot)
   @Column({
     type: DataType.INTEGER,
   })
@@ -87,10 +87,10 @@ export class CorpEvent extends Model<CorpEvent> {
   })
   num_people!: string;
 
-  // @Column({
-  //   type: DataType.STRING,
-  // })
-  // header_img!: string;
+  @Column({
+    type: DataType.STRING,
+  })
+  header_img!: string;
 
   @Column({
     type: DataType.STRING,

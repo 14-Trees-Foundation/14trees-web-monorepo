@@ -40,10 +40,24 @@
 //Model in postgresql db
 
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import {Organization} from './org'
 
+export interface PondUpdate{
+    date: Date,
+  levelFt: Number,
+  // user: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
+  user: Organization
+  images: string[],
+
+}
 
 @Table({ 
   tableName: 'ponds' 
+}) // Set the table name
+
+
+@Table({ 
+  tableName: 'pondUpdate' 
 }) // Set the table name
 
 export class Pond extends Model<Pond> {
@@ -77,6 +91,6 @@ export class Pond extends Model<Pond> {
   @Column(DataType.FLOAT)
   depthFt!: number;
 
-  // @Column(DataType.ARRAY(DataType.JSON))
-  // updates!: PondUpdate[];
+  @Column(DataType.ARRAY(DataType.JSON))
+  updates!: PondUpdate[];
 }

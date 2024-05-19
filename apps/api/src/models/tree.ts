@@ -43,7 +43,7 @@ import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize
 import { TreeType } from '../models/treetype_model'
 import { Plot } from '../models/plot'
 import OnSiteStaff from "../models/onsitestaff";
-
+import { User } from './user'
 
 @Table({
   tableName: 'trees'
@@ -79,9 +79,9 @@ export class Tree extends Model {
   @Column(DataType.JSON)
   location!: { type: string, coordinates: number[] };
 
-  // @ForeignKey(() => User)
-  // @Column
-  // mapped_to!: number;
+  @ForeignKey(() => User)
+  @Column
+  mapped_to!: number;
 
   @Column(DataType.STRING)
   link!: string;
@@ -104,6 +104,6 @@ export class Tree extends Model {
   @BelongsTo(() => OnSiteStaff)
   onSiteStaff!: OnSiteStaff;
 
-  // @BelongsTo(() => User)
-  // user!: User;
+  @BelongsTo(() => User)
+  user!: User;
 }

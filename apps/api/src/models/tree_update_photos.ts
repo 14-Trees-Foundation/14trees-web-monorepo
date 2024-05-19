@@ -33,7 +33,7 @@
 
 
 import { Model, Column, Table, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-// import { Tree } from './Tree'; // Import the Tree model
+import { Tree } from './tree'; // Import the Tree model
 
 @Table({ tableName: 'treeupdate' })
 export class TreeUpdate extends Model<TreeUpdate> {
@@ -46,12 +46,12 @@ export class TreeUpdate extends Model<TreeUpdate> {
 
 
 
-  // @ForeignKey(() => Tree)
-  // @Column(DataType.UUID)
-  // tree_id!: string;
+  @ForeignKey(() => Tree)
+  @Column(DataType.UUID)
+  tree_id!: string;
 
-  // @BelongsTo(() => Tree)
-  // tree!: Tree;
+  @BelongsTo(() => Tree)
+  tree!: Tree;
 
   @Column(DataType.ARRAY(DataType.JSONB))
   photo_update!: TreeUpdate[];

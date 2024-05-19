@@ -27,38 +27,38 @@
 //Model in postgreSQL db
 
 import { Model, Table, Column, DataType, ForeignKey } from 'sequelize-typescript';
-// import { User } from './User';  // assuming you have a User model
-// import { Tree } from './Tree';  // assuming you have a Tree model
+import { User } from './user';  // assuming you have a User model
+import { Tree } from './tree';  // assuming you have a Tree model
 
 @Table({
   tableName: 'mytrees',
   timestamps: false,
 })
 export class MyTree extends Model<MyTree> {
-  // @ForeignKey(() => User)
-  // @Column({
-  //   type: DataType.INTEGER,
-  //   allowNull: false,
-  // })
-  // user_id!: number;
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  user_id!: number;
 
-  // @ForeignKey(() => Tree)
-  // @Column({
-  //   type: DataType.INTEGER,
-  //   allowNull: false,
-  // })
-  // tree_id!: number;
+  @ForeignKey(() => Tree)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  tree_id!: number;
 
-  // @Column({
-  //   type: DataType.BOOLEAN,
-  // })
-  // assigned!: boolean;
+  @Column({
+    type: DataType.BOOLEAN,
+  })
+  assigned!: boolean;
 
-  // @ForeignKey(() => User)
-  // @Column({
-  //   type: DataType.INTEGER,
-  // })
-  // assigned_to!: number;
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  assigned_to!: number;
 
   @Column({
     type: DataType.STRING,
