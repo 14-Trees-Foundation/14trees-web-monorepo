@@ -43,8 +43,8 @@ export const addUsersBulk = async (req: Request, res: Response) => {
       throw new Error('No file uploaded. Bulk operation requires data as csv file.');
     }
 
-    let csvData : any[];
-    let failedRows = [];
+    let csvData: any[];
+    let failedRows: any[] = [];
     fs.createReadStream(constants.DEST_FOLDER + req.file.filename)
       .pipe(csvParser())
       .on('data', (row) => {
@@ -82,7 +82,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
           }
 
           // Prepare the response
-          let responseCsv = ''
+          let responseCsv: Buffer = Buffer.from('')
           const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_user_records.csv'
           if (failedRows.length > 0) {
             // Generate CSV string for failed rows
@@ -113,8 +113,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
 export const getUser = async (req: Request, res: Response) => {
   try {
     if (req.query.email && req.query.name) {
-      let userid = req.query.name.toLowerCase() + req.query.email.toLowerCase();
-      userid = userid.replace(/[^A-Z0-9@.]+/gi, "");
+      let userid = userHelper.getUserId((req.query.name as string), (req.query.email as string))
 
       let result = await UserModel.findOne({ userid: userid });
       if (result === null) {
@@ -192,15 +191,15 @@ export const updateUser = async (req: Request, res: Response) => {
         status: status.notfound,
         message: "User not found with given id"
       })
+      return;
     }
 
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
     if (req.body.dob) user.dob = req.body.dob;
     if (req.body.phone) user.phone = req.body.phone;
-    if (req.body.org) user.org = req.body.org;
 
-    user.userid = userHelper.getUserId(user.name, user.email);
+    user.userid = userHelper.getUserId(user.name, user.email? user.email: '');
 
     let result = await user.save();
     res.status(status.success).json(result);

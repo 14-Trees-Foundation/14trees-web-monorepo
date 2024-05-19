@@ -6,6 +6,7 @@ import { status } from "../helpers/status";
 import { UploadFileToS3 } from "./helper/uploadtos3"; // Assuming UploadFileToS3 is a function
 import OnSiteStaff  from "../models/onsitestaff";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { Request, Response } from "express";
 
 
 /*
@@ -125,7 +126,7 @@ export const getPonds = async (req: any,res: any) => {
   }
 };
 
-export const addUpdate = async (req: any,res: any) => {
+export const addWaterLevelUpdate = async (req: any,res: any) => {
   try {
     if (!req.body.pond_name) {
       throw new Error("Pond name is required");
@@ -190,5 +191,23 @@ export const getHistory = async (req: any,res: any) => {
       status: status.error,
       message: error.message,
     });
+  }
+};
+
+export const searchPonds = async (req: Request, res: Response) => {
+  try {
+    if (!req.params.search || req.params.search.length < 3) {
+      res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+      return;
+    }
+
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const regex = new RegExp(req.params.search, 'i');
+    const ponds = await PondModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
+    res.status(status.success).send(ponds);
+    return;
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+    return;
   }
 };

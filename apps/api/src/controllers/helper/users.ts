@@ -14,7 +14,7 @@ export const getUserDocumentFromRequestBody = (reqBody:any) => {
     });
 }
 
-export const getUserId = (name:string, email:any) => {
+export const getUserId = (name:string, email: string) => {
     let userid = name.toLowerCase() + email.toLowerCase();
     userid = userid.replace(/[^A-Z0-9@.]+/ig, "");
 

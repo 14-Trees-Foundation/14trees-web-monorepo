@@ -137,7 +137,7 @@ export const deletePlot = async (req: Request,res: Response) => {
     }
 };
 
-module.exports.searchPlots = async (req, res) => {
+export const searchPlots = async (req: Request, res: Response) => {
     try {
       if (!req.params.search || req.params.search.length < 3) {
         res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
@@ -149,7 +149,7 @@ module.exports.searchPlots = async (req, res) => {
       const plots = await PlotModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
       res.status(status.success).send(plots);
       return;
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
       return;
     }

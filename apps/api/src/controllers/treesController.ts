@@ -16,6 +16,8 @@ import mongoose from "mongoose";
 import { constants } from  "../constants";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import userModel from "../models/user";
+import { isTypedArray } from "util/types";
+import { isArray } from "lodash";
 
 dotenv.config();
 
@@ -26,24 +28,24 @@ dotenv.config();
 
 export const getTreeTypes = async (req: Request, res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
-  let filters = {}
+  let filters: any = {}
   if (req.query?.name) {
-      filters["name"] = new RegExp(req.query?.name, "i")
+      filters["name"] = new RegExp(req.query.name.toString(), "i")
   }
   if (req.query?.sci_name) {
-      filters["scientific_name"] = new RegExp(req.query?.sci_name, "i")
+      filters["scientific_name"] = new RegExp(req.query.sci_name.toString(), "i")
   }
   if (req.query?.med_use) {
-      filters["med_use"] = new RegExp(req.query?.med_use, "i")
+      filters["med_use"] = new RegExp(req.query.med_use.toString(), "i")
   }
   if (req.query?.food) {
-      filters["food"] = new RegExp(req.query?.food, "i")
+      filters["food"] = new RegExp(req.query.food.toString(), "i")
   }
 
   try {
     let result = await TreeTypeModel.find(filters).skip(offset).limit(limit).exec();
     res.status(status.success).send(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -59,14 +61,14 @@ export const addTreeType = async (req: Request, res: Response) => {
     if (!req.body.tree_id) {
       throw new Error("Tree ID required");
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
 
   // Upload images to S3
   let imageUrl = "";
-  if (req.files && req.files[0]) {
+  if (req.files && isArray(req.files) && req.files[0]) {
     imageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
   }
 
@@ -91,7 +93,7 @@ export const addTreeType = async (req: Request, res: Response) => {
   let treeTypeRes;
   try {
     treeTypeRes = await treeType.save();
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({ error });
   }
 
@@ -102,7 +104,7 @@ export const addTreeType = async (req: Request, res: Response) => {
       treetype: treeTypeRes,
       csvupload: "Success",
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       treetype: treeTypeRes,
       csvupload: "Failure",
@@ -131,7 +133,7 @@ export const updateTreeType = async (req: Request, res: Response) => {
     // Update other fields similarly
 
     // Upload images to S3
-    if (req.files && req.files[0]) {
+    if (req.files && isArray(req.files) && req.files[0]) {
       const location = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
       if (location != "") {
         treeType.image = location; // Update image URL
@@ -141,7 +143,7 @@ export const updateTreeType = async (req: Request, res: Response) => {
     // Save updated tree type
     const updatedTreeType = await treeType.save();
     res.status(status.success).send(updatedTreeType);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
   }
 };
@@ -160,16 +162,16 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   
       // Update the CSV file
       try {
-        csvhelper.UpdateTreeTypeCsv(treeType, true); // Pass true to indicate deletion
+        csvhelper.UpdateTreeTypeCsv(treeType); // Pass true to indicate deletion
         res.status(status.success).json({
           message: "Tree type deleted successfully",
         });
-      } catch (error) {
+      } catch (error: any) {
         res.status(status.error).json({
           error: "Failed to update CSV file",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
     }
   };
@@ -186,7 +188,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       const treeTypes = await TreeTypeModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
       res.status(status.success).send(treeTypes);
       return;
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
       return;
     }
@@ -216,7 +218,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       treetype = await TreeTypeModel.findOne({ _id: reqBody.tree_id })
     }
     // If tree type doesn't exists, return error
-    if (!treetype  || treetype.length === 0) {
+    if (!treetype) {
       throw new Error("Tree type ID doesn't exist" );
     }
   
@@ -300,7 +302,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       let tree = await validateRequestAndGetTreeDocument(req.body);
       treeRes = await tree.save();
       res.status(status.created).send(treeRes);
-    } catch (error) {
+    } catch (error: any) {
       console.log("Tree add error : ", error);
       res.status(status.error).send({
         error: error,
@@ -323,7 +325,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       } else {
         res.status(status.success).send(result);
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -339,7 +341,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         .limit(limit);
       
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -349,13 +351,13 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   
   export const addTreesBulk = async (req: Request, res: Response) => {
     try {
-      if (!req.files.csvFile || !req.files.csvFile[0]) {
+      if (!req.files || !isArray(req.files) && (!req.files.csvFile || !req.files.csvFile[0])) {
         throw new Error('No file uploaded. Bulk operation requires data as csv file.');
       }
   
-      let csvData = [];
-      let failedRows = [];
-      fs.createReadStream(constants.DEST_FOLDER + req.files.csvFile[0].filename)
+      let csvData: any[] = [];
+      let failedRows: any[] = [];
+      fs.createReadStream(constants.DEST_FOLDER + (req.files as any).csvFile[0].filename)
         .pipe(csvParser())
         .on('data', (row) => {
           csvData.push(row);
@@ -375,7 +377,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
               if (trees.length === constants.ADD_DB_BATCH_SIZE) {
                 try {
                   await TreeModel.bulkSave(trees);
-                } catch (error) {
+                } catch (error: any) {
                   failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
                 }
                 trees = [];
@@ -386,12 +388,12 @@ export const deleteTreeType = async (req: Request, res: Response) => {
             if (trees.length !== 0) {
               try {
                 await TreeModel.bulkSave(trees);
-              } catch (error) {
+              } catch (error: any) {
                 failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
               }
             }
   
-            let responseCsv = '';
+            let responseCsv: Buffer = Buffer.from('');
             const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_tree_records.csv';
             if (failedRows.length > 0) {
               const csvWriter = createObjectCsvWriter({
@@ -405,12 +407,12 @@ export const deleteTreeType = async (req: Request, res: Response) => {
             res.setHeader('Content-Disposition', 'attachment; filename="failed_rows.csv"');
             res.setHeader('Content-Type', 'text/csv');
             res.send(responseCsv);
-          } catch (error) {
+          } catch (error: any) {
             console.error('Error saving tree bulk data:', error);
             res.status(500).json({ error: 'Error saving trees data.' });
           }
         });
-    } catch (error) {
+    } catch (error: any) {
       console.log("Tree add error : ", error);
       res.status(status.error).send({
         error: error,
@@ -426,7 +428,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       let tree = await TreeModel.findById(treeId);
   
       if (!tree) {
-        res.status(status.notFound).send({ error: "Tree not found" });
+        res.status(status.notfound).send({ error: "Tree not found" });
         return;
       }
   
@@ -460,7 +462,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   
       // Upload images to S3
       let imageUrls: string[] = [];
-      if (req.files && req.files.length > 0) {
+      if (req.files && isArray(req.files)) {
         for (const file of req.files) {
           const location = await uploadHelper.UploadFileToS3(file.filename, "trees");
           if (location !== "") {
@@ -470,13 +472,11 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         tree.image = imageUrls;
       }
   
-      let loc = null;
       if (req.body.lat) {
-        loc = {
+        tree.location = {
           type: "Point",
-          coordinates: [req.body.lat, req.body.lng],
-        };
-        tree.location = loc;
+          // coordinates: [parseFloat(req.body.lat), parseFloat(req.body.lng)], // TODO: for some reason coordinates property is not getting reflected
+        }
       }
   
       // Update user if provided
@@ -492,7 +492,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       // Save updated tree
       const updatedTree = await tree.save();
       res.status(status.success).send(updatedTree);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Tree update error:", error);
       res.status(status.error).send({ error: error.message });
     }
@@ -503,7 +503,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       const resp = await TreeModel.findByIdAndDelete(req.params.id).exec();
       console.log("Deleted tree with the id:", req.params.id, resp);
       res.status(status.success).send({ message: "Tree deleted successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Tree delete error:", error);
       res.status(status.error).send({ error: error.message });
     }
@@ -521,7 +521,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       let trees = await TreeModel.aggregate([
         {
           $match: {
-            plot_id: mongoose.Types.ObjectId(req.query.id),
+            plot_id: new mongoose.Types.ObjectId(req.query.id.toString()),
           },
         },
         {
@@ -549,7 +549,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
           trees: trees,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -661,7 +661,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       ]);
   
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -671,11 +671,14 @@ export const deleteTreeType = async (req: Request, res: Response) => {
 
   export const getTreeFromId = async (req: Request, res: Response) => {
     try {
+      if (!req.query.id) {
+        throw new Error("tree id is required")
+      }
       let result = await TreeModel.findOne({
-        _id: mongoose.Types.ObjectId(req.query.id as string),
+        _id: new mongoose.Types.ObjectId(req.query.id.toString()),
       });
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -714,7 +717,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         { $limit: limit },
       ]);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -746,7 +749,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         { $limit: limit },
       ]);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -797,7 +800,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         { $limit: limit },
       ]);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -851,7 +854,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         { $limit: limit },
       ]);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -894,7 +897,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         { $limit: limit },
       ]);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -952,7 +955,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         { $limit: limit },
       ]);
       res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
         message: error.message,
@@ -968,14 +971,14 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       if (!req.body.sapling_id) {
         throw new Error("Sapling ID required");
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
       return;
     }
   
     // Upload images to S3
     let imageUrl = "";
-    if (req.files[0]) {
+    if (req.files && isArray(req.files) && req.files.length !== 0) {
       imageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "tree_update");
     }
   
@@ -1025,7 +1028,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).send({
         error: error,
       });
