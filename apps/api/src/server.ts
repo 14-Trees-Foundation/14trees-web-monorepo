@@ -1,5 +1,6 @@
 import path from "path";
 import express, { Request } from "express";
+const morgan = require("morgan");
 import mongoose from "mongoose";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express"
@@ -19,7 +20,7 @@ import searchRoutes from "./routes/searchRoutes";
 import eventRoutes from "./routes/eventRoutes";
 import orgRoutes from "./routes/orgRoutes";
 import loginRoutes from "./routes/loginRoutes";
-import mytreesRoutes from "./routes/mytreesRoutes";
+import treesMappingRoutes from "./routes/treesMappingRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import templateRoutes from "./routes/templateRoute";
@@ -68,6 +69,9 @@ const port = process.env.SERVER_PORT ?? 8088;
 const initExpressApp = (app: express.Application) => {
   console.log("Initializing Express App...");
 
+  // log requests
+  app.use(morgan("[:date[clf]] - :method :url - :status - :response-time ms"));
+
   app.use(express.static(path.join(__dirname, "client/build")));
 
   app.use(cors<Request>());
@@ -86,8 +90,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/admin", adminRoutes);
   app.use("/api/trees", treeRoutes);
   app.use("/api/profile", profileRoute);
-
-  app.use("/api/mytrees", mytreesRoutes);
+  app.use("/api/mytrees", treesMappingRoutes);
   app.use("/api/plots", plotRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/organizations", orgRoutes);

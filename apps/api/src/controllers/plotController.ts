@@ -1,14 +1,18 @@
-const PlotModel = require("../models/plot");
-const { errorMessage, successMessage, status } = require("../helpers/status");
-const csvhelper = require("./helper/uploadtocsv");
-const { getOffsetAndLimitFromRequest } = require("./helper/request");
+
+// const csvhelper = require("./helper/uploadtocsv");
+
+import PlotModel from "../models/plot";
+import { errorMessage, successMessage, status } from "../helpers/status";
+import { UpdatePlotCsv } from "./helper/uploadtocsv"; // Assuming UpdatePlotCsv function exists
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { Request, Response } from "express";
 
 /*
     Model - Plot
     CRUD Operations for plots collection
 */
 
-module.exports.updatePlot = async (req, res) => {
+export const updatePlot = async (req: Request,res: Response) => {
     // Check if plot type exists
     // let plotExists = await PlotModel.findOne({ plot_id: req.body.shortname });
     // // If plot exists, return error
@@ -34,7 +38,7 @@ module.exports.updatePlot = async (req, res) => {
     }
 }
 
-module.exports.addPlot = async (req, res) => {
+export const addPlot = async (req: Request,res: Response) => {
 
     try {
         if (!req.body.plot_name) {
@@ -54,7 +58,7 @@ module.exports.addPlot = async (req, res) => {
         if (!req.body.boundaries) {
             throw new Error("Boundaries Lat Lng required");
         }
-    } catch (error) {
+    } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
         return;
     }
@@ -104,16 +108,16 @@ module.exports.addPlot = async (req, res) => {
     // }
 }
 
-module.exports.getPlots = async (req, res) => {
+export const getPlots = async (req: Request,res: Response) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
-    let filters = {}
+    let filters: Record<string,any> = {}
     if (req.query?.name) {
-        filters["name"] = new RegExp(req.query?.name, "i")
+        filters["name"] = new RegExp(req.query?.name as string, "i")
     }
     try {
         let result = await PlotModel.find(filters).skip(offset).limit(limit);;
         res.status(status.success).send(result);
-    } catch (error) {
+    } catch (error: any) {
         res.status(status.error).json({
             status: status.error,
             message: error.message,
@@ -121,14 +125,32 @@ module.exports.getPlots = async (req, res) => {
     }
 }
 
-module.exports.deletePlot = async (req, res) => {
+export const deletePlot = async (req: Request,res: Response) => {
     try {
         let resp = await PlotModel.findByIdAndDelete(req.params.id).exec();
         console.log("Delete Plot Response for id: %s", req.params.id, resp)
         res.status(status.success).json({
           message: "Plot deleted successfully",
         });
-    } catch (error) {
+    } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
+    }
+};
+
+export const searchPlots = async (req: Request, res: Response) => {
+    try {
+      if (!req.params.search || req.params.search.length < 3) {
+        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+        return;
+      }
+  
+      const { offset, limit } = getOffsetAndLimitFromRequest(req);
+      const regex = new RegExp(req.params.search, 'i');
+      const plots = await PlotModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
+      res.status(status.success).send(plots);
+      return;
+    } catch (error: any) {
+      res.status(status.bad).send({ error: error.message });
+      return;
     }
 };

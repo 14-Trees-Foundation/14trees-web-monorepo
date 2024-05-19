@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as users from '../controllers/usersController';
-import uploadImages from "../helpers/multer";
+import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
@@ -8,8 +8,9 @@ const routes = Router();
 routes.post('/add', users.addUser);
 
 routes.get('/', users.getUser);
+routes.get('/:search', users.searchUsers);
 routes.post('/', users.addUser);
-routes.post('/bulk', uploadImages.single('file'),users.addUsersBulk);
+routes.post('/bulk', uploadFiles.single('file'),users.addUsersBulk);
 routes.put('/:id', users.updateUser);
 routes.delete('/:id', users.deleteUser);
 

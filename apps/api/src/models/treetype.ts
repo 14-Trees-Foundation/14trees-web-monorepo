@@ -24,4 +24,4 @@ const treeTypeModel = mongoose.model("tree_type", treeTypeSchema);
 
 treeTypeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = treeTypeModel;
+export default treeTypeModel;

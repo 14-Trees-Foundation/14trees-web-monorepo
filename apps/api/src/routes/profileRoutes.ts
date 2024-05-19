@@ -1,24 +1,19 @@
 import { Router } from "express";
 import * as profile from "../controllers/profileController";
-import uploadImages from "../helpers/multer";
+import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
 routes.get("/", profile.getProfile);
 routes.get("/id", profile.getProfileById);
-routes.get("/userid", profile.getUserProfile);
-routes.post(
-  "/usertreereg",
-  uploadImages.array("files", 12),
-  profile.regUserTree
-);
-routes.post(
-  "/usertreereg/multi",
-  uploadImages.array("files", 12),
-  profile.regMultiUserTree
-);
-routes.get("/update", profile.update);
 routes.get("/allprofile", profile.getAllProfile);
-routes.delete("/", profile.deleteProfile);
+routes.get("/userid", profile.getUserProfile);
+
+routes.post("/usertreereg",uploadFiles.array("files", 12),profile.assignTreeToUser);
+routes.post("/usertreereg/multi",uploadFiles.array("files", 12),profile.assignTreesToUser);
+routes.post("/", profile.unassignTrees);
+
+// not used
+routes.get("/update", profile.update);
 
 export default routes;

@@ -8,11 +8,11 @@ const s3 = new AWS.S3({
 
 var destImg = process.env.DEST_IMG_FOLDER;
 
-function getNewUploadObjectKey(objectName) {
+function getNewUploadObjectKey(objectName: string) {
     return Date.now().toString() + "_" + removeSpecialCharacters(objectName);
 }
 
-module.exports.UploadFileToS3 = async (filename, type, folder_name = "") => {
+export const UploadFileToS3 = async (filename: string, type: string, folder_name :string = "") => {
     const readStream = fs.createReadStream(destImg + filename);
     let bucket;
 
