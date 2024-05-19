@@ -7,11 +7,11 @@ class Database {
   public sequelize: Sequelize | undefined;
 
 
-  private POSTGRES_DB =  'postgres';
-  private POSTGRES_HOST = 'localhost';
-  private POSTGRES_PORT = 5432;
-  private POSTGRES_USER = 'postgres';
-  private POSTGRES_PASSWORD = 'Jain3002'
+  private POSTGRES_DB =  'defaultdb';
+  private POSTGRES_HOST = 'vivek-tree-vivek-tree.e.aivencloud.com';
+  private POSTGRES_PORT = 15050;
+  private POSTGRES_USER = 'avnadmin';
+  private POSTGRES_PD = '';
 
   constructor() {
     this.connectToPostgreSQL();
@@ -22,10 +22,16 @@ class Database {
     this.sequelize = new Sequelize({
       database: this.POSTGRES_DB,
       username: this.POSTGRES_USER,
-      password: this.POSTGRES_PASSWORD,
+      password: this.POSTGRES_PD,
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
+      dialectOptions: {
+        ssl: {
+          require: true, // This will help you. But you will see nwe error
+          rejectUnauthorized: false // This line will fix new error
+        }
+      },
       models:[TreeType]
     });
 
