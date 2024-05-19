@@ -16,4 +16,4 @@ const userTree = new Schema({
 });
 
 const userTreeModel = mongoose.model("user_tree_reg", userTree);
-module.exports = userTreeModel;
+export default userTreeModel;

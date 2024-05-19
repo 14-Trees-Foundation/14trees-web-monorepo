@@ -1,9 +1,8 @@
-const { errorMessage, successMessage, status } = require("../helpers/status");
-const Jimp = require('jimp');
-var path = require('path')
+import { errorMessage, successMessage, status } from "../helpers/status";
+import * as Jimp from 'jimp'; // Import all members from Jimp
+import * as path from 'path'; // Import all members from path
 
-
-module.exports.getTemplate = async (req, res) => {
+export const getTemplate = async (req: any, res: any): Promise<void> => {
 
 
     try {
@@ -32,7 +31,7 @@ module.exports.getTemplate = async (req, res) => {
             res.set({ 'Content-Type': 'image/png' });
             res.sendFile(path.join(__dirname, 'templateimages/test.png'))
         }
-    } catch (error) {
+    } catch (error: any) {
         console.log(error)
         res.status(status.error).send();
     }

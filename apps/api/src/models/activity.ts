@@ -17,4 +17,4 @@ const activityModel = mongoose.model("activities", activitySchema);
 
 activityModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
 
-module.exports = activityModel;
+export default activityModel;

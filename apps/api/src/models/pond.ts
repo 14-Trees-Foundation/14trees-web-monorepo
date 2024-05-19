@@ -31,4 +31,4 @@ const PondModel = mongoose.model("ponds", pondSchema);
 
 PondModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = { PondModel, pondUpdate };
+export { PondModel, pondUpdate };

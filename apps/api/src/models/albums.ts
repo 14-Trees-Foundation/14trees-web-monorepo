@@ -15,4 +15,4 @@ const abumsModel = mongoose.model("albums", albuumsSchema);
 
 abumsModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
 
-module.exports = abumsModel;
+export default abumsModel;

@@ -1,6 +1,7 @@
 const User = require("../../models/user");
 
-module.exports.getUserDocumentFromRequestBody = (reqBody) => {
+export const getUserDocumentFromRequestBody = (reqBody:any) => {
+    // @ts-ignore: Object is possibly 'null'.
     let userId = this.getUserId(reqBody.name, reqBody.email)
 
     return new User({
@@ -13,7 +14,7 @@ module.exports.getUserDocumentFromRequestBody = (reqBody) => {
     });
 }
 
-module.exports.getUserId = (name, email) => {
+export const getUserId = (name:string, email:any) => {
     let userid = name.toLowerCase() + email.toLowerCase();
     userid = userid.replace(/[^A-Z0-9@.]+/ig, "");
 

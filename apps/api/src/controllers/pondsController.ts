@@ -1,15 +1,19 @@
-const { PondModel, pondUpdate } = require("../models/pond");
-const { status } = require("../helpers/status");
-const uploadHelper = require("./helper/uploadtos3");
-const OnSiteStaff = require("../models/onsitestaff");
-const { getOffsetAndLimitFromRequest } = require("./helper/request");
+
+// const uploadHelper = require("./helper/uploadtos3");
+
+import { PondModel, pondUpdate } from "../models/pond";
+import { status } from "../helpers/status";
+import { UploadFileToS3 } from "./helper/uploadtos3"; // Assuming UploadFileToS3 is a function
+import OnSiteStaff  from "../models/onsitestaff";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+
 
 /*
     Model - Pond
     CRUD Operations for ponds collection
 */
 
-module.exports.addPond = async (req, res) => {
+export const addPond = async (req: any,res: any) => {
   try {
     if (req.body.name) req.body.pond_name = req.body.name;
     if (req.body.lengthFt) req.body.length = req.body.lengthFt;
@@ -28,7 +32,7 @@ module.exports.addPond = async (req, res) => {
         "Pond type is required - (Storage/Percolation/Water hole)"
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
@@ -67,7 +71,7 @@ module.exports.addPond = async (req, res) => {
   }
 };
 
-module.exports.updatePond = async (req, res) => {
+export const updatePond = async (req: any,res: any) => {
   
   if (!req.params.id || req.params.id === "") {
     res.status(status.bad).send({error: "pond id is required to update the pond"});
@@ -101,19 +105,19 @@ module.exports.updatePond = async (req, res) => {
   }
 };
 
-module.exports.getPonds = async (req, res) => {
+export const getPonds = async (req: any,res: any) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
-  let filters = {}
+  let filters: Record<string,any> = {}
     if (req.query?.name) {
-        filters["name"] = new RegExp(req.query?.name, "i")
+        filters["name"] = new RegExp(req.query?.name as string, "i")
     }
     if (req.query?.type) {
-        filters["type"] = new RegExp(req.query?.type, "i")
+        filters["type"] = new RegExp(req.query?.type as string, "i")
     }
   try {
     let result = await PondModel.find(filters, { updates: 0 }).skip(offset).limit(limit);
     res.status(status.success).send(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -121,14 +125,14 @@ module.exports.getPonds = async (req, res) => {
   }
 };
 
-module.exports.addWaterLevelUpdate = async (req, res) => {
+export const addUpdate = async (req: any,res: any) => {
   try {
     if (!req.body.pond_name) {
       throw new Error("Pond name is required");
     } else if (!req.body.levelFt) {
       throw new Error("Water level is required");
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
@@ -138,9 +142,9 @@ module.exports.addWaterLevelUpdate = async (req, res) => {
     user = await OnSiteStaff.findOne({ user_id: req.body.user_id });
   }
 
-  let pondImageUrl = "";
+  let pondImageUrl: string = "";
   if (req.files && req.files.length !== 0) {
-    pondImageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
+    pondImageUrl = await UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
   }
 
   let obj = {
@@ -160,7 +164,7 @@ module.exports.addWaterLevelUpdate = async (req, res) => {
   }
 };
 
-module.exports.deletePond = async (req, res) => {
+export const deletePond = async (req: any,res: any) => {
   try {
       let resp = await PondModel.findByIdAndDelete(req.params.id).exec();
       console.log("Delete Ponds Response for id: %s", req.params.id, resp);
@@ -168,12 +172,12 @@ module.exports.deletePond = async (req, res) => {
       res.status(status.success).json({
         message: "Pond deleted successfully",
       });
-  } catch (error) {
+  } catch (error: any) {
       res.status(status.bad).send({ error: error.message });
   }
 };
 
-module.exports.getHistory = async (req, res) => {
+export const getHistory = async (req: any,res: any) => {
   if (!req.query.pond_name) {
     res.status(status.bad).send({ error: "Pond name required!" });
     return;
@@ -181,28 +185,10 @@ module.exports.getHistory = async (req, res) => {
   try {
     let result = await PondModel.find({ name: req.query.pond_name });
     res.status(status.success).send(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
     });
-  }
-};
-
-module.exports.searchPonds = async (req, res) => {
-  try {
-    if (!req.params.search || req.params.search.length < 3) {
-      res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-      return;
-    }
-
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const regex = new RegExp(req.params.search, 'i');
-    const ponds = await PondModel.find({name: { $regex: regex }}, {updates: 0}).skip(offset).limit(limit);
-    res.status(status.success).send(ponds);
-    return;
-  } catch (error) {
-    res.status(status.bad).send({ error: error.message });
-    return;
   }
 };

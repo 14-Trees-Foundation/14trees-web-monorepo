@@ -14,4 +14,4 @@ const orgModel = mongoose.model("organizations", orgSchema);
 
 orgModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = orgModel;
+export default orgModel;

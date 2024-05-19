@@ -1,7 +1,7 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const creds = require('../../auth/sheet-node-test.json');
 
-module.exports.UpdateTreeTypeCsv = async (data) => {
+export const UpdateTreeTypeCsv = async (data:any) => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -29,7 +29,7 @@ module.exports.UpdateTreeTypeCsv = async (data) => {
     }
 }
 
-module.exports.UpdateTreeCsv = async (data, tree_id, tree_name, loc, plot_id, plot_name, user, sheet_name = 'tree') => {
+export const UpdateTreeCsv = async (data:any, tree_id:any, tree_name:string, loc:string, plot_id:any, plot_name:string, user:any, sheet_name: string = 'tree') => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -54,11 +54,12 @@ module.exports.UpdateTreeCsv = async (data, tree_id, tree_name, loc, plot_id, pl
     }
 }
 
-module.exports.UpdateDuplicateTreeCsv = async (data, tree_id, tree_name, plot_id, plot_name, user) => {
+export const UpdateDuplicateTreeCsv = async (data:any, tree_id:any, tree_name:string, plot_id:any, plot_name:string, user:any) => {
+    // @ts-ignore: Object is possibly 'null'.
     return await this.UpdateTreeCsv(data, tree_id, tree_name, "", plot_id, plot_name, user, 'duplicate_tree')
 }
 
-module.exports.UpdateUserTreeCsv = async (user_data, reg_info, tree_id, profile_image, memory_images, org, donor) => {
+export const UpdateUserTreeCsv = async (user_data:any, reg_info:any, tree_id:any, profile_image:any, memory_images:any, org:any, donor:any) => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -90,7 +91,7 @@ module.exports.UpdateUserTreeCsv = async (user_data, reg_info, tree_id, profile_
     }
 }
 
-module.exports.UpdatePlotCsv = async (data) => {
+export const UpdatePlotCsv = async (data:any) => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -109,7 +110,7 @@ module.exports.UpdatePlotCsv = async (data) => {
     }
 }
 
-module.exports.UpdateOrg = async (data) => {
+export const UpdateOrg = async (data:any ) => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -128,7 +129,7 @@ module.exports.UpdateOrg = async (data) => {
     }
 }
 
-module.exports.UpdateActivityCsv = async (data) => {
+export const UpdateActivityCsv = async (data:any) => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -150,7 +151,7 @@ module.exports.UpdateActivityCsv = async (data) => {
     }
 }
 
-module.exports.UpdateEventCsv = async (data) => {
+export const UpdateEventCsv = async (data: any) => {
 
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
@@ -173,7 +174,7 @@ module.exports.UpdateEventCsv = async (data) => {
     }
 }
 
-module.exports.UpdateMyTreesCsv = async (data) => {
+export const UpdateMyTreesCsv = async (data: any) => {
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
     await doc.loadInfo();
@@ -186,7 +187,7 @@ module.exports.UpdateMyTreesCsv = async (data) => {
     }
 }
 
-module.exports.UpdateMyTreeAssignmentCsv = async (sapling_id) => {
+export const UpdateMyTreeAssignmentCsv = async (sapling_id: string) => {
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
     await doc.loadInfo();
@@ -201,7 +202,7 @@ module.exports.UpdateMyTreeAssignmentCsv = async (sapling_id) => {
     }
 }
 
-module.exports.updateStaffCsv = async (data) => {
+export const updateStaffCsv = async (data: any) => {
     const doc = new GoogleSpreadsheet('1rbTnfv6eeu37TOUXkuTtWVCuqQk-x7rXiOBCah19kQw');
     await doc.useServiceAccountAuth(creds);
     await doc.loadInfo();
