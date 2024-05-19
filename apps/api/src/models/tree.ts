@@ -27,4 +27,4 @@ const treeModel = mongoose.model("trees", treeSchema);
 
 treeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = treeModel;
+export default treeModel;

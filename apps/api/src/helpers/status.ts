@@ -1,6 +1,6 @@
-module.exports.successMessage = { status: 'success' };
-module.exports.errorMessage = { status: 'error' };
-module.exports.status = {
+export const successMessage = { status: 'success' };
+export const errorMessage = { status: 'error' };
+export const status = {
     success: 200,
     created: 201,
     nocontent:204,

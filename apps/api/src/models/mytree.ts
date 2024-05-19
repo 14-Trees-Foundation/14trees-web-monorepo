@@ -18,4 +18,4 @@ const mytreesModel = mongoose.model("mytrees", mytreesSchema);
 
 mytreesModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = mytreesModel;
+export default mytreesModel;

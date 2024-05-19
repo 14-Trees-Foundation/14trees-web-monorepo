@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { errorMessage, successMessage, status } from '../helpers/status';
 import OnSiteStaffModel from '../models/onsitestaff';
-import csvhelper from './helper/uploadtocsv';
+import * as csvhelper from './helper/uploadtocsv';
 
 export const addStaff = async (req: Request, res: Response): Promise<void> => {
   try {

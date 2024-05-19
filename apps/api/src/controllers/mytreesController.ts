@@ -1,18 +1,16 @@
-const { status } = require("../helpers/status");
-const AlbumModel = require("../models/albums");
-const TreeModel = require("../models/tree");
-const UserModel = require("../models/user");
+import { status } from "../helpers/status";
+import  AlbumModel  from "../models/albums"; // Assuming Album is the interface/type for albums
+import Tree  from "../models/tree"; // Assuming Tree is the interface/type for trees
+import User  from "../models/user"; // Assuming User is the interface/type for users
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import * as userHelper from "./helper/users";
+import * as uploadHelper from "./helper/uploadtos3";
 
-const csvhelper = require("./helper/uploadtocsv");
-const uploadHelper = require("./helper/uploadtos3");
-const mongoose = require("mongoose");
-const { getUserDocumentFromRequestBody } = require("./helper/users");
-const { getOffsetAndLimitFromRequest } = require("./helper/request");
 
-module.exports.createAlbum = async (req, res) => {
+export const createAlbum = async (req: any,res: any) => {
   let email = req.params["email"];
   try {
-    let user = await UserModel.find({ email: email, name: req.body.name });
+    let user = await User.find({ email: email, name: req.body.name });
     if (user === null || user.length === 0) {
       res
         .status(status.notfound)
@@ -61,7 +59,7 @@ module.exports.createAlbum = async (req, res) => {
       });
       return;
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -69,11 +67,11 @@ module.exports.createAlbum = async (req, res) => {
   }
 };
 
-module.exports.deleteAlbum = async (req, res) => {
+export const deleteAlbum = async (req: any,res: any) => {
   try {
-    let user = await UserModel.find({ user_id: req.body.user_id });
+    let user = await User.find({ user_id: req.body.user_id });
     let album = await AlbumModel.find({
-      user_id: user._id,
+      user_id: (user as any)._id,
       album_name: req.body.album_name,
     });
 
@@ -89,13 +87,13 @@ module.exports.deleteAlbum = async (req, res) => {
       );
       res.status(status.nocontent).send();
       return;
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).send({
         error: error,
       });
       return;
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -103,10 +101,10 @@ module.exports.deleteAlbum = async (req, res) => {
   }
 };
 
-module.exports.getAlbums = async (req, res) => {
+export const getAlbums = async (req: any,res: any) => {
   let email = req.params["email"];
   try {
-    let user = await UserModel.find({ email: email });
+    let user = await User.find({ email: email });
     if (user === null || user.length === 0) {
       res
         .status(status.notfound)
@@ -122,7 +120,7 @@ module.exports.getAlbums = async (req, res) => {
     res.status(status.success).send({
       albums: albums,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -130,11 +128,11 @@ module.exports.getAlbums = async (req, res) => {
   }
 };
 
-module.exports.getTrees = async (req, res) => {
+export const getTrees = async (req: any,res: any) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
-    let user = await UserModel.find({ email: email });
+    let user = await User.find({ email: email });
     if (user === null || user.length === 0) {
       res
         .status(status.notfound)
@@ -142,7 +140,7 @@ module.exports.getTrees = async (req, res) => {
       return;
     }
 
-    let trees = await TreeModel.aggregate([
+    let trees = await Tree.aggregate([
       {
         $match: {
           mapped_to: user[0]._id,
@@ -245,7 +243,7 @@ module.exports.getTrees = async (req, res) => {
       user: user,
       trees: trees,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -253,20 +251,20 @@ module.exports.getTrees = async (req, res) => {
   }
 };
 
-module.exports.updateTrees = async (req, res) => {
+export const updateTrees = async (req: any,res: any) => {
   const sapling_ids = req.body.sapling_ids;
 
   let link = req.body.link ? req.body.link : "";
   let type = req.body.type ? req.body.type : "";
   try {
     for (let i = 0; i < sapling_ids.length; i++) {
-      let tree = await TreeModel.updateOne(
+      let tree = await Tree.updateOne(
         { sapling_id: sapling_ids[i] },
         { $set: { event_type: type, link: link } }
       );
     }
     res.status(status.created).send();
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -274,19 +272,19 @@ module.exports.updateTrees = async (req, res) => {
   }
 };
 
-module.exports.addTrees = async (req, res) => {
+export const addTrees = async (req: any,res: any) => {
   const fields = req.body;
   let email_id = fields.email;
   let saplingids = fields.sapling_id.split(/[ ,]+/);
 
-  const filtered_saplings = saplingids.filter(function (el) {
+  const filtered_saplings = saplingids.filter(function (el:any) {
     return el;
   });
 
-  let user = await UserModel.findOne({ email: email_id });
+  let user = await User.findOne({ email: email_id });
   if (user === null) {
     try {
-      let userDoc = await getUserDocumentFromRequestBody(req);
+      let userDoc = await userHelper.getUserDocumentFromRequestBody(req);
       user = await userDoc.save();
     } catch (error) {
       res.status(status.error).send(error);
@@ -296,11 +294,11 @@ module.exports.addTrees = async (req, res) => {
   try {
     for (let i = 0; i < filtered_saplings.length; i++) {
       try {
-        let result = await TreeModel.updateOne(
+        let result = await Tree.updateOne(
           { sapling_id: filtered_saplings[i] },
           {
             $set: {
-              mapped_to: user.id,
+              mapped_to: user?.id,
               date_assigned: new Date(),
             },
           }
@@ -311,7 +309,7 @@ module.exports.addTrees = async (req, res) => {
           });
           return;
         }
-      } catch (error) {
+      } catch (error: any) {
         res.status(status.error).send({
           error: error,
         });
@@ -326,14 +324,14 @@ module.exports.addTrees = async (req, res) => {
   }
 };
 
-module.exports.removeMappedToFromTrees = async (req, res) => {
+export const removeMappedToFromTrees = async (req: any,res: any) => {
   const fields = req.body;
   let saplingIds = fields.sapling_id.split(/[ ,]+/);
 
   let failedSaplingIds = []
   for (let i = 0; i < saplingIds.length; i++) {
     try {
-      let result = await TreeModel.updateOne(
+      let result = await Tree.updateOne(
         { sapling_id: saplingIds[i] },
         {
           $set: {
@@ -345,7 +343,7 @@ module.exports.removeMappedToFromTrees = async (req, res) => {
       if (result.modifiedCount === 0) {
         failedSaplingIds.push(saplingIds[i]);
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).send({
         error: error,
       });
@@ -359,10 +357,10 @@ module.exports.removeMappedToFromTrees = async (req, res) => {
   res.status(status.created).send();
 };
 
-module.exports.getUserTreeCount = async (req, res) => {
+export const getUserTreeCount = async (req: any,res: any) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   try {
-    let result = await TreeModel.aggregate([
+    let result = await Tree.aggregate([
       {
         $group: {
           _id: {
@@ -436,7 +434,7 @@ module.exports.getUserTreeCount = async (req, res) => {
     );
     result = result.map((e) => Object.assign({}, defaultObj, e));
     res.status(status.success).send(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).json({
       message: error.message,
     });

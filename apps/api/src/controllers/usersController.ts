@@ -1,19 +1,20 @@
-const { constants } = require("../constants");
-const { errorMessage, successMessage, status } = require("../helpers/status");
-const UserModel = require("../models/user");
-const UserTreeModel = require("../models/userprofile");
-const userHelper = require("./helper/users");
-const csvParser = require('csv-parser');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const fs = require('fs');
-const { getOffsetAndLimitFromRequest } = require("./helper/request");
+import { Request, Response } from "express";
+import { constants } from "../constants";
+import { errorMessage, successMessage, status } from "../helpers/status";
+import UserModel from "../models/user";
+import UserTreeModel from "../models/userprofile";
+import userHelper from "./helper/users";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import csvParser from 'csv-parser';
+import { createObjectCsvWriter } from 'csv-writer';
+import fs from 'fs';
 
 /*
     Model - User
     CRUD Operations for users collection
 */
 
-module.exports.addUser = async (req, res) => {
+export const addUser = async (req: Request, res: Response) => {
   try {
     if (!req.body.name) {
       throw new Error("User name is required");
@@ -35,7 +36,7 @@ module.exports.addUser = async (req, res) => {
   }
 };
 
-module.exports.addUsersBulk = async (req, res) => {
+export const addUsersBulk = async (req: Request, res: Response) => {
 
   try {
     if (!req.file) {
@@ -85,7 +86,7 @@ module.exports.addUsersBulk = async (req, res) => {
           const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_user_records.csv'
           if (failedRows.length > 0) {
             // Generate CSV string for failed rows
-            const csvWriter = createCsvWriter({
+            const csvWriter = createObjectCsvWriter({
               path: filePath,
               header: Object.keys(failedRows[0]).map(key => ({ id: key, title: key }))
             });
@@ -109,7 +110,7 @@ module.exports.addUsersBulk = async (req, res) => {
   }
 };
 
-module.exports.getUser = async (req, res) => {
+export const getUser = async (req: Request, res: Response) => {
   try {
     if (req.query.email && req.query.name) {
       let userid = req.query.name.toLowerCase() + req.query.email.toLowerCase();
@@ -146,16 +147,21 @@ module.exports.getUser = async (req, res) => {
   }
 };
 
-module.exports.getUsersByEmailIdPrefix = async (req, res) => {
+export const searchUsers = async (req: Request, res: Response) => {
   try {
-    if (!req.params.email || req.params.email.length < 3) {
-      res.status(status.bad).send({ error: "Please provide at least 3 char of email"});
+    if (!req.params.search || req.params.search.length < 3) {
+      res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
       return;
     }
 
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const regex = new RegExp(req.params.email, 'i');
-    const users = await UserModel.find({ email: { $regex: regex } }).skip(offset).limit(limit);
+    const regex = new RegExp(req.params.search, 'i');
+    const users = await UserModel.find({
+      $or: [
+        {email: { $regex: regex }},
+        {name: { $regex: regex }},
+      ]
+    }).skip(offset).limit(limit);
     res.status(status.success).send(users);
     return;
   } catch (error) {
@@ -164,7 +170,7 @@ module.exports.getUsersByEmailIdPrefix = async (req, res) => {
   }
 };
 
-module.exports.getUsers = async (req, res) => {
+export const getUsers = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await UserModel.find().skip(offset).limit(limit);
@@ -177,7 +183,7 @@ module.exports.getUsers = async (req, res) => {
   }
 };
 
-module.exports.updateUser = async (req, res) => {
+export const updateUser = async (req: Request, res: Response) => {
 
   try {
     let user = await UserModel.findById(req.params.id);
@@ -206,17 +212,15 @@ module.exports.updateUser = async (req, res) => {
   }
 };
 
-
-module.exports.deleteUser = async (req, res) => {
-
-  try {
-    let resp = await UserModel.findByIdAndDelete(req.params.id).exec();
-    console.log("Deleted User with id: %s", req.params.id, resp)
-    res.status(status.success).json(resp);
-  } catch (error) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
-  }
-};
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+      let resp = await UserModel.findByIdAndDelete(req.params.id).exec();
+      console.log(`Deleted User with id: ${req.params.id}`, resp);
+      res.status(status.success).json(resp);
+    } catch (error) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };

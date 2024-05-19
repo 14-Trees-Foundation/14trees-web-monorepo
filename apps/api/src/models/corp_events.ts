@@ -24,4 +24,4 @@ const corpEventModel = mongoose.model("corp_events", corpEventSchema);
 
 corpEventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = corpEventModel;
+export default corpEventModel;
