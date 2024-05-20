@@ -15,5 +15,5 @@ const userTree = new Schema({
   date_added: { type: Date },
 });
 
-const userTreeModel = mongoose.model("user_tree_reg", userTree);
-export default userTreeModel;
+const UserTreeModel = mongoose.model("user_tree_reg", userTree);
+export default UserTreeModel;

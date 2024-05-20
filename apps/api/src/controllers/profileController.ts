@@ -1,21 +1,19 @@
+import mongoose from "mongoose";
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
 import connect from "../services/mongo";
-import { ProfileUserInfo, UserTree } from "schema";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { status } from "../helpers/status";
 
-const { errorMessage, successMessage, status } = require("../helpers/status");
+import TreeModel from "../models/tree";
+import UserTreeModel from "../models/userprofile";
+import OrgModel from "../models/org";
+import UserModel from "../models/user";
+import DeletedUserTreeModel from "../models/deleteduserprofile";
 
-const mongoose = require("mongoose");
-const TreeModel = require("../models/tree");
-const UserTreeModel = require("../models/userprofile");
-const DeletedProfile = require("../models/deleteduserprofile");
-const OrgModel = require("../models/org");
+import * as userHelper from "./helper/users"
+import * as uploadHelper from "./helper/uploadtos3"
+import * as csvHelper from "./helper/uploadtocsv"
 
-const userHelper = require("./helper/users");
-const uploadHelper = require("./helper/uploadtos3");
-const csvhelper = require("./helper/uploadtocsv");
-const userModel = require("../models/user");
 
 export const getAllProfile = async (req: Request, res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -115,7 +113,7 @@ export const getUserProfile = async  (req: Request, res: Response) => {
   }
    
   try {
-      const mongoUserId = mongoose.Types.ObjectId(req.query.userid);
+      const mongoUserId = new mongoose.Types.ObjectId(req.query.userid.toString());
       const usertrees = await getUserProfilePipeline(mongoUserId);
       res.status(status.success).json({
         usertrees: usertrees,
@@ -159,7 +157,11 @@ export const getProfileById = async  (req: Request, res: Response) => {
       org: 1,
     });
 
-    let usertrees = await UserTreeModel.find({ user: user.user._id })
+    if (!user) {
+      throw new Error("No user found for sapling Id");
+    }
+
+    let usertrees = await UserTreeModel.find({ user: user._id })
       .populate({ path: "tree", populate: { path: "tree_id" } })
       .populate({ path: "tree", populate: { path: "plot_id" } });
 
@@ -191,7 +193,7 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
 
     // Get the user
     let userDoc = await userHelper.getUserDocumentFromRequestBody(req);
-    let user = await userModel.findOne({userid: userDoc.userid});
+    let user = await UserModel.findOne({userid: userDoc.userid});
     if (!user) {
       user = await userDoc.save();
     }
@@ -232,14 +234,14 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
 
     let user_tree_data = new UserTreeModel({
       tree: tree.id,
-      user: user.id,
+      user: user?.id,
       profile_image: userImageUrls,
       memories: memoryImageUrls,
       orgid: req.body.org
-        ? mongoose.Types.ObjectId(req.body.org)
-        : mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
+        ? new mongoose.Types.ObjectId(req.body.org)
+        : new mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
       donated_by: req.body.donor
-        ? mongoose.Types.ObjectId(req.body.donor)
+        ? new mongoose.Types.ObjectId(req.body.donor)
         : null,
       plantation_type: req.body.plantation_type
         ? req.body.plantation_type
@@ -272,14 +274,14 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     });
     let donor = "";
     if (req.body.donor) {
-      let dUser = await userModel.findOne({ _id: req.body.donor });
-      donor = dUser.name;
+      let dUser = await UserModel.findOne({ _id: req.body.donor });
+      if (dUser) donor = dUser.name;
     }
 
     // Save the info into the sheet
     let err;
     try {
-      await csvhelper.UpdateUserTreeCsv(
+      await csvHelper.UpdateUserTreeCsv(
         {
           name: req.body.name,
           email: req.body.email,
@@ -344,12 +346,12 @@ export const unassignTrees = async  (req: Request, res: Response) => {
 
   try {
 
-    let trees = await TreeModel.findOne({ sapling_id: {$in: req.body.sapling_ids} });
+    let trees = await TreeModel.find({ sapling_id: {$in: req.body.sapling_ids} });
 
     for (let i = 0; i < trees.length; i++) {
       let userTree = await UserTreeModel.findOne({ tree: trees[i] });
       if (!userTree) { continue; }
-      let deletedProfile = new DeletedProfile({
+      let deletedProfile = new DeletedUserTreeModel({
         tree: userTree.tree,
         user: userTree.user,
         profile_image: userTree.profile_image,
@@ -486,7 +488,7 @@ async function getUserAndTreesFromSapling(saplingId: string) {
     ]
 
     const result = (await trees.aggregate(pipeline).toArray())[0];
-    return result as UserTree;
+    return result;
 }
 
 // async function getUserAndTrees(user: ObjectId) {
@@ -496,7 +498,7 @@ async function getUserAndTreesFromSapling(saplingId: string) {
 //     return {}
 // }
 
-async function getUserProfilePipeline(user: ObjectId) {
+async function getUserProfilePipeline(user: mongoose.Types.ObjectId) {
   let usertrees = await UserTreeModel.aggregate([
     {
       $match: {

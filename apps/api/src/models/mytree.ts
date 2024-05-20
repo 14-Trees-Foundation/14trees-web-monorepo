@@ -14,8 +14,8 @@ const mytreesSchema = new Schema({
   assigned_at: { type: Date },
 });
 
-const mytreesModel = mongoose.model("mytrees", mytreesSchema);
+const MyTreesModel = mongoose.model("mytrees", mytreesSchema);
 
-mytreesModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+MyTreesModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-export default mytreesModel;
+export default MyTreesModel;

@@ -1,16 +1,19 @@
 import { status } from "../helpers/status";
-import  AlbumModel  from "../models/albums"; // Assuming Album is the interface/type for albums
-import Tree  from "../models/tree"; // Assuming Tree is the interface/type for trees
-import User  from "../models/user"; // Assuming User is the interface/type for users
-import { getOffsetAndLimitFromRequest } from "./helper/request";
-import * as userHelper from "./helper/users";
+import AlbumModel from "../models/albums";
+import TreeModel from "../models/tree";
+import UserModel from "../models/user";
+import PlotModel from "../models/plot";
+
 import * as uploadHelper from "./helper/uploadtos3";
+import { getUserDocumentFromRequestBody } from "./helper/users";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { getQueryExpression } from "./helper/filters";
+import { Request, Response } from "express";
 
-
-export const createAlbum = async (req: any,res: any) => {
+export const createAlbum = async (req: Request, res: Response) => {
   let email = req.params["email"];
   try {
-    let user = await User.find({ email: email, name: req.body.name });
+    let user = await UserModel.find({ email: email, name: req.body.name });
     if (user === null || user.length === 0) {
       res
         .status(status.notfound)
@@ -53,7 +56,7 @@ export const createAlbum = async (req: any,res: any) => {
       res.status(status.created).send({
         albums: result,
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).send({
         error: error,
       });
@@ -67,11 +70,11 @@ export const createAlbum = async (req: any,res: any) => {
   }
 };
 
-export const deleteAlbum = async (req: any,res: any) => {
+export const deleteAlbum = async (req: Request, res: Response) => {
   try {
-    let user = await User.find({ user_id: req.body.user_id });
+    let user = await UserModel.findOne({ user_id: req.body.user_id });
     let album = await AlbumModel.find({
-      user_id: (user as any)._id,
+      user_id: user?._id,
       album_name: req.body.album_name,
     });
 
@@ -101,10 +104,10 @@ export const deleteAlbum = async (req: any,res: any) => {
   }
 };
 
-export const getAlbums = async (req: any,res: any) => {
+export const getAlbums = async (req: Request, res: Response) => {
   let email = req.params["email"];
   try {
-    let user = await User.find({ email: email });
+    let user = await UserModel.find({ email: email });
     if (user === null || user.length === 0) {
       res
         .status(status.notfound)
@@ -128,11 +131,11 @@ export const getAlbums = async (req: any,res: any) => {
   }
 };
 
-export const getTrees = async (req: any,res: any) => {
+export const getMappedTrees = async (req: Request, res: Response) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
-    let user = await User.find({ email: email });
+    let user = await UserModel.find({ email: email });
     if (user === null || user.length === 0) {
       res
         .status(status.notfound)
@@ -140,7 +143,7 @@ export const getTrees = async (req: any,res: any) => {
       return;
     }
 
-    let trees = await Tree.aggregate([
+    let trees = await TreeModel.aggregate([
       {
         $match: {
           mapped_to: user[0]._id,
@@ -251,14 +254,14 @@ export const getTrees = async (req: any,res: any) => {
   }
 };
 
-export const updateTrees = async (req: any,res: any) => {
+export const updateEventDataInTrees = async (req: Request, res: Response) => {
   const sapling_ids = req.body.sapling_ids;
 
   let link = req.body.link ? req.body.link : "";
   let type = req.body.type ? req.body.type : "";
   try {
     for (let i = 0; i < sapling_ids.length; i++) {
-      let tree = await Tree.updateOne(
+      let tree = await TreeModel.updateOne(
         { sapling_id: sapling_ids[i] },
         { $set: { event_type: type, link: link } }
       );
@@ -272,21 +275,21 @@ export const updateTrees = async (req: any,res: any) => {
   }
 };
 
-export const addTrees = async (req: any,res: any) => {
+export const mapTrees = async (req: Request, res: Response) => {
   const fields = req.body;
   let email_id = fields.email;
-  let saplingids = fields.sapling_id.split(/[ ,]+/);
+  let saplingIds = fields.sapling_id.split(/[ ,]+/);
 
-  const filtered_saplings = saplingids.filter(function (el:any) {
+  const filtered_saplings = saplingIds.filter(function (el: string) {
     return el;
   });
 
-  let user = await User.findOne({ email: email_id });
+  let user = await UserModel.findOne({ email: email_id });
   if (user === null) {
     try {
-      let userDoc = await userHelper.getUserDocumentFromRequestBody(req);
+      let userDoc = await getUserDocumentFromRequestBody(req);
       user = await userDoc.save();
-    } catch (error) {
+    } catch (error: any) {
       res.status(status.error).send(error);
     }
   }
@@ -294,7 +297,7 @@ export const addTrees = async (req: any,res: any) => {
   try {
     for (let i = 0; i < filtered_saplings.length; i++) {
       try {
-        let result = await Tree.updateOne(
+        let result = await TreeModel.updateOne(
           { sapling_id: filtered_saplings[i] },
           {
             $set: {
@@ -317,21 +320,75 @@ export const addTrees = async (req: any,res: any) => {
       }
     }
     res.status(status.created).send();
-  } catch (error) {
+  } catch (error: any) {
     res.status(status.error).send({
       error: error,
     });
   }
 };
 
-export const removeMappedToFromTrees = async (req: any,res: any) => {
+export const mapTreesInPlot = async (req: Request, res: Response) => {
   const fields = req.body;
-  let saplingIds = fields.sapling_id.split(/[ ,]+/);
+  let email_id = fields.email;
+  let plot_id = fields.plot_id;
+  let count = fields.count;
+
+  try {
+    let user = await UserModel.findOne({ email: email_id });
+    if (!user) {
+      res.status(status.error).send({error: "user with given email doesn't exists"});
+      return;
+    }
+
+    let plot = await PlotModel.findOne({ $or: [
+      {plot_id: plot_id},
+      {_id : plot_id}
+    ] });
+    if (!plot) {
+      res.status(status.error).send({error: "plot with given plot_id doesn't exists"});
+      return;
+    }
+
+    let trees = await TreeModel.find({
+      plot_id: plot._id, 
+      $and: [
+        {$or: [
+          {"mapped_to": {"$exists": false}},
+          {"mapped_to": {"$exists": true, "$eq": null}},
+        ]},
+        {$or: [
+          {"date_assigned": {"$exists": false}},
+          {"date_assigned": {"$exists": true, "$eq": null}},
+        ]}
+      ]
+    }).limit(count);
+
+    if (trees.length != count) {
+      res.status(status.error).send({error: "not enough trees to assign"});
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      trees[i]["mapped_to"] = user._id;
+    }
+
+    await TreeModel.bulkSave(trees);
+    res.status(status.success).send();
+  } catch (error: any) {
+    res.status(status.error).send({
+      error: error,
+    });
+  }
+};
+
+export const unMapTrees = async (req: Request, res: Response) => {
+  const fields = req.body;
+  let saplingIds = fields.sapling_ids;
 
   let failedSaplingIds = []
   for (let i = 0; i < saplingIds.length; i++) {
     try {
-      let result = await Tree.updateOne(
+      let result = await TreeModel.updateOne(
         { sapling_id: saplingIds[i] },
         {
           $set: {
@@ -357,83 +414,115 @@ export const removeMappedToFromTrees = async (req: any,res: any) => {
   res.status(status.created).send();
 };
 
-export const getUserTreeCount = async (req: any,res: any) => {
+export const getUserMappedTreesCount = async (req: Request, res: Response) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
-  try {
-    let result = await Tree.aggregate([
-      {
-        $group: {
-          _id: {
-            user: "$mapped_to",
-            plot: "$plot_id",
-          },
-          count: { $sum: 1 },
-          tree_id: { $push: "$_id" },
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id.user",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $project: {
-                name: 1,
-                email: 1,
-                _id: 0,
-              },
-            },
-          ],
-          as: "user",
-        },
-      },
-      { $unwind: "$user" },
-      {
-        $lookup: {
-          from: "plots",
-          localField: "_id.plot",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $project: {
-                name: 1,
-                plot_id: 1,
-                _id: 0,
-              },
-            },
-          ],
-          as: "plot",
-        },
-      },
-      {
-        $lookup: {
-          from: "user_tree_regs",
-          let: { id: "$tree_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $in: ["$tree", "$$id"] },
-              },
-            },
-            { $count: "count" },
-          ],
-          as: "matched",
-        },
-      },
-      { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
-      { $unwind: "$plot" },
-      { $project: { _id: 0 } },
-      { $skip: offset },
-      { $limit: limit },
-    ]);
+  const filterReq = req.body.filters;
+  let filters;
+  if (filterReq && filterReq.length != 0) {
+    if (filterReq[0].columnField === "name") {
+      filters = getQueryExpression("user.name", filterReq[0].operatorValue, filterReq[0].value)
+    } else if (filterReq[0].columnField === "plot") {
+      filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
+    }
+  }
 
-    var defaultObj = result.reduce(
-      (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
-      {}
-    );
-    result = result.map((e) => Object.assign({}, defaultObj, e));
-    res.status(status.success).send(result);
+  let pipeline: any[] = [
+    {
+      $group: {
+        _id: {
+          user: "$mapped_to",
+          plot: "$plot_id",
+        },
+        count: { $sum: 1 },
+        tree_id: { $push: "$_id" },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id.user",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              _id: 0,
+            },
+          },
+        ],
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+    {
+      $lookup: {
+        from: "plots",
+        localField: "_id.plot",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              plot_id: 1,
+              _id: 0,
+            },
+          },
+        ],
+        as: "plot",
+      },
+    },
+    {
+      $lookup: {
+        from: "user_tree_regs",
+        let: { id: "$tree_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $in: ["$tree", "$$id"] },
+            },
+          },
+          { $count: "count" },
+        ],
+        as: "matched",
+      },
+    },
+    { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
+    { $unwind: "$plot" },
+  ]
+
+  if (filters) {
+    pipeline.push({ $match: filters })
+  }
+  pipeline.push({ $project: { _id: 0 } })
+  
+  try {
+    
+    // let countDocPipeline = [...pipeline, {$count: "totalDocuments"}];
+    // let countResult = await TreeModel.aggregate(countDocPipeline);
+    let getDocPipeline = [...pipeline, {
+      $facet: {
+        paginatedResults: [{ $skip: offset }, { $limit: limit }],
+        totalCount: [
+          {
+            $count: 'count'
+          }
+        ]
+      }
+    }];
+    let result = await TreeModel.aggregate(getDocPipeline);
+    
+    // var defaultObj = result.reduce(
+    //   (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
+    //   {}
+    // );
+    // result = result.map((e) => Object.assign({}, defaultObj, e));
+    res.status(status.success).send({
+      total: result[0].totalCount[0].count,
+      offset: offset,
+      result_count: result[0].paginatedResults.length,
+      result: result[0].paginatedResults,
+    });
   } catch (error: any) {
     res.status(status.error).json({
       message: error.message,

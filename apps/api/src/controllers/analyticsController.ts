@@ -1,21 +1,23 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status'; 
 
-const TreeModel = require("../models/tree");
-const TreeTypeModel = require("../models/treetype");
-const UserModel = require("../models/user");
-const PlotModel = require("../models/plot");
-const { PondModel, pondUpdate } = require("../models/pond");
-const UserTreeModel = require("../models/userprofile");
+import TreeModel from '../models/tree';
+import TreeTypeModel from '../models/treetype';
+import UserModel from '../models/user';
+import PlotModel from '../models/plot';
+import { PondModel } from '../models/pond';
+import UserTreeModel from '../models/userprofile';
+
+
 
 export const summary = async (req: Request, res: Response) => {
   try {
-    const treeCount = await TreeModel.estimatedDocumentCount({});
-    const treeTypeCount = await TreeTypeModel.estimatedDocumentCount({});
+    const treeCount = await TreeModel.estimatedDocumentCount();
+    const treeTypeCount = await TreeTypeModel.estimatedDocumentCount();
     const userCount = await UserModel.distinct('user_id').count();
-    const assignedTreeCount = await UserTreeModel.estimatedDocumentCount({});
-    const plotCount = await PlotModel.estimatedDocumentCount({});
-    const pondCount = await PondModel.estimatedDocumentCount({});
+    const assignedTreeCount = await UserTreeModel.estimatedDocumentCount();
+    const plotCount = await PlotModel.estimatedDocumentCount();
+    const pondCount = await PondModel.estimatedDocumentCount();
 
     res.status(status.success).send({
       treeCount,
@@ -26,6 +28,7 @@ export const summary = async (req: Request, res: Response) => {
       pondCount,
     });
   } catch (error) {
+    console.log('hi', error);
     res.status(status.error).send({
       error: error,
     });

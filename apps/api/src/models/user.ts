@@ -12,7 +12,7 @@ const user = new Schema({
   date_added: { type: Date },
 });
 
-const userModel = mongoose.model("users", user);
-userModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+const UserModel = mongoose.model("users", user);
+UserModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-export default userModel
+export default UserModel

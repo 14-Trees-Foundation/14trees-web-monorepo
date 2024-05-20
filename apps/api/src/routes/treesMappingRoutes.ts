@@ -20,6 +20,7 @@ routes.post("/assign", mapTrees);
 routes.post("/unmap", unMapTrees);
 routes.get("/:email", getMappedTrees);
 routes.get("/count/usertreescount", getUserMappedTreesCount);
+routes.post("/count/usertreescount", getUserMappedTreesCount);
 
 routes.post("/update", updateEventDataInTrees);
 

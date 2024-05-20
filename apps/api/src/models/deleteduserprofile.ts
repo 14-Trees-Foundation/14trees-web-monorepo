@@ -16,5 +16,5 @@ const userTree = new Schema({
   date_deleted: { type: Date },
 });
 
-const deletedUserTreeModel = mongoose.model("deleted_user_tree_reg", userTree);
-module.exports = deletedUserTreeModel;
+const DeletedUserTreeModel = mongoose.model("deleted_user_tree_reg", userTree);
+export default DeletedUserTreeModel;

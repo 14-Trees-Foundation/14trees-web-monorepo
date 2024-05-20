@@ -3,7 +3,7 @@ import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
 
 const Schema = mongoose.Schema;
 
-const albuumsSchema = new Schema({
+const albumsSchema = new Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
   album_name: { type: String },
   images: [{ type: String }],
@@ -11,8 +11,8 @@ const albuumsSchema = new Schema({
   status: { type: String, default: "active" },
 });
 
-const abumsModel = mongoose.model("albums", albuumsSchema);
+const AlbumModel = mongoose.model("albums", albumsSchema);
 
-abumsModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
+AlbumModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
 
-export default abumsModel;
+export default AlbumModel;

@@ -10,8 +10,8 @@ var orgSchema = new Schema({
   date_added: { type: Date },
 });
 
-const orgModel = mongoose.model("organizations", orgSchema);
+const OrgModel = mongoose.model("organizations", orgSchema);
 
-orgModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+OrgModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-export default orgModel;
+export default OrgModel;
