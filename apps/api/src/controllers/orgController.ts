@@ -1,134 +1,81 @@
-// import {
-//     errorMessage,
-//     successMessage,
-//     status,
-//   } from "../helpers/status";
-//   import OrgModel  from "../models/org";
-//   import *  as csvhelper from "./helper/uploadtocsv"; // Assuming UpdateOrg function exists
-//   import { getOffsetAndLimitFromRequest } from "./helper/request";
-//   import { Request, Response } from "express";
+import { status } from "../helpers/status";
+import { Org } from "../models/org";
+import { OrgRepository } from "../repo/orgRepo";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { Request, Response } from "express";
   
 
-// /*
-//     Model - Org
-//     CRUD Operations for organizations collection
-// */
+/*
+    Model - Org
+    CRUD Operations for organizations collection
+*/
 
-// export const getOrgs = async (req: Request, res: Response) => {
-//     const {offset, limit } = getOffsetAndLimitFromRequest(req);
-//     let filters: Record<string,any> = {}
-//     if (req.query?.name) {
-//         filters["name"] = new RegExp(req.query?.name as string, "i")
-//     }
-//     if (req.query?.type) {
-//         filters["type"] = new RegExp(req.query?.type as string, "i")
-//     }
-//     try {
-//         let result = await OrgModel.find(filters).skip(offset).limit(limit);
-//         res.status(status.success).send(result);
-//     } catch (error: any) {
-//         res.status(status.error).json({
-//             status: status.error,
-//             message: error.message,
-//         });
-//     }
-// }
+export const getOrgs = async (req: Request, res: Response) => {
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+        let result = await OrgRepository.getOrgs(req.query, offset, limit);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}
 
-// export const addOrg = async (req: Request, res: Response) => {
+export const addOrg = async (req: Request, res: Response) => {
 
-//     if (!req.body.name) {
-//         res.status(status.bad).send({ error: "Organization name is required" });
-//         return;
-//     }
-
-//     let obj = {
-//         name: req.body.name,
-//         date_added: new Date().toISOString(),
-//         desc: req.body.desc ? req.body.desc : "",
-//         type: req.body.type ? req.body.type : "",
-//     }
-//     let org = new OrgModel(obj)
-
-//     let orgRes;
-//     try {
-//         orgRes = await org.save();
-//     } catch (error) {
-//         res.status(status.bad).json({
-//             error: error,
-//         });
-//     }
-
-//     // Save the info into the sheet
-//     try {
-//         csvhelper.UpdateOrg(obj);
-//         res.status(status.created).json({
-//             org: orgRes,
-//             csvupload: "Success"
-//         });
-//     } catch (error) {
-//         res.status(status.error).json({
-//             org: orgRes,
-//             csvupload: "Failure"
-//         });
-//     }
-// }
+    if (!req.body.name) {
+        res.status(status.bad).send({ error: "Organization name is required" });
+        return;
+    }
+    try {
+        const org = await OrgRepository.addOrg(req.body);
+        res.status(status.created).send(org);
+    } catch (error) {
+        res.status(status.bad).json({
+            error: error,
+        });
+    }
+}
 
 
-// export const updateOrg = async (req: Request, res: Response) => {
-
-//     try {
-//         let org = await OrgModel.findById(req.params.id);
-//         if (!org) {
-//             throw new Error("Organization not found for given id");
-//         }
-
-//         if (req.body.name) {
-//             org.name = req.body.name;
-//         }
-//         if (req.body.desc) {
-//             org.name = req.body.desc;
-//         }
-//         if (req.body.type) {
-//             org.name = req.body.type;
-//         }
-
-//         const updatedOrg = await org.save();
-//         res.status(status.success).send(updatedOrg);
-
-//     } catch (error: any) {
-//         res.status(status.bad).send({ error: error.message });
-//     }
-// }
+export const updateOrg = async (req: Request, res: Response) => {
+    try {
+        let result = await OrgRepository.updateOrg(req.body)
+        res.status(status.created).json(result);
+    } catch (error) {
+        console.log(error)
+        res.status(status.error).json({ error: error });
+    }
+}
 
 
-// export const deleteOrg = async (req: Request, res: Response) => {
+export const deleteOrg = async (req: Request, res: Response) => {
+    try {
+        let resp = await OrgRepository.deleteOrg(req.params.id);
+        console.log("Delete organizations Response for id: %s", req.params.id, resp);
+        res.status(status.success).json({
+          message: "Organization deleted successfully",
+        });
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+    }
+}
 
-//     try {
-//         let response = await OrgModel.findByIdAndDelete(req.params.id).exec();
-//         console.log("Delete Org Response for orgId: %s", req.params.id, response)
+export const searchOrgs = async (req: Request, res: Response) => {
+    try {
+        if (!req.params.search || req.params.search.length < 3) {
+            res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+            return;
+        }
 
-//         res.status(status.success).send({
-//             message: "Organization deleted successfully",
-//           })
-//     } catch (error: any) {
-//         res.status(status.bad).send({ error: error.message });
-//     }
-// }
-
-// export const searchOrgs = async (req: Request, res: Response) => {
-//     try {
-//       if (!req.params.search || req.params.search.length < 3) {
-//         res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-//         return;
-//       }
-  
-//       const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//       const regex = new RegExp(req.params.search, 'i');
-//       const orgs = await OrgModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
-//       res.status(status.success).send(orgs);
-//       return;
-//     } catch (error: any) {
-//       res.status(status.bad).send({ error: error.message });
-//       return;
-//     }
-// };
+        const { offset, limit } = getOffsetAndLimitFromRequest(req);
+        const orgs = await OrgRepository.getOrgs( {name: req.params.search}, offset, limit);
+        res.status(status.success).send(orgs);
+        return;
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+        return;
+    }
+};

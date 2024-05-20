@@ -18,7 +18,7 @@ import plotRoutes from "./routes/plotRoutes";
 // import activityRoutes from "./routes/activityRoutes";
 // import searchRoutes from "./routes/searchRoutes";
 // import eventRoutes from "./routes/eventRoutes";
-// import orgRoutes from "./routes/orgRoutes";
+import orgRoutes from "./routes/orgRoutes";
 // import loginRoutes from "./routes/loginRoutes";
 // import treesMappingRoutes from "./routes/treesMappingRoutes";
 // import adminRoutes from "./routes/adminRoutes";
@@ -93,7 +93,7 @@ const initExpressApp = (app: express.Application) => {
   // app.use("/api/mytrees", treesMappingRoutes);
   app.use("/api/plots", plotRoutes);
   // app.use("/api/events", eventRoutes);
-  // app.use("/api/organizations", orgRoutes);
+  app.use("/api/organizations", orgRoutes);
   // app.use("/api/analytics", analyticsRoutes);
   // // app.use("/api/activity", activityRoutes);
   // app.use("/api/search", searchRoutes);

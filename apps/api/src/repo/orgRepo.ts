@@ -1,95 +1,49 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { Organization as OrgModel } from '../models/org'; // Import your Sequelize model for Org
+import { Org, OrgAttributes, OrgCreationAttributes } from '../models/org'; // Import your Sequelize model for Org
 
 export class OrgRepository {
-    static async getOrgs(req: Request, res: Response): Promise<void> {
-        const { offset = 0, limit = 10 } = req.query;
-        const filters: any = {};
-        if (req.query?.name) {
-            filters.name = { [Op.iLike]: `%${req.query.name}%` };
+    static async getOrgs(query: any, offset: number = 0, limit: number = 20): Promise<Org[]> {
+        const whereClause: Record<string, any> = {};
+        if (query?.name) {
+            whereClause.name = { [Op.iLike]: `%${query.name}%` };
         }
-        if (req.query?.type) {
-            filters.type = { [Op.iLike]: `%${req.query.type}%` };
+        if (query?.type) {
+            whereClause.type = { [Op.iLike]: `%${query.type}%` };
         }
-        try {
-            const result = await OrgModel.findAll({
-                where: filters,
-                offset: Number(offset),
-                limit: Number(limit),
-            });
-            res.status(200).send(result);
-        } catch (error) {
-            res.status(500).json({
-                status: 'error',
-                message: error,
-            });
-        }
+        const orgs = await Org.findAll({
+            where: whereClause,
+            offset: Number(offset),
+            limit: Number(limit),
+        });
+        return orgs;
     }
 
-    static async addOrg(req: Request, res: Response): Promise<void> {
-        if (!req.body.name) {
-            res.status(400).send({ error: 'Organization name is required' });
-            return;
-        }
-
-        const orgData = {
-            name: req.body.name,
-            date_added: new Date().toISOString(),
-            desc: req.body.desc || '',
-            type: req.body.type || '',
+    static async addOrg(data: any): Promise<Org> {
+        const orgData: OrgCreationAttributes = {
+            id: "",      // TODO: Random ID generator (24 char)
+            name: data.name,
+            date_added: new Date(),
+            desc: data.desc || '',
+            type: data.type || '',
         };
 
-        // try {
-        //     const org = await OrgModel.create(orgData);
-        //     // Save the info into the sheet
-        //     csvhelper.UpdateOrg(orgData);
-        //     res.status(201).json({
-        //         org,
-        //         csvupload: 'Success',
-        //     });
-        // } catch (error) {
-        //     res.status(400).json({
-        //         error: error,
-        //     });
-        // }
+        const org = Org.create(orgData);
+        return org;
     }
 
-    static async updateOrg(req: Request, res: Response): Promise<void> {
-        try {
-            const org = await OrgModel.findByPk(req.params.id);
-            if (!org) {
-                throw new Error('Organization not found for given id');
-            }
-
-            if (req.body.name) {
-                org.name = req.body.name;
-            }
-            if (req.body.desc) {
-                org.desc = req.body.desc;
-            }
-            if (req.body.type) {
-                org.type = req.body.type;
-            }
-
-            const updatedOrg = await org.save();
-            res.status(200).send(updatedOrg);
-        } catch (error) {
-            res.status(400).send({ error: error });
+    static async updateOrg(orgData: OrgAttributes): Promise<Org> {
+        const org = await Org.findByPk(orgData.id);
+        if (!org) {
+            throw new Error('Organization not found for given id');
         }
+
+        const updatedOrg = org.update(orgData);
+        return updatedOrg;
     }
 
-    static async deleteOrg(req: Request, res: Response): Promise<void> {
-        try {
-            const response = await OrgModel.destroy({
-                where: { id: req.params.id },
-            });
-            console.log('Delete Org Response for orgId:', req.params.id, response);
-            res.status(200).send({
-                message: 'Organization deleted successfully',
-            });
-        } catch (error) {
-            res.status(400).send({ error: error });
-        }
+    static async deleteOrg(orgId: string): Promise<number> {
+        const response = await Org.destroy({ where: { id: orgId } });
+        return response;
     }
 }

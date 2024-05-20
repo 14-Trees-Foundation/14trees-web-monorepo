@@ -1,28 +1,31 @@
-// import mongoose from "mongoose";
-// import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
 
-// const Schema = mongoose.Schema;
-
-// var orgSchema = new Schema({
-//   name: { type: String, required: true, unique: true },
-//   type: { type: String },
-//   desc: { type: String },
-//   date_added: { type: Date },
-// });
-
-// const orgModel = mongoose.model("organizations", orgSchema);
-
-// orgModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
-
-// module.exports = orgModel;
-
-
-
-
+import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-@Table
-export class Organization extends Model<Organization> {
+interface OrgAttributes {
+  id: string;
+  name: string;
+  type?: string;
+  desc?: string;
+  date_added?: Date;
+}
+
+interface OrgCreationAttributes
+	extends Optional<OrgAttributes, 'type' | 'desc' > {}
+
+@Table({ tableName: 'organizations' })
+class Org
+extends Model<OrgAttributes, OrgCreationAttributes>
+implements OrgAttributes {
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
+
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
   name!: string;
 
@@ -35,3 +38,6 @@ export class Organization extends Model<Organization> {
   @Column({ type: DataType.DATE })
   date_added?: Date;
 }
+
+export { Org }
+export type { OrgAttributes, OrgCreationAttributes }

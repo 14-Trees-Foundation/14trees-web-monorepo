@@ -3,6 +3,7 @@ import { Sequelize } from "sequelize-typescript";
 // import { TreeType } from "../models/treetype";
 import { Pond } from "../models/pond";
 import { Plot } from "../models/plot";
+import { Org } from "../models/org";
 
 
 class Database {
@@ -13,7 +14,7 @@ class Database {
   private POSTGRES_HOST = 'vivek-tree-vivek-tree.e.aivencloud.com';
   private POSTGRES_PORT = 15050;
   private POSTGRES_USER = 'avnadmin';
-  private POSTGRES_PD = ;
+  private POSTGRES_PD = process.env.POSTGRES_PD;
 
   constructor() {
     this.sequelize = new Sequelize({
@@ -35,6 +36,7 @@ class Database {
       models:[
         Pond,
         Plot,
+        Org,
       ]
     });
 
