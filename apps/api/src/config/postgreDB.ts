@@ -1,10 +1,11 @@
 import { Sequelize } from "sequelize-typescript";
-import { Pond} from '../models/pond';
 
+// import { TreeType } from "../models/treetype";
+import { Pond } from "../models/pond";
 
 
 class Database {
-  public sequelize: Sequelize | undefined;
+  public sequelize: Sequelize;
 
 
   private POSTGRES_DB =  'defaultdb';
@@ -14,7 +15,35 @@ class Database {
   private POSTGRES_PD = ;
 
   constructor() {
-    this.connectToPostgreSQL();
+    this.sequelize = new Sequelize({
+      database: this.POSTGRES_DB,
+      username: this.POSTGRES_USER,
+      password: this.POSTGRES_PD,
+      host: this.POSTGRES_HOST,
+      port: this.POSTGRES_PORT,
+      dialect: "postgres",
+      dialectOptions: {
+        ssl: {
+          require: true, // This will help you. But you will see nwe error
+          rejectUnauthorized: false // This line will fix new error
+        }
+      },
+      define: {
+        timestamps: false,
+      },
+      models:[Pond]
+    });
+
+    this.sequelize
+      .authenticate()
+      .then(() => {
+        console.log(
+          "✅ PostgreSQL Connection has been established successfully."
+        );
+      })
+      .catch((err) => {
+        console.error("❌ Unable to connect to the PostgreSQL database:", err);
+      });
   }
 
 
@@ -32,7 +61,11 @@ class Database {
           rejectUnauthorized: false // This line will fix new error
         }
       },
-     models:[ Pond  ]
+      define: {
+        timestamps: false,
+      },
+      repositoryMode: true,
+      // models:[Pond]
     });
 
     await this.sequelize
@@ -47,5 +80,9 @@ class Database {
       });
   }
 }
+
+const db = new Database();
+
+export const sequelize = db.sequelize;
 
 export default Database;

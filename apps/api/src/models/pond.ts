@@ -39,68 +39,106 @@
 
 //Model in postgresql db
 
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo,Unique, Index } from 'sequelize-typescript';
+import { Optional } from 'sequelize';
+import { Model, DataType } from 'sequelize-typescript';
+import { Boundaries } from './common';
+import {sequelize} from '../config/postgreDB';
 // import {OnSiteStaff} from './onsitestaff'
 
-export interface PondUpdate{
-    date: Date,
+interface PondUpdateAttributes{
+  date: Date,
   levelFt: Number,
   // user: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
   // user: OnSiteStaff
   images: string[],
-
 }
 
-@Table({ 
-  tableName: 'ponds' 
-}) // Set the table name
-
-
-@Table({ 
-  tableName: 'pondUpdate' 
-}) // Set the table name
-
-export class Pond extends Model<Pond> {
-
-  @Column({
-    
-    type: DataType.STRING,
-    allowNull: false,
-    field: "_id",
-    primaryKey: true,
-    unique: true
-  })
-  id!: string;
-
-
-  @Column(DataType.STRING)
-  name!: string;
-
-  @Column(DataType.ARRAY(DataType.STRING))
-  tags!: string[];
-
-
-  @Column(DataType.STRING)
-  type!: string;
-
-  @Column(DataType.JSON)
-  boundaries!: { type: string, coordinates: number[][][] };
-
-  @Column(DataType.DATE)
-  date_added!: Date;
-
-  @Column(DataType.ARRAY(DataType.STRING))
-  images!: string[];
-
-  @Column(DataType.FLOAT)
-  lengthFt!: number;
-
-  @Column(DataType.FLOAT)
-  widthFt!: number;
-
-  @Column(DataType.FLOAT)
-  depthFt!: number;
-
-  @Column(DataType.ARRAY(DataType.JSON))
-  updates!: PondUpdate[];
+interface PondAttributes {
+	id: string;
+	name: string;
+	tags: string[];
+	desc: string;
+	type: string;
+	boundaries: Boundaries;
+  date_added: Date;
+  images: string[];
+  lengthFt: number;
+  widthFt: number;
+  depthFt: number;
+  updates: PondUpdateAttributes[];
 }
+
+interface PondCreationAttributes
+	extends Optional<PondAttributes, 'id' | 'tags' | 'boundaries' | 'updates'> {}
+
+class Pond
+extends Model<PondAttributes, PondCreationAttributes>
+implements PondAttributes {
+	public id!: string;
+  public name!: string;
+	public tags!: string[];
+	public desc!: string;
+	public type!: string;
+	public boundaries!: Boundaries;
+  public date_added!: Date;
+  public images!: string[];
+  public lengthFt!: number;
+  public widthFt!: number;
+  public depthFt!: number;
+  public updates!: PondUpdateAttributes[];
+}
+
+
+Pond.init(
+	{
+		id: {
+			type: DataType.STRING,
+      allowNull: false,
+      field: "_id",
+      primaryKey: true,
+      unique: true
+		},
+		name: {
+      type: DataType.STRING
+    },
+    tags: {
+      type: DataType.ARRAY(DataType.STRING)
+    },
+    desc: {
+      type: DataType.STRING
+    },
+    type: {
+      type: DataType.STRING
+    },
+    boundaries: {
+      type: DataType.JSON
+    },
+    date_added: {
+      type: DataType.DATE
+    },
+    images: {
+      type: DataType.ARRAY(DataType.STRING)
+    },
+    lengthFt: {
+      type: DataType.FLOAT
+    },
+    widthFt: {
+      type: DataType.FLOAT
+    },
+    depthFt: {
+      type: DataType.FLOAT
+    },
+    updates: {
+      type: DataType.ARRAY(DataType.JSON)
+    },
+	},
+	{
+		sequelize,
+		modelName: 'Pond',
+		tableName: 'ponds',
+		timestamps: false,
+	},
+);
+
+export { Pond }
+export type { PondCreationAttributes, PondAttributes }
