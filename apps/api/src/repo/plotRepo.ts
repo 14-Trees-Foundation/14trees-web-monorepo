@@ -1,61 +1,50 @@
-import {Sequelize } from 'sequelize';
-import { Plot } from '../models/plot'
-import  Op  from 'sequelize';
+import { Op } from 'sequelize';
+import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
 
-export async function updatePlot(shortname: string, boundaries: string): Promise<Plot> {
-  try {
-      const result = await Plot.findOne({
-          where: { plot_code: shortname }
-      });
-      if (!result) {
-          throw new Error("Plot doesn't exist");
-      }
-      // result.boundaries = boundaries;
-      // await result.save();
-      return result;
-  } catch (error) {
-      throw error;
-  }
-}
+export class PlotRepository {
+    public static async updatePlot(plotData: PlotAttributes): Promise<Plot> {
+        const plot = await Plot.findByPk(plotData.id);
+        if (!plot) {
+            throw new Error("Plot doesn't exist");
+        }
+        const updatedPlot = plot.update(plotData);
+        return updatedPlot;
+    }
 
-export async function addPlot(plotName: string, plotCode: string, boundaries: string, center: string): Promise<Plot> {
-  try {
-      const plot = await Plot.create({
-          plot_name: plotName,
-          plot_code: plotCode,
-          boundaries: boundaries,
-          center: center,
-          date_added: new Date()
-      });
-      return plot;
-  } catch (error) {
-      throw error;
-  }
-}
+    public static async addPlot( plotData: any): Promise<Plot> {
+        // Check if plot type exists
+        let plotExists = await Plot.findOne({ where: { plot_id: plotData.plot_code } });
 
-export async function getPlots(name?: string, offset: number = 0, limit: number = 10): Promise<Plot[]> {
-  try {
-      const filters: any = {};
-      // if (name) {
-      //     filters.plot_name = { [Sequelize.Op.iLike]: `%${name}%` };
-      // }
-      const result = await Plot.findAll({
-          where: filters,
-          offset: offset,
-          limit: limit
-      });
-      return result;
-  } catch (error) {
-      throw error;
-  }
-}
+        // If plot exists, return error
+        if (plotExists) {
+            throw new Error("plot already exists");
+        }
+        let obj: PlotCreationAttributes = {
+            name: plotData.plot_name,
+            plot_id: plotData.plot_code,
+            boundaries: plotData.boundaries,
+            center: plotData.center,
+            date_added: new Date()
+        };
+        const plot = Plot.create(obj);
+        return plot;
+    }
 
-export async function deletePlot(id: number): Promise<void> {
-  try {
-      await Plot.destroy({
-          where: { id: id }
-      });
-  } catch (error) {
-      throw error;
-  }
+    public static async getPlots(name?: string, offset: number = 0, limit: number = 10): Promise<Plot[]> {
+        const whereClause: Record<string, any> = {};
+        if (name) {
+            whereClause["name"] = { [ Op.iLike]: `%${name}%` };
+        }
+        const result = await Plot.findAll({
+            where: whereClause,
+            offset: offset,
+            limit: limit
+        });
+        return result;
+    }
+
+    public static async deletePlot(plotId: string): Promise<number> {
+        const resp = await Plot.destroy({where: { id: plotId }});
+        return resp;
+    }
 }

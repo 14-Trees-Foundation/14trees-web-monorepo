@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize-typescript";
 
 // import { TreeType } from "../models/treetype";
 import { Pond } from "../models/pond";
+import { Plot } from "../models/plot";
 
 
 class Database {
@@ -31,7 +32,10 @@ class Database {
       define: {
         timestamps: false,
       },
-      models:[Pond]
+      models:[
+        Pond,
+        Plot,
+      ]
     });
 
     this.sequelize

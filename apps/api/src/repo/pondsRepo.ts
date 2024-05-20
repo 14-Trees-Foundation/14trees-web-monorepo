@@ -3,7 +3,6 @@ import { Pond, PondAttributes, PondCreationAttributes } from '../models/pond'; /
 import { status } from '../helpers/status'
 import { OnSiteStaff } from '../models/onsitestaff'
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
-import { getOffsetAndLimitFromRequest } from '../controllers/helper/request';
 import { Sequelize } from 'sequelize'
 // import { customAlphabet } from 'nanoid'
 // const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 24)
