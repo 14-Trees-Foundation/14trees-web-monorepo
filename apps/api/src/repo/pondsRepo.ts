@@ -5,6 +5,8 @@ import { OnSiteStaff } from '../models/onsitestaff'
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
 import { getOffsetAndLimitFromRequest } from '../controllers/helper/request';
 import { Sequelize } from 'sequelize'
+// import { customAlphabet } from 'nanoid'
+// const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 24)
 
 export class PondRepository {
   public static async addPond(data: any, files?: Express.Multer.File[]): Promise<Pond> {
@@ -15,11 +17,11 @@ export class PondRepository {
     }
 
     let obj: PondCreationAttributes = {
+      id: '6270af218262b1f5baxx792d',
       name: data.pond_name,
       lengthFt: data.length,
       depthFt: data.depth,
       widthFt: data.width,
-      desc: data.desc? data.desc : '',
       type: data.type,
       date_added: new Date(),
       tags: [],
