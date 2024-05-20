@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize-typescript";
+import { Pond} from '../models/pond';
 
-import { TreeType } from "../models/treetype_model";
 
 
 class Database {
@@ -32,7 +32,7 @@ class Database {
           rejectUnauthorized: false // This line will fix new error
         }
       },
-      models:[TreeType]
+     models:[ Pond  ]
     });
 
     await this.sequelize

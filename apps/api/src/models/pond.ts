@@ -39,14 +39,14 @@
 
 //Model in postgresql db
 
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import {Organization} from './org'
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo,Unique, Index } from 'sequelize-typescript';
+// import {OnSiteStaff} from './onsitestaff'
 
 export interface PondUpdate{
     date: Date,
   levelFt: Number,
   // user: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
-  user: Organization
+  // user: OnSiteStaff
   images: string[],
 
 }
@@ -61,14 +61,24 @@ export interface PondUpdate{
 }) // Set the table name
 
 export class Pond extends Model<Pond> {
+
+  @Column({
+    
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
+
+
   @Column(DataType.STRING)
   name!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
   tags!: string[];
 
-  @Column(DataType.STRING)
-  desc!: string;
 
   @Column(DataType.STRING)
   type!: string;
@@ -77,7 +87,7 @@ export class Pond extends Model<Pond> {
   boundaries!: { type: string, coordinates: number[][][] };
 
   @Column(DataType.DATE)
-  dateAdded!: Date;
+  date_added!: Date;
 
   @Column(DataType.ARRAY(DataType.STRING))
   images!: string[];

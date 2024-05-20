@@ -1,109 +1,109 @@
-// import mongoose from "mongoose";
-// import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
+// // import mongoose from "mongoose";
+// // import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
 
-// const Schema = mongoose.Schema;
+// // const Schema = mongoose.Schema;
 
-// const treeSchema = new Schema({
-//   sapling_id: { type: String, required: true, index: true, unique: true },
-//   tree_id: { type: mongoose.Schema.Types.ObjectId, ref: "tree_type" },
-//   plot_id: { type: mongoose.Schema.Types.ObjectId, ref: "plots" },
-//   user_id: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
-//   image: [{ type: String }],
-//   height: { type: Number },
-//   date_added: { type: Date },
-//   tags: [{ type: String }],
-//   location: {
-//     type: { type: String, default: "Point" },
-//     coordinates: { type: [Number], default: [0, 0] },
-//   },
-//   mapped_to: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-//   link: { type: String },
-//   event_type: { type: String },
-//   desc: { type: String },
-//   date_assigned: { type: Date },
-// });
+// // const treeSchema = new Schema({
+// //   sapling_id: { type: String, required: true, index: true, unique: true },
+// //   tree_id: { type: mongoose.Schema.Types.ObjectId, ref: "tree_type" },
+// //   plot_id: { type: mongoose.Schema.Types.ObjectId, ref: "plots" },
+// //   user_id: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
+// //   image: [{ type: String }],
+// //   height: { type: Number },
+// //   date_added: { type: Date },
+// //   tags: [{ type: String }],
+// //   location: {
+// //     type: { type: String, default: "Point" },
+// //     coordinates: { type: [Number], default: [0, 0] },
+// //   },
+// //   mapped_to: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+// //   link: { type: String },
+// //   event_type: { type: String },
+// //   desc: { type: String },
+// //   date_assigned: { type: Date },
+// // });
 
-// const treeModel = mongoose.model("trees", treeSchema);
+// // const treeModel = mongoose.model("trees", treeSchema);
 
-// treeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+// // treeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-// module.exports = treeModel;
-
-
+// // module.exports = treeModel;
 
 
 
 
 
 
-// Model in postgresql db
 
 
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { TreeType } from '../models/treetype_model'
-import { Plot } from '../models/plot'
-import OnSiteStaff from "../models/onsitestaff";
-import { User } from './user'
+// // Model in postgresql db
 
-@Table({
-  tableName: 'trees'
-})
-export class Tree extends Model {
-  @Column({ type: DataType.STRING, allowNull: false, unique: true })
-  sapling_id!: string;
 
-  @ForeignKey(() => TreeType)
-  @Column
-  tree_id!: number;
+// import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
+// import { TreeType } from '../models/treetype_model'
+// import { Plot } from '../models/plot'
+// import OnSiteStaff from "../models/onsitestaff";
+// import { User } from './user'
 
-  @ForeignKey(() => Plot)
-  @Column
-  plot_id!: number;
+// @Table({
+//   tableName: 'trees'
+// })
+// export class Tree extends Model {
+//   @Column({ type: DataType.STRING, allowNull: false, unique: true })
+//   sapling_id!: string;
 
-  @ForeignKey(() => OnSiteStaff)
-  @Column
-  user_id!: number;
+//   @ForeignKey(() => TreeType)
+//   @Column
+//   tree_id!: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  image!: string[];
+//   @ForeignKey(() => Plot)
+//   @Column
+//   plot_id!: number;
 
-  @Column(DataType.FLOAT)
-  height!: number;
+//   @ForeignKey(() => OnSiteStaff)
+//   @Column
+//   user_id!: number;
 
-  @Column(DataType.DATE)
-  date_added!: Date;
+//   @Column(DataType.ARRAY(DataType.STRING))
+//   image!: string[];
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  tags!: string[];
+//   @Column(DataType.FLOAT)
+//   height!: number;
 
-  @Column(DataType.JSON)
-  location!: { type: string, coordinates: number[] };
+//   @Column(DataType.DATE)
+//   date_added!: Date;
 
-  @ForeignKey(() => User)
-  @Column
-  mapped_to!: number;
+//   @Column(DataType.ARRAY(DataType.STRING))
+//   tags!: string[];
 
-  @Column(DataType.STRING)
-  link!: string;
+//   @Column(DataType.JSON)
+//   location!: { type: string, coordinates: number[] };
 
-  @Column(DataType.STRING)
-  event_type!: string;
+//   @ForeignKey(() => User)
+//   @Column
+//   mapped_to!: number;
 
-  @Column(DataType.STRING)
-  desc!: string;
+//   @Column(DataType.STRING)
+//   link!: string;
 
-  @Column(DataType.DATE)
-  date_assigned!: Date;
+//   @Column(DataType.STRING)
+//   event_type!: string;
 
-  @BelongsTo(() => TreeType)
-  treeType!: TreeType;
+//   @Column(DataType.STRING)
+//   desc!: string;
 
-  @BelongsTo(() => Plot)
-  plot!: Plot;
+//   @Column(DataType.DATE)
+//   date_assigned!: Date;
 
-  @BelongsTo(() => OnSiteStaff)
-  onSiteStaff!: OnSiteStaff;
+//   @BelongsTo(() => TreeType)
+//   treeType!: TreeType;
 
-  @BelongsTo(() => User)
-  user!: User;
-}
+//   @BelongsTo(() => Plot)
+//   plot!: Plot;
+
+//   @BelongsTo(() => OnSiteStaff)
+//   onSiteStaff!: OnSiteStaff;
+
+//   @BelongsTo(() => User)
+//   user!: User;
+// }

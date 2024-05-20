@@ -1,8 +1,8 @@
-import express from 'express';
-import { signin } from '../controllers/authController';
+// import express from 'express';
+// import { signin } from '../controllers/authController';
 
-const routes = express.Router();
+// const routes = express.Router();
 
-routes.post('/google', signin);
+// routes.post('/google', signin);
 
-export default routes;
+// export default routes;

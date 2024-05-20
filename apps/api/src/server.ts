@@ -10,24 +10,24 @@ import { getMongoDBConnectionString } from "./services/mongo";
 import Database from "./config/postgreDB";
 
 // Routes
-import userRoutes from "./routes/userRoutes";
-import treeRoutes from "./routes/treeRoutes";
-import profileRoute from "./routes/profileRoutes";
-import analyticsRoutes from "./routes/analyticsRoutes";
-import plotRoutes from "./routes/plotRoutes";
-import activityRoutes from "./routes/activityRoutes";
-import searchRoutes from "./routes/searchRoutes";
-import eventRoutes from "./routes/eventRoutes";
-import orgRoutes from "./routes/orgRoutes";
-import loginRoutes from "./routes/loginRoutes";
-import treesMappingRoutes from "./routes/treesMappingRoutes";
-import adminRoutes from "./routes/adminRoutes";
-import authRoutes from "./routes/authRoutes";
-import templateRoutes from "./routes/templateRoute";
-import contributionRoutes from "./routes/contributeRoutes";
+// import userRoutes from "./routes/userRoutes";
+// import treeRoutes from "./routes/treeRoutes";
+// import profileRoute from "./routes/profileRoutes";
+// import analyticsRoutes from "./routes/analyticsRoutes";
+// import plotRoutes from "./routes/plotRoutes";
+// import activityRoutes from "./routes/activityRoutes";
+// import searchRoutes from "./routes/searchRoutes";
+// import eventRoutes from "./routes/eventRoutes";
+// import orgRoutes from "./routes/orgRoutes";
+// import loginRoutes from "./routes/loginRoutes";
+// import treesMappingRoutes from "./routes/treesMappingRoutes";
+// import adminRoutes from "./routes/adminRoutes";
+// import authRoutes from "./routes/authRoutes";
+// import templateRoutes from "./routes/templateRoute";
+// import contributionRoutes from "./routes/contributeRoutes";
 import pondsRoutes from "./routes/pondsRoutes";
-import imageRoutes from "./routes/imageRoutes";
-import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
+// import imageRoutes from "./routes/imageRoutes";
+// import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
 
 require("dotenv").config();
 
@@ -85,25 +85,25 @@ const initExpressApp = (app: express.Application) => {
     next();
   });
 
-  app.use("/api/templates", templateRoutes);
-  app.use("/api/users", userRoutes);
-  app.use("/api/admin", adminRoutes);
-  app.use("/api/trees", treeRoutes);
-  app.use("/api/profile", profileRoute);
-  app.use("/api/mytrees", treesMappingRoutes);
-  app.use("/api/plots", plotRoutes);
-  app.use("/api/events", eventRoutes);
-  app.use("/api/organizations", orgRoutes);
-  app.use("/api/analytics", analyticsRoutes);
-  app.use("/api/activity", activityRoutes);
-  app.use("/api/search", searchRoutes);
-  app.use("/api/login", loginRoutes);
-  app.use("/api/auth", authRoutes);
-  // app.use('/api/donations', donationRoutes);
-  app.use("/api/contributions", contributionRoutes);
+  // app.use("/api/templates", templateRoutes);
+  // // app.use("/api/users", userRoutes);
+  // app.use("/api/admin", adminRoutes);
+  // // app.use("/api/trees", treeRoutes);
+  // app.use("/api/profile", profileRoute);
+  // app.use("/api/mytrees", treesMappingRoutes);
+  // // app.use("/api/plots", plotRoutes);
+  // app.use("/api/events", eventRoutes);
+  // app.use("/api/organizations", orgRoutes);
+  // app.use("/api/analytics", analyticsRoutes);
+  // // app.use("/api/activity", activityRoutes);
+  // app.use("/api/search", searchRoutes);
+  // app.use("/api/login", loginRoutes);
+  // app.use("/api/auth", authRoutes);
+  // // app.use('/api/donations', donationRoutes);
+  // app.use("/api/contributions", contributionRoutes);
   app.use("/api/ponds", pondsRoutes);
-  app.use("/api/images", imageRoutes);
-  app.use("/api/onsitestaff", onSiteStaffRoutes);
+  // app.use("/api/images", imageRoutes);
+  // app.use("/api/onsitestaff", onSiteStaffRoutes);
 
   // swagger doc
   if (swaggerFile) {

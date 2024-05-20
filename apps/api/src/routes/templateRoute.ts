@@ -1,8 +1,8 @@
-import express from 'express';
-import { getTemplate } from '../controllers/templateController';
+// import express from 'express';
+// import { getTemplate } from '../controllers/templateController';
 
-const routes = express.Router();
+// const routes = express.Router();
 
-routes.post('/', getTemplate);
+// routes.post('/', getTemplate);
 
-export default routes;
+// export default routes;

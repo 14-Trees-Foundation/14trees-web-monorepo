@@ -1,85 +1,85 @@
-// import mongoose from "mongoose";
+// // import mongoose from "mongoose";
 
-// const Schema = mongoose.Schema;
+// // const Schema = mongoose.Schema;
 
-// const userTree = new Schema({
-//   tree: { type: mongoose.Schema.Types.ObjectId, ref: "trees" },
-//   user: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-//   orgid: { type: mongoose.Schema.Types.ObjectId, ref: "organizations" },
-//   donated_by: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-//   profile_image: [{ type: String }],
-//   gifted_by: { type: String },
-//   planted_by: { type: String },
-//   memories: [{ type: String }],
-//   plantation_type: { type: String },
-//   date_added: { type: Date },
-//   date_deleted: { type: Date },
-// });
+// // const userTree = new Schema({
+// //   tree: { type: mongoose.Schema.Types.ObjectId, ref: "trees" },
+// //   user: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+// //   orgid: { type: mongoose.Schema.Types.ObjectId, ref: "organizations" },
+// //   donated_by: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+// //   profile_image: [{ type: String }],
+// //   gifted_by: { type: String },
+// //   planted_by: { type: String },
+// //   memories: [{ type: String }],
+// //   plantation_type: { type: String },
+// //   date_added: { type: Date },
+// //   date_deleted: { type: Date },
+// // });
 
-// const deletedUserTreeModel = mongoose.model("deleted_user_tree_reg", userTree);
-// module.exports = deletedUserTreeModel;
-
-
-
-//Model in postgresql db
+// // const deletedUserTreeModel = mongoose.model("deleted_user_tree_reg", userTree);
+// // module.exports = deletedUserTreeModel;
 
 
-import { Table, Column, Model, ForeignKey, BelongsTo, DataType } from 'sequelize-typescript';
-import { Tree } from './tree';
-import { User } from './user';
-import { Organization } from './org';
 
-@Table({
-  tableName: 'deleted_user_tree_reg',
-  timestamps: false,
-})
-export class DeletedProfileUserTree extends Model<DeletedProfileUserTree> {
-  @ForeignKey(() => Tree)
-  @Column(DataType.INTEGER)
-  treeId!: number;
+// //Model in postgresql db
 
-  @ForeignKey(() => User)
-  @Column(DataType.INTEGER)
-  userId!: number;
 
-  @ForeignKey(() => Organization)
-  @Column(DataType.INTEGER)
-  orgId!: number;
+// import { Table, Column, Model, ForeignKey, BelongsTo, DataType } from 'sequelize-typescript';
+// import { Tree } from './tree';
+// import { User } from './user';
+// import { Organization } from './org';
 
-  @ForeignKey(() => User)
-  @Column(DataType.INTEGER)
-  donatedById!: number;
+// @Table({
+//   tableName: 'deleted_user_tree_reg',
+//   timestamps: false,
+// })
+// export class DeletedProfileUserTree extends Model<DeletedProfileUserTree> {
+//   @ForeignKey(() => Tree)
+//   @Column(DataType.INTEGER)
+//   treeId!: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  profileImage!: string[];
+//   @ForeignKey(() => User)
+//   @Column(DataType.INTEGER)
+//   userId!: number;
 
-  @Column(DataType.STRING)
-  giftedBy!: string;
+//   @ForeignKey(() => Organization)
+//   @Column(DataType.INTEGER)
+//   orgId!: number;
 
-  @Column(DataType.STRING)
-  plantedBy!: string;
+//   @ForeignKey(() => User)
+//   @Column(DataType.INTEGER)
+//   donatedById!: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  memories!: string[];
+//   @Column(DataType.ARRAY(DataType.STRING))
+//   profileImage!: string[];
 
-  @Column(DataType.STRING)
-  plantationType!: string;
+//   @Column(DataType.STRING)
+//   giftedBy!: string;
 
-  @Column(DataType.DATE)
-  dateAdded!: Date;
+//   @Column(DataType.STRING)
+//   plantedBy!: string;
 
-  @Column(DataType.DATE)
-  dateDeleted!: Date;
+//   @Column(DataType.ARRAY(DataType.STRING))
+//   memories!: string[];
 
-  @BelongsTo(() => Tree)
-  tree!: Tree;
+//   @Column(DataType.STRING)
+//   plantationType!: string;
 
-  @BelongsTo(() => User)
-  user!: User;
+//   @Column(DataType.DATE)
+//   dateAdded!: Date;
 
-  @BelongsTo(() => Organization)
-  organization!: Organization;
+//   @Column(DataType.DATE)
+//   dateDeleted!: Date;
 
-  @BelongsTo(() => User, { foreignKey: 'donatedById' })
-  donatedBy!: User;
-}
+//   @BelongsTo(() => Tree)
+//   tree!: Tree;
+
+//   @BelongsTo(() => User)
+//   user!: User;
+
+//   @BelongsTo(() => Organization)
+//   organization!: Organization;
+
+//   @BelongsTo(() => User, { foreignKey: 'donatedById' })
+//   donatedBy!: User;
+// }
