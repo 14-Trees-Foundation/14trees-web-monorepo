@@ -511,14 +511,14 @@ export const getUserMappedTreesCount = async (req: Request, res: Response) => {
       }
     }];
     let result = await TreeModel.aggregate(getDocPipeline);
-    
+    console.log(result);
     // var defaultObj = result.reduce(
     //   (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
     //   {}
     // );
     // result = result.map((e) => Object.assign({}, defaultObj, e));
     res.status(status.success).send({
-      total: result[0].totalCount[0].count,
+      total: result[0].totalCount[0]?.count ? result[0].totalCount[0]?.count : 0,
       offset: offset,
       result_count: result[0].paginatedResults.length,
       result: result[0].paginatedResults,
