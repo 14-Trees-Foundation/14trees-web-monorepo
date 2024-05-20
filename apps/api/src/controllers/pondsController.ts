@@ -46,39 +46,21 @@ export const addPond = async (req: Request, res: Response) => {
   }
 };
 
-// export const updatePond = async (req: any,res: any) => {
+export const updatePond = async (req: Request, res: Response) => {
   
-//   if (!req.params.id || req.params.id === "") {
-//     res.status(status.bad).send({error: "pond id is required to update the pond"});
-//     return;
-//   }
+  if (!req.params.id || req.params.id === "") {
+    res.status(status.bad).send({error: "pond id is required to update the pond"});
+    return;
+  }
 
-//   try {
-//     let pond = await Pond.findById(req.params.id);
-//     if(!pond) {
-//       res.status(status.error).send({error: "pond not found for given id."});
-//       return;
-//     }
-
-//     pond.name = req.body.name;
-//     pond.tags = req.body.tags;
-//     pond.desc = req.body.desc;
-//     pond.type = req.body.type;
-//     pond.boundaries = req.body.boundaries;
-//     pond.date_added = req.body.date_added;
-//     pond.images = req.body.images;
-//     pond.lengthFt = req.body.lengthFt;
-//     pond.widthFt = req.body.widthFt;
-//     pond.depthFt = req.body.depthFt;
-//     pond.updates = req.body.updates;
-
-
-//     let pondRes = await pond.save();
-//     res.status(status.success).json(pondRes);
-//   } catch (error) {
-//     res.status(status.error).json({ error });
-//   }
-// };
+  try {
+    const pond = await PondRepository.updatePond(req.body, isArray(req.files) ? req.files: []);
+    res.status(status.success).send(pond);
+  } catch (error) {
+    console.log(error);
+    res.status(status.error).json({ error });
+  }
+};
 
 export const getPonds = async (req: Request ,res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);

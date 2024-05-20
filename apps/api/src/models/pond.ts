@@ -85,4 +85,4 @@ implements PondAttributes {
   updates!: PondUpdateAttributes[];
 }
 
-export type {PondCreationAttributes}
+export type {PondCreationAttributes, PondAttributes}

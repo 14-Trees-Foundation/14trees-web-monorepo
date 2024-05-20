@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Pond, PondCreationAttributes } from '../models/pond'; // Assuming PondModel is the Sequelize model for the Pond entity
+import { Pond, PondAttributes, PondCreationAttributes } from '../models/pond'; // Assuming PondModel is the Sequelize model for the Pond entity
 import { status } from '../helpers/status'
 import { OnSiteStaff } from '../models/onsitestaff'
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
@@ -29,6 +29,22 @@ export class PondRepository {
     };
     const pondRes = await Pond.create(obj);
     return pondRes;
+  }
+
+  public static async updatePond(data: PondAttributes, files?: Express.Multer.File[]): Promise<Pond> {
+
+    let pondImageUrl = "";
+    if (files && files.length !== 0) {
+      pondImageUrl = await UploadFileToS3(files[0].filename, "ponds", data.name);
+      data.images = [pondImageUrl]
+    }
+
+    const pond = await Pond.findByPk(data.id);
+    if (!pond) {
+      throw new Error("Pond not found")
+    }
+    const updatedPond = await pond.update(data);
+    return updatedPond;
   }
 
   public static async getPonds(filters: Record<string, any>, offset: number, limit: number) {

@@ -10,7 +10,7 @@ const routes = Router();
 // routes.post('/update', uploadFiles.array('files', 1), ponds.addWaterLevelUpdate);
 
 routes.post('/', uploadFiles.array('files', 1), ponds.addPond);
-// routes.put('/:id', uploadFiles.array('files', 1), ponds.updatePond);
+routes.put('/:id', uploadFiles.array('files', 1), ponds.updatePond);
 // routes.post('/update-pond-level', uploadFiles.array('files', 1), ponds.addWaterLevelUpdate);
 routes.get("/", ponds.getPonds);
 routes.get('/:search', ponds.searchPonds);
