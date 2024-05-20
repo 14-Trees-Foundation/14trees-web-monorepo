@@ -11,7 +11,7 @@ class Database {
   private POSTGRES_HOST = 'vivek-tree-vivek-tree.e.aivencloud.com';
   private POSTGRES_PORT = 15050;
   private POSTGRES_USER = 'avnadmin';
-  private POSTGRES_PD = '';
+  private POSTGRES_PD = ;
 
   constructor() {
     this.connectToPostgreSQL();
