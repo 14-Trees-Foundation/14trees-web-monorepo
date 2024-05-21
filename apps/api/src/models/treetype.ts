@@ -1,27 +1,92 @@
-import mongoose from "mongoose";
-import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
+//Model in postgresql db
 
-const Schema = mongoose.Schema;
+import { Optional } from 'sequelize';
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-const treeTypeSchema = new Schema({
-  name: { type: String, required: true },
-  scientific_name: { type: String },
-  tree_id: { type: String, equired: true, index: true, unique: true },
-  image: [{ type: String }],
-  family: { type: String },
-  habit: { type: String },
-  remarkable_char: { type: String },
-  med_use: { type: String },
-  other_use: { type: String },
-  food: { type: String },
-  eco_value: { type: String },
-  parts_userd: { type: String },
-  tags: [{ type: String }],
-  desc: { type: String },
-});
+interface TreeTypeAttributes {
+	id: string;
+	name: string;
+	scientific_name: string;
+	tree_id: string;
+  image: string[];
+	tags: string[];
+  habit: string;
+  name_english: string;
+  family?: string;
+  remarkable_char?: string;
+  med_use?: string;
+  other_use?: string;
+  food?: string;
+  eco_value?: string;
+  desc?: string;
+}
 
-const treeTypeModel = mongoose.model("tree_type", treeTypeSchema);
+interface TreeTypeCreationAttributes
+	extends Optional<TreeTypeAttributes, 'tags' | 'image' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'desc'> {}
 
-treeTypeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+@Table({ tableName: 'tree_types' })
+class TreeType extends Model<TreeTypeAttributes, TreeTypeCreationAttributes>
+implements TreeTypeAttributes {
 
-export default treeTypeModel;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
+
+
+  @Column(DataType.STRING)
+  name!: string;
+
+  @Column(DataType.STRING)
+  scientific_name!: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    unique: true
+  })
+  tree_id!: string;
+
+  @Column(DataType.ARRAY(DataType.STRING))
+  image!: string[];
+
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: true
+  })
+  tags!: string[];
+
+  @Column(DataType.STRING)
+  habit!: string;
+
+  @Column(DataType.STRING)
+  name_english!: string;
+
+  @Column(DataType.STRING)
+  family!: string;
+
+  @Column(DataType.STRING)
+  remarkable_char!: string;
+
+  @Column(DataType.STRING)
+  med_use!: string;
+
+  @Column(DataType.STRING)
+  other_use!: string;
+
+  @Column(DataType.STRING)
+  food!: string;
+
+  @Column(DataType.STRING)
+  eco_value!: string;
+
+  @Column(DataType.STRING)
+  desc!: string;
+}
+
+export { TreeType }
+export type {TreeTypeAttributes, TreeTypeCreationAttributes}

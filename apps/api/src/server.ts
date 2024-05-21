@@ -11,7 +11,7 @@ import Database from "./config/postgreDB";
 
 // Routes
 // import userRoutes from "./routes/userRoutes";
-// import treeRoutes from "./routes/treeRoutes";
+import treeRoutes from "./routes/treeRoutes";
 // import profileRoute from "./routes/profileRoutes";
 // import analyticsRoutes from "./routes/analyticsRoutes";
 import plotRoutes from "./routes/plotRoutes";
@@ -88,7 +88,7 @@ const initExpressApp = (app: express.Application) => {
   // app.use("/api/templates", templateRoutes);
   // // app.use("/api/users", userRoutes);
   // app.use("/api/admin", adminRoutes);
-  // // app.use("/api/trees", treeRoutes);
+  app.use("/api/trees", treeRoutes);
   // app.use("/api/profile", profileRoute);
   // app.use("/api/mytrees", treesMappingRoutes);
   app.use("/api/plots", plotRoutes);

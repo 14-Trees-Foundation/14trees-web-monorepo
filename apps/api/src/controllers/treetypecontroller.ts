@@ -1,48 +1,89 @@
-// import { Request, Response } from 'express';
-// import TreeTypeRepository from '../repo/treetypeRepo';
+/*
+  Model - TreeType
+  CRUD Operations for tree_types collection
+*/
 
-// import status from '../helpers/status';
+import { Request, Response } from "express";
+import TreeTypeRepository from "../repo/treetypeRepo";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { status } from "../helpers/status";
+import { isArray } from "lodash";
 
-// const treeTypeRepository = new TreeTypeRepository();
+export const getTreeTypes = async (req: Request, res: Response) => {
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
+  try {
+    let result = await TreeTypeRepository.getTreeTypes(req.query, offset, limit);
+    res.status(status.success).send(result);
+  } catch (error: any) {
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
+  }
+};
 
-// export const createTreeType = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     if (!req.body.name) {
-//       throw new Error("Tree name is required");
-//     }
-   
+export const addTreeType = async (req: Request, res: Response) => {
+    try {
+    if (!req.body.name) {
+        throw new Error("Tree name is required");
+    }
+    if (!req.body.tree_id) {
+        throw new Error("Tree ID required");
+    }
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+        return;
+    }
 
-//     // let imageUrl = "";
-//     // if (req.files && req.files[0]) {
-//     //   imageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
-//     // }
+    // Save the info into the sheet
+    try {
+        const treeType = await TreeTypeRepository.addTreeType(req.body, isArray(req.files)? req.files: [])
+        res.status(status.created).json(treeType);
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+    }
+};
 
-//     const treeTypeData = {
-//       name: req.body.name,
-//       // tree_id: req.body.tree_id,
-//       description: req.body.desc,
-//       // scientific_name: req.body.scientific_name,
-//       // // image: imageUrl,
-//       // family: req.body.family,
-//       // habit: req.body.habit,
-//       // remarkable_char: req.body.remarkable_char,
-//       // med_use: req.body.med_use,
-//       // other_use: req.body.other_use,
-//       // food: req.body.food,
-//       // eco_value: req.body.eco_value,
-//       // parts_used: req.body.parts_used,
 
-//     };
+export const updateTreeType = async (req: Request, res: Response) => {
+    try {
+        const treeType = await TreeTypeRepository.updateTreeType(req.body, isArray(req.files)? req.files: [])
+        res.status(status.success).json(treeType);
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+    }
+};
 
-//     await treeTypeRepository.create(treeTypeData);
+export const deleteTreeType = async (req: Request, res: Response) => {
+    try {
+      const resp = TreeTypeRepository.deleteTreeType(req.params.id)
+      console.log("Delete TreeTypes Response for id: %s", req.params.id, resp);
 
-//     res.status(201).json({
-//       status: "Created!",
-//       message: "Successfully created treetype!",
-//     });
-
-    
-//   } catch (error) {
-//     res.status(501).json(error);
-//   }
-// };
+      res.status(status.success).json({
+        message: "Tree Type deleted successfully",
+      });
+    } catch (error: any) {
+      res.status(status.bad).send({ error: error.message });
+    }
+  };
+  
+  export const searchTreeTypes = async (req: Request, res: Response) => {
+    try {
+      if (!req.params.search || req.params.search.length < 3) {
+        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+        return;
+      }
+  
+      const { offset, limit } = getOffsetAndLimitFromRequest(req);
+      const query: Record<string, any> = {
+        "name": req.params.search
+      }
+      const treeTypes = await TreeTypeRepository.getTreeTypes(query, offset, limit);
+      res.status(status.success).send(treeTypes);
+      return;
+    } catch (error: any) {
+      res.status(status.bad).send({ error: error.message });
+      return;
+    }
+  };
+  

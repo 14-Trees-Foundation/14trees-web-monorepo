@@ -4,6 +4,7 @@ import { Sequelize } from "sequelize-typescript";
 import { Pond } from "../models/pond";
 import { Plot } from "../models/plot";
 import { Org } from "../models/org";
+import { TreeType } from "../models/treetype";
 
 
 class Database {
@@ -37,6 +38,7 @@ class Database {
         Pond,
         Plot,
         Org,
+        TreeType,
       ]
     });
 

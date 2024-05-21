@@ -1,16 +1,16 @@
-// import { Router } from "express";
+import { Router } from "express";
 // import * as trees from "../controllers/treesController";
-// import uploadFiles from "../helpers/multer";
-// import * as treeTypes from '../controllers/treetypecontroller'
+import uploadFiles from "../helpers/multer";
+import * as treeTypes from '../controllers/treetypecontroller'
 
-// const routes = Router();
+const routes = Router();
 
-// // TreeTypes
-// routes.get("/treetypes", trees.getTreeTypes);
-// routes.get('/:search', trees.searchTreeTypes);
-// routes.post("/addtreetype", uploadFiles.array("files", 4), trees.addTreeType);
-// routes.put('/treetypes/:id', uploadFiles.array('files', 4), trees.updateTreeType);
-// routes.delete('/treetypes/:id', trees.deleteTreeType);
+// TreeTypes
+routes.get("/treetypes", treeTypes.getTreeTypes);
+routes.get('/:search', treeTypes.searchTreeTypes);
+routes.post("/addtreetype", uploadFiles.array("files", 4), treeTypes.addTreeType);
+routes.put('/treetypes/:id', uploadFiles.array('files', 4), treeTypes.updateTreeType);
+routes.delete('/treetypes/:id', treeTypes.deleteTreeType);
 
 // // Trees
 
@@ -38,4 +38,4 @@
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
 
-// export default routes;
+export default routes;
