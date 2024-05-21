@@ -1,109 +1,107 @@
-// // import mongoose from "mongoose";
-// // import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
-
-// // const Schema = mongoose.Schema;
-
-// // const treeSchema = new Schema({
-// //   sapling_id: { type: String, required: true, index: true, unique: true },
-// //   tree_id: { type: mongoose.Schema.Types.ObjectId, ref: "tree_type" },
-// //   plot_id: { type: mongoose.Schema.Types.ObjectId, ref: "plots" },
-// //   user_id: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
-// //   image: [{ type: String }],
-// //   height: { type: Number },
-// //   date_added: { type: Date },
-// //   tags: [{ type: String }],
-// //   location: {
-// //     type: { type: String, default: "Point" },
-// //     coordinates: { type: [Number], default: [0, 0] },
-// //   },
-// //   mapped_to: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-// //   link: { type: String },
-// //   event_type: { type: String },
-// //   desc: { type: String },
-// //   date_assigned: { type: Date },
-// // });
-
-// // const treeModel = mongoose.model("trees", treeSchema);
-
-// // treeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
-
-// // module.exports = treeModel;
-
-
-
-
-
-
-
-
 // Model in postgresql db
 
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import { TreeType } from '../models/treetype'
+import { Plot } from '../models/plot'
+import { OnsiteStaff } from "../models/onsitestaff";
+import { User } from './user'
+import { Center } from './common';
+import { Optional } from 'sequelize';
 
-// import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-// import { TreeType } from '../models/treetype_model'
-// import { Plot } from '../models/plot'
-// import OnSiteStaff from "../models/onsitestaff";
-// import { User } from './user'
 
-// @Table({
-//   tableName: 'trees'
-// })
-// export class Tree extends Model {
-//   @Column({ type: DataType.STRING, allowNull: false, unique: true })
-//   sapling_id!: string;
+interface TreeAttributes {
+    id: string,
+    sapling_id: string,
+    tree_id: string,
+    plot_id: string,
+    user_id: string,
+    image: string[],
+    height: number,
+    date_added: Date,
+    tags: string[],
+    location: Center,
+    link: string,
+    mapped_to: string,
+    event_type: string,
+    desc: string,
+    date_assigned: Date,
+};
 
-//   @ForeignKey(() => TreeType)
-//   @Column
-//   tree_id!: number;
+interface TreeCreationAttributes
+	extends Optional<TreeAttributes, 'tags' | 'location' | 'link' | 'mapped_to' | 'event_type' | 'desc' | 'date_assigned' | 'image' | 'user_id' | 'height'> {}
 
-//   @ForeignKey(() => Plot)
-//   @Column
-//   plot_id!: number;
+@Table({ tableName: 'trees' })
+class Tree extends Model<TreeAttributes, TreeCreationAttributes>
+implements TreeAttributes {
 
-//   @ForeignKey(() => OnSiteStaff)
-//   @Column
-//   user_id!: number;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
 
-//   @Column(DataType.ARRAY(DataType.STRING))
-//   image!: string[];
+  @Column({ type: DataType.STRING, allowNull: false, unique: true })
+  sapling_id!: string;
 
-//   @Column(DataType.FLOAT)
-//   height!: number;
+  @ForeignKey(() => TreeType)
+  @Column
+  tree_id!: string;
 
-//   @Column(DataType.DATE)
-//   date_added!: Date;
+  @ForeignKey(() => Plot)
+  @Column
+  plot_id!: string;
 
-//   @Column(DataType.ARRAY(DataType.STRING))
-//   tags!: string[];
+  @ForeignKey(() => OnsiteStaff)
+  @Column
+  user_id!: string;
 
-//   @Column(DataType.JSON)
-//   location!: { type: string, coordinates: number[] };
+  @Column(DataType.ARRAY(DataType.STRING))
+  image!: string[];
 
-//   @ForeignKey(() => User)
-//   @Column
-//   mapped_to!: number;
+  @Column(DataType.FLOAT)
+  height!: number;
 
-//   @Column(DataType.STRING)
-//   link!: string;
+  @Column(DataType.DATE)
+  date_added!: Date;
 
-//   @Column(DataType.STRING)
-//   event_type!: string;
+  @Column(DataType.ARRAY(DataType.STRING))
+  tags!: string[];
 
-//   @Column(DataType.STRING)
-//   desc!: string;
+  @Column(DataType.JSON)
+  location!: { type: string, coordinates: number[] };
 
-//   @Column(DataType.DATE)
-//   date_assigned!: Date;
+  @ForeignKey(() => User)
+  @Column
+  mapped_to!: string;
 
-//   @BelongsTo(() => TreeType)
-//   treeType!: TreeType;
+  @Column(DataType.STRING)
+  link!: string;
 
-//   @BelongsTo(() => Plot)
-//   plot!: Plot;
+  @Column(DataType.STRING)
+  event_type!: string;
 
-//   @BelongsTo(() => OnSiteStaff)
-//   onSiteStaff!: OnSiteStaff;
+  @Column(DataType.STRING)
+  desc!: string;
 
-//   @BelongsTo(() => User)
-//   user!: User;
-// }
+  @Column(DataType.DATE)
+  date_assigned!: Date;
+
+  @BelongsTo(() => TreeType)
+  treeType!: TreeType;
+
+  @BelongsTo(() => Plot)
+  plot!: Plot;
+
+  @BelongsTo(() => OnsiteStaff)
+  onSiteStaff!: OnsiteStaff;
+
+  @BelongsTo(() => User)
+  user!: User;
+}
+
+
+export { Tree }
+export type { TreeAttributes, TreeCreationAttributes }

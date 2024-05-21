@@ -19,6 +19,12 @@
 // import { isTypedArray } from "util/types";
 // import { isArray } from "lodash";
 
+import { Request, Response } from "express";
+import { status } from "../helpers/status";
+import TreeRepository from "../repo/treeRepo";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { isArray } from "lodash";
+
 // dotenv.config();
 
 // /*
@@ -195,10 +201,10 @@
 //   };
   
   
-//   /*
-//     Model - Tree
-//     CRUD Operations for trees collection
-//   */
+  /*
+    Model - Tree
+    CRUD Operations for trees collection
+  */
   
 //   const validateRequestAndGetTreeDocument = async (reqBody: any) => {
   
@@ -296,218 +302,145 @@
 //     return treeDoc
 //   }
 
-//   export const addTree = async (req: Request, res: Response) => {
-//     let treeRes;
-//     try {
-//       let tree = await validateRequestAndGetTreeDocument(req.body);
-//       treeRes = await tree.save();
-//       res.status(status.created).send(treeRes);
-//     } catch (error: any) {
-//       console.log("Tree add error : ", error);
-//       res.status(status.error).send({
-//         error: error,
-//       });
-//     }
-//   };
-  
-//   export const getTree = async (req: Request, res: Response) => {
+export const addTree = async (req: Request, res: Response) => {
+    try {
+        let tree = await TreeRepository.addTree(req.body);
+        res.status(status.created).send(tree);
+    } catch (error: any) {
+        console.log("Tree add error : ", error);
+        res.status(status.error).send({
+        error: error,
+        });
+    }
+};
+
+// export const getTree = async (req: Request, res: Response) => {
 //     if (!req.query.sapling_id) {
-//       res.status(status.bad).send({ error: "Sapling ID required" });
-//       return;
+//         res.status(status.bad).send({ error: "Sapling ID required" });
+//         return;
 //     }
-  
+
 //     try {
-//       let result = await TreeModel.findOne({ sapling_id: req.query.sapling_id })
+//         let result = await TreeModel.findOne({ sapling_id: req.query.sapling_id })
 //         .populate({ path: "tree_id", select: "name" })
 //         .populate({ path: "plot_id", select: "name" });
-//       if (result === null) {
+//         if (result === null) {
 //         res.status(status.notfound).send();
-//       } else {
+//         } else {
 //         res.status(status.success).send(result);
-//       }
+//         }
 //     } catch (error: any) {
-//       res.status(status.error).json({
+//         res.status(status.error).json({
 //         status: status.error,
 //         message: error.message,
-//       });
+//         });
 //     }
-//   };
-  
-//   export const getTrees = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req); 
+// };
+
+export const getTrees = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req); 
+    try {
+        let result = await TreeRepository.getTrees(offset, limit);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+        });
+    }
+};
+
+// export const addTreesBulk = async (req: Request, res: Response) => {
 //     try {
-//       let result = await TreeModel.find()
-//         .skip(offset)
-//         .limit(limit);
-      
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
-  
-//   export const addTreesBulk = async (req: Request, res: Response) => {
-//     try {
-//       if (!req.files || !isArray(req.files) && (!req.files.csvFile || !req.files.csvFile[0])) {
+//         if (!req.files || !isArray(req.files) && (!req.files.csvFile || !req.files.csvFile[0])) {
 //         throw new Error('No file uploaded. Bulk operation requires data as csv file.');
-//       }
-  
-//       let csvData: any[] = [];
-//       let failedRows: any[] = [];
-//       fs.createReadStream(constants.DEST_FOLDER + (req.files as any).csvFile[0].filename)
+//         }
+
+//         let csvData: any[] = [];
+//         let failedRows: any[] = [];
+//         fs.createReadStream(constants.DEST_FOLDER + (req.files as any).csvFile[0].filename)
 //         .pipe(csvParser())
 //         .on('data', (row) => {
-//           csvData.push(row);
+//             csvData.push(row);
 //         })
 //         .on('end', async () => {
-//           try {
+//             try {
 //             if (csvData.length > constants.MAX_BULK_ADD_LIMIT) {
-//               throw new Error("Number of rows in csv file are more than allowed limit.")
+//                 throw new Error("Number of rows in csv file are more than allowed limit.")
 //             }
-  
+
 //             let trees = [];
 //             let batchRows = [];
 //             for (const row of csvData) {
-//               let tree = await validateRequestAndGetTreeDocument(row);
-//               batchRows.push(row);
-//               trees.push(tree);
-//               if (trees.length === constants.ADD_DB_BATCH_SIZE) {
+//                 let tree = await validateRequestAndGetTreeDocument(row);
+//                 batchRows.push(row);
+//                 trees.push(tree);
+//                 if (trees.length === constants.ADD_DB_BATCH_SIZE) {
 //                 try {
-//                   await TreeModel.bulkSave(trees);
+//                     await TreeModel.bulkSave(trees);
 //                 } catch (error: any) {
-//                   failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
+//                     failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
 //                 }
 //                 trees = [];
 //                 batchRows = [];
-//               }
+//                 }
 //             }
-  
+
 //             if (trees.length !== 0) {
-//               try {
+//                 try {
 //                 await TreeModel.bulkSave(trees);
-//               } catch (error: any) {
+//                 } catch (error: any) {
 //                 failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
-//               }
+//                 }
 //             }
-  
+
 //             let responseCsv: Buffer = Buffer.from('');
 //             const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_tree_records.csv';
 //             if (failedRows.length > 0) {
-//               const csvWriter = createObjectCsvWriter({
+//                 const csvWriter = createObjectCsvWriter({
 //                 path: filePath,
 //                 header: Object.keys(failedRows[0]).map(key => ({ id: key, title: key }))
-//               });
-//               await csvWriter.writeRecords(failedRows);
-//               responseCsv = fs.readFileSync(filePath);
+//                 });
+//                 await csvWriter.writeRecords(failedRows);
+//                 responseCsv = fs.readFileSync(filePath);
 //             }
-  
+
 //             res.setHeader('Content-Disposition', 'attachment; filename="failed_rows.csv"');
 //             res.setHeader('Content-Type', 'text/csv');
 //             res.send(responseCsv);
-//           } catch (error: any) {
+//             } catch (error: any) {
 //             console.error('Error saving tree bulk data:', error);
 //             res.status(500).json({ error: 'Error saving trees data.' });
-//           }
+//             }
 //         });
 //     } catch (error: any) {
-//       console.log("Tree add error : ", error);
-//       res.status(status.error).send({
+//         console.log("Tree add error : ", error);
+//         res.status(status.error).send({
 //         error: error,
-//       });
+//         });
 //     }
-//   };
+// };
 
-//   export const updateTree = async (req: Request, res: Response) => {
-//     try {
-//       const treeId = req.params.id;
-  
-//       // Check if the tree exists
-//       let tree = await TreeModel.findById(treeId);
-  
-//       if (!tree) {
-//         res.status(status.notfound).send({ error: "Tree not found" });
-//         return;
-//       }
-  
-//       // Update tree fields
-//       if (req.body.sapling_id && req.body.sapling_id != tree.sapling_id) {
-//         let existingTree = await TreeModel.findOne({ sapling_id: req.body.sapling_id });
-//         if (existingTree !== null) {
-//           res.status(status.duplicate).send({ error: "Sapling_id exists, please check!" });
-//           return;
-//         }
-//         tree.sapling_id = req.body.sapling_id;
-//       }
-//       if (req.body.tree_id) {
-//         // Check if tree type exists
-//         const treetype = await TreeTypeModel.findOne({ _id: req.body.tree_id });
-//         if (!treetype) {
-//           res.status(status.bad).send({ error: "Tree type ID doesn't exist" });
-//           return;
-//         }
-//         tree.tree_id = treetype._id;
-//       }
-//       if (req.body.plot_id) {
-//         // Check if plot exists
-//         const plot = await PlotModel.findOne({ _id: req.body.plot_id });
-//         if (!plot) {
-//           res.status(status.bad).send({ error: "Plot ID doesn't exist" });
-//           return;
-//         }
-//         tree.plot_id = plot._id;
-//       }
-  
-//       // Upload images to S3
-//       let imageUrls: string[] = [];
-//       if (req.files && isArray(req.files)) {
-//         for (const file of req.files) {
-//           const location = await uploadHelper.UploadFileToS3(file.filename, "trees");
-//           if (location !== "") {
-//             imageUrls.push(location);
-//           }
-//         }
-//         tree.image = imageUrls;
-//       }
-  
-//       if (req.body.lat) {
-//         tree.location = {
-//           type: "Point",
-//           // coordinates: [parseFloat(req.body.lat), parseFloat(req.body.lng)], // TODO: for some reason coordinates property is not getting reflected
-//         }
-//       }
-  
-//       // Update user if provided
-//       if (req.body.user_id) {
-//         const user = await OnSiteStaff.findOne({ user_id: req.body.user_id });
-//         if (!user) {
-//           res.status(status.bad).send({ error: "User ID doesn't exist" });
-//           return;
-//         }
-//         tree.user_id = user.id;
-//       }
-  
-//       // Save updated tree
-//       const updatedTree = await tree.save();
-//       res.status(status.success).send(updatedTree);
-//     } catch (error: any) {
-//       console.error("Tree update error:", error);
-//       res.status(status.error).send({ error: error.message });
-//     }
-//   };
-  
-//   export const deleteTree = async (req: Request, res: Response) => {
-//     try {
-//       const resp = await TreeModel.findByIdAndDelete(req.params.id).exec();
-//       console.log("Deleted tree with the id:", req.params.id, resp);
-//       res.status(status.success).send({ message: "Tree deleted successfully" });
-//     } catch (error: any) {
-//       console.error("Tree delete error:", error);
-//       res.status(status.error).send({ error: error.message });
-//     }
-//   };
+export const updateTree = async (req: Request, res: Response) => {
+    try {
+        const tree = await TreeRepository.updateTree(req.body, isArray(req.files) ? req.files : [])
+        res.status(status.success).json(tree);
+    } catch (error: any) {
+        console.error("Tree update error:", error);
+        res.status(status.error).send({ error: error.message });
+    }
+};
+
+export const deleteTree = async (req: Request, res: Response) => {
+    try {
+        const resp = await TreeRepository.deleteTree(req.params.id);
+        console.log("Deleted tree with the id:", req.params.id, resp);
+        res.status(status.success).send({ message: "Tree deleted successfully" });
+    } catch (error: any) {
+        console.error("Tree delete error:", error);
+        res.status(status.error).send({ error: error.message });
+    }
+};
   
 //   export const countByPlot = async (req: Request, res: Response) => {
 //     const { offset, limit } = getOffsetAndLimitFromRequest(req);

@@ -5,6 +5,7 @@ import { Pond } from "../models/pond";
 import { Plot } from "../models/plot";
 import { Org } from "../models/org";
 import { TreeType } from "../models/treetype";
+import { Tree } from "../models/tree";
 import { User } from "../models/user";
 import { OnsiteStaff } from "../models/onsitestaff";
 
@@ -43,6 +44,7 @@ class Database {
         TreeType,
         User,
         OnsiteStaff,
+        Tree
       ]
     });
 

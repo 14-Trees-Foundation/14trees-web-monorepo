@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
 import { Pond, PondAttributes, PondCreationAttributes } from '../models/pond'; // Assuming PondModel is the Sequelize model for the Pond entity
 import { status } from '../helpers/status'
-import { OnSiteStaff } from '../models/onsitestaff'
+import { OnsiteStaff } from '../models/onsitestaff'
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
 import { Sequelize } from 'sequelize'
 // import { customAlphabet } from 'nanoid'
@@ -78,7 +78,7 @@ export class PondRepository {
 
     let user = null;
     if (req.body.user_id) {
-      user = await OnSiteStaff.findOne({ where: { user_id: req.body.user_id } });
+      user = await OnsiteStaff.findOne({ where: { user_id: req.body.user_id } });
     }
 
     let pondImageUrl = "";
