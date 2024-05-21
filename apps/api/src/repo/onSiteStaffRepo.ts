@@ -1,32 +1,43 @@
 
-import {OnSiteStaff} from '../models/onsitestaff'
+import { OnsiteStaff, OnsiteStaffCreationAttributes } from '../models/onsitestaff'
 
 
-export class OnSiteStaffRepository {
-  constructor(private model: typeof OnSiteStaff) {}
+export class OnsiteStaffRepository {
 
-  public async getOnSiteStaffs(offset: number, limit: number, filters: any): Promise<OnSiteStaff[]> {
-    return this.model.findAll({
-      where: filters,
+  public static async getOnsiteStaffs(offset: number, limit: number): Promise<OnsiteStaff[]> {
+    return OnsiteStaff.findAll({
       offset,
       limit,
     });
   }
 
-  public async addOnSiteStaff(data: any): Promise<OnSiteStaff> {
-    return this.model.create(data);
+  public static async addOnsiteStaff(data: any): Promise<OnsiteStaff> {
+    const staffObj: OnsiteStaffCreationAttributes = {
+        id: "",
+        name: data.name,
+        email: data.email,
+        user_id: data.user_id,
+        phone: data.phone,
+        permissions: data.permissions,
+        role: data.role,
+        dob: data.dob,
+        date_added: new Date(),
+    }
+    return OnsiteStaff.create(staffObj);
   }
 
-  public async updateOnSiteStaff(id: number, data: any): Promise<[number, OnSiteStaff[]]> {
-    return this.model.update(data, {
-      where: { id },
-      returning: true,
-    });
+  public static async updateOnsiteStaff(data: any): Promise<OnsiteStaff> {
+    const staff = await OnsiteStaff.findByPk(data.id);
+    if (!staff) {
+      throw new Error("OnsiteStaff not found")
+    }
+    const updatedStaff = await staff.update(data);
+    return updatedStaff;
   }
 
-  public async deleteOnSiteStaff(id: number): Promise<number> {
-    return this.model.destroy({
-      where: { id },
+  public static async deleteOnsiteStaff(id: string): Promise<number> {
+    return OnsiteStaff.destroy({
+      where: { id: id },
     });
   }
 }

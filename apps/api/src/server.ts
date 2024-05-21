@@ -27,7 +27,7 @@ import orgRoutes from "./routes/orgRoutes";
 // import contributionRoutes from "./routes/contributeRoutes";
 import pondsRoutes from "./routes/pondsRoutes";
 // import imageRoutes from "./routes/imageRoutes";
-// import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
+import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
 
 require("dotenv").config();
 
@@ -103,7 +103,7 @@ const initExpressApp = (app: express.Application) => {
   // app.use("/api/contributions", contributionRoutes);
   app.use("/api/ponds", pondsRoutes);
   // app.use("/api/images", imageRoutes);
-  // app.use("/api/onsitestaff", onSiteStaffRoutes);
+  app.use("/api/onsitestaff", onSiteStaffRoutes);
 
   // swagger doc
   if (swaggerFile) {

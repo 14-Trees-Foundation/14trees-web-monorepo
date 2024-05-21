@@ -1,9 +1,5 @@
 import { Op } from 'sequelize';
-import { User, UserAttributes, UserCreationAttributes } from '../models/user'; // Assuming UserModel is the Sequelize model for the User entity
-import { status } from '../helpers/status'
-import { OnSiteStaff } from '../models/onsitestaff'
-import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
-import { Sequelize } from 'sequelize'
+import { User, UserAttributes, UserCreationAttributes } from '../models/user';
 
 export const getUserId = (name:string, email: string) => {
     let userid = name.toLowerCase() + email.toLowerCase();

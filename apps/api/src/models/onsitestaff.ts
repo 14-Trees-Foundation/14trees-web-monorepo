@@ -1,48 +1,36 @@
-// import mongoose from "mongoose";
-// // import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
+// Model in postgresql db
 
-// const Schema = mongoose.Schema;
+import { Optional } from 'sequelize';
+import { Table, Column, Model, DataType, AllowNull, Unique } from 'sequelize-typescript';
 
-// let onsitestaff = new Schema({
-//   name: { type: String, required: true },
-//   user_id: { type: String },
-//   phone: { type: Number },
-//   image: { type: String },
-//   email: { type: String, unique: true },
-//   role: { type: String },
-//   permissions: [{ type: String }],
-//   dob: { type: Date },
-//   date_added: { type: Date },
-// });
+interface OnsiteStaffAttributes {
+	id: string;
+	name: string;
+	user_id: string;
+  phone?: number;
+  email: string;
+  image?: string;
+  role?: string;
+  permissions?: string[];
+  date_added: Date;
+  dob?: Date;
+}
 
-// const onSiteStaff = mongoose.model("onsitestaffs", onsitestaff);
-// // onSiteStaff.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
-// module.exports = onSiteStaff;
+interface OnsiteStaffCreationAttributes
+	extends Optional<OnsiteStaffAttributes, 'dob' | 'role' | 'permissions' | 'image'> {}
 
+@Table({ tableName: 'onsitestaffs' })
+class OnsiteStaff extends Model<OnsiteStaffAttributes, OnsiteStaffCreationAttributes>
+implements OnsiteStaffAttributes {
 
-
-//MOdel in postgresql db
-
-import {
-  Model,
-  Table,
-  Column,
-  DataType,
-  PrimaryKey,
-  AutoIncrement,
-  Unique,
-  AllowNull,
-} from 'sequelize-typescript';
-
-@Table({
-  tableName: 'onsitestaffs',
-  timestamps: false,
-})
-export class OnSiteStaff extends Model<OnSiteStaff> {
-  @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  id!: number;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
 
   @AllowNull(false)
   @Column(DataType.STRING)
@@ -74,5 +62,6 @@ export class OnSiteStaff extends Model<OnSiteStaff> {
   date_added!: Date;
 }
 
-export default OnSiteStaff;
+export { OnsiteStaff }
+export type { OnsiteStaffAttributes, OnsiteStaffCreationAttributes }
 

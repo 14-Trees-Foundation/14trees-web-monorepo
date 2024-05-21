@@ -182,4 +182,4 @@ export const deleteUser = async (req: Request, res: Response) => {
         message: error.message,
       });
     }
-  };
+};

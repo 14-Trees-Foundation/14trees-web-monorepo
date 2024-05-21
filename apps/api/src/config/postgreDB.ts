@@ -6,6 +6,7 @@ import { Plot } from "../models/plot";
 import { Org } from "../models/org";
 import { TreeType } from "../models/treetype";
 import { User } from "../models/user";
+import { OnsiteStaff } from "../models/onsitestaff";
 
 
 class Database {
@@ -41,6 +42,7 @@ class Database {
         Org,
         TreeType,
         User,
+        OnsiteStaff,
       ]
     });
 

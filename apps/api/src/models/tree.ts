@@ -36,7 +36,7 @@
 
 
 
-// // Model in postgresql db
+// Model in postgresql db
 
 
 // import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
