@@ -5,6 +5,7 @@ import { Pond } from "../models/pond";
 import { Plot } from "../models/plot";
 import { Org } from "../models/org";
 import { TreeType } from "../models/treetype";
+import { User } from "../models/user";
 
 
 class Database {
@@ -39,6 +40,7 @@ class Database {
         Plot,
         Org,
         TreeType,
+        User,
       ]
     });
 
