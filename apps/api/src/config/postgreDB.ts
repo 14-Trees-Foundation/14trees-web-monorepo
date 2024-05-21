@@ -95,4 +95,7 @@ class Database {
   }
 }
 
+const db = new Database();
+export const sequelize =  db.sequelize;
+
 export default Database;

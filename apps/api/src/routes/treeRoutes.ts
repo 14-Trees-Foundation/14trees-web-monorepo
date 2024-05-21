@@ -7,7 +7,7 @@ const routes = Router();
 
 // TreeTypes
 routes.get("/treetypes", treeTypes.getTreeTypes);
-routes.get('/:search', treeTypes.searchTreeTypes);
+// routes.get('/:search', treeTypes.searchTreeTypes);
 routes.post("/addtreetype", uploadFiles.array("files", 4), treeTypes.addTreeType);
 routes.put('/treetypes/:id', uploadFiles.array('files', 4), treeTypes.updateTreeType);
 routes.delete('/treetypes/:id', treeTypes.deleteTreeType);
@@ -28,12 +28,12 @@ routes.delete('/:id', uploadFiles.array('files', 1), trees.deleteTree);
 
 // // the below route should be /get-tree-by-sapling-id
 // routes.get('/gettree', trees.getTree);
-// routes.get("/groupbyplots", trees.treeCountByPlot);
-// routes.get("/loggedbydate", trees.treeLoggedByDate);
-// routes.get("/treelogbyuser", trees.treeLogByUser);
-// routes.get("/treelogbyplot", trees.treeLogByPlot);
-// routes.get("/treetypecount", trees.treeCountTreeType);
-// routes.get("/treetypecount/plotwise", trees.treeTypeCountByPlot);
+routes.get("/groupbyplots", trees.treeCountByPlot);
+routes.get("/loggedbydate", trees.treeLoggedByDate);
+routes.get("/treelogbyuser", trees.treeLogByUser);
+routes.get("/treelogbyplot", trees.treeLogByPlot);
+routes.get("/treetypecount", trees.treeCountTreeType);
+routes.get("/treetypecount/plotwise", trees.treeTypeCountByPlot);
 // routes.get("/plot/count", trees.countByPlot);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);

@@ -24,6 +24,10 @@ import { status } from "../helpers/status";
 import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { isArray } from "lodash";
+import { Tree } from "../models/tree";
+import { Plot } from "../models/plot";
+import { QueryTypes, Sequelize } from "sequelize";
+import { sequelize } from "../config/postgreDB";
 
 // dotenv.config();
 
@@ -619,282 +623,315 @@ export const deleteTree = async (req: Request, res: Response) => {
 //     }
 //   };
   
-//   export const treeCountByPlot = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     try {
-//       let result = await TreeModel.aggregate([
-//         {
-//           $group: {
-//             _id: "$plot_id",
-//             count: { $sum: 1 },
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "plots",
-//             localField: "_id",
-//             foreignField: "_id",
-//             as: "plot_name",
-//           },
-//         },
-//         {
-//           $unwind: "$plot_name",
-//         },
-//         {
-//           $project: { "plot_name.name": 1, count: 1 },
-//         },
-//         {
-//           $sort: { count: -1 },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const treeCountByPlot = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const query = `select p."name" , p._id , count(t._id)
+                    from trees t, plots p 
+                    where t.plot_id =p."_id"
+                    group by p."name" , p._id
+                    order by count(t._id) desc
+                    offset ${offset} limit ${limit};
+    `
+    try {   
+        let result = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+      console.log(result);
+      res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
   
-//   export const treeLoggedByDate = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     try {
-//       let result = await TreeModel.aggregate([
-//         {
-//           $project: {
-//             date_added: {
-//               $dateToString: { format: "%Y-%m-%d", date: "$date_added" },
-//             },
-//           },
-//         },
-//         {
-//           $group: {
-//             _id: "$date_added",
-//             count: { $sum: 1 },
-//           },
-//         },
-//         {
-//           $sort: { _id: -1 },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const treeLoggedByDate = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+        const query = `SELECT t.date_added, count(t._id)
+                        from trees as t
+                        group by t.date_added
+                        order by t.date_added desc
+                        offset ${offset} limit ${limit};
+        `
+    //   let result = await TreeModel.aggregate([
+    //     {
+    //       $project: {
+    //         date_added: {
+    //           $dateToString: { format: "%Y-%m-%d", date: "$date_added" },
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $group: {
+    //         _id: "$date_added",
+    //         count: { $sum: 1 },
+    //       },
+    //     },
+    //     {
+    //       $sort: { _id: -1 },
+    //     },
+    //     { $skip: offset },
+    //     { $limit: limit },
+    //   ]);
+    let result = await sequelize.query(query, {
+        type: QueryTypes.SELECT
+    })
+      res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
   
-//   export const treeLogByUser = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     try {
-//       let result = await TreeModel.aggregate([
-//         {
-//           $match: {
-//             user_id: {
-//               $exists: true,
-//               $ne: null,
-//             },
-//           },
-//         },
-//         {
-//           $group: {
-//             _id: {
-//               date: "$date_added",
-//               user: "$user_id",
-//             },
-//             count: { $sum: 1 },
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "onsitestaffs",
-//             localField: "_id.user",
-//             foreignField: "_id",
-//             as: "user",
-//           },
-//         },
-//         {
-//           $project: {
-//             "user.name": 1,
-//             count: 1,
-//             "_id.date": 1,
-//           },
-//         },
-//         {
-//           $sort: { "_id.date": -1 },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const treeLogByUser = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+    //   let result = await TreeModel.aggregate([
+    //     {
+    //       $match: {
+    //         user_id: {
+    //           $exists: true,
+    //           $ne: null,
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $group: {
+    //         _id: {
+    //           date: "$date_added",
+    //           user: "$user_id",
+    //         },
+    //         count: { $sum: 1 },
+    //       },
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "onsitestaffs",
+    //         localField: "_id.user",
+    //         foreignField: "_id",
+    //         as: "user",
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         "user.name": 1,
+    //         count: 1,
+    //         "_id.date": 1,
+    //       },
+    //     },
+    //     {
+    //       $sort: { "_id.date": -1 },
+    //     },
+    //     { $skip: offset },
+    //     { $limit: limit },
+    //   ]);
+        const query = `SELECT t.date_added, s.name, count(t._id)
+                            FROM trees AS t, onsitestaffs AS s
+                            WHERE t.user_id IS NOT NULL AND t.user_id = s._id
+                            GROUP BY t.date_added, s.name
+                            ORDER BY t.date_added DESC
+                            OFFSET ${offset} LIMIT ${limit};
+            `
+        let result = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
 
-//   export const treeLogByPlot = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     try {
-//       let result = await TreeModel.aggregate([
-//         {
-//           $project: {
-//             date_added: {
-//               $dateToString: { format: "%Y-%m-%d", date: "$date_added" },
-//             },
-//             plot_id: 1,
-//           },
-//         },
-//         {
-//           $group: {
-//             _id: {
-//               date: "$date_added",
-//               plot: "$plot_id",
-//             },
-//             count: { $sum: 1 },
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "plots",
-//             localField: "_id.plot",
-//             foreignField: "_id",
-//             as: "plot",
-//           },
-//         },
-//         {
-//           $project: {
-//             "plot.name": 1,
-//             count: 1,
-//             "_id.date": 1,
-//           },
-//         },
-//         {
-//           $unwind: "$plot",
-//         },
-//         {
-//           $sort: { "_id.date": -1 },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const treeLogByPlot = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+    //   let result = await TreeModel.aggregate([
+    //     {
+    //       $project: {
+    //         date_added: {
+    //           $dateToString: { format: "%Y-%m-%d", date: "$date_added" },
+    //         },
+    //         plot_id: 1,
+    //       },
+    //     },
+    //     {
+    //       $group: {
+    //         _id: {
+    //           date: "$date_added",
+    //           plot: "$plot_id",
+    //         },
+    //         count: { $sum: 1 },
+    //       },
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "plots",
+    //         localField: "_id.plot",
+    //         foreignField: "_id",
+    //         as: "plot",
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         "plot.name": 1,
+    //         count: 1,
+    //         "_id.date": 1,
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$plot",
+    //     },
+    //     {
+    //       $sort: { "_id.date": -1 },
+    //     },
+    //     { $skip: offset },
+    //     { $limit: limit },
+    //   ]);
+        const query = `SELECT t.date_added, p.name, count(t._id)
+                                FROM trees AS t, plots AS p
+                                WHERE t.plot_id IS NOT NULL AND t.plot_id = p._id
+                                GROUP BY t.date_added, p.name
+                                ORDER BY t.date_added DESC
+                                OFFSET ${offset} LIMIT ${limit};
+                `
+        let result = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
   
-//   export const treeCountTreeType = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     try {
-//       let result = await TreeModel.aggregate([
-//         {
-//           $group: {
-//             _id: {
-//               tree_id: "$tree_id",
-//             },
-//             count: { $sum: 1 },
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "tree_types",
-//             localField: "_id.tree_id",
-//             foreignField: "_id",
-//             as: "tree_type",
-//           },
-//         },
-//         {
-//           $project: {
-//             "tree_type.name": 1,
-//             "tree_type.image": 1,
-//             count: 1,
-//             _id: 0,
-//           },
-//         },
-//         {
-//           $sort: { count: -1 },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const treeCountTreeType = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+    //   let result = await TreeModel.aggregate([
+    //     {
+    //       $group: {
+    //         _id: {
+    //           tree_id: "$tree_id",
+    //         },
+    //         count: { $sum: 1 },
+    //       },
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "tree_types",
+    //         localField: "_id.tree_id",
+    //         foreignField: "_id",
+    //         as: "tree_type",
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         "tree_type.name": 1,
+    //         "tree_type.image": 1,
+    //         count: 1,
+    //         _id: 0,
+    //       },
+    //     },
+    //     {
+    //       $sort: { count: -1 },
+    //     },
+    //     { $skip: offset },
+    //     { $limit: limit },
+    //   ]);
+        const query = `SELECT t.tree_id, tt.name, tt.image, count(t._id)
+                                FROM trees AS t, tree_types AS tt
+                                WHERE t.tree_id = tt._id
+                                GROUP BY t.tree_id, tt.name, tt.image
+                                ORDER BY count(t._id) DESC
+                                OFFSET ${offset} LIMIT ${limit};
+                `
+        let result = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
 
-//   export const treeTypeCountByPlot = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     try {
-//       let result = await TreeModel.aggregate([
-//         {
-//           $group: {
-//             _id: {
-//               tree_id: "$tree_id",
-//               plot: "$plot_id",
-//             },
-//             count: { $sum: 1 },
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "tree_types",
-//             localField: "_id.tree_id",
-//             foreignField: "_id",
-//             as: "tree_type",
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "plots",
-//             localField: "_id.plot",
-//             foreignField: "_id",
-//             as: "plot",
-//           },
-//         },
-//         {
-//           $project: {
-//             count: 1,
-//             "tree_type.name": 1,
-//             "plot.name": 1,
-//             _id: 0,
-//           },
-//         },
-//         {
-//           $unwind: "$tree_type",
-//         },
-//         {
-//           $unwind: "$plot",
-//         },
-//         {
-//           $sort: { count: -1 },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const treeTypeCountByPlot = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+    //   let result = await TreeModel.aggregate([
+    //     {
+    //       $group: {
+    //         _id: {
+    //           tree_id: "$tree_id",
+    //           plot: "$plot_id",
+    //         },
+    //         count: { $sum: 1 },
+    //       },
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "tree_types",
+    //         localField: "_id.tree_id",
+    //         foreignField: "_id",
+    //         as: "tree_type",
+    //       },
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "plots",
+    //         localField: "_id.plot",
+    //         foreignField: "_id",
+    //         as: "plot",
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         count: 1,
+    //         "tree_type.name": 1,
+    //         "plot.name": 1,
+    //         _id: 0,
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$tree_type",
+    //     },
+    //     {
+    //       $unwind: "$plot",
+    //     },
+    //     {
+    //       $sort: { count: -1 },
+    //     },
+    //     { $skip: offset },
+    //     { $limit: limit },
+    //   ]);
+        const query = `SELECT tt.name as tree_type, p.name  as plot, count(t._id)
+                                FROM trees AS t, tree_types AS tt, plots AS p
+                                WHERE t.tree_id = tt._id AND t.plot_id = p._id
+                                GROUP BY tt._id, tt.name, p._id, p.name
+                                ORDER BY count(t._id) DESC
+                                OFFSET ${offset} LIMIT ${limit};
+                `
+        let result = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
   
 //   export const addPhotoUpdate = async (req: Request, res: Response) => {
 //     try {

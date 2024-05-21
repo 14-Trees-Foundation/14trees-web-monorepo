@@ -16,7 +16,6 @@ interface TreeAttributes {
     plot_id: string,
     user_id: string,
     image: string[],
-    height: number,
     date_added: Date,
     tags: string[],
     location: Center,
@@ -28,7 +27,7 @@ interface TreeAttributes {
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'tags' | 'location' | 'link' | 'mapped_to' | 'event_type' | 'desc' | 'date_assigned' | 'image' | 'user_id' | 'height'> {}
+	extends Optional<TreeAttributes, 'tags' | 'location' | 'link' | 'mapped_to' | 'event_type' | 'desc' | 'date_assigned' | 'image' | 'user_id'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>
@@ -60,9 +59,6 @@ implements TreeAttributes {
 
   @Column(DataType.ARRAY(DataType.STRING))
   image!: string[];
-
-  @Column(DataType.FLOAT)
-  height!: number;
 
   @Column(DataType.DATE)
   date_added!: Date;
