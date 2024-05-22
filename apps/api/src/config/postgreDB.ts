@@ -8,6 +8,8 @@ import { TreeType } from "../models/treetype";
 import { Tree } from "../models/tree";
 import { User } from "../models/user";
 import { OnsiteStaff } from "../models/onsitestaff";
+import { UserTree } from "../models/userprofile";
+import { DeletedProfileUserTree } from "../models/deleteduserprofile";
 
 
 class Database {
@@ -44,7 +46,9 @@ class Database {
         TreeType,
         User,
         OnsiteStaff,
-        Tree
+        Tree,
+        UserTree,
+        DeletedProfileUserTree,
       ]
     });
 
