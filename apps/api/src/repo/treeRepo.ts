@@ -14,6 +14,14 @@ class TreeRepository {
         });
     };
 
+    public static async getTreeBySaplingId(saplingId: string): Promise<Tree | null> {
+        return await Tree.findOne({ where: { sapling_id: saplingId }});
+    };
+
+    public static async getTreeByTreeId(treeId: string): Promise<Tree | null> {
+        return await Tree.findByPk(treeId);
+    };
+
     public static async addTree(data: any, files?: Express.Multer.File[]): Promise<Tree> {
 
         // Check if tree type exists
@@ -112,6 +120,10 @@ class TreeRepository {
         const resp = await Tree.destroy({ where: { id: treeId } });
         return resp;
     };
+
+    public static async treeCount(): Promise<number> {
+      return await Tree.count()
+    }
 }
 
 export default TreeRepository;

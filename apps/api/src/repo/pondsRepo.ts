@@ -113,4 +113,8 @@ export class PondRepository {
     const result = await Pond.findOne({ where: { name: pondName } });
     return result;
   }
+
+  public static async pondCount(): Promise<number> {
+    return await Pond.count()
+  }
 }

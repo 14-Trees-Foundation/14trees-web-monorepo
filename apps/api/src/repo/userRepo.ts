@@ -28,6 +28,11 @@ export class UserRepository {
         return user;
     }
 
+    public static async bulkAddUsers(users: UserCreationAttributes[]): Promise<User[]> {
+        const user = await User.bulkCreate(users);
+        return user;
+    }
+
     public static async updateUser(data: UserAttributes): Promise<User> {
         const user = await User.findByPk(data.id);
         if (!user) {
@@ -63,5 +68,9 @@ export class UserRepository {
     public static async deleteUser(userId: string): Promise<number> {
         const resp = await User.destroy({ where: { id: userId } });
         return resp;
+    }
+
+    public static async userCount(): Promise<number> {
+        return await User.count()
     }
 }

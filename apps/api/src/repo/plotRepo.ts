@@ -47,4 +47,8 @@ export class PlotRepository {
         const resp = await Plot.destroy({where: { id: plotId }});
         return resp;
     }
+
+    public static async plotCount(): Promise<number> {
+        return await Plot.count()
+    }
 }

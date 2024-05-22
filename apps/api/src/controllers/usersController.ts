@@ -2,10 +2,11 @@ import { Request, Response } from "express";
 import { status } from "../helpers/status";
 import { User } from "../models/user";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
-import { UserRepository } from "../repo/userRepo";
-// import csvParser from 'csv-parser';
-// import { createObjectCsvWriter } from 'csv-writer';
-// import fs from 'fs';
+import { UserRepository, getUserDocumentFromRequestBody } from "../repo/userRepo";
+import csvParser from 'csv-parser';
+import { createObjectCsvWriter } from 'csv-writer';
+import fs from 'fs';
+import { constants } from "../constants";
 
 /*
     Model - User
@@ -33,79 +34,79 @@ export const addUser = async (req: Request, res: Response) => {
   }
 };
 
-// export const addUsersBulk = async (req: Request, res: Response) => {
+export const addUsersBulk = async (req: Request, res: Response) => {
 
-//   try {
-//     if (!req.file) {
-//       throw new Error('No file uploaded. Bulk operation requires data as csv file.');
-//     }
+  try {
+    if (!req.file) {
+      throw new Error('No file uploaded. Bulk operation requires data as csv file.');
+    }
 
-//     let csvData: any[];
-//     let failedRows: any[] = [];
-//     fs.createReadStream(constants.DEST_FOLDER + req.file.filename)
-//       .pipe(csvParser())
-//       .on('data', (row) => {
-//         csvData.push(row);
-//       })
-//       .on('end', async () => {
-//         try {
-//           if (csvData.length > constants.MAX_BULK_ADD_LIMIT) {
-//             throw new Error("Number of rows in csv file are more than allowed limit.")
-//           }
+    let csvData: any[];
+    let failedRows: any[] = [];
+    fs.createReadStream(constants.DEST_FOLDER + req.file.filename)
+      .pipe(csvParser())
+      .on('data', (row) => {
+        csvData.push(row);
+      })
+      .on('end', async () => {
+        try {
+          if (csvData.length > constants.MAX_BULK_ADD_LIMIT) {
+            throw new Error("Number of rows in csv file are more than allowed limit.")
+          }
 
-//           let users = [];
-//           let batchRows = [];
-//           for (const row of csvData) {
-//             batchRows.push(row);
-//             let user = userHelper.getUserDocumentFromRequestBody(row);
-//             users.push(user);
-//             if (users.length === constants.ADD_DB_BATCH_SIZE) {
-//               try {
-//                 await UserModel.bulkSave(users);
-//               } catch (error:any) {
-//                 failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
-//               }
-//               batchRows = [];
-//               users = [];
-//             }
-//           }
+          let users = [];
+          let batchRows = [];
+          for (const row of csvData) {
+            batchRows.push(row);
+            let user = getUserDocumentFromRequestBody(row);
+            users.push(user);
+            if (users.length === constants.ADD_DB_BATCH_SIZE) {
+              try {
+                await UserRepository.bulkAddUsers(users);
+              } catch (error:any) {
+                failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
+              }
+              batchRows = [];
+              users = [];
+            }
+          }
 
-//           if (users.length !== 0) {
-//             try {
-//               await UserModel.bulkSave(users);
-//             } catch (error:any) {
-//               failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
-//             }
-//           }
+          if (users.length !== 0) {
+            try {
+              await UserRepository.bulkAddUsers(users);
+            } catch (error:any) {
+              failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
+            }
+          }
 
-//           // Prepare the response
-//           let responseCsv: Buffer = Buffer.from('')
-//           const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_user_records.csv'
-//           if (failedRows.length > 0) {
-//             // Generate CSV string for failed rows
-//             const csvWriter = createObjectCsvWriter({
-//               path: filePath,
-//               header: Object.keys(failedRows[0]).map(key => ({ id: key, title: key }))
-//             });
-//             await csvWriter.writeRecords(failedRows);
-//             responseCsv = fs.readFileSync(filePath);
-//           }
+          // Prepare the response
+          let responseCsv: Buffer = Buffer.from('')
+          const filePath = constants.DEST_FOLDER + Date.now().toString() + '_' + 'failed_user_records.csv'
+          if (failedRows.length > 0) {
+            // Generate CSV string for failed rows
+            const csvWriter = createObjectCsvWriter({
+              path: filePath,
+              header: Object.keys(failedRows[0]).map(key => ({ id: key, title: key }))
+            });
+            await csvWriter.writeRecords(failedRows);
+            responseCsv = fs.readFileSync(filePath);
+          }
 
-//           // Send the response with CSV content
-//           res.setHeader('Content-Disposition', 'attachment; filename="failed_rows.csv"');
-//           res.setHeader('Content-Type', 'text/csv');
-//           res.send(responseCsv);
-//         } catch (error) {
-//           console.error('Error saving User bulk data:', error);
-//           res.status(500).json({ error: 'Error saving users data.' });
-//         }
-//       });
+          // Send the response with CSV content
+          res.setHeader('Content-Disposition', 'attachment; filename="failed_rows.csv"');
+          res.setHeader('Content-Type', 'text/csv');
+          res.send(responseCsv);
+        } catch (error) {
+          console.error('Error saving User bulk data:', error);
+          res.status(500).json({ error: 'Error saving users data.' });
+        }
+      });
 
-//   } catch (error:any) {
-//     console.error('Error processing CSV:', error);
-//     res.status(500).json({ error: error.message });
-//   }
-// };
+  } catch (error:any) {
+    console.error('Error processing CSV:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 export const getUser = async (req: Request, res: Response) => {
   try {

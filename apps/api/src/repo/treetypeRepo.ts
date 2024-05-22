@@ -77,6 +77,10 @@ class TreeTypeRepository {
         const resp = await TreeType.destroy({ where: { id: treeTypeId } });
         return resp;
     };
+
+    public static async treeTypeCount(): Promise<number> {
+        return await TreeType.count()
+    }
 }
 
 export default TreeTypeRepository;

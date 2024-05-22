@@ -3,7 +3,7 @@ import { errorMessage, successMessage, status } from '../helpers/status';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { OnsiteStaff } from '../models/onsitestaff';
+import { OnsiteStaffRepository } from '../repo/onSiteStaffRepo';
 
 dotenv.config();
 
@@ -34,20 +34,24 @@ export const signin = async (req: CustomRequest, res: Response) => {
             return;
         }
 
-        const { name, email, picture } = payload;
-        const user = await OnsiteStaff.findOne({ where: {email: email} });
-        if (user === null) {
-            res.status(status.notfound).send();
-            return;
+        const { email } = payload;
+        if (email) {
+            const user = await OnsiteStaffRepository.getOnsiteStaffByEmail(email);
+            if (user === null) {
+                res.status(status.notfound).send();
+                return;
+            }
+            const jwtToken = jwt.sign({ id: email }, process.env.SECRET_KEY as string, {
+                expiresIn: 3660, // expires in 61 mins
+            });
+    
+            res.status(201).json({
+                user: user,
+                token: jwtToken,
+            });
+        } else {
+            throw new Error("email is empty or is undefined")
         }
-        const jwtToken = jwt.sign({ id: email }, process.env.SECRET_KEY as string, {
-            expiresIn: 3660, // expires in 61 mins
-        });
-
-        res.status(201).json({
-            user: user,
-            token: jwtToken,
-        });
     } catch (error: any) {
         console.log(error);
         res.status(status.error).json({

@@ -28,182 +28,6 @@ import { Tree } from "../models/tree";
 import { Plot } from "../models/plot";
 import { QueryTypes, Sequelize } from "sequelize";
 import { sequelize } from "../config/postgreDB";
-
-// dotenv.config();
-
-// /*
-//   Model - TreeType
-//   CRUD Operations for tree_types collection
-// */
-
-// export const getTreeTypes = async (req: Request, res: Response) => {
-//   const {offset, limit } = getOffsetAndLimitFromRequest(req);
-//   let filters: any = {}
-//   if (req.query?.name) {
-//       filters["name"] = new RegExp(req.query.name.toString(), "i")
-//   }
-//   if (req.query?.sci_name) {
-//       filters["scientific_name"] = new RegExp(req.query.sci_name.toString(), "i")
-//   }
-//   if (req.query?.med_use) {
-//       filters["med_use"] = new RegExp(req.query.med_use.toString(), "i")
-//   }
-//   if (req.query?.food) {
-//       filters["food"] = new RegExp(req.query.food.toString(), "i")
-//   }
-
-//   try {
-//     let result = await TreeTypeModel.find(filters).skip(offset).limit(limit).exec();
-//     res.status(status.success).send(result);
-//   } catch (error: any) {
-//     res.status(status.error).json({
-//       status: status.error,
-//       message: error.message,
-//     });
-//   }
-// };
-
-// export const addTreeType = async (req: Request, res: Response) => {
-//   try {
-//     if (!req.body.name) {
-//       throw new Error("Tree name is required");
-//     }
-//     if (!req.body.tree_id) {
-//       throw new Error("Tree ID required");
-//     }
-//   } catch (error: any) {
-//     res.status(status.bad).send({ error: error.message });
-//     return;
-//   }
-
-//   // Upload images to S3
-//   let imageUrl = "";
-//   if (req.files && isArray(req.files) && req.files[0]) {
-//     imageUrl = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
-//   }
-
-//   // Tree type object to be saved
-//   let obj = {
-//     name: req.body.name,
-//     tree_id: req.body.tree_id,
-//     desc: req.body.desc,
-//     scientific_name: req.body.scientific_name,
-//     image: imageUrl,
-//     family: req.body.family,
-//     habit: req.body.habit,
-//     remarkable_char: req.body.remarkable_char,
-//     med_use: req.body.med_use,
-//     other_use: req.body.other_use,
-//     food: req.body.food,
-//     eco_value: req.body.eco_value,
-//     parts_used: req.body.parts_used,
-//   };
-//   const treeType = new TreeTypeModel(obj);
-
-//   let treeTypeRes;
-//   try {
-//     treeTypeRes = await treeType.save();
-//   } catch (error: any) {
-//     res.status(status.error).json({ error });
-//   }
-
-//   // Save the info into the sheet
-//   try {
-//     csvhelper.UpdateTreeTypeCsv(obj);
-//     res.status(status.created).json({
-//       treetype: treeTypeRes,
-//       csvupload: "Success",
-//     });
-//   } catch (error: any) {
-//     res.status(status.error).json({
-//       treetype: treeTypeRes,
-//       csvupload: "Failure",
-//     });
-//   }
-// };
-
-
-// export const updateTreeType = async (req: Request, res: Response) => {
-//   try {
-//     const treeType = await TreeTypeModel.findById(req.params.id);
-
-//     if (!treeType) {
-//       throw new Error("Tree type not found for given id");
-//     }
-
-//     if (req.body.name) {
-//       treeType.name = req.body.name;
-//     }
-//     if (req.body.desc) {
-//       treeType.desc = req.body.desc;
-//     }
-//     if (req.body.scientific_name) {
-//       treeType.scientific_name = req.body.scientific_name;
-//     }
-//     // Update other fields similarly
-
-//     // Upload images to S3
-//     if (req.files && isArray(req.files) && req.files[0]) {
-//       const location = await uploadHelper.UploadFileToS3(req.files[0].filename, "treetype");
-//       if (location != "") {
-//         treeType.image = location; // Update image URL
-//       }
-//     }
-
-//     // Save updated tree type
-//     const updatedTreeType = await treeType.save();
-//     res.status(status.success).send(updatedTreeType);
-//   } catch (error: any) {
-//     res.status(status.bad).send({ error: error.message });
-//   }
-// };
-
-// export const deleteTreeType = async (req: Request, res: Response) => {
-//     try {
-//       // Find the tree type by ID
-//       const treeType = await TreeTypeModel.findById(req.params.id);
-  
-//       if (!treeType) {
-//         throw new Error("Tree type not found for given id");
-//       }
-  
-//       // Delete the tree type
-//       await treeType.remove();
-  
-//       // Update the CSV file
-//       try {
-//         csvhelper.UpdateTreeTypeCsv(treeType); // Pass true to indicate deletion
-//         res.status(status.success).json({
-//           message: "Tree type deleted successfully",
-//         });
-//       } catch (error: any) {
-//         res.status(status.error).json({
-//           error: "Failed to update CSV file",
-//         });
-//       }
-//     } catch (error: any) {
-//       res.status(status.bad).send({ error: error.message });
-//     }
-//   };
-  
-//   export const searchTreeTypes = async (req: Request, res: Response) => {
-//     try {
-//       if (!req.params.search || req.params.search.length < 3) {
-//         res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-//         return;
-//       }
-  
-//       const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//       const regex = new RegExp(req.params.search, 'i');
-//       const treeTypes = await TreeTypeModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
-//       res.status(status.success).send(treeTypes);
-//       return;
-//     } catch (error: any) {
-//       res.status(status.bad).send({ error: error.message });
-//       return;
-//     }
-//   };
-  
   
   /*
     Model - Tree
@@ -318,28 +142,26 @@ export const addTree = async (req: Request, res: Response) => {
     }
 };
 
-// export const getTree = async (req: Request, res: Response) => {
-//     if (!req.query.sapling_id) {
-//         res.status(status.bad).send({ error: "Sapling ID required" });
-//         return;
-//     }
+export const getTree = async (req: Request, res: Response) => {
+    if (!req.query.sapling_id) {
+        res.status(status.bad).send({ error: "Sapling ID required" });
+        return;
+    }
 
-//     try {
-//         let result = await TreeModel.findOne({ sapling_id: req.query.sapling_id })
-//         .populate({ path: "tree_id", select: "name" })
-//         .populate({ path: "plot_id", select: "name" });
-//         if (result === null) {
-//         res.status(status.notfound).send();
-//         } else {
-//         res.status(status.success).send(result);
-//         }
-//     } catch (error: any) {
-//         res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//         });
-//     }
-// };
+    try {
+      const result = TreeRepository.getTreeBySaplingId(req.query.sapling_id.toString())
+      if (result === null) {
+        res.status(status.notfound).send();
+      } else {
+        res.status(status.success).send(result);
+      }
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+};
 
 export const getTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req); 
@@ -446,53 +268,50 @@ export const deleteTree = async (req: Request, res: Response) => {
     }
 };
   
-//   export const countByPlot = async (req: Request, res: Response) => {
-//     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-//     if (!req.query.id) {
-//       res.status(status.bad).send({ error: "Plot ID required" });
-//       return;
-//     }
+  // export const countByPlot = async (req: Request, res: Response) => {
+  //   if (!req.query.id) {
+  //     res.status(status.bad).send({ error: "Plot ID required" });
+  //     return;
+  //   }
   
-//     try {
-//       // Assigned trees in a plot
-//       let trees = await TreeModel.aggregate([
-//         {
-//           $match: {
-//             plot_id: new mongoose.Types.ObjectId(req.query.id.toString()),
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "user_tree_regs",
-//             localField: "_id",
-//             foreignField: "tree",
-//             as: "assigned_to",
-//           },
-//         },
-//         {
-//           $unwind: {
-//             path: "$assigned_to",
-//             preserveNullAndEmptyArrays: true,
-//           },
-//         },
-//         { $skip: offset },
-//         { $limit: limit },
-//       ]);
+  //   try {
+  //     // Assigned trees in a plot
+  //     let trees = await TreeModel.aggregate([
+  //       {
+  //         $match: {
+  //           plot_id: new mongoose.Types.ObjectId(req.query.id.toString()),
+  //         },
+  //       },
+  //       {
+  //         $lookup: {
+  //           from: "user_tree_regs",
+  //           localField: "_id",
+  //           foreignField: "tree",
+  //           as: "assigned_to",
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: "$assigned_to",
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //     ]);
   
-//       if (trees === null) {
-//         res.status(status.notfound).send();
-//       } else {
-//         res.status(status.success).json({
-//           trees: trees,
-//         });
-//       }
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  //     if (trees === null) {
+  //       res.status(status.notfound).send();
+  //     } else {
+  //       res.status(status.success).json({
+  //         trees: trees,
+  //       });
+  //     }
+  //   } catch (error: any) {
+  //     res.status(status.error).json({
+  //       status: status.error,
+  //       message: error.message,
+  //     });
+  //   }
+  // };
 
 //   export const treeListByPlot = async (req: Request, res: Response) => {
 //     const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -606,22 +425,20 @@ export const deleteTree = async (req: Request, res: Response) => {
 //     }
 //   };
 
-//   export const getTreeFromId = async (req: Request, res: Response) => {
-//     try {
-//       if (!req.query.id) {
-//         throw new Error("tree id is required")
-//       }
-//       let result = await TreeModel.findOne({
-//         _id: new mongoose.Types.ObjectId(req.query.id.toString()),
-//       });
-//       res.status(status.success).send(result);
-//     } catch (error: any) {
-//       res.status(status.error).json({
-//         status: status.error,
-//         message: error.message,
-//       });
-//     }
-//   };
+  export const getTreeFromId = async (req: Request, res: Response) => {
+    try {
+      if (!req.query.id) {
+        throw new Error("tree id is required")
+      }
+      let result = await TreeRepository.getTreeByTreeId(req.query.id.toString())
+      res.status(status.success).send(result);
+    } catch (error: any) {
+      res.status(status.error).json({
+        status: status.error,
+        message: error.message,
+      });
+    }
+  };
   
   export const treeCountByPlot = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);

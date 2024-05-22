@@ -24,10 +24,10 @@ routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
 routes.delete('/:id', uploadFiles.array('files', 1), trees.deleteTree);
 
 // // the below route should be /get-tree-by-mongo-id or /get-tree-by-id
-// routes.get("/getsaplingid", trees.getTreeFromId);
+routes.get("/getsaplingid", trees.getTreeFromId);
 
 // // the below route should be /get-tree-by-sapling-id
-// routes.get('/gettree', trees.getTree);
+routes.get('/gettree', trees.getTree);
 routes.get("/groupbyplots", trees.treeCountByPlot);
 routes.get("/loggedbydate", trees.treeLoggedByDate);
 routes.get("/treelogbyuser", trees.treeLogByUser);

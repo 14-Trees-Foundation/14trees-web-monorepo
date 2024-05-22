@@ -11,6 +11,10 @@ export class OnsiteStaffRepository {
     });
   }
 
+  public static async getOnsiteStaffByEmail(email: string): Promise<OnsiteStaff | null> {
+    return OnsiteStaff.findOne({ where: {email: email} });
+  }
+
   public static async addOnsiteStaff(data: any): Promise<OnsiteStaff> {
     const staffObj: OnsiteStaffCreationAttributes = {
         id: "",
@@ -39,5 +43,9 @@ export class OnsiteStaffRepository {
     return OnsiteStaff.destroy({
       where: { id: id },
     });
+  }
+
+  public static async staffCount(): Promise<number> {
+    return await OnsiteStaff.count()
   }
 }
