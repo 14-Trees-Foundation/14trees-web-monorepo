@@ -26,35 +26,63 @@
 
 
 
-import { Table, Column, Model, ForeignKey, BelongsTo, BelongsToMany } from 'sequelize-typescript';
+import { Table, Column, Model, ForeignKey, BelongsTo, BelongsToMany, DataType } from 'sequelize-typescript';
 import { User } from './user';
 import { Plot } from './plot';
-// import { UserTreeReg } from './UserTreeReg';
+import { Optional } from 'sequelize';
+import { UserTree } from './userprofile';
 
+interface EventAttributes {
+	id: string;
+  assigned_by: string;
+  assigned_to: string[];
+  user_trees: string[];
+  plot_id: string;
+  link: string;
+  desc: string;
+	tags: string[];
+	type: number;
+  date: Date;
+}
 
+interface EventCreationAttributes
+	extends Optional<EventAttributes, 'tags' | 'assigned_to' | 'desc'> {}
 
-//this table creates aggregations with other tables that is why all coloumns are comment
 @Table({ tableName: 'events' })
-export class Event extends Model<Event> {
-  @Column
-  name!: string;
+export class Event extends Model<EventAttributes, EventCreationAttributes>
+implements EventAttributes {
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
 
   @ForeignKey(() => User)
   @Column
-  assigned_by!: number;
-
+  assigned_by!: string;
+  
   @BelongsTo(() => User, 'assigned_by')
   assignedBy!: User;
 
-  @BelongsToMany(() => User, 'event_users', 'event_id', 'user_id')
+  @Column
+  assigned_to!: string[];
+
+  @BelongsToMany(() => User, 'assigned_to', 'event_id', 'user_id')
   assignedTo!: User[];
 
-  // @BelongsToMany(() => UserTreeReg, 'event_user_trees', 'event_id', 'user_tree_id')
-  // userTrees!: UserTreeReg[];
+  @Column
+  user_trees!: string[];
+
+  @BelongsToMany(() => UserTree, 'user_trees', 'event_id', 'user_tree_id')
+  userTrees!: UserTree[];
 
   @ForeignKey(() => Plot)
   @Column
-  plot_id!: number;
+  plot_id!: string;
 
   @BelongsTo(() => Plot, 'plot_id')
   plot!: Plot;
@@ -63,7 +91,7 @@ export class Event extends Model<Event> {
   link!: string;
 
   @Column
-  type!: string;
+  type!: number;
 
   @Column
   desc!: string;
