@@ -173,7 +173,11 @@ export const getUsers = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let result = await UserModel.find().skip(offset).limit(limit);
-    res.status(status.success).json(result);
+    let resultCount = await UserModel.find().estimatedDocumentCount();
+    res.status(status.success).send({
+      result: result,
+      total: resultCount
+    });
   } catch (error:any) {
     res.status(status.error).json({
       status: status.error,

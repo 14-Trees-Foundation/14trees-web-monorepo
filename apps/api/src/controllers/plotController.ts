@@ -115,8 +115,12 @@ export const getPlots = async (req: Request,res: Response) => {
         filters["name"] = new RegExp(req.query?.name as string, "i")
     }
     try {
-        let result = await PlotModel.find(filters).skip(offset).limit(limit);;
-        res.status(status.success).send(result);
+        let result = await PlotModel.find(filters).skip(offset).limit(limit);
+        let resultCount = await PlotModel.find(filters).estimatedDocumentCount();
+        res.status(status.success).send({
+            result: result,
+            total: resultCount
+        });
     } catch (error: any) {
         res.status(status.error).json({
             status: status.error,

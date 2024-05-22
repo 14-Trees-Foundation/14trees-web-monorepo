@@ -25,7 +25,11 @@ export const getOrgs = async (req: Request, res: Response) => {
     }
     try {
         let result = await OrgModel.find(filters).skip(offset).limit(limit);
-        res.status(status.success).send(result);
+        let resultCount = await OrgModel.find(filters).estimatedDocumentCount();
+        res.status(status.success).send({
+            result: result,
+            total: resultCount
+          });
     } catch (error: any) {
         res.status(status.error).json({
             status: status.error,

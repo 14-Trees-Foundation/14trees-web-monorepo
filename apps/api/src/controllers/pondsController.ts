@@ -117,7 +117,11 @@ export const getPonds = async (req: any,res: any) => {
     }
   try {
     let result = await PondModel.find(filters, { updates: 0 }).skip(offset).limit(limit);
-    res.status(status.success).send(result);
+    let resultCount = await PondModel.find(filters, { updates: 0 }).estimatedDocumentCount();
+    res.status(status.success).send({
+      result: result,
+      total: resultCount
+    });
   } catch (error: any) {
     res.status(status.error).json({
       status: status.error,

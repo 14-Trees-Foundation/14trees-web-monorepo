@@ -44,7 +44,11 @@ export const getTreeTypes = async (req: Request, res: Response) => {
 
   try {
     let result = await TreeTypeModel.find(filters).skip(offset).limit(limit).exec();
-    res.status(status.success).send(result);
+    let resultCount = await TreeTypeModel.find(filters).estimatedDocumentCount();
+    res.status(status.success).send({
+      total: resultCount,
+      result: result
+    });
   } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
@@ -339,8 +343,11 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       let result = await TreeModel.find()
         .skip(offset)
         .limit(limit);
-      
-      res.status(status.success).send(result);
+      let resultCount = await TreeModel.estimatedDocumentCount();
+      res.status(status.success).send({
+        total: resultCount,
+        results: result
+      });
     } catch (error: any) {
       res.status(status.error).json({
         status: status.error,
