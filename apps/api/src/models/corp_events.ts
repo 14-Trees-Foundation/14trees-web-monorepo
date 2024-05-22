@@ -1,45 +1,44 @@
-// import mongoose from "mongoose";
-// import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
-
-// const Schema = mongoose.Schema;
-
-// const corpEventSchema = new Schema({
-//   event_link: { type: String },
-//   event_name: { type: String },
-//   tree_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "trees" }],
-//   plot_id: { type: mongoose.Schema.Types.ObjectId, ref: "plots" },
-//   title: { type: String },
-//   logo: [{ type: String }],
-//   short_desc: { type: String },
-//   long_desc: { type: String },
-//   num_people: { type: String },
-//   header_img: { type: String },
-//   plot_desc: { type: String },
-//   album: [{ type: String }],
-//   plot_img: { type: String },
-//   date_added: { type: Date },
-// });
-
-// const corpEventModel = mongoose.model("corp_events", corpEventSchema);
-
-// corpEventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
-
-// module.exports = corpEventModel;
-
-
-
-
 // Model in postgreSQL db
 
 import { Model, Table, Column, DataType, ForeignKey } from 'sequelize-typescript';
 import {Tree}  from './tree';   //they can be used for foreign key purposes
 import { Plot } from './plot';
+import { Optional } from 'sequelize';
 
-@Table({
-  tableName: 'corp_events',
-  // timestamps: false, // Adjust based on your requirements
-})
-export class CorpEvent extends Model<CorpEvent> {
+interface CorpEventAttributes {
+  id: string,
+  event_link: string,
+  event_name: string,
+  tree_ids: string[],
+  plot_id: string,
+  title: string,
+  logo: string[],
+  short_desc: string,
+  long_desc: string,
+  num_people: string,
+  header_img: string,
+  plot_desc: string,
+  album: string[],
+  plot_img: string,
+  date_added: Date,
+};
+
+interface CorpEventCreationAttributes
+	extends Optional<CorpEventAttributes, 'plot_img' | 'plot_desc'> {}
+
+@Table({ tableName: 'corp_events' })
+class CorpEvent extends Model<CorpEventAttributes, CorpEventCreationAttributes>
+implements CorpEventAttributes {
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: "_id",
+    primaryKey: true,
+    unique: true
+  })
+  id!: string;
+
   @Column({
     type: DataType.STRING,
   })
@@ -54,13 +53,13 @@ export class CorpEvent extends Model<CorpEvent> {
     type: DataType.ARRAY(DataType.INTEGER), // assuming IDs are integers, change if needed
   })
   @ForeignKey(() => Tree)
-  tree_ids!: number[];
+  tree_ids!: string[];
 
   @ForeignKey(() => Plot)
   @Column({
     type: DataType.INTEGER,
   })
-  plot_id!: number;
+  plot_id!: string;
 
   @Column({
     type: DataType.STRING,
@@ -112,3 +111,6 @@ export class CorpEvent extends Model<CorpEvent> {
   })
   date_added!: Date;
 }
+
+export { CorpEvent }
+export type { CorpEventAttributes, CorpEventCreationAttributes }
