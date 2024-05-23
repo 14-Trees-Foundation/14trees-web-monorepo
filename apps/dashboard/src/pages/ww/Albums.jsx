@@ -1,4 +1,3 @@
-// import "react-toastify/dist/ReactToastify.css";
 import {
   Button,
   Box,
@@ -12,6 +11,7 @@ import {
 } from "@mui/material";
 import { createStyles, makeStyles } from "@mui/styles";
 import { useRecoilValue, useSetRecoilState } from "recoil";
+import "react-toastify/dist/ReactToastify.css";
 import { useState } from "react";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 // import EditIcon from '@mui/icons-material/Edit';

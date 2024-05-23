@@ -1,4 +1,3 @@
-// import "react-image-crop/dist/ReactCrop.css";
 import * as React from "react";
 import {
   Dialog,
@@ -16,6 +15,7 @@ import { Field, Form } from "react-final-form";
 import { makeStyles } from "@mui/styles";
 import Dropzone from "react-dropzone";
 import { useState } from "react";
+import "react-image-crop/dist/ReactCrop.css";
 import ReactCrop from "react-image-crop";
 import { useRecoilValue } from "recoil";
 

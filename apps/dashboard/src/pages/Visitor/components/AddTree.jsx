@@ -1,4 +1,3 @@
-// import "react-image-crop/dist/ReactCrop.css";
 import {
   Box,
   Button,
@@ -9,6 +8,7 @@ import {
   TextField,
 } from "@mui/material";
 import AccountCircle from "@mui/icons-material/AccountCircle";
+import "react-image-crop/dist/ReactCrop.css";
 import ReactCrop from "react-image-crop";
 
 import { GetCroppedImg } from "../../../helpers/imageCrop";

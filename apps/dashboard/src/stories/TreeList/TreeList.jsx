@@ -1,5 +1,5 @@
-// import "./treelist.scss";
 import React from "react";
+import "./treelist.scss";
 
 export const TreeList = ({ data, ...props }) => {
   return (

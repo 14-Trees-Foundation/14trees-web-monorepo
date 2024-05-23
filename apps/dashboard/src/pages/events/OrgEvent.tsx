@@ -1,8 +1,8 @@
-// import "react-toastify/dist/ReactToastify.css";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import { createStyles, makeStyles } from "@mui/styles";
+import "react-toastify/dist/ReactToastify.css";
 
 import asset1 from "../../assets/events/birthday_1.png";
 import asset2 from "../../assets/events/birthday_2.png";

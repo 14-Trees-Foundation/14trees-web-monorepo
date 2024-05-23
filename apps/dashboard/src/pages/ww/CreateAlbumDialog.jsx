@@ -1,4 +1,3 @@
-// import "react-toastify/dist/ReactToastify.css";
 import * as React from "react";
 import {
   Button,
@@ -11,6 +10,7 @@ import {
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import { useDropzone } from "react-dropzone";
+import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer, toast } from "react-toastify";
 
 const Transition = React.forwardRef(function Transition(props, ref) {

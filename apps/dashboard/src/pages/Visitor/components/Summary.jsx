@@ -1,4 +1,3 @@
-// import "react-toastify/dist/ReactToastify.css";
 import {
   Box,
   Typography,
@@ -10,6 +9,7 @@ import {
 } from "@mui/material";
 import imageCompression from "browser-image-compression";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Alert from "@mui/material/Alert";
 
 import Axios from "../../../api/local";

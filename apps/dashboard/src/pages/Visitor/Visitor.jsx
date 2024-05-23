@@ -1,4 +1,3 @@
-// import "react-toastify/dist/ReactToastify.css";
 import { useState, useEffect } from "react";
 
 import { createStyles, makeStyles } from "@mui/styles";
@@ -23,9 +22,11 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import CardActions from "@mui/material/CardActions";
+import "react-image-crop/dist/ReactCrop.css";
 import ReactCrop from "react-image-crop";
 
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import bg from "../../assets/bg.png";
 import tree from "../../assets/dark_logo.png";

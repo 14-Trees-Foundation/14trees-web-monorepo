@@ -1,7 +1,7 @@
-// import "react-gallery-carousel/dist/index.css";
 import { useState } from "react";
 import { useRecoilValue } from "recoil";
 import { createStyles, makeStyles } from "@mui/styles";
+import "react-gallery-carousel/dist/index.css";
 import Carousel from "react-gallery-carousel";
 
 import asset1 from "../../assets/events/birthday_1.png";

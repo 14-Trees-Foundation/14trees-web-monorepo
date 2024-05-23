@@ -1,5 +1,5 @@
-// import "./orglist.scss";
 import React from "react";
+import "./orglist.scss";
 
 export const OrgList = ({ data, ...props }) => {
   return (

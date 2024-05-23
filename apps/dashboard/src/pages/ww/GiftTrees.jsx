@@ -1,4 +1,3 @@
-// import "react-toastify/dist/ReactToastify.css";
 /* eslint-disable array-callback-return */
 import { useEffect, useState, useCallback } from "react";
 import { createStyles, makeStyles } from "@mui/styles";
@@ -25,6 +24,7 @@ import { useRecoilState } from "recoil";
 import { ToastContainer, toast } from "react-toastify";
 import moment from "moment";
 import { useParams } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
 import imageCompression from "browser-image-compression";
 
 import { Spinner } from "../../components/Spinner";

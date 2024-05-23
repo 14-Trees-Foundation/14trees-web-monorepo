@@ -1,4 +1,3 @@
-// import "react-toastify/dist/ReactToastify.css";
 import * as React from "react";
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
 } from "@mui/material";
 import { useRef } from "react";
 import { makeStyles } from "@mui/styles";
+import "react-toastify/dist/ReactToastify.css";
 
 import hny from "../../assets/gift/hny.png";
 import bd from "../../assets/gift/bd.png";

@@ -1,4 +1,3 @@
-// import "react-gallery-carousel/dist/index.css";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { createStyles, makeStyles } from "@mui/styles";
@@ -15,6 +14,7 @@ import gatimg from "../../assets/gaticon.png";
 import treeicon from "../../assets/treeicon.png";
 import footicon from "../../assets/footicon.png";
 import footericon from "../../assets/footericon.png";
+import "react-gallery-carousel/dist/index.css";
 import HorizontalTimeline from "react-horizontal-timeline";
 
 import { Divider } from "@mui/material";

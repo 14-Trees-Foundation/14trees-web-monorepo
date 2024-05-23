@@ -1,8 +1,8 @@
-// import "react-toastify/dist/ReactToastify.css";
 import * as React from "react";
 import { createStyles, makeStyles } from "@mui/styles";
 import { useRecoilValue } from "recoil";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 
 import { AppBar } from "../../components/Appbar";

@@ -13,6 +13,8 @@ import icon from "../../../assets/marker.png";
 import { useRecoilValue } from "recoil";
 import { usersData, selUsersData } from "../../../store/atoms";
 
+require("dotenv").config();
+
 const containerStyle = {
   width: "100%",
   height: "100%",
