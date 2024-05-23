@@ -12,7 +12,7 @@ import { Request, Response } from "express";
     CRUD Operations for plots collection
 */
 
-export const updatePlot = async (req: Request,res: Response) => {
+export const updatePlotCoordinates = async (req: Request,res: Response) => {
     // Check if plot type exists
     // let plotExists = await PlotModel.findOne({ plot_id: req.body.shortname });
     // // If plot exists, return error
@@ -37,6 +37,22 @@ export const updatePlot = async (req: Request,res: Response) => {
         res.status(status.error).json({ error: error });
     }
 }
+
+export const updatePlot = async (req: Request,res: Response) => {
+    try {
+        let plot = await PlotModel.findById(req.params.id);
+        if (plot) {
+            const resp = await plot.updateOne(req.body);
+        }
+        res.status(status.success).json({
+            plot: req.body,
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(status.error).json({ error: error });
+    }
+}
+
 
 export const addPlot = async (req: Request,res: Response) => {
 
