@@ -12,7 +12,7 @@ const ContactPage: React.FC = () => {
     <div className="">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="px-4">
-          <h2 className="mb-2 text-xl font-bold text-gray-700">Registered Office</h2>
+          {/* <h2 className="mb-2 text-xl font-bold text-gray-700">Registered Office</h2>
           <p className="mb-4 text-gray-600">
             14 Trees Foundation 
             <br />
@@ -22,7 +22,7 @@ const ContactPage: React.FC = () => {
             <br />
             Maharashtra
             <br />
-          </p>
+          </p> */}
           <h2 className="mb-2 text-xl font-bold text-gray-700">Site Address</h2>
           <p className="mb-4 text-gray-600">
             14 Trees Foundation 
@@ -37,8 +37,6 @@ const ContactPage: React.FC = () => {
           <h2 className="mb-2 text-xl font-bold text-gray-700">CIN Number</h2>
           <p className="mb-4 text-gray-600">U93090PN2020NPL191410</p>
           <h2 className="mb-2 text-xl font-bold text-gray-700">Phone Number</h2>
-          <h2 className="mb-2 text-xl font-bold text-gray-700">Phone Number</h2>
-          <p className="mb-4 text-gray-600">(+91) 9096531278</p>
           <p className="mb-4 text-gray-600">(+91) 9096531278</p>
         </div>
         <div className="px-4">
