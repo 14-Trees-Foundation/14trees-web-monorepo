@@ -43,7 +43,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
       throw new Error('No file uploaded. Bulk operation requires data as csv file.');
     }
 
-    let csvData: any[];
+    let csvData: any[] = [];
     let failedRows: any[] = [];
     fs.createReadStream(constants.DEST_FOLDER + req.file.filename)
       .pipe(csvParser())
@@ -137,7 +137,11 @@ export const getUser = async (req: Request, res: Response) => {
     } else {
       const { offset, limit } = getOffsetAndLimitFromRequest(req);
       let result = await UserModel.find().skip(offset).limit(limit);
-      res.status(status.success).json(result);
+      let resultCount = await UserModel.find().estimatedDocumentCount();
+      res.status(status.success).send({
+        result: result,
+        total: resultCount
+      });
     }
 
   } catch (error: any) {

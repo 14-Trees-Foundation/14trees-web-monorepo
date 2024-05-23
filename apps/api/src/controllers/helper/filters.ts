@@ -18,6 +18,6 @@ export const getQueryExpression = (filedName: string, operatorValue: string, val
             return { [filedName]: { $in: value } };
 
         default:
-            return value
+            return {}
     }
 }
