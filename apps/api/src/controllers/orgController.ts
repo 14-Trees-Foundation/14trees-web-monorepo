@@ -90,10 +90,10 @@ export const updateOrg = async (req: Request, res: Response) => {
             org.name = req.body.name;
         }
         if (req.body.desc) {
-            org.name = req.body.desc;
+            org.desc = req.body.desc;
         }
         if (req.body.type) {
-            org.name = req.body.type;
+            org.type = req.body.type;
         }
 
         const updatedOrg = await org.save();

@@ -340,66 +340,93 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   
   export const getTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req); 
-    // const filterReq = req.body.filters;
-    // let filters = {};
-    // if (filterReq && filterReq.length != 0) {
-    //   if (filterReq[0].columnField === "plot_id") {
-    //     filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
-    //   } else if (filterReq[0].columnField === "tree_id") {
-    //     filters = getQueryExpression("tree.name", filterReq[0].operatorValue, filterReq[0].value)
-    //   }
-    // }
-    // console.log(filters);
+    const filterReq = req.body.filters;
+    let filters = {};
+    if (filterReq && filterReq.length != 0) {
+      if (filterReq[0].columnField === "plot_id") {
+        filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
+      } else if (filterReq[0].columnField === "tree_id") {
+        filters = getQueryExpression("tree.name", filterReq[0].operatorValue, filterReq[0].value)
+      }
+    }
     try {
-      let result = await TreeModel.find()
-        .populate({ path: "tree_id", select: "name" })
-        .populate({ path: "plot_id", select: "name" })
-        .skip(offset)
-        .limit(limit);
-
-      // let data = await TreeModel.aggregate([
-      //   {
-      //     $lookup: {
-      //         from: "plots", 
-      //         localField: "plot_id",
-      //         foreignField: "_id",
-      //         as: "plot"
-      //     }
-      //   },
-      //   {
-      //     $lookup: {
-      //         from: "tree_types", 
-      //         localField: "tree_id",
-      //         foreignField: "_id",
-      //         as: "tree"
-      //     }
-      //   },
-      //   {
-      //       $unwind: "$plot"
-      //   },
-      //   {
-      //       $unwind: "$tree"
-      //   },
-      //   {
-      //       $match: filters
-      //   },
-      //   {
-      //     $project: {
-      //       _id: 1,
-      //       "plot.name": 1 
-      //     }
-      //   },
-      //   {
-      //       $skip: offset
-      //   },
-      //   {
-      //       $limit: limit
-      //   }
-      // ])
-      let resultCount = await TreeModel.find().estimatedDocumentCount();
+      let data = await TreeModel.aggregate([
+        {
+          $lookup: {
+              from: "plots", 
+              localField: "plot_id",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                  },
+                },
+              ],
+              as: "plot"
+          }
+        },
+        {
+          $lookup: {
+              from: "tree_types", 
+              localField: "tree_id",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                  },
+                },
+              ],
+              as: "tree"
+          }
+        },
+        {
+          $lookup: {
+              from: "users", 
+              localField: "mapped_to",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                  },
+                },
+              ],
+              as: "user"
+          }
+        },
+        {
+          $unwind: {
+            path: "$plot",
+            preserveNullAndEmptyArrays: true
+          },
+        },
+        {
+          $unwind: {
+            path: "$tree",
+            preserveNullAndEmptyArrays: true
+          },
+        },
+        {
+          $unwind: {
+            path: "$user",
+            preserveNullAndEmptyArrays: true
+          },
+        },
+        {
+            $match: filters
+        },
+        {
+          $facet: {
+            paginatedResults: [{ $skip: offset }, { $limit: limit }],
+            totalCount: [{ $count: 'count' }]
+          }
+        }
+      ])
       res.status(status.success).send({
-        total: resultCount,
-        results: result
+        total: data[0].totalCount[0].count,
+        results: data[0].paginatedResults
       });
     } catch (error: any) {
       res.status(status.error).json({
