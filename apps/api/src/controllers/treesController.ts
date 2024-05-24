@@ -597,6 +597,8 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         }
         tree.user_id = user.id;
       }
+
+      if (req.body.link || req.body.link === "" ) tree.link = req.body.link;
   
       // Save updated tree
       const updatedTree = await tree.save();
