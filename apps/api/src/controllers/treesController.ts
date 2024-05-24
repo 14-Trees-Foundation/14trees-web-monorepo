@@ -397,6 +397,21 @@ export const deleteTreeType = async (req: Request, res: Response) => {
           }
         },
         {
+          $lookup: {
+              from: "user_tree_regs", 
+              localField: "_id",
+              foreignField: "tree",
+              pipeline: [
+                {
+                  $project: {
+                    user: 1,
+                  },
+                },
+              ],
+              as: "assigned_to"
+          }
+        },
+        {
           $unwind: {
             path: "$plot",
             preserveNullAndEmptyArrays: true
@@ -415,18 +430,25 @@ export const deleteTreeType = async (req: Request, res: Response) => {
           },
         },
         {
-            $match: filters
+          $unwind: {
+            path: "$assigned_to",
+            preserveNullAndEmptyArrays: true
+          },
         },
         {
-          $facet: {
-            paginatedResults: [{ $skip: offset }, { $limit: limit }],
-            totalCount: [{ $count: 'count' }]
-          }
-        }
+            $match: filters
+        },
+        // {
+        //   $facet: {
+        //     paginatedResults: [{ $skip: offset }, { $limit: limit }],
+        //     totalCount: [{ $count: 'count' }]
+        //   }
+        // }
+        { $skip: offset }, { $limit: limit }
       ])
       res.status(status.success).send({
-        total: data[0].totalCount[0].count,
-        results: data[0].paginatedResults
+        total: 1000,
+        results: data
       });
     } catch (error: any) {
       res.status(status.error).json({

@@ -192,7 +192,7 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     }
 
     // Get the user
-    let userDoc = await userHelper.getUserDocumentFromRequestBody(req);
+    let userDoc = userHelper.getUserDocumentFromRequestBody(req.body);
     let user = await UserModel.findOne({userid: userDoc.userid});
     if (!user) {
       user = await userDoc.save();
@@ -327,6 +327,7 @@ export const assignTreesToUser = async  (req: Request, res: Response) => {
   try {
     let saplingids = req.body.sapling_id.split(/[ ,]+/);
     let user_tree_reg_res;
+    console.log(saplingids)
     for (let i = 0; i < saplingids.length; i++) {
       user_tree_reg_res = await addUserTree(saplingids[i], req, res);
     }
