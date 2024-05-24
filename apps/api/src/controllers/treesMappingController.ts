@@ -9,6 +9,7 @@ import { getUserDocumentFromRequestBody } from "./helper/users";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { getQueryExpression } from "./helper/filters";
 import { Request, Response } from "express";
+import UserTreeCountModel from "../models/user_tree_count";
 
 export const createAlbum = async (req: Request, res: Response) => {
   let email = req.params["email"];
@@ -417,7 +418,7 @@ export const unMapTrees = async (req: Request, res: Response) => {
 export const getUserMappedTreesCount = async (req: Request, res: Response) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   const filterReq = req.body.filters;
-  let filters;
+  let filters = {};
   if (filterReq && filterReq.length != 0) {
     if (filterReq[0].columnField === "name") {
       filters = getQueryExpression("user.name", filterReq[0].operatorValue, filterReq[0].value)
@@ -426,102 +427,104 @@ export const getUserMappedTreesCount = async (req: Request, res: Response) => {
     }
   }
 
-  let pipeline: any[] = [
-    {
-      $group: {
-        _id: {
-          user: "$mapped_to",
-          plot: "$plot_id",
-        },
-        count: { $sum: 1 },
-        tree_id: { $push: "$_id" },
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "_id.user",
-        foreignField: "_id",
-        pipeline: [
-          {
-            $project: {
-              name: 1,
-              email: 1,
-              _id: 0,
-            },
-          },
-        ],
-        as: "user",
-      },
-    },
-    { $unwind: "$user" },
-    {
-      $lookup: {
-        from: "plots",
-        localField: "_id.plot",
-        foreignField: "_id",
-        pipeline: [
-          {
-            $project: {
-              name: 1,
-              plot_id: 1,
-              _id: 0,
-            },
-          },
-        ],
-        as: "plot",
-      },
-    },
-    {
-      $lookup: {
-        from: "user_tree_regs",
-        let: { id: "$tree_id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $in: ["$tree", "$$id"] },
-            },
-          },
-          { $count: "count" },
-        ],
-        as: "matched",
-      },
-    },
-    { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
-    { $unwind: "$plot" },
-  ]
+  // let pipeline: any[] = [
+  //   {
+  //     $group: {
+  //       _id: {
+  //         user: "$mapped_to",
+  //         plot: "$plot_id",
+  //       },
+  //       count: { $sum: 1 },
+  //       tree_id: { $push: "$_id" },
+  //     },
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "users",
+  //       localField: "_id.user",
+  //       foreignField: "_id",
+  //       pipeline: [
+  //         {
+  //           $project: {
+  //             name: 1,
+  //             email: 1,
+  //             _id: 0,
+  //           },
+  //         },
+  //       ],
+  //       as: "user",
+  //     },
+  //   },
+  //   { $unwind: "$user" },
+  //   {
+  //     $lookup: {
+  //       from: "plots",
+  //       localField: "_id.plot",
+  //       foreignField: "_id",
+  //       pipeline: [
+  //         {
+  //           $project: {
+  //             name: 1,
+  //             plot_id: 1,
+  //             _id: 0,
+  //           },
+  //         },
+  //       ],
+  //       as: "plot",
+  //     },
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "user_tree_regs",
+  //       let: { id: "$tree_id" },
+  //       pipeline: [
+  //         {
+  //           $match: {
+  //             $expr: { $in: ["$tree", "$$id"] },
+  //           },
+  //         },
+  //         { $count: "count" },
+  //       ],
+  //       as: "matched",
+  //     },
+  //   },
+  //   { $unwind: { path: "$matched", preserveNullAndEmptyArrays: true } },
+  //   { $unwind: "$plot" },
+  // ]
 
-  if (filters) {
-    pipeline.push({ $match: filters })
-  }
-  pipeline.push({ $project: { _id: 0 } })
+  // if (filters) {
+  //   pipeline.push({ $match: filters })
+  // }
+  // pipeline.push({ $project: { _id: 0 } })
   
   try {
     
     // let countDocPipeline = [...pipeline, {$count: "totalDocuments"}];
     // let countResult = await TreeModel.aggregate(countDocPipeline);
-    let getDocPipeline = [...pipeline, {
-      $facet: {
-        paginatedResults: [{ $skip: offset }, { $limit: limit }],
-        totalCount: [
-          {
-            $count: 'count'
-          }
-        ]
-      }
-    }];
-    let result = await TreeModel.aggregate(getDocPipeline);
-    console.log(result);
+    // let getDocPipeline = [...pipeline, {
+    //   $facet: {
+    //     paginatedResults: [{ $skip: offset }, { $limit: limit }],
+    //     totalCount: [
+    //       {
+    //         $count: 'count'
+    //       }
+    //     ]
+    //   }
+    // }];
+    // let result = await TreeModel.aggregate(getDocPipeline);
+    const result = await UserTreeCountModel.find(filters).skip(offset).limit(limit);
+    const resultCount = await UserTreeCountModel.find(filters).count();
+    // console.log(resultCount);
     // var defaultObj = result.reduce(
     //   (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
     //   {}
     // );
     // result = result.map((e) => Object.assign({}, defaultObj, e));
     res.status(status.success).send({
-      total: result[0].totalCount[0]?.count ? result[0].totalCount[0]?.count : 0,
+      total: resultCount,
       offset: offset,
-      result_count: result[0].paginatedResults.length,
-      result: result[0].paginatedResults,
+      result_count: result.length,
+      result: result,
     });
   } catch (error: any) {
     res.status(status.error).json({
