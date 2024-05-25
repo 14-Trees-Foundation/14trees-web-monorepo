@@ -10,6 +10,8 @@ import { User } from "../models/user";
 import { OnsiteStaff } from "../models/onsitestaff";
 import { UserTree } from "../models/userprofile";
 import { DeletedProfileUserTree } from "../models/deleteduserprofile";
+import { Event } from "../models/events";
+import { CorpEvent } from "../models/corp_events";
 
 
 class Database {
@@ -49,6 +51,8 @@ class Database {
         Tree,
         UserTree,
         DeletedProfileUserTree,
+        Event,
+        CorpEvent,
       ]
     });
 

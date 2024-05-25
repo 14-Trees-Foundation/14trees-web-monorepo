@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { Event } from '../models/events';
 // import { UserTree } from '../models/UserTree';
 // import { User } from '../models/User';
@@ -83,46 +84,27 @@ export class EventRepository {
   //   }
   // }
 
-  public async getEvents(req: Request, res: Response): Promise<void> {
-    const { offset, limit } = req.query;
-    const filters: any = {};
-
-    if (req.query.name) {
-      filters.name = { $like: `%${req.query.name}%` };
+  public static async getEvents(query: any, offset: number, limit: number): Promise<Event[]> {
+    const whereClause: Record<string, any> = {};
+    if (query.name) {
+      whereClause.name = { [Op.iLike]: `%${query.name}%` };
+    }
+    if (query.type) {
+      whereClause.type = { [Op.iLike]: `%${query.type}%` };
     }
 
-    if (req.query.type) {
-      filters.type = { $like: `%${req.query.type}%` };
-    }
-
-    try {
-      const events = await Event.findAll({
-        where: filters,
-        offset: Number(offset) || 0,
-        limit: Number(limit) || 10,
-      });
-      res.status(200).send(events);
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error,
-      });
-    }
+    const events = await Event.findAll({
+      where: whereClause,
+      offset: offset,
+      limit: limit
+    })
+    return events;
   }
 
-  public async deleteEvent(req: Request, res: Response): Promise<void> {
-    try {
-      const event = await Event.destroy({
-        where: { id: req.params.id },
-      });
-
-      if (event) {
-        res.status(200).json({ message: 'Event deleted successfully' });
-      } else {
-        res.status(404).json({ message: 'Event not found' });
-      }
-    } catch (error) {
-      res.status(500).send(error);
-    }
+  public static async deleteEvent(id: string): Promise<void> {
+    const resp = await Event.destroy({ where: { id: id }});
+    console.log("Delete event response for event id: %s", id, resp);
   }
 }
+
+export default EventRepository;
