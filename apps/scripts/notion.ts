@@ -1,7 +1,10 @@
 import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import * as fs from 'fs';
+import { dataBaseId }from './Notion_DB_credentials'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
+
 
 const getDatabaseData = async (databaseId: string) => {
 
@@ -44,7 +47,7 @@ const getDatabaseData = async (databaseId: string) => {
                                 }
                             }
                         }
-                        console.log(JSON.stringify(data, null, 2));
+                        // console.log(JSON.stringify(data, null, 2));
                         dbData.push(data);
                     }
                 }
@@ -59,5 +62,85 @@ const getDatabaseData = async (databaseId: string) => {
     return dbData;
 };
 
+const csv_data = function(data: any) {
+    // Setup header from object keys
+    // const header = Object.keys(data).join(",");
 
-const data = getDatabaseData("72349ec04ef4414db51406715a7f9e6e");
+    const hdr: Array<string> = [];
+    const header: string[]  = data.map((d: any)=> Object.keys(d))
+    // console.log(header[0][0])
+
+    for( var i = 0 ; i<header.length ; i= i+ 1){
+        for(var j = 0 ; j<header[i].length ; j++){
+            const element  = header[i][j]
+            if( !hdr.includes(element)){
+               hdr.push(element)
+            }
+        }
+
+    }
+//    console.log(hdr)
+
+    // Setup values from object values
+    const val: Array<any> = [];
+    const values = data.map((item: any) => Object.values(item));
+   
+    for( var x = 0 ; x<values.length ; x= x+ 1){
+        for(var y = 0 ; y<values[x].length ; y++){
+            const element  = values[x][y]
+           if(element == null || element == ',,,' || element == ',,' )  //stores value as NULL if satisfied
+           { val.push('NULL');}
+        else if( Array.isArray(element) && element.length == 0){     //stores value as NULL if satisfied
+           val.push('NULL')
+        }
+        else{
+            val.push(element)
+        }
+        
+        } 
+    }
+    // console.log(val)
+    // Concat header and values with a linebreak
+    const csv = [hdr, val].join("\n");
+   
+    return csv;
+  };
+
+    for(let dbId of dataBaseId){
+   
+        // const data =  getDatabaseData(dbId.value);
+        // console.log(data)
+
+        getDatabaseData(dbId.value).then((data)=>{
+            
+           
+            const csv = csv_data(data)
+            const filePath =  `./${dbId.key}.csv`   //Name of the csv file 
+        
+            
+            
+          fs.writeFile(filePath, csv, 'utf8', (err) => {
+            if (err) {
+                console.error('An error occurred while writing the CSV file.', err);
+            } else {
+                console.log(`CSV file saved to ${filePath}`);
+            }
+        });
+        })
+   
+    //     const csv = csv_data(data)
+    //     const filePath =  `./${dbId.key}.csv`   //Name of the csv file 
+    
+        
+    //   fs.writeFile(filePath, csv, 'utf8', (err) => {
+    //     if (err) {
+    //         console.error('An error occurred while writing the CSV file.', err);
+    //     } else {
+    //         console.log(`CSV file saved to ${filePath}`);
+    //     }
+    // });
+    
+}
+
+
+
