@@ -8,6 +8,7 @@ const routes = Router();
 routes.post('/add', users.addUser);
 
 routes.get('/', users.getUser);
+routes.post('/get', users.getUsersByFilters);
 routes.get('/:search', users.searchUsers);
 routes.post('/', users.addUser);
 routes.post('/bulk', uploadFiles.single('file'),users.addUsersBulk);

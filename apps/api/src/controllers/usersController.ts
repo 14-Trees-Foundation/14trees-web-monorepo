@@ -7,6 +7,7 @@ import * as userHelper from "./helper/users";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import csvParser from 'csv-parser';
 import { createObjectCsvWriter } from 'csv-writer';
+import { getQueryExpression } from "./helper/filters";
 import fs from 'fs';
 
 /*
@@ -144,6 +145,28 @@ export const getUser = async (req: Request, res: Response) => {
       });
     }
 
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+    return;
+  }
+};
+
+export const getUsersByFilters = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  let filterReq = req.body.filters;
+  let filters = {};
+  if (filterReq && filterReq.length != 0) {
+    filterReq.forEach((filter: any) => {
+      filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
+    });
+  }
+  try {
+    const users = await UserModel.find(filters).skip(offset).limit(limit);
+    const userCount = await UserModel.find(filters).count();
+    res.status(status.success).send({
+      result: users,
+      total: userCount
+    });
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
