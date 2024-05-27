@@ -10,3 +10,12 @@
 // routes.put('/:id/assign', donations.assignDonation);
 
 // module.exports = routes;
+
+import express from 'express';
+import * as donations from '../controllers/donationsController';
+
+const routes = express.Router();
+
+routes.get('/', donations.getDonations);
+
+export default routes;

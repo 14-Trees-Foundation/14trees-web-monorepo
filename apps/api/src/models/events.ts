@@ -68,13 +68,13 @@ implements EventAttributes {
   @BelongsTo(() => User, 'assigned_by')
   assignedBy!: User;
 
-  @Column
+  @Column(DataType.ARRAY(DataType.STRING))
   assigned_to!: string[];
 
   @BelongsToMany(() => User, 'assigned_to', 'event_id', 'user_id')
   assignedTo!: User[];
 
-  @Column
+  @Column(DataType.ARRAY(DataType.STRING))
   user_trees!: string[];
 
   @BelongsToMany(() => UserTree, 'user_trees', 'event_id', 'user_tree_id')
@@ -96,7 +96,7 @@ implements EventAttributes {
   @Column
   desc!: string;
 
-  @Column
+  @Column(DataType.ARRAY(DataType.STRING))
   tags!: string[];
 
   @Column

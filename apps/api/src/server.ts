@@ -28,6 +28,7 @@ import authRoutes from "./routes/authRoutes";
 import pondsRoutes from "./routes/pondsRoutes";
 // import imageRoutes from "./routes/imageRoutes";
 import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
+import donationRoutes from "./routes/donationRoutes"
 
 require("dotenv").config();
 
@@ -99,7 +100,7 @@ const initExpressApp = (app: express.Application) => {
   // app.use("/api/search", searchRoutes);
   // app.use("/api/login", loginRoutes);
   app.use("/api/auth", authRoutes);
-  // // app.use('/api/donations', donationRoutes);
+  app.use('/api/donations', donationRoutes);
   // app.use("/api/contributions", contributionRoutes);
   app.use("/api/ponds", pondsRoutes);
   // app.use("/api/images", imageRoutes);
