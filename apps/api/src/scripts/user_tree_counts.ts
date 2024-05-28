@@ -105,7 +105,7 @@ const CreateUserTreeCountCollection = async () => {
     }
 
     try {
-        const newData = data.map( (item) => new UserTreeCountModel(item) )
+        const newData = data.map( (item) => { if (item?.mapped_to === "") item.mapped_to = undefined;  return new UserTreeCountModel(item)} )
         await UserTreeCountModel.bulkSave(newData);
     } catch(error) {
         console.log("error saving data into new collection", error);

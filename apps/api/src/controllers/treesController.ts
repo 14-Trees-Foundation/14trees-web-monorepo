@@ -19,6 +19,7 @@ import userModel from "../models/user";
 import { isTypedArray } from "util/types";
 import { isArray } from "lodash";
 import { getQueryExpression } from "./helper/filters";
+import TreesCopyModel from "../models/trees_copy";
 
 dotenv.config();
 
@@ -350,104 +351,11 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       }
     }
     try {
-      let data = await TreeModel.aggregate([
-        {
-          $lookup: {
-              from: "plots", 
-              localField: "plot_id",
-              foreignField: "_id",
-              pipeline: [
-                {
-                  $project: {
-                    name: 1,
-                  },
-                },
-              ],
-              as: "plot"
-          }
-        },
-        {
-          $lookup: {
-              from: "tree_types", 
-              localField: "tree_id",
-              foreignField: "_id",
-              pipeline: [
-                {
-                  $project: {
-                    name: 1,
-                  },
-                },
-              ],
-              as: "tree"
-          }
-        },
-        {
-          $lookup: {
-              from: "users", 
-              localField: "mapped_to",
-              foreignField: "_id",
-              pipeline: [
-                {
-                  $project: {
-                    name: 1,
-                  },
-                },
-              ],
-              as: "user"
-          }
-        },
-        {
-          $lookup: {
-              from: "user_tree_regs", 
-              localField: "_id",
-              foreignField: "tree",
-              pipeline: [
-                {
-                  $project: {
-                    user: 1,
-                  },
-                },
-              ],
-              as: "assigned_to"
-          }
-        },
-        {
-          $unwind: {
-            path: "$plot",
-            preserveNullAndEmptyArrays: true
-          },
-        },
-        {
-          $unwind: {
-            path: "$tree",
-            preserveNullAndEmptyArrays: true
-          },
-        },
-        {
-          $unwind: {
-            path: "$user",
-            preserveNullAndEmptyArrays: true
-          },
-        },
-        {
-          $unwind: {
-            path: "$assigned_to",
-            preserveNullAndEmptyArrays: true
-          },
-        },
-        {
-            $match: filters
-        },
-        // {
-        //   $facet: {
-        //     paginatedResults: [{ $skip: offset }, { $limit: limit }],
-        //     totalCount: [{ $count: 'count' }]
-        //   }
-        // }
-        { $skip: offset }, { $limit: limit }
-      ])
+
+      let data = await TreesCopyModel.find(filters).skip(offset).limit(limit);
+      let count = await TreesCopyModel.find(filters).count();
       res.status(status.success).send({
-        total: 1000,
+        total: count,
         results: data
       });
     } catch (error: any) {
