@@ -12,6 +12,7 @@ import { UserTree } from "../models/userprofile";
 import { DeletedProfileUserTree } from "../models/deleteduserprofile";
 import { Event } from "../models/events";
 import { CorpEvent } from "../models/corp_events";
+import { Site } from "../models/sites";
 
 
 class Database {
@@ -53,6 +54,7 @@ class Database {
         DeletedProfileUserTree,
         Event,
         CorpEvent,
+        Site
       ]
     });
 

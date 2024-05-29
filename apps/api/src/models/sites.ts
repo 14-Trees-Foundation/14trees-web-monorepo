@@ -1,5 +1,5 @@
-import { Model, DataTypes, Optional } from 'sequelize';
-import { Column, DataType, Table } from 'sequelize-typescript';
+import { Optional } from 'sequelize';
+import { Column, DataType, Table, Model } from 'sequelize-typescript';
 
 interface SiteAttributes {
   created_at?: Date;
