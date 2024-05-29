@@ -1,7 +1,8 @@
 import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import * as fs from 'fs';
-import { dataBaseId }from './Notion_DB_credentials'
+import { createObjectCsvWriter } from 'csv-writer';
+import { dataBaseId }from './Notion_DB_credentials';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -79,7 +80,7 @@ const csv_data = function(data: any) {
         }
 
     }
-//    console.log(hdr)
+   console.log(hdr)
 
     // Setup values from object values
     const val: Array<any> = [];
@@ -104,41 +105,46 @@ const csv_data = function(data: any) {
     const csv = [hdr, val].join("\n");
    
     return csv;
-  };
+};
 
-    for(let dbId of dataBaseId){
+for(let dbId of dataBaseId){
    
-        // const data =  getDatabaseData(dbId.value);
-        // console.log(data)
+    // const data =  getDatabaseData(dbId.value);
+    // console.log(data)
 
-        getDatabaseData(dbId.value).then((data)=>{
-            
-           
-            const csv = csv_data(data)
-            const filePath =  `./${dbId.key}.csv`   //Name of the csv file 
+    getDatabaseData(dbId.value).then((data)=>{
         
-            
-            
-          fs.writeFile(filePath, csv, 'utf8', (err) => {
-            if (err) {
-                console.error('An error occurred while writing the CSV file.', err);
-            } else {
-                console.log(`CSV file saved to ${filePath}`);
+        
+        // const csv = csv_data(data)
+        const filePath =  `./notion_data/${dbId.key}.csv`   //Name of the csv file 
+        
+        // fs.writeFile(filePath, csv, 'utf8', (err) => {
+        // if (err) {
+        //     console.error('An error occurred while writing the CSV file.', err);
+        // } else {
+        //     console.log(`CSV file saved to ${filePath}`);
+        // }
+        // });
+
+        const hdr: Array<string> = [];
+        const header: string[][]  = data.map((d: any)=> Object.keys(d))
+
+        for( var i = 0 ; i<header.length ; i= i+ 1){
+            for(var j = 0 ; j<header[i].length ; j++){
+                const element  = header[i][j]
+                if( !hdr.includes(element)){
+                    hdr.push(element)
+                }
             }
+
+        }
+
+        const csvWriter = createObjectCsvWriter({
+            path: filePath,
+            header: hdr.map(key => ({ id: key, title: key }))
         });
-        })
-   
-    //     const csv = csv_data(data)
-    //     const filePath =  `./${dbId.key}.csv`   //Name of the csv file 
-    
-        
-    //   fs.writeFile(filePath, csv, 'utf8', (err) => {
-    //     if (err) {
-    //         console.error('An error occurred while writing the CSV file.', err);
-    //     } else {
-    //         console.log(`CSV file saved to ${filePath}`);
-    //     }
-    // });
+        csvWriter.writeRecords(data);
+    })
     
 }
 
