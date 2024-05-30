@@ -22,3 +22,26 @@ export const getSites = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const updateSite = async (req: Request, res: Response) => {
+    try {
+        let result = await SiteRepository.updateSite(req.body)
+        res.status(status.created).json(result);
+    } catch (error) {
+        console.log(error)
+        res.status(status.error).json({ error: error });
+    }
+}
+
+
+export const deleteSite = async (req: Request, res: Response) => {
+    try {
+        let resp = await SiteRepository.deleteSite(req.params.id);
+        console.log("Delete site Response for id: %s", req.params.id, resp);
+        res.status(status.success).json({
+          message: "Site deleted successfully",
+        });
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+    }
+}
