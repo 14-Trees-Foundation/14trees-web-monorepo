@@ -25,7 +25,7 @@ export class PlotRepository {
             boundaries: plotData.boundaries,
             center: plotData.center,
         };
-        const plot = Plot.create(obj);
+        const plot = await Plot.create(obj);
         return plot;
     }
 

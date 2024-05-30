@@ -27,6 +27,7 @@ implements PondAttributes {
     type: DataType.NUMBER,
     allowNull: false,
     primaryKey: true,
+    autoIncrement: true,
     unique: true
   })
   id!: number;

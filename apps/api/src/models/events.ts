@@ -1,38 +1,8 @@
-// import mongoose from "mongoose";
-// import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
-
-// const Schema = mongoose.Schema;
-
-// const eventSchema = new Schema({
-//   name: { type: String },
-//   assigned_by: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-//   assigned_to: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
-//   user_trees: [{ type: mongoose.Schema.Types.ObjectId, ref: "user_tree_reg" }],
-//   plot_id: { type: mongoose.Schema.Types.ObjectId, ref: "plots" },
-//   link: { type: String },
-//   type: { type: String },
-//   desc: { type: String },
-//   tags: [{ type: String }],
-//   date: { type: Date },
-// });
-
-// const eventModel = mongoose.model("events", eventSchema);
-
-// eventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
-
-// module.exports = eventModel;
-
-
-
-
-
-import { Table, Column, Model, ForeignKey, BelongsTo, BelongsToMany, DataType } from 'sequelize-typescript';
+import { Table, Column, Model, ForeignKey, DataType } from 'sequelize-typescript';
 import { User } from './user';
-import { Plot } from './plot';
 import { Optional } from 'sequelize';
-import { UserTree } from './userprofile';
 
-type PlantationType = 'onsite' | 'offsite'
+type EventLocation = 'onsite' | 'offsite'
 
 interface EventAttributes {
 	id: number;
@@ -44,11 +14,11 @@ interface EventAttributes {
 	tags?: string[];
   event_date: Date;
   memories?: string[];
-  plantation_type: PlantationType;
+  event_location: EventLocation;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'description'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'description' | 'id'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -57,6 +27,7 @@ implements EventAttributes {
   @Column({
     type: DataType.NUMBER,
     allowNull: false,
+    autoIncrement: true,
     primaryKey: true,
     unique: true
   })
@@ -79,7 +50,7 @@ implements EventAttributes {
   description?: string;
 
   @Column(DataType.STRING)
-  plantation_type!: PlantationType;
+  event_location!: EventLocation;
 
   @Column(DataType.ARRAY(DataType.STRING))
   tags?: string[];
@@ -90,3 +61,5 @@ implements EventAttributes {
   @Column(DataType.DATE)
   event_date!: Date;
 }
+
+export type {EventAttributes, EventCreationAttributes}

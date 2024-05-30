@@ -45,7 +45,7 @@ export const addPlot = async (req: Request,res: Response) => {
     }
 
     try {
-        const plot = PlotRepository.addPlot(req.body);
+        const plot = await PlotRepository.addPlot(req.body);
         res.status(status.created).json(plot);
     } catch (error) {
         res.status(status.error).json({ error });

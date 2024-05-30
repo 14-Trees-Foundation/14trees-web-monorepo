@@ -26,6 +26,7 @@ implements PlotAttributes {
     @Column({
       type: DataType.NUMBER,
       allowNull: false,
+      autoIncrement: true,
       primaryKey: true,
       unique: true
     })
