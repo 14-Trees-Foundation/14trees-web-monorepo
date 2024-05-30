@@ -35,11 +35,10 @@ class TreeTypeRepository {
 
         // Tree type object to be saved
         let obj: TreeTypeCreationAttributes = {
-            id: "",
             name: data.name,
             name_english: data.name_english,
             tree_id: data.tree_id,
-            desc: data.desc,
+            description: data.desc,
             scientific_name: data.scientific_name,
             image: [imageUrl],
             family: data.family,

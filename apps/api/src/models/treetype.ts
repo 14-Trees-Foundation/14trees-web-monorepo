@@ -22,7 +22,7 @@ interface TreeTypeAttributes {
 }
 
 interface TreeTypeCreationAttributes
-	extends Optional<TreeTypeAttributes, 'tags' | 'image' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description'> {}
+	extends Optional<TreeTypeAttributes, 'id' | 'tags' | 'image' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description'> {}
 
 @Table({ tableName: 'tree_types' })
 class TreeType extends Model<TreeTypeAttributes, TreeTypeCreationAttributes>

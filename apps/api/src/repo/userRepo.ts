@@ -2,10 +2,10 @@ import { Op } from 'sequelize';
 import { User, UserAttributes, UserCreationAttributes } from '../models/user';
 
 export const getUserId = (name:string, email: string) => {
-    let userid = name.toLowerCase() + email.toLowerCase();
-    userid = userid.replace(/[^A-Z0-9@.]+/ig, "");
+    let userId = name.toLowerCase() + email.toLowerCase();
+    userId = userId.replace(/[^A-Z0-9@.]+/ig, "");
 
-    return userid;
+    return userId;
 }
 
 export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttributes => {
@@ -15,9 +15,8 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
         name: reqBody.name,
         phone: reqBody.contact !== "undefined" ? reqBody.contact : reqBody.phone !== "undefined" ? reqBody.phone : 0,
         email: reqBody.email,
-        userid: userId,
-        dob: reqBody.dob,
-        date_added: new Date()
+        user_id: userId,
+        birth_date: reqBody.dob
     } as UserCreationAttributes;
 }
 
@@ -50,6 +49,9 @@ export class UserRepository {
         if (query.email) {
             whereClause.email = { [Op.iLike]: `%${query.email}%` };
         }
+        if (query.phone) {
+            whereClause.phone = { [Op.iLike]: `%${query.phone}%` };
+        }
     
         return await User.findAll({
             where: whereClause,
@@ -61,7 +63,7 @@ export class UserRepository {
     public static async getUser(name: string, email: string): Promise<User | null> {
         const userId = getUserId(name, email);
         return await User.findOne({
-            where: { userid: userId},
+            where: { user_id: userId},
         });
     }
 

@@ -34,7 +34,7 @@ interface TreeAttributes {
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'images'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'images' | 'user_tree_images'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>

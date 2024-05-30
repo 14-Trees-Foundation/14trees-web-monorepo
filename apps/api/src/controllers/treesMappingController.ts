@@ -146,10 +146,11 @@ export const getMappedTrees = async (req: Request, res: Response) => {
 export const updateEventDataInTrees = async (req: Request, res: Response) => {
   const sapling_ids = req.body.sapling_ids;
 
-  let link = req.body.link ? req.body.link : "";
-  let type = req.body.type ? req.body.type : "";
+  // let link = req.body.link ? req.body.link : "";
+  // let type = req.body.type ? req.body.type : "";
+  let eventId = req.body.event_id as number;
   try {
-    await TreeRepository.updateEventDataInTrees(sapling_ids, link, type);
+    await TreeRepository.updateEventDataInTrees(sapling_ids, eventId);
     res.status(status.created).send();
   } catch (error: any) {
     res.status(status.error).json({

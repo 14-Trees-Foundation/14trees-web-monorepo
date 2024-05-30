@@ -24,7 +24,6 @@ export class PlotRepository {
             plot_id: plotData.plot_code,
             boundaries: plotData.boundaries,
             center: plotData.center,
-            date_added: new Date()
         };
         const plot = Plot.create(obj);
         return plot;

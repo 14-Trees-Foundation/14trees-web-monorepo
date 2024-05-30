@@ -4,6 +4,8 @@ import { status } from '../helpers/status'
 import { OnsiteStaff } from '../models/onsitestaff'
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
 import { Sequelize } from 'sequelize'
+import { User } from '../models/user';
+import { PondWaterLevel, PondWaterLevelCreationAttributes } from '../models/pond_water_level';
 // import { customAlphabet } from 'nanoid'
 // const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 24)
 
@@ -16,13 +18,11 @@ export class PondRepository {
     }
 
     let obj: PondCreationAttributes = {
-      id: '6270af218262b1f5baxx792d',
       name: data.pond_name,
-      lengthFt: data.length,
-      depthFt: data.depth,
-      widthFt: data.width,
+      length_ft: data.length,
+      depth_ft: data.depth,
+      width_ft: data.width,
       type: data.type,
-      date_added: new Date(),
       tags: [],
       images: [pondImageUrl]
     };
@@ -75,29 +75,34 @@ export class PondRepository {
       res.status(status.bad).send({ error: error.message });
       return;
     }
-
-    let user = null;
-    if (req.body.user_id) {
-      user = await OnsiteStaff.findOne({ where: { user_id: req.body.user_id } });
-    }
-
-    let pondImageUrl = "";
-    if (req.files[0]) {
-      pondImageUrl = await UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
-    }
-
-    let obj = {
-      date: req.body.date === null ? new Date().toISOString() : req.body.date,
-      levelFt: req.body.levelFt,
-      user: user === null ? null : user,
-      images: pondImageUrl,
-    };
     try {
-      const result = await Pond.update({
-        updates: Sequelize.fn('array_append', Sequelize.col('updates'), obj)
-      }, {
-        where: { name: req.body.pond_name }
-      });
+      let user = null;
+      if (req.body.user_id) {
+        user = await User.findOne({ where: { id: req.body.user_id } });
+      }
+  
+      let pond = null;
+      if (req.body.pond_id) {
+        pond = await User.findByPk(req.body.pond_id);
+      }
+  
+      if (!pond) {
+        throw new Error("Invalid pond id. Pond with given id not found!")
+      }
+  
+      let pondImageUrl = "";
+      if (req.files[0]) {
+        pondImageUrl = await UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
+      }
+  
+      let obj: PondWaterLevelCreationAttributes = {
+        level_ft: req.body.levelFt,
+        user_id: user?.id,
+        pond_id: pond?.id,
+        images: pondImageUrl === ""? undefined : [pondImageUrl],
+      };
+
+      const result = await PondWaterLevel.create(obj);
       res.status(status.success).send(result);
     } catch (error) {
       res.status(status.error).json({ error });

@@ -1,17 +1,17 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-type GroupType = 'visitor' | 'corporate' | 'family' | 'ngo' | 'onsite_staff' | 'alumni' | 'donors'
+export type GroupType = 'visitor' | 'corporate' | 'family' | 'ngo' | 'onsite_staff' | 'alumni' | 'donors'
 
 interface GroupAttributes {
 	id: number;
 	name: string;
 	type: GroupType;
-    description: string;
+  description: string;
 }
 
 interface GroupCreationAttributes
-	extends Optional<GroupAttributes, 'description'> {}
+	extends Optional<GroupAttributes, 'id'> {}
 
 @Table({ tableName: 'groups' })
 class Group extends Model<GroupAttributes, GroupCreationAttributes>

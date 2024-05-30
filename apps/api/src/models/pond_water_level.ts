@@ -6,13 +6,13 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 interface PondWaterLevelAttributes {
 	id: number;
 	level_ft: number;
-	user_id: number;
-    pond_id: number;
-    images: string[];
+	user_id?: number;
+  pond_id: number;
+  images: string[];
 }
 
 interface PondWaterLevelCreationAttributes
-	extends Optional<PondWaterLevelAttributes, 'images'> {}
+	extends Optional<PondWaterLevelAttributes, 'images' | 'id'> {}
 
 @Table({ tableName: 'pond_water_level' })
 class PondWaterLevel extends Model<PondWaterLevelAttributes, PondWaterLevelCreationAttributes>
@@ -30,7 +30,7 @@ implements PondWaterLevelAttributes {
   level_ft!: number;
 
   @Column({ type: DataType.NUMBER, allowNull: false, unique: true })
-  user_id!: number;
+  user_id?: number;
 
   @Column(DataType.NUMBER)
   pond_id!: number;

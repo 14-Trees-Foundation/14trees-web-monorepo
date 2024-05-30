@@ -44,16 +44,6 @@ class TreeRepository {
       throw new Error("Sapling_id exists, please check!");
     }
 
-    // get user
-    let user: OnsiteStaff | null = null;
-    if (
-      data.user_id !== "" ||
-      data.user_id !== undefined ||
-      data.user_id !== null
-    ) {
-      user = await OnsiteStaff.findOne({ where: { user_id: data.user_id, id: data.user_id } });
-    }
-
     let mapped_to: User | null = null;
     if (data.mapped_to) {
       mapped_to = await User.findOne({ where: { id: data.mapped_to } });
@@ -81,15 +71,12 @@ class TreeRepository {
     }
 
     let treeObj: TreeCreationAttributes = {
-      id: "",
       sapling_id: data.sapling_id,
-      tree_id: treeType.id,
+      tree_type_id: treeType.id,
       plot_id: plot.id,
-      image: imageUrls,
+      images: imageUrls,
       location: loc,
-      user_id: user?.id,
-      mapped_to: mapped_to?.id,
-      date_added: new Date(),
+      mapped_to_user: mapped_to?.id,
     };
     const treeResp = Tree.create(treeObj);
     return treeResp;
@@ -107,7 +94,7 @@ class TreeRepository {
           imageUrls.push(location);
         }
       }
-      data.image = imageUrls;
+      data.images = imageUrls;
     }
 
     const tree = await Tree.findByPk(data.id);
@@ -168,8 +155,8 @@ class TreeRepository {
   };
 
 
-  public static async updateEventDataInTrees(saplingIds: string[], link: string, type: string) {
-    const resp = await Tree.update({ link: link, event_type: type }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+  public static async updateEventDataInTrees(saplingIds: string[], eventId: number) {
+    const resp = await Tree.update({ event_id: eventId}, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("Update event data in trees response: ", resp);
   }
 
@@ -179,7 +166,7 @@ class TreeRepository {
       throw new Error("User with given email not found");
     }
 
-    const resp = await Tree.update({ mapped_to: user.id, date_assigned: new Date() }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update({ mapped_to_user: user.id, mapped_at: new Date() }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("mapped trees response for email: %s", emailId, resp);
   }
 
@@ -194,10 +181,11 @@ class TreeRepository {
       throw new Error("plot with given plot_id doesn't exists");
     }
 
-    let trees = await Tree.findAll({
+    let trees: any[] = await Tree.findAll({
       where: {
-        mapped_to: { [Op.is]: undefined },
-        date_assigned: { [Op.is]: undefined },
+        mapped_to_user: { [Op.is]: undefined },
+        mapped_to_group: { [Op.is]: undefined },
+        assigned_at: { [Op.is]: undefined },
         plot_id: { [Op.eq]: plot.id },
       },
       limit: count
@@ -214,7 +202,7 @@ class TreeRepository {
   }
 
   public static async unMapTrees(saplingIds: string[]) {
-    const resp = await Tree.update({ mapped_to: undefined, date_assigned: undefined }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update({ mapped_to_user: undefined, mapped_at: undefined, mapped_to_group: undefined }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("un mapped trees response: %s", resp);
   }
 }
