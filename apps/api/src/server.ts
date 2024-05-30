@@ -11,6 +11,8 @@ import Database from "./config/postgreDB";
 
 // Routes
 import userRoutes from "./routes/userRoutes";
+import groupRoutes from "./routes/groupRoutes";
+import userGroupRoutes from "./routes/userGroupRoutes";
 import treeRoutes from "./routes/treeRoutes";
 import profileRoute from "./routes/profileRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
@@ -89,6 +91,8 @@ const initExpressApp = (app: express.Application) => {
 
   // app.use("/api/templates", templateRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/groups", groupRoutes);
+  app.use("/api/user-groups", userGroupRoutes);
   // app.use("/api/admin", adminRoutes);
   app.use("/api/trees", treeRoutes);
   app.use("/api/profile", profileRoute);
