@@ -32,73 +32,61 @@ import { Plot } from './plot';
 import { Optional } from 'sequelize';
 import { UserTree } from './userprofile';
 
+type PlantationType = 'onsite' | 'offsite'
+
 interface EventAttributes {
-	id: string;
-  assigned_by: string;
-  assigned_to: string[];
-  user_trees: string[];
-  plot_id: string;
-  link: string;
-  desc: string;
-	tags: string[];
+	id: number;
+  assigned_by: number;
+  site_id: number;
+  name: string;
 	type: number;
-  date: Date;
+  description?: string;
+	tags?: string[];
+  event_date: Date;
+  memories?: string[];
+  plantation_type: PlantationType;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'assigned_to' | 'desc'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'description'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
 implements EventAttributes {
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.NUMBER,
     allowNull: false,
-    field: "_id",
     primaryKey: true,
     unique: true
   })
-  id!: string;
+  id!: number;
 
   @ForeignKey(() => User)
-  @Column
-  assigned_by!: string;
-  
-  @BelongsTo(() => User, 'assigned_by')
-  assignedBy!: User;
+  @Column(DataType.NUMBER)
+  assigned_by!: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  assigned_to!: string[];
+  @Column(DataType.NUMBER)
+  site_id!: number;
 
-  @BelongsToMany(() => User, 'assigned_to', 'event_id', 'user_id')
-  assignedTo!: User[];
-
-  @Column(DataType.ARRAY(DataType.STRING))
-  user_trees!: string[];
-
-  @BelongsToMany(() => UserTree, 'user_trees', 'event_id', 'user_tree_id')
-  userTrees!: UserTree[];
-
-  @ForeignKey(() => Plot)
-  @Column
-  plot_id!: string;
-
-  @BelongsTo(() => Plot, 'plot_id')
-  plot!: Plot;
-
-  @Column
-  link!: string;
-
-  @Column
+  @Column(DataType.NUMBER)
   type!: number;
 
-  @Column
-  desc!: string;
+  @Column(DataType.STRING)
+  name!: string;
+
+  @Column(DataType.STRING)
+  description?: string;
+
+  @Column(DataType.STRING)
+  plantation_type!: PlantationType;
 
   @Column(DataType.ARRAY(DataType.STRING))
-  tags!: string[];
+  tags?: string[];
 
-  @Column
-  date!: Date;
+  @Column(DataType.ARRAY(DataType.STRING))
+  memories?: string[];
+
+  @Column(DataType.DATE)
+  event_date!: Date;
 }
