@@ -4,48 +4,43 @@ import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface UserAttributes {
-	id: string;
+	id: number;
 	name: string;
-	userid: string;
-  phone: number;
+	user_id: string;
+  phone: string;
   email: string;
-  date_added: Date;
-  dob: Date;
+  birth_date?: Date;
 }
 
 interface UserCreationAttributes
-	extends Optional<UserAttributes, 'dob'> {}
+	extends Optional<UserAttributes, 'birth_date'> {}
 
 @Table({ tableName: 'users' })
 class User extends Model<UserAttributes, UserCreationAttributes>
 implements UserAttributes {
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.NUMBER,
     allowNull: false,
-    field: "_id",
     primaryKey: true,
     unique: true
   })
-  id!: string;
+  id!: number;
 
   @Column({ type: DataType.STRING, allowNull: false })
   name!: string;
 
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
-  userid!: string;
+  user_id!: string;
 
-  @Column(DataType.INTEGER)
-  phone!: number;
+  @Column(DataType.STRING)
+  phone!: string;
 
   @Column(DataType.STRING)
   email!: string;
 
   @Column(DataType.DATE)
-  dob!: Date;
-
-  @Column(DataType.DATE)
-  date_added!: Date;
+  birth_date?: Date;
 }
 
 export { User }

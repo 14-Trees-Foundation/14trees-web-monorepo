@@ -4,7 +4,7 @@ import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface TreeTypeAttributes {
-	id: string;
+	id: number;
 	name: string;
 	scientific_name: string;
 	tree_id: string;
@@ -18,24 +18,23 @@ interface TreeTypeAttributes {
   other_use?: string;
   food?: string;
   eco_value?: string;
-  desc?: string;
+  description?: string;
 }
 
 interface TreeTypeCreationAttributes
-	extends Optional<TreeTypeAttributes, 'tags' | 'image' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'desc'> {}
+	extends Optional<TreeTypeAttributes, 'tags' | 'image' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description'> {}
 
 @Table({ tableName: 'tree_types' })
 class TreeType extends Model<TreeTypeAttributes, TreeTypeCreationAttributes>
 implements TreeTypeAttributes {
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.NUMBER,
     allowNull: false,
-    field: "_id",
     primaryKey: true,
     unique: true
   })
-  id!: string;
+  id!: number;
 
 
   @Column(DataType.STRING)

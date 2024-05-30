@@ -4,30 +4,32 @@ import { Boundaries, Center } from './common';
 import { Optional } from 'sequelize';
 
 interface PlotAttributes {
-  id: string;
+  id: number;
   name: string;
   plot_id: string;
   tags?: string[];
   boundaries?: Boundaries;
   center?: Center;
-  date_added?: Date;
+  gat?: string;
+  status?: string;
+  land_type?: number;
+  category?: number;
 }
 
 interface PlotCreationAttributes
-	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center'> {}
+	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status'> {}
 
 @Table({ tableName: 'plots' })
 class Plot
 extends Model<PlotAttributes, PlotCreationAttributes>
 implements PlotAttributes {
     @Column({
-      type: DataType.STRING,
+      type: DataType.NUMBER,
       allowNull: false,
-      field: "_id",
       primaryKey: true,
       unique: true
     })
-    id!: string;
+    id!: number;
 
     @Column({ type: DataType.STRING, allowNull: false })
     name!: string;
@@ -40,14 +42,24 @@ implements PlotAttributes {
     @Column({ type: DataType.ARRAY(DataType.STRING) })
     tags?: string[];
 
-    @Column({ type: DataType.JSONB })
-    boundaries?: { type: string; coordinates: number[][][] };
+    @Column({ type: DataType.JSON })
+    boundaries?: Boundaries;
 
-    @Column({ type: DataType.JSONB })
-    center?: { type: string; coordinates: number[] };
+    @Column({ type: DataType.JSON })
+    center?: Center;
 
-    @Column({ type: DataType.DATE })
-    date_added?: Date;
+    @Column({ type: DataType.STRING })
+    gat!: string;
+
+    @Column({ type: DataType.STRING })
+    status!: string;
+
+    @Column({ type: DataType.NUMBER })
+    land_type?: number;
+
+    @Column({ type: DataType.NUMBER })
+    category?: number;
+
 }
 
 export { Plot }

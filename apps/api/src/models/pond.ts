@@ -3,45 +3,33 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 import { Boundaries } from './common';
-// import {OnSiteStaff} from './onsitestaff'
-
-interface PondUpdateAttributes{
-  date: Date,
-  levelFt: Number,
-  // user: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
-  // user: OnSiteStaff
-  images: string[],
-}
 
 interface PondAttributes {
-	id: string;
+	id: number;
 	name: string;
 	tags: string[];
 	type: string;
 	boundaries: Boundaries;
-  date_added: Date;
   images: string[];
-  lengthFt: number;
-  widthFt: number;
-  depthFt: number;
-  updates: PondUpdateAttributes[];
+  length_ft: number;
+  width_ft: number;
+  depth_ft: number;
 }
 
 interface PondCreationAttributes
-	extends Optional<PondAttributes, 'id' | 'tags' | 'boundaries' | 'updates'> {}
+	extends Optional<PondAttributes, 'id' | 'tags' | 'boundaries'> {}
 
 @Table({ tableName: 'ponds' })
 export class Pond extends Model<PondAttributes, PondCreationAttributes>
 implements PondAttributes {
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.NUMBER,
     allowNull: false,
-    field: "_id",
     primaryKey: true,
     unique: true
   })
-  id!: string;
+  id!: number;
 
 
   @Column(DataType.STRING)
@@ -53,7 +41,6 @@ implements PondAttributes {
   })
   tags!: string[];
 
-
   @Column(DataType.STRING)
   type!: string;
 
@@ -63,26 +50,17 @@ implements PondAttributes {
   })
   boundaries!: { type: string, coordinates: number[][][] };
 
-  @Column(DataType.DATE)
-  date_added!: Date;
-
   @Column(DataType.ARRAY(DataType.STRING))
   images!: string[];
 
   @Column(DataType.FLOAT)
-  lengthFt!: number;
+  length_ft!: number;
 
   @Column(DataType.FLOAT)
-  widthFt!: number;
+  width_ft!: number;
 
   @Column(DataType.FLOAT)
-  depthFt!: number;
-
-  @Column({
-    type: DataType.ARRAY(DataType.JSON),
-    allowNull: true,
-  })
-  updates!: PondUpdateAttributes[];
+  depth_ft!: number;
 }
 
 export type {PondCreationAttributes, PondAttributes}
