@@ -13,10 +13,12 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
 
     return  {
         name: reqBody.name,
-        phone: reqBody.contact !== "undefined" ? reqBody.contact : reqBody.phone !== "undefined" ? reqBody.phone : 0,
+        phone: reqBody.contact !== undefined ? reqBody.contact : reqBody.phone,
         email: reqBody.email,
         user_id: userId,
-        birth_date: reqBody.dob
+        birth_date: reqBody.dob,
+        created_at: new Date(),
+        updated_at: new Date(),
     } as UserCreationAttributes;
 }
 
@@ -24,6 +26,7 @@ export class UserRepository {
     public static async addUser(data: any): Promise<User> {
         let obj: UserCreationAttributes = getUserDocumentFromRequestBody(data);
         const user = await User.create(obj);
+        console.log(user);
         return user;
     }
 
@@ -60,6 +63,20 @@ export class UserRepository {
         });
     }
 
+    public static async searchUsers(searchStr: string, offset: number, limit: number): Promise<User[]> {
+        const whereClause: Record<string, any> = { [Op.or]: [
+            { name: {[Op.like]:`%${searchStr}%` } },
+            { phone: {[Op.like]:`%${searchStr}%` } },
+            { email: {[Op.like]:`%${searchStr}%` } },
+        ]};
+    
+        return await User.findAll({
+            where: whereClause,
+            offset,
+            limit,
+        });
+    }
+
     public static async getUser(name: string, email: string): Promise<User | null> {
         const userId = getUserId(name, email);
         return await User.findOne({
@@ -67,7 +84,7 @@ export class UserRepository {
         });
     }
 
-    public static async deleteUser(userId: string): Promise<number> {
+    public static async deleteUser(userId: number): Promise<number> {
         const resp = await User.destroy({ where: { id: userId } });
         return resp;
     }

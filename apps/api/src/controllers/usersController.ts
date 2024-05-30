@@ -24,7 +24,7 @@ export const addUser = async (req: Request, res: Response) => {
   }
 
   try {
-    let user = UserRepository.addUser(req.body);
+    let user = await UserRepository.addUser(req.body);
     res.status(status.created).json(user);
   } catch (error: any) {
     res.status(status.error).json({
@@ -150,11 +150,7 @@ export const searchUsers = async (req: Request, res: Response) => {
     }
 
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const query: Record<string, any> = {
-        "name": req.params.search,
-        "email": req.params.search,
-    }
-    const users = await UserRepository.getUsers(query, offset, limit);
+    const users = await UserRepository.searchUsers(req.params.search, offset, limit);
     res.status(status.success).send(users);
     return;
   } catch (error:any) {
@@ -174,7 +170,7 @@ export const updateUser = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
-      let resp = await UserRepository.deleteUser(req.params.id);
+      let resp = await UserRepository.deleteUser(parseInt(req.params.id));
       console.log(`Deleted User with id: ${req.params.id}`, resp);
       res.status(status.success).json("User deleted successfully");
     } catch (error : any) {

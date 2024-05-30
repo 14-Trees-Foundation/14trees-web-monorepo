@@ -149,7 +149,7 @@ export class UserTreeRepository {
         
         // Get the user
         let userDoc = await getUserDocumentFromRequestBody(reqBody);
-        let user = await User.findOne({ where: { userid: userDoc.userid } });
+        let user = await User.findOne({ where: { user_id: userDoc.user_id } });
         if (!user) {
             user = await User.create(userDoc);
         }
@@ -206,7 +206,7 @@ export class UserTreeRepository {
     
         const result = await UserTree.create(userTreeData);
         if(reqBody.desc) {
-            tree.desc = reqBody.desc;
+            tree.description = reqBody.desc;
             await tree.update(tree);
         }
         
@@ -221,8 +221,8 @@ export class UserTreeRepository {
             if (!userTree) { continue; }
             let deletedProfile: DeletedProfileUserTreeCreationAttributes = {
                 id: "",
-                treeId: userTree.tree.id,
-                userId: userTree.user.id,
+                treeId: "",
+                userId: "",
                 profileImage: userTree.profile_image,
                 memories: userTree.memories,
                 orgId: userTree.orgid,

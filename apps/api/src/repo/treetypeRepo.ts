@@ -38,10 +38,11 @@ class TreeTypeRepository {
             name: data.name,
             name_english: data.name_english,
             tree_id: data.tree_id,
-            description: data.desc,
+            description: data.description,
             scientific_name: data.scientific_name,
-            image: [imageUrl],
+            images: imageUrl === "" ? undefined : [imageUrl],
             family: data.family,
+            tags: data.tags,
             habit: data.habit,
             remarkable_char: data.remarkable_char,
             med_use: data.med_use,
@@ -61,7 +62,7 @@ class TreeTypeRepository {
         let imageUrl = "";
         if (files && files.length !== 0) {
             imageUrl = await UploadFileToS3(files[0].filename, "treetype");
-            data.image = [imageUrl];
+            data.images = [imageUrl];
         }
     
         const treeType = await TreeType.findByPk(data.id);

@@ -10,10 +10,12 @@ interface UserAttributes {
   phone: string;
   email: string;
   birth_date?: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 interface UserCreationAttributes
-	extends Optional<UserAttributes, 'birth_date'> {}
+	extends Optional<UserAttributes, 'birth_date' | 'id'> {}
 
 @Table({ tableName: 'users' })
 class User extends Model<UserAttributes, UserCreationAttributes>
@@ -21,7 +23,7 @@ implements UserAttributes {
 
   @Column({
     type: DataType.NUMBER,
-    allowNull: false,
+    autoIncrement: true,
     primaryKey: true,
     unique: true
   })
@@ -41,6 +43,12 @@ implements UserAttributes {
 
   @Column(DataType.DATE)
   birth_date?: Date;
+
+  @Column(DataType.DATE)
+  created_at?: Date;
+
+  @Column(DataType.DATE)
+  updated_at?: Date;
 }
 
 export { User }

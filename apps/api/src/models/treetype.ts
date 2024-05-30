@@ -8,7 +8,7 @@ interface TreeTypeAttributes {
 	name: string;
 	scientific_name: string;
 	tree_id: string;
-  image: string[];
+  images: string[];
 	tags: string[];
   habit: string;
   name_english: string;
@@ -22,7 +22,7 @@ interface TreeTypeAttributes {
 }
 
 interface TreeTypeCreationAttributes
-	extends Optional<TreeTypeAttributes, 'id' | 'tags' | 'image' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description'> {}
+	extends Optional<TreeTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description'> {}
 
 @Table({ tableName: 'tree_types' })
 class TreeType extends Model<TreeTypeAttributes, TreeTypeCreationAttributes>
@@ -31,6 +31,7 @@ implements TreeTypeAttributes {
   @Column({
     type: DataType.NUMBER,
     allowNull: false,
+    autoIncrement: true,
     primaryKey: true,
     unique: true
   })
@@ -51,7 +52,7 @@ implements TreeTypeAttributes {
   tree_id!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
-  image!: string[];
+  images!: string[];
 
   @Column({
     type: DataType.ARRAY(DataType.STRING),
@@ -84,7 +85,7 @@ implements TreeTypeAttributes {
   eco_value!: string;
 
   @Column(DataType.STRING)
-  desc!: string;
+  description!: string;
 }
 
 export { TreeType }

@@ -43,7 +43,7 @@ class CorpEventRepository {
         }
 
         const trees = await Tree.findAll({ where: { sapling_id: { [Op.in]: saplingIds } } });
-        const treeIds = trees.map((tree) => { return tree.id });
+        const treeIds = trees.map((tree) => { return "" });
 
         const corpEventData: CorpEventCreationAttributes = {
             id: "",
@@ -114,7 +114,7 @@ class CorpEventRepository {
             const treeIds: string[] = [];
             for (const saplingId of saplingIds) {
                 const tree = await Tree.findOne({ where: { sapling_id: saplingId } });
-                if (tree) treeIds.push(tree.id);
+                if (tree) treeIds.push("");
             }
             event.tree_ids = treeIds;
         }
