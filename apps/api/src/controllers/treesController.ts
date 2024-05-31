@@ -343,7 +343,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req); 
     const filterReq = req.body.filters;
     let filters = {};
-    if (filterReq && filterReq.length != 0) {
+    if (filterReq && filterReq.length !== 0) {
       if (filterReq[0].columnField === "plot_id") {
         filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
       } else if (filterReq[0].columnField === "tree_id") {
@@ -529,7 +529,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
   
   export const countByPlot = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     if (!req.query.id) {
       res.status(status.bad).send({ error: "Plot ID required" });
       return;
@@ -557,8 +556,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
             preserveNullAndEmptyArrays: true,
           },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
   
       if (trees === null) {
@@ -577,7 +574,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
 
   export const treeListByPlot = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       if (!req.query.plot_name) {
         res.status(status.bad).send({ error: "Plot name required" });
@@ -675,8 +671,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
             planted_by: "$user_tree_reg.planted_by",
           },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
   
       res.status(status.success).send(result);
@@ -706,7 +700,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
   
   export const treeCountByPlot = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       let result = await TreeModel.aggregate([
         {
@@ -732,8 +725,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         {
           $sort: { count: -1 },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
       res.status(status.success).send(result);
     } catch (error: any) {
@@ -745,7 +736,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
   
   export const treeLoggedByDate = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       let result = await TreeModel.aggregate([
         {
@@ -764,8 +754,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         {
           $sort: { _id: -1 },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
       res.status(status.success).send(result);
     } catch (error: any) {
@@ -777,7 +765,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
   
   export const treeLogByUser = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       let result = await TreeModel.aggregate([
         {
@@ -815,8 +802,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         {
           $sort: { "_id.date": -1 },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
       res.status(status.success).send(result);
     } catch (error: any) {
@@ -828,7 +813,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
 
   export const treeLogByPlot = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       let result = await TreeModel.aggregate([
         {
@@ -869,8 +853,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         {
           $sort: { "_id.date": -1 },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
       res.status(status.success).send(result);
     } catch (error: any) {
@@ -882,7 +864,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
   
   export const treeCountTreeType = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       let result = await TreeModel.aggregate([
         {
@@ -912,8 +893,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         {
           $sort: { count: -1 },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
       res.status(status.success).send(result);
     } catch (error: any) {
@@ -925,7 +904,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
   };
 
   export const treeTypeCountByPlot = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
       let result = await TreeModel.aggregate([
         {
@@ -970,8 +948,6 @@ export const deleteTreeType = async (req: Request, res: Response) => {
         {
           $sort: { count: -1 },
         },
-        { $skip: offset },
-        { $limit: limit },
       ]);
       res.status(status.success).send(result);
     } catch (error: any) {

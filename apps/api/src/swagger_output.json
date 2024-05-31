@@ -112,6 +112,30 @@
         }
       }
     },
+    "/api/users/get": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "filters": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/users/{search}": {
       "get": {
         "description": "",
@@ -169,9 +193,6 @@
                   "example": "any"
                 },
                 "phone": {
-                  "example": "any"
-                },
-                "org": {
                   "example": "any"
                 }
               }
@@ -250,21 +271,25 @@
     "/api/trees/treetypes": {
       "get": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/trees/{search}": {
-      "get": {
-        "description": "",
         "parameters": [
           {
-            "name": "search",
-            "in": "path",
-            "required": true,
+            "name": "name",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "sci_name",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "med_use",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "food",
+            "in": "query",
             "type": "string"
           }
         ],
@@ -394,15 +419,31 @@
         }
       }
     },
-    "/api/trees/": {
-      "get": {
+    "/api/trees/get": {
+      "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "filters": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
           }
         }
-      },
+      }
+    },
+    "/api/trees/": {
       "post": {
         "description": "",
         "responses": {
@@ -453,10 +494,10 @@
                 "lat": {
                   "example": "any"
                 },
-                "lng": {
+                "user_id": {
                   "example": "any"
                 },
-                "user_id": {
+                "link": {
                   "example": "any"
                 }
               }
@@ -889,6 +930,28 @@
             "description": ""
           }
         }
+      },
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "filters": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
       }
     },
     "/api/mytrees/update": {
@@ -1096,6 +1159,22 @@
     },
     "/api/plots/{id}": {
       "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "put": {
         "description": "",
         "parameters": [
           {
@@ -1677,9 +1756,6 @@
         "responses": {
           "403": {
             "description": "Forbidden"
-          },
-          "500": {
-            "description": "Internal Server Error"
           }
         }
       }
@@ -1786,9 +1862,6 @@
           },
           "403": {
             "description": "Forbidden"
-          },
-          "500": {
-            "description": "Internal Server Error"
           }
         }
       }
@@ -1904,6 +1977,29 @@
     "/api/ponds/update": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "pond_name": {
+                  "example": "any"
+                },
+                "levelFt": {
+                  "example": "any"
+                },
+                "user_id": {
+                  "example": "any"
+                },
+                "date": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -2052,22 +2148,27 @@
     "/api/ponds/update-pond-level": {
       "post": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/ponds/{search}": {
-      "get": {
-        "description": "",
         "parameters": [
           {
-            "name": "search",
-            "in": "path",
-            "required": true,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "pond_name": {
+                  "example": "any"
+                },
+                "levelFt": {
+                  "example": "any"
+                },
+                "user_id": {
+                  "example": "any"
+                },
+                "date": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
