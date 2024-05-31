@@ -26,6 +26,8 @@ const getDatabaseData = async (databaseId: string) => {
                 for ( let i = 0; i < response.results.length; i++) {
                     let data = {} as any
                     let result = response.results[i] as PageObjectResponse;
+                    // console.log(JSON.stringify(result));
+                    // break;
                     if (result.properties) {
                         for (const key in result.properties) {
                             if (result.properties.hasOwnProperty(key)) {
@@ -34,10 +36,17 @@ const getDatabaseData = async (databaseId: string) => {
 
                                 if (type == "rich_text" || type == "title") {
                                     if (value[type].length != 0) data[key] = value[type][0].plain_text;
-                                } else if (type == "select") {
+                                } else if (type == "select" || type == "status") {
                                     if (value[type]) data[key] = value[type].name;
-                                } else if (type == "number" || type == "files") {
-                                    data[key] = value[type];
+                                } else if (type == "date") {
+                                    if (value[type]) data[key] = value[type].start;
+                                } else if (type == "files") {
+                                    data[key] = []
+                                    if (value[type].length != 0) {
+                                        value[type].forEach((item: any) => {
+                                            data[key].push(item.file.url);
+                                        });
+                                    }
                                 } else if (type == "multi_select") {
                                     data[key] = []
                                     if (value[type].length != 0) {
@@ -45,6 +54,8 @@ const getDatabaseData = async (databaseId: string) => {
                                             data[key].push(item.name);
                                         });
                                     }
+                                } else {
+                                    data[key] = value[type];
                                 }
                             }
                         }

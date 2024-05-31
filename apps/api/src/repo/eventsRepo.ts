@@ -1,10 +1,5 @@
 import { Op } from 'sequelize';
-import { Event, EventCreationAttributes } from '../models/events';
-// import { UserTree } from '../models/UserTree';
-// import { User } from '../models/User';
-// import { Tree } from '../models/Tree';
-// import uploadHelper from '../helpers/uploadHelper';
-import { Request, Response } from 'express';
+import { Event, EventAttributes, EventCreationAttributes } from '../models/events';
 
 export class EventRepository {
   public async addEvent(fields: any): Promise<Event> {
@@ -42,6 +37,16 @@ export class EventRepository {
       limit: limit
     })
     return events;
+  }
+
+  static async updateEvent(eventData: EventAttributes): Promise<Event> {
+    const event = await Event.findByPk(eventData.id);
+    if (!event) {
+        throw new Error('Event not found for given id');
+    }
+
+    const updatedEvent = event.update(eventData);
+    return updatedEvent;
   }
 
   public static async deleteEvent(id: string): Promise<void> {
