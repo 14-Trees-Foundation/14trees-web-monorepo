@@ -352,10 +352,108 @@ export const deleteTreeType = async (req: Request, res: Response) => {
     }
     try {
 
-      let data = await TreesCopyModel.find(filters).skip(offset).limit(limit);
-      let count = await TreesCopyModel.find(filters).count();
+      let data = await TreeModel.aggregate([
+        {
+          $lookup: {
+              from: "plots", 
+              localField: "plot_id",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                  },
+                },
+              ],
+              as: "plot"
+          }
+        },
+        {
+          $lookup: {
+              from: "tree_types", 
+              localField: "tree_id",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                  },
+                },
+              ],
+              as: "tree"
+          }
+        },
+        {
+            $lookup: {
+                from: "users", 
+                localField: "mapped_to",
+                foreignField: "_id",
+                pipeline: [
+                  {
+                    $project: {
+                      name: 1,
+                    },
+                  },
+                ],
+                as: "user"
+            }
+        },
+        {
+            $lookup: {
+                from: "user_tree_regs", 
+                localField: "_id",
+                foreignField: "tree",
+                pipeline: [
+                  {
+                      $lookup: {
+                          from: "users",
+                          localField: "user",
+                          foreignField: "_id",
+                          as: "user"
+                      }
+                  },
+                  {
+                    $unwind: "$user"
+                  },
+                  {
+                      $project: {
+                          name: "$user.name"
+                      }
+                  }
+                ],
+                as: "assigned_to"
+            }
+        },
+        {
+            $unwind: {
+                path: "$assigned_to",
+                preserveNullAndEmptyArrays: true
+            },
+        },
+        {
+            $unwind: {
+                path: "$user",
+                preserveNullAndEmptyArrays: true
+            },
+        },
+        {
+          $unwind: {
+            path: "$plot",
+            preserveNullAndEmptyArrays: true
+          },
+        },
+        {
+          $unwind: {
+            path: "$tree",
+            preserveNullAndEmptyArrays: true
+          },
+        },
+        { $match: filters },
+        { $skip: offset },
+        { $limit: limit },
+      ]);
       res.status(status.success).send({
-        total: count,
+        total: 100000,
         results: data
       });
     } catch (error: any) {
