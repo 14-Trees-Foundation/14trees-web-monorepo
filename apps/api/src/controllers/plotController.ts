@@ -6,6 +6,7 @@ import { errorMessage, successMessage, status } from "../helpers/status";
 import { UpdatePlotCsv } from "./helper/uploadtocsv"; // Assuming UpdatePlotCsv function exists
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
+import { getQueryExpression } from "./helper/filters";
 
 /*
     Model - Plot
@@ -144,6 +145,28 @@ export const getPlots = async (req: Request,res: Response) => {
         });
     }
 }
+
+export const getPlotsByFilters = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    let filterReq = req.body.filters;
+    let filters = {};
+    if (filterReq && filterReq.length != 0) {
+      filterReq.forEach((filter: any) => {
+        filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
+      });
+    }
+    try {
+      const plots = await PlotModel.find(filters).skip(offset).limit(limit);
+      const plotCount = await PlotModel.find(filters).count();
+      res.status(status.success).send({
+        result: plots,
+        total: plotCount
+      });
+    } catch (error: any) {
+      res.status(status.bad).send({ error: error.message });
+      return;
+    }
+};
 
 export const deletePlot = async (req: Request,res: Response) => {
     try {
