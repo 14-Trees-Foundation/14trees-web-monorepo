@@ -59,6 +59,28 @@ export const getTreeTypes = async (req: Request, res: Response) => {
   }
 };
 
+export const getTreeTypesByFilters = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  let filterReq = req.body.filters;
+  let filters = {};
+  if (filterReq && filterReq.length != 0) {
+    filterReq.forEach((filter: any) => {
+      filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
+    });
+  }
+  try {
+    const treeTypes = await TreeTypeModel.find(filters).skip(offset).limit(limit);
+    const treeTypeCount = await TreeTypeModel.find(filters).count();
+    res.status(status.success).send({
+      result: treeTypes,
+      total: treeTypeCount
+    });
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+    return;
+  }
+};
+
 export const addTreeType = async (req: Request, res: Response) => {
   try {
     if (!req.body.name) {
