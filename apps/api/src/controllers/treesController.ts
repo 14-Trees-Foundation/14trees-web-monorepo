@@ -344,11 +344,19 @@ export const deleteTreeType = async (req: Request, res: Response) => {
     const filterReq = req.body.filters;
     let filters = {};
     if (filterReq && filterReq.length !== 0) {
-      if (filterReq[0].columnField === "plot_id") {
-        filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
-      } else if (filterReq[0].columnField === "tree_id") {
-        filters = getQueryExpression("tree.name", filterReq[0].operatorValue, filterReq[0].value)
-      }
+      filterReq.forEach((filter: any) => {
+        if (filter.columnField === "plot") {
+          filters = { ...filters, ...getQueryExpression("plot.name", filter.operatorValue, filter.value)}
+        } else if (filter.columnField === "tree") {
+          filters = { ...filters, ...getQueryExpression("tree.name", filter.operatorValue, filter.value)}
+        } else if (filter.columnField === "mapped_to") {
+          filters = { ...filters, ...getQueryExpression("user.name", filter.operatorValue, filter.value)}
+        } else if (filter.columnField === "assigned_to") {
+          filters = { ...filters, ...getQueryExpression("assigned_to.name", filter.operatorValue, filter.value)}
+        } else {
+          filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
+        }
+      });
     }
     try {
 
@@ -454,6 +462,7 @@ export const deleteTreeType = async (req: Request, res: Response) => {
       ]);
       res.status(status.success).send({
         total: 100000,
+        offset: offset,
         results: data
       });
     } catch (error: any) {
