@@ -131,8 +131,162 @@ export const getProfile = async  (req: Request, res: Response) => {
   }
 
   try {
-    const usertrees = await getUserAndTreesFromSapling(req.query.id as string);
-    res.status(status.success).json({ ...usertrees});
+    // const usertrees = await getUserAndTreesFromSapling(req.query.id as string);
+    let tree = await TreeModel.findOne({ sapling_id: req.query.id });
+    if (tree === null) {
+      throw new Error("Sapling ID not found");
+    }
+
+    let user = await UserTreeModel.findOne({ tree: tree},{user : 1})
+    if (user === null) {
+      throw new Error("User not found");
+    }
+    let usertrees = await UserTreeModel.aggregate([
+      {
+        $match: {
+          user: user.user,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                _id: 1
+              }
+            }
+          ],
+          as: "user",
+        },
+      },
+      {
+        $unwind: "$user",
+      },
+      {
+        $lookup: {
+          from: "trees",
+          localField: "tree",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                sapling_id:1,
+                image:1,
+                location:1,
+                tree_id:1,
+                plot_id:1,
+                event_type: 1,
+                link: 1,
+                mapped_to: 1,
+                desc: 1
+              }
+            }
+          ],
+          as: "tree",
+        },
+      },
+      {
+        $unwind: "$tree",
+      },
+      {
+        $lookup: {
+          from: "tree_types",
+          localField: "tree.tree_id",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                image:1,
+                scientific_name:1,
+                _id:0
+              }
+            }
+          ],
+          as: "tree.tree_type",
+        },
+      },
+      {
+        $unwind: "$tree.tree_type",
+      },
+      {
+        $lookup: {
+          from: "plots",
+          localField: "tree.plot_id",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                boundaries:1,
+                _id:0
+              }
+            }
+          ],
+          as: "tree.plot",
+        },
+      },
+      {
+        $unwind: "$tree.plot",
+      },
+      {
+        $lookup: {
+          from: "organizations",
+          localField: "orgid",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                _id:0
+              }
+            }
+          ],
+          as: "orgid",
+        },
+      },
+      {
+        $unwind: "$orgid",
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "donated_by",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                _id:1
+              }
+            }
+          ],
+          as: "donated_by",
+        },
+      },
+      {
+        $unwind: {
+          path: "$donated_by",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          "_id": 0,
+          "tree._id": 0,
+          "tree.tree_id": 0,
+          "tree.plot_id": 0,
+        },
+      },
+    ]);
+
+    res.status(status.success).json({
+      usertrees: usertrees,
+    });
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
