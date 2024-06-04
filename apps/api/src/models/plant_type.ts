@@ -3,7 +3,7 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-interface TreeTypeAttributes {
+interface PlantTypeAttributes {
 	id: number;
 	name: string;
   name_english: string;
@@ -29,12 +29,12 @@ interface TreeTypeAttributes {
   updated_at?: Date;
 }
 
-interface TreeTypeCreationAttributes
-	extends Optional<TreeTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description' | 'status'> {}
+interface PlantTypeCreationAttributes
+	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description' | 'status'> {}
 
 @Table({ tableName: 'plant_types' })
-class TreeType extends Model<TreeTypeAttributes, TreeTypeCreationAttributes>
-implements TreeTypeAttributes {
+class PlantType extends Model<PlantTypeAttributes, PlantTypeCreationAttributes>
+implements PlantTypeAttributes {
 
   @Column({
     type: DataType.NUMBER,
@@ -120,5 +120,5 @@ implements TreeTypeAttributes {
   updated_at!: Date;
 }
 
-export { TreeType }
-export type {TreeTypeAttributes, TreeTypeCreationAttributes}
+export { PlantType }
+export type {PlantTypeAttributes, PlantTypeCreationAttributes}

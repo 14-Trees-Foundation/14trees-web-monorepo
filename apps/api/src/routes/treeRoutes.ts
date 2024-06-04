@@ -1,17 +1,17 @@
 import { Router } from "express";
 import * as trees from "../controllers/treesController";
 import uploadFiles from "../helpers/multer";
-import * as treeTypes from '../controllers/treetypecontroller'
+import * as treeTypes from '../controllers/plantTypeController'
 
 const routes = Router();
 
 // TreeTypes
-routes.get("/treetypes", treeTypes.getTreeTypes);
-routes.post("/treetypes", treeTypes.getTreeTypes);
+// routes.get("/treetypes", treeTypes.getTreeTypes);
+// routes.post("/treetypes", treeTypes.getTreeTypes);
 // routes.get('/:search', treeTypes.searchTreeTypes);
-routes.post("/addtreetype", uploadFiles.array("files", 4), treeTypes.addTreeType);
-routes.put('/treetypes/:id', uploadFiles.array('files', 4), treeTypes.updateTreeType);
-routes.delete('/treetypes/:id', treeTypes.deleteTreeType);
+// routes.post("/addtreetype", uploadFiles.array("files", 4), treeTypes.addTreeType);
+// routes.put('/treetypes/:id', uploadFiles.array('files', 4), treeTypes.updateTreeType);
+// routes.delete('/treetypes/:id', treeTypes.deleteTreeType);
 
 // // Trees
 

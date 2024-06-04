@@ -1,10 +1,9 @@
 import { Sequelize } from "sequelize-typescript";
 
-// import { TreeType } from "../models/treetype";
 import { Pond } from "../models/pond";
 import { Plot } from "../models/plot";
 import { Org } from "../models/org";
-import { TreeType } from "../models/treetype";
+import { PlantType } from "../models/plant_type";
 import { Tree } from "../models/tree";
 import { User } from "../models/user";
 import { OnsiteStaff } from "../models/onsitestaff";
@@ -49,7 +48,7 @@ class Database {
         Pond,
         Plot,
         Org,
-        TreeType,
+        PlantType,
         User,
         OnsiteStaff,
         Tree,

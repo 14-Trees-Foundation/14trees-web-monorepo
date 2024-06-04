@@ -16,8 +16,8 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
     const readStream = fs.createReadStream(destImg + filename);
     let bucket;
 
-    if (type === "treetype") {
-        bucket = process.env.BUCKET_TREE_TYPES
+    if (type === "plant_type") {
+        bucket = process.env.BUCKET_PLANT_TYPES
     } else if (type === "users") {
         bucket = process.env.BUCKET_USERS
     } else if (type === "memories") {

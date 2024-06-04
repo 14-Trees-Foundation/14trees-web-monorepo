@@ -1,7 +1,7 @@
 // Model in postgresql db
 
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { TreeType } from '../models/treetype'
+import { PlantType } from './plant_type'
 import { Plot } from '../models/plot'
 import { User } from './user'
 import { Center } from './common';
@@ -51,7 +51,7 @@ implements TreeAttributes {
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
   sapling_id!: string;
 
-  @ForeignKey(() => TreeType)
+  @ForeignKey(() => PlantType)
   @Column
   tree_type_id!: number;
 

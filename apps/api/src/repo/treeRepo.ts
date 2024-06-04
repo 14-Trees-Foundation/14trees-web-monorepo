@@ -1,6 +1,6 @@
 import { Tree, TreeAttributes, TreeCreationAttributes } from "../models/tree";
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
-import { TreeType } from "../models/treetype";
+import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
 import { OnsiteStaff } from "../models/onsitestaff";
 import { User } from "../models/user";
@@ -27,9 +27,9 @@ class TreeRepository {
   public static async addTree(data: any, files?: Express.Multer.File[]): Promise<Tree> {
 
     // Check if tree type exists
-    let treeType = await TreeType.findOne({ where: { plant_type_id: data.tree_id, id: data.tree_id } });
-    if (!treeType) {
-      throw new Error("Tree type ID doesn't exist");
+    let plantType = await PlantType.findOne({ where: { id: data.plant_type_id } });
+    if (!plantType) {
+      throw new Error("Plant type ID doesn't exist");
     }
 
     // Check if plot exists
@@ -72,7 +72,7 @@ class TreeRepository {
 
     let treeObj: TreeCreationAttributes = {
       sapling_id: data.sapling_id,
-      tree_type_id: treeType.id,
+      tree_type_id: plantType.id,
       plot_id: plot.id,
       images: imageUrls,
       location: loc,

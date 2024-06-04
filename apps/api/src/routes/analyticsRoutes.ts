@@ -5,7 +5,7 @@ import verifyToken from '../auth/verifyToken';
 const routes = Router();
 
 routes.get('/totaltrees', analytics.getTotalTree);
-routes.get('/totaltreetypes', analytics.getTotalTreeType);
+routes.get('/totaltreetypes', analytics.getTotalPlantType);
 routes.get('/totalponds', analytics.getTotalPonds);
 routes.get('/totalemp', analytics.getTotalEmployees);
 routes.get('/totalUsers', analytics.getUniqueUsers);

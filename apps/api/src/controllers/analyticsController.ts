@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status'; 
 import TreeRepository from '../repo/treeRepo';
-import TreeTypeRepository from '../repo/treetypeRepo';
+import PlantTypeRepository from '../repo/plantTypeRepo';
 import { UserRepository } from '../repo/userRepo';
 import { PlotRepository } from '../repo/plotRepo';
 import { PondRepository } from '../repo/pondsRepo';
@@ -11,7 +11,7 @@ import { OnsiteStaffRepository } from '../repo/onSiteStaffRepo';
 export const summary = async (req: Request, res: Response) => {
   try {
     const treeCount = await TreeRepository.treeCount();
-    const treeTypeCount = await TreeTypeRepository.treeTypeCount();
+    const plantTypeCount = await PlantTypeRepository.plantTypeCount();
     const userCount = await UserRepository.userCount();
     // const assignedTreeCount = await UserTreeRepository.userTreeCount();
     const plotCount = await PlotRepository.plotCount();
@@ -19,7 +19,7 @@ export const summary = async (req: Request, res: Response) => {
 
     res.status(status.success).send({
       treeCount,
-      treeTypeCount,
+      plantTypeCount,
       userCount,
       assignedTreeCount: 1000,
       plotCount,
@@ -45,9 +45,9 @@ export const getTotalTree = async (req: Request, res: Response) => {
   }
 };
 
-export const getTotalTreeType = async (req: Request, res: Response) => {
+export const getTotalPlantType = async (req: Request, res: Response) => {
   try {
-    const count = await TreeTypeRepository.treeTypeCount();
+    const count = await PlantTypeRepository.plantTypeCount();
     res.status(status.success).send({
       count,
     });
