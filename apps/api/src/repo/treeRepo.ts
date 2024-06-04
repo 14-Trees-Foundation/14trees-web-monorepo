@@ -27,7 +27,7 @@ class TreeRepository {
   public static async addTree(data: any, files?: Express.Multer.File[]): Promise<Tree> {
 
     // Check if tree type exists
-    let treeType = await TreeType.findOne({ where: { tree_id: data.tree_id, id: data.tree_id } });
+    let treeType = await TreeType.findOne({ where: { plant_type_id: data.tree_id, id: data.tree_id } });
     if (!treeType) {
       throw new Error("Tree type ID doesn't exist");
     }

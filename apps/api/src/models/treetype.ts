@@ -6,23 +6,31 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 interface TreeTypeAttributes {
 	id: number;
 	name: string;
+  name_english: string;
+  common_name_english?: string;
+  common_name_marathi?: string;
 	scientific_name: string;
-	tree_id: string;
+	plant_type_id: string;
   images: string[];
 	tags: string[];
   habit: string;
-  name_english: string;
   family?: string;
-  remarkable_char?: string;
+  category?: string;
   med_use?: string;
   other_use?: string;
   food?: string;
   eco_value?: string;
   description?: string;
+  names_index?: string;
+  status?: string;
+  status_message?: string[];
+  last_system_updated_at?: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 interface TreeTypeCreationAttributes
-	extends Optional<TreeTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'remarkable_char' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description'> {}
+	extends Optional<TreeTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description' | 'status'> {}
 
 @Table({ tableName: 'plant_types' })
 class TreeType extends Model<TreeTypeAttributes, TreeTypeCreationAttributes>
@@ -42,6 +50,15 @@ implements TreeTypeAttributes {
   name!: string;
 
   @Column(DataType.STRING)
+  name_english!: string;
+
+  @Column(DataType.STRING)
+  common_name_english!: string;
+
+  @Column(DataType.STRING)
+  common_name_marathi!: string;
+
+  @Column(DataType.STRING)
   scientific_name!: string;
 
   @Column({
@@ -49,7 +66,7 @@ implements TreeTypeAttributes {
     allowNull: false,
     unique: true
   })
-  tree_id!: string;
+  plant_type_id!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
   images!: string[];
@@ -64,13 +81,10 @@ implements TreeTypeAttributes {
   habit!: string;
 
   @Column(DataType.STRING)
-  name_english!: string;
-
-  @Column(DataType.STRING)
   family!: string;
 
   @Column(DataType.STRING)
-  remarkable_char!: string;
+  category!: string;
 
   @Column(DataType.STRING)
   med_use!: string;
@@ -86,6 +100,24 @@ implements TreeTypeAttributes {
 
   @Column(DataType.STRING)
   description!: string;
+
+  @Column(DataType.STRING)
+  names_index!: string;
+  
+  @Column(DataType.STRING)
+  status!: string;
+
+  @Column(DataType.ARRAY(DataType.STRING))
+  status_message!: string[];
+
+  @Column(DataType.DATE)
+  last_system_updated_at!: Date;
+
+  @Column(DataType.DATE)
+  created_at!: Date;
+
+  @Column(DataType.DATE)
+  updated_at!: Date;
 }
 
 export { TreeType }

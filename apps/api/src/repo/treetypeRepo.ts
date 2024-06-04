@@ -1,9 +1,10 @@
 import { TreeType, TreeTypeAttributes, TreeTypeCreationAttributes } from "../models/treetype";
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
+import { PaginatedResponse } from "../models/pagination";
 
 
 class TreeTypeRepository {
-    public static async getTreeTypes(query: any, offset: number = 0, limit: number = 20): Promise<TreeType[]> {
+    public static async getTreeTypes(query: any, offset: number = 0, limit: number = 20): Promise<PaginatedResponse<TreeType>> {
         let whereClause: Record<string, any> = {}
         if (query?.name) {
             whereClause["name"] = query.name.toString()
@@ -18,11 +19,11 @@ class TreeTypeRepository {
             whereClause["food"] = query.food.toString()
         }
 
-        return await TreeType.findAll({
-            where: whereClause,
-            offset,
-            limit
-        });
+        return {
+            results: await TreeType.findAll({ where: whereClause, offset, limit }),
+            total: await TreeType.count({ where: whereClause }),
+            offset: offset
+        }
     };
 
     public static async addTreeType(data: any, files?: Express.Multer.File[]): Promise<TreeType> {
@@ -37,14 +38,13 @@ class TreeTypeRepository {
         let obj: TreeTypeCreationAttributes = {
             name: data.name,
             name_english: data.name_english,
-            tree_id: data.tree_id,
+            plant_type_id: data.tree_id,
             description: data.description,
             scientific_name: data.scientific_name,
             images: imageUrl === "" ? undefined : [imageUrl],
             family: data.family,
             tags: data.tags,
             habit: data.habit,
-            remarkable_char: data.remarkable_char,
             med_use: data.med_use,
             other_use: data.other_use,
             food: data.food,
