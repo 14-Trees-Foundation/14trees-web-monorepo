@@ -466,11 +466,11 @@ export const deleteTree = async (req: Request, res: Response) => {
   export const treeLoggedByDate = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     try {
-        const query = `SELECT t.date_added, count(t._id)
-                        from trees as t
-                        group by t.date_added
-                        order by t.date_added desc
-                        offset ${offset} limit ${limit};
+        const query = `SELECT DATE(t.date_added) AS "_id", COUNT(t._id)
+                        FROM trees AS t
+                        GROUP BY DATE(t.date_added)
+                        ORDER BY DATE(t.date_added) DESC
+                        OFFSET ${offset} LIMIT ${limit};
         `
     //   let result = await TreeModel.aggregate([
     //     {
@@ -492,9 +492,10 @@ export const deleteTree = async (req: Request, res: Response) => {
     //     { $skip: offset },
     //     { $limit: limit },
     //   ]);
-    let result = await sequelize.query(query, {
-        type: QueryTypes.SELECT
-    })
+      let result: any[] = await sequelize.query(query, {
+          type: QueryTypes.SELECT
+      })
+      result.forEach(item => item.count = parseInt(item.count))
       res.status(status.success).send(result);
     } catch (error: any) {
       res.status(status.error).json({

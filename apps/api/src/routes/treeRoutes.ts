@@ -7,6 +7,7 @@ const routes = Router();
 
 // TreeTypes
 routes.get("/treetypes", treeTypes.getTreeTypes);
+routes.post("/treetypes", treeTypes.getTreeTypes);
 // routes.get('/:search', treeTypes.searchTreeTypes);
 routes.post("/addtreetype", uploadFiles.array("files", 4), treeTypes.addTreeType);
 routes.put('/treetypes/:id', uploadFiles.array('files', 4), treeTypes.updateTreeType);

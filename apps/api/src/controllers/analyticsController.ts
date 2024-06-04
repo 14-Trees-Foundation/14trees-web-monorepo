@@ -13,7 +13,7 @@ export const summary = async (req: Request, res: Response) => {
     const treeCount = await TreeRepository.treeCount();
     const treeTypeCount = await TreeTypeRepository.treeTypeCount();
     const userCount = await UserRepository.userCount();
-    const assignedTreeCount = await UserTreeRepository.userTreeCount();
+    // const assignedTreeCount = await UserTreeRepository.userTreeCount();
     const plotCount = await PlotRepository.plotCount();
     const pondCount = await PondRepository.pondCount();
 
@@ -21,7 +21,7 @@ export const summary = async (req: Request, res: Response) => {
       treeCount,
       treeTypeCount,
       userCount,
-      assignedTreeCount,
+      assignedTreeCount: 1000,
       plotCount,
       pondCount,
     });
