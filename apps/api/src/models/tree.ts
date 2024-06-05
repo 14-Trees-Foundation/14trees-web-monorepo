@@ -23,8 +23,8 @@ const treeSchema = new Schema({
   date_assigned: { type: Date },
 });
 
-const treeModel = mongoose.model("trees", treeSchema);
+const TreeModel = mongoose.model("trees", treeSchema);
 
-treeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+TreeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = treeModel;
+export default TreeModel;

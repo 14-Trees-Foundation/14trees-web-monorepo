@@ -20,8 +20,8 @@ const treeTypeSchema = new Schema({
   desc: { type: String },
 });
 
-const treeTypeModel = mongoose.model("tree_type", treeTypeSchema);
+const TreeTypeModel = mongoose.model("tree_type", treeTypeSchema);
 
-treeTypeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+TreeTypeModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = treeTypeModel;
+export default TreeTypeModel;

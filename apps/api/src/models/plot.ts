@@ -19,8 +19,8 @@ const plotSchema = new Schema({
   date_added: { type: Date },
 });
 
-const plotModel = mongoose.model("plots", plotSchema);
+const PlotModel = mongoose.model("plots", plotSchema);
 
-plotModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+PlotModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = plotModel;
+export default  PlotModel;

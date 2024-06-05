@@ -15,6 +15,6 @@ let onsitestaff = new Schema({
   date_added: { type: Date },
 });
 
-const onSiteStaff = mongoose.model("onsitestaffs", onsitestaff);
+const OnSiteStaff = mongoose.model("onsitestaffs", onsitestaff);
 // onSiteStaff.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
-module.exports = onSiteStaff;
+export default OnSiteStaff;

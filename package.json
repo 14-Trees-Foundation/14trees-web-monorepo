@@ -10,11 +10,11 @@
   },
   "devDependencies": {
     "dotenv-cli": "latest",
+    "eslint-config-custom": "*",
     "prettier": "^2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.11",
-    "turbo": "latest",
-    "eslint-config-custom": "*",
-    "tsconfig": "*"
+    "tsconfig": "*",
+    "turbo": "latest"
   },
   "packageManager": "yarn@1.22.19",
   "engines": {
@@ -23,5 +23,8 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@notionhq/client": "^2.2.15"
+  }
 }

@@ -13,8 +13,8 @@ const activitySchema = new Schema({
     video: {type: String}
 });
 
-const activityModel = mongoose.model("activities", activitySchema);
+const ActivityModel = mongoose.model("activities", activitySchema);
 
-activityModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
+ActivityModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
 
-module.exports = activityModel;
+export default ActivityModel;

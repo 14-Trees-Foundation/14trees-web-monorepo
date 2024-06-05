@@ -16,8 +16,8 @@ const eventSchema = new Schema({
   date: { type: Date },
 });
 
-const eventModel = mongoose.model("events", eventSchema);
+const EventModel = mongoose.model("events", eventSchema);
 
-eventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+EventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = eventModel;
+export default EventModel;

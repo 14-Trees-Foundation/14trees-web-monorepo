@@ -1,13 +1,20 @@
 import { Router } from "express";
-import { Request, Response } from "express";
 import * as ponds from "../controllers/pondsController";
-import uploadImages from "../helpers/multer";
+import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
-routes.post("/add", uploadImages.array("files", 1), ponds.addPond);
-routes.post("/update", uploadImages.array("files", 1), ponds.addUpdate);
+// @deprecated
+routes.post('/add', uploadFiles.array('files', 1), ponds.addPond);
+// @deprecated
+routes.post('/update', uploadFiles.array('files', 1), ponds.addWaterLevelUpdate);
+
+routes.post('/', uploadFiles.array('files', 1), ponds.addPond);
+routes.put('/:id', uploadFiles.array('files', 1), ponds.updatePond);
+routes.post('/update-pond-level', uploadFiles.array('files', 1), ponds.addWaterLevelUpdate);
 routes.get("/", ponds.getPonds);
+// routes.get('/:search', ponds.searchPonds);
+routes.delete('/:id', ponds.deletePond);
 routes.get("/history", ponds.getHistory);
 
 export default routes;

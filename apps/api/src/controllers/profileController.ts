@@ -1,22 +1,22 @@
+import mongoose from "mongoose";
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
 import connect from "../services/mongo";
-import { ProfileUserInfo, UserTree } from "schema";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { status } from "../helpers/status";
 
-const { errorMessage, successMessage, status } = require("../helpers/status");
+import TreeModel from "../models/tree";
+import UserTreeModel from "../models/userprofile";
+import OrgModel from "../models/org";
+import UserModel from "../models/user";
+import DeletedUserTreeModel from "../models/deleteduserprofile";
 
-const mongoose = require("mongoose");
-const TreeModel = require("../models/tree");
-const UserTreeModel = require("../models/userprofile");
-const DeletedProfile = require("../models/deleteduserprofile");
-const OrgModel = require("../models/org");
+import * as userHelper from "./helper/users"
+import * as uploadHelper from "./helper/uploadtos3"
+import * as csvHelper from "./helper/uploadtocsv"
 
-const userHelper = require("./helper/users");
-const uploadHelper = require("./helper/uploadtos3");
-const csvhelper = require("./helper/uploadtocsv");
-const userModel = require("../models/user");
 
 export const getAllProfile = async (req: Request, res: Response) => {
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     let profiles = await UserTreeModel.aggregate([
       {
@@ -88,6 +88,12 @@ export const getAllProfile = async (req: Request, res: Response) => {
           "treetype.name": 1,
         },
       },
+      {
+        $skip: offset
+      },
+      {
+        $limit: limit,
+      },
     ]);
     res.status(status.success).json({
       result: profiles,
@@ -107,7 +113,7 @@ export const getUserProfile = async  (req: Request, res: Response) => {
   }
    
   try {
-      const mongoUserId = mongoose.Types.ObjectId(req.query.userid);
+      const mongoUserId = new mongoose.Types.ObjectId(req.query.userid.toString());
       const usertrees = await getUserProfilePipeline(mongoUserId);
       res.status(status.success).json({
         usertrees: usertrees,
@@ -125,8 +131,162 @@ export const getProfile = async  (req: Request, res: Response) => {
   }
 
   try {
-    const usertrees = await getUserAndTreesFromSapling(req.query.id as string);
-    res.status(status.success).json({ ...usertrees});
+    // const usertrees = await getUserAndTreesFromSapling(req.query.id as string);
+    let tree = await TreeModel.findOne({ sapling_id: req.query.id });
+    if (tree === null) {
+      throw new Error("Sapling ID not found");
+    }
+
+    let user = await UserTreeModel.findOne({ tree: tree},{user : 1})
+    if (user === null) {
+      throw new Error("User not found");
+    }
+    let usertrees = await UserTreeModel.aggregate([
+      {
+        $match: {
+          user: user.user,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                _id: 1
+              }
+            }
+          ],
+          as: "user",
+        },
+      },
+      {
+        $unwind: "$user",
+      },
+      {
+        $lookup: {
+          from: "trees",
+          localField: "tree",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                sapling_id:1,
+                image:1,
+                location:1,
+                tree_id:1,
+                plot_id:1,
+                event_type: 1,
+                link: 1,
+                mapped_to: 1,
+                desc: 1
+              }
+            }
+          ],
+          as: "tree",
+        },
+      },
+      {
+        $unwind: "$tree",
+      },
+      {
+        $lookup: {
+          from: "tree_types",
+          localField: "tree.tree_id",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                image:1,
+                scientific_name:1,
+                _id:0
+              }
+            }
+          ],
+          as: "tree.tree_type",
+        },
+      },
+      {
+        $unwind: "$tree.tree_type",
+      },
+      {
+        $lookup: {
+          from: "plots",
+          localField: "tree.plot_id",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                boundaries:1,
+                _id:0
+              }
+            }
+          ],
+          as: "tree.plot",
+        },
+      },
+      {
+        $unwind: "$tree.plot",
+      },
+      {
+        $lookup: {
+          from: "organizations",
+          localField: "orgid",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                _id:0
+              }
+            }
+          ],
+          as: "orgid",
+        },
+      },
+      {
+        $unwind: "$orgid",
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "donated_by",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                name:1,
+                _id:1
+              }
+            }
+          ],
+          as: "donated_by",
+        },
+      },
+      {
+        $unwind: {
+          path: "$donated_by",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          "_id": 0,
+          "tree._id": 0,
+          "tree.tree_id": 0,
+          "tree.plot_id": 0,
+        },
+      },
+    ]);
+
+    res.status(status.success).json({
+      usertrees: usertrees,
+    });
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
@@ -151,7 +311,11 @@ export const getProfileById = async  (req: Request, res: Response) => {
       org: 1,
     });
 
-    let usertrees = await UserTreeModel.find({ user: user.user._id })
+    if (!user) {
+      throw new Error("No user found for sapling Id");
+    }
+
+    let usertrees = await UserTreeModel.find({ user: user._id })
       .populate({ path: "tree", populate: { path: "tree_id" } })
       .populate({ path: "tree", populate: { path: "plot_id" } });
 
@@ -182,18 +346,25 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     }
 
     // Get the user
-    let user = await userHelper.addUser(req, res);
+    let userDoc = userHelper.getUserDocumentFromRequestBody(req.body);
+    let user = await UserModel.findOne({userid: userDoc.userid});
+    if (!user) {
+      user = await userDoc.save();
+    }
 
     // Upload images to S3
-    let userimages;
-    let memoryimages;
+    let userImageUrls = []
+    let memoryImageUrls = []
 
     // User Profile images
     if (req.body.userimages !== undefined) {
       if (req.body.userimages.length > 0) {
-        userimages = req.body.userimages.split(",");
-        for (const image in userimages) {
-          await uploadHelper.UploadFileToS3(userimages[image], "users");
+        let userImages = req.body.userimages.split(",");
+        for (const image in userImages) {
+          const location = await uploadHelper.UploadFileToS3(userImages[image], "users");
+          if (location != "") {
+            userImageUrls.push(location);
+          }
         }
       }
     }
@@ -201,39 +372,30 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     // Memories for the visit
     if (req.body.memoryimages !== undefined) {
       if (req.body.memoryimages.length > 0) {
-        memoryimages = req.body.memoryimages.split(",");
-        for (const image in memoryimages) {
-          await uploadHelper.UploadFileToS3(memoryimages[image], "memories");
+        let memoryImages = req.body.memoryimages.split(",");
+        for (const image in memoryImages) {
+          const location = await uploadHelper.UploadFileToS3(memoryImages[image], "memories");
+          if (location != "") {
+            memoryImageUrls.push(location);
+          }
         }
       }
     }
 
-    // Save the urls with S3 location prefixed for each image
-    const s3urlprofile =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/users/";
-    let uimageurl =
-      userimages !== undefined ? userimages.map((x: string) => s3urlprofile + x) : "";
-    const s3urlmemories =
-      "https://14treesplants.s3.ap-south-1.amazonaws.com/memories/";
-    let mimageurl =
-      memoryimages !== undefined
-        ? memoryimages.map((x: string) => s3urlmemories + x)
-        : "";
-
-    if (req.body.albumimages !== undefined && req.body.albumimages.length > 0) {
-      mimageurl = req.body.albumimages.split(",");
-    }
+    // if (req.body.albumimages !== undefined && req.body.albumimages.length > 0) {
+    //   mimageurl = req.body.albumimages.split(",");
+    // }
 
     let user_tree_data = new UserTreeModel({
       tree: tree.id,
-      user: user.id,
-      profile_image: uimageurl,
-      memories: mimageurl,
+      user: user?.id,
+      profile_image: userImageUrls,
+      memories: memoryImageUrls,
       orgid: req.body.org
-        ? mongoose.Types.ObjectId(req.body.org)
-        : mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
+        ? new mongoose.Types.ObjectId(req.body.org)
+        : new mongoose.Types.ObjectId("61726fe62793a0a9994b8bc2"),
       donated_by: req.body.donor
-        ? mongoose.Types.ObjectId(req.body.donor)
+        ? new mongoose.Types.ObjectId(req.body.donor)
         : null,
       plantation_type: req.body.plantation_type
         ? req.body.plantation_type
@@ -266,14 +428,14 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
     });
     let donor = "";
     if (req.body.donor) {
-      let dUser = await userModel.findOne({ _id: req.body.donor });
-      donor = dUser.name;
+      let dUser = await UserModel.findOne({ _id: req.body.donor });
+      if (dUser) donor = dUser.name;
     }
 
     // Save the info into the sheet
     let err;
     try {
-      await csvhelper.UpdateUserTreeCsv(
+      await csvHelper.UpdateUserTreeCsv(
         {
           name: req.body.name,
           email: req.body.email,
@@ -283,8 +445,8 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
         },
         regInfo,
         tree.sapling_id,
-        uimageurl,
-        mimageurl,
+        userImageUrls,
+        memoryImageUrls,
         org,
         donor
       );
@@ -299,7 +461,7 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
   }
 };
 
-export const regUserTree = async  (req: Request, res: Response) => {
+export const assignTreeToUser = async  (req: Request, res: Response) => {
   try {
     let user_tree_reg_res = await addUserTree(
       req.body.sapling_id,
@@ -315,10 +477,11 @@ export const regUserTree = async  (req: Request, res: Response) => {
   }
 };
 
-export const regMultiUserTree = async  (req: Request, res: Response) => {
+export const assignTreesToUser = async  (req: Request, res: Response) => {
   try {
     let saplingids = req.body.sapling_id.split(/[ ,]+/);
     let user_tree_reg_res;
+    console.log(saplingids)
     for (let i = 0; i < saplingids.length; i++) {
       user_tree_reg_res = await addUserTree(saplingids[i], req, res);
     }
@@ -330,41 +493,36 @@ export const regMultiUserTree = async  (req: Request, res: Response) => {
   }
 };
 
-export const deleteProfile = async  (req: Request, res: Response) => {
-  if (!req.query.id) {
-    res.status(status.bad).send({ error: "Sapling ID required" });
+export const unassignTrees = async  (req: Request, res: Response) => {
+  if (!req.body.sapling_ids && req.body.sapling_ids.length === 0) {
+    res.status(status.bad).send({ error: "Sapling IDs required" });
     return;
   }
 
-  let tree;
   try {
-    tree = await TreeModel.findOne({ sapling_id: req.query.id });
-    if (tree === null) {
-      throw new Error("Sapling ID not found");
+
+    let trees = await TreeModel.find({ sapling_id: {$in: req.body.sapling_ids} });
+
+    for (let i = 0; i < trees.length; i++) {
+      let userTree = await UserTreeModel.findOne({ tree: trees[i] });
+      if (!userTree) { continue; }
+      let deletedProfile = new DeletedUserTreeModel({
+        tree: userTree.tree,
+        user: userTree.user,
+        profile_image: userTree.profile_image,
+        memories: userTree.memories,
+        orgid: userTree.orgid,
+        donated_by: userTree.donated_by,
+        plantation_type: userTree.plantation_type,
+        gifted_by: userTree.gifted_by,
+        planted_by: userTree.planted_by,
+        date_added: userTree.date_added,
+        date_deleted: new Date().toISOString()
+      });
+      await deletedProfile.save();
+      await UserTreeModel.deleteOne({ tree: trees[i] })
     }
 
-    let userTree = await UserTreeModel.findOne({ tree: tree });
-    let deletedProfile = new DeletedProfile({
-      tree: userTree.tree,
-      user: userTree.user,
-      profile_image: userTree.profile_image,
-      memories: userTree.memories,
-      orgid: userTree.orgid,
-      donated_by: userTree.donated_by,
-      plantation_type: userTree.plantation_type,
-      gifted_by: userTree.gifted_by,
-      planted_by: userTree.planted_by,
-      date_added: userTree.date_added,
-      date_deleted: new Date().toISOString()
-    });
-    await deletedProfile.save();
-  } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
-  }
-
-  try {
-    await UserTreeModel.deleteOne({ tree: tree })
     res.status(status.success).send();
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
@@ -485,7 +643,7 @@ async function getUserAndTreesFromSapling(saplingId: string) {
     ]
 
     const result = (await trees.aggregate(pipeline).toArray())[0];
-    return result as UserTree;
+    return result;
 }
 
 // async function getUserAndTrees(user: ObjectId) {
@@ -495,7 +653,7 @@ async function getUserAndTreesFromSapling(saplingId: string) {
 //     return {}
 // }
 
-async function getUserProfilePipeline(user: ObjectId) {
+async function getUserProfilePipeline(user: mongoose.Types.ObjectId) {
   let usertrees = await UserTreeModel.aggregate([
     {
       $match: {

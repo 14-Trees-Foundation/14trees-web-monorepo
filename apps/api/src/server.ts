@@ -1,7 +1,10 @@
 import path from "path";
 import express, { Request } from "express";
+const morgan = require("morgan");
 import mongoose from "mongoose";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express"
+import { readFileSync } from "fs"
 import { MongoClient } from "mongodb";
 import { getMongoDBConnectionString } from "./services/mongo";
 
@@ -16,15 +19,24 @@ import searchRoutes from "./routes/searchRoutes";
 import eventRoutes from "./routes/eventRoutes";
 import orgRoutes from "./routes/orgRoutes";
 import loginRoutes from "./routes/loginRoutes";
-import mytreesRoutes from "./routes/mytreesRoutes";
+import treesMappingRoutes from "./routes/treesMappingRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import templateRoutes from "./routes/templateRoute";
 import contributionRoutes from "./routes/contributeRoutes";
 import pondsRoutes from "./routes/pondsRoutes";
 import imageRoutes from "./routes/imageRoutes";
+import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
 
 require("dotenv").config();
+
+let swaggerFile: any;
+try {
+  const data = readFileSync('src/swagger_output.json', 'utf8');
+  swaggerFile = JSON.parse(data);
+} catch (error) {
+  console.error("Error reading swagger file:", error);
+}
 
 interface ResponseError extends Error {
   status?: number;
@@ -54,6 +66,9 @@ const port = process.env.SERVER_PORT ?? 8088;
 const initExpressApp = (app: express.Application) => {
   console.log("Initializing Express App...");
 
+  // log requests
+  app.use(morgan("[:date[clf]] - :method :url - :status - :response-time ms"));
+
   app.use(express.static(path.join(__dirname, "client/build")));
 
   app.use(cors<Request>());
@@ -72,7 +87,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/admin", adminRoutes);
   app.use("/api/trees", treeRoutes);
   app.use("/api/profile", profileRoute);
-  app.use("/api/mytrees", mytreesRoutes);
+  app.use("/api/mytrees", treesMappingRoutes);
   app.use("/api/plots", plotRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/organizations", orgRoutes);
@@ -85,6 +100,12 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/contributions", contributionRoutes);
   app.use("/api/ponds", pondsRoutes);
   app.use("/api/images", imageRoutes);
+  app.use("/api/onsitestaff", onSiteStaffRoutes);
+
+  // swagger doc
+  if (swaggerFile) {
+    app.use('/api/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
+  }
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {

@@ -18,13 +18,13 @@ const treePhotoUpdateSchema = new Schema({
   ],
 });
 
-const treeUpdatePhotoModel = mongoose.model(
+const TreeUpdatePhotoModel = mongoose.model(
   "tree_update_photos",
   treePhotoUpdateSchema
 );
 
-treeUpdatePhotoModel.createIndexes({
+TreeUpdatePhotoModel.createIndexes({
   maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT,
 }); //create index
 
-module.exports = treeUpdatePhotoModel;
+export default TreeUpdatePhotoModel;

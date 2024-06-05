@@ -20,8 +20,8 @@ const corpEventSchema = new Schema({
   date_added: { type: Date },
 });
 
-const corpEventModel = mongoose.model("corp_events", corpEventSchema);
+const CorpEventModel = mongoose.model("corp_events", corpEventSchema);
 
-corpEventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+CorpEventModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
 
-module.exports = corpEventModel;
+export default CorpEventModel;
