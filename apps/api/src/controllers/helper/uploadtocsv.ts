@@ -1,5 +1,5 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
-const creds = require('../../auth/sheet-node-test.json');
+import * as creds from '../../auth/sheet-node-test.json';
 
 export const UpdateTreeTypeCsv = async (data:any) => {
 

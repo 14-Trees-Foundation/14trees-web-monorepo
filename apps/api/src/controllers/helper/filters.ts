@@ -1,10 +1,14 @@
+import mongoose from "mongoose";
 
-export const getQueryExpression = (filedName: string, operatorValue: string, value: string | string[] | undefined) => {
+export const getQueryExpression = (filedName: string, operatorValue: string, value: string | string[] | undefined, isObjectId: boolean = false) => {
 
     switch(operatorValue) {
         case 'contains':
             return { [filedName]: { $regex: new RegExp((value as string), 'i') } };
         case 'equals':
+            if (isObjectId) {
+                return { [filedName]: new mongoose.Types.ObjectId(value as string)}
+            }
             return { [filedName]: value };
         case 'startsWith':
             return { [filedName]: { $regex: new RegExp( '^' + value, 'i') } };
