@@ -10,6 +10,7 @@ const user = new Schema({
   email: { type: String },
   dob: { type: Date },
   date_added: { type: Date },
+  pin: { type: Number }
 });
 
 const UserModel = mongoose.model("users", user);

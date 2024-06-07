@@ -7,7 +7,7 @@ import swaggerUi from "swagger-ui-express"
 import { readFileSync } from "fs"
 import { MongoClient } from "mongodb";
 import { getMongoDBConnectionString } from "./services/mongo";
-
+const maxRequestSize = '50mb';
 // Routes
 import userRoutes from "./routes/userRoutes";
 import treeRoutes from "./routes/treeRoutes";
@@ -27,6 +27,8 @@ import contributionRoutes from "./routes/contributeRoutes";
 import pondsRoutes from "./routes/pondsRoutes";
 import imageRoutes from "./routes/imageRoutes";
 import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
+//appv2 route
+import appV2Routes from "./routes/appV2Routes";
 
 require("dotenv").config();
 
@@ -74,7 +76,7 @@ const initExpressApp = (app: express.Application) => {
   app.use(cors<Request>());
   // Add middleware for parsing JSON and urlencoded data and populating `req.body`
   app.use(express.urlencoded({ extended: false }));
-  app.use(express.json());
+  app.use(express.json({ limit: maxRequestSize })); //added max Request Size 
   app.use(function (req, res, next) {
     // Website you wish to allow to connect
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -101,7 +103,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/ponds", pondsRoutes);
   app.use("/api/images", imageRoutes);
   app.use("/api/onsitestaff", onSiteStaffRoutes);
-
+  app.use("/api/appv2", appV2Routes); //app v2 route
   // swagger doc
   if (swaggerFile) {
     app.use('/api/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
