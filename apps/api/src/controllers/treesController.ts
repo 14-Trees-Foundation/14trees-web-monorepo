@@ -375,6 +375,8 @@ export const deleteTreeType = async (req: Request, res: Response) => {
           filters = { ...filters, ...getQueryExpression("user.name", filter.operatorValue, filter.value)}
         } else if (filter.columnField === "assigned_to") {
           filters = { ...filters, ...getQueryExpression("assigned_to.name", filter.operatorValue, filter.value)}
+        } else if (filter.columnField === "plot_id" || filter.columnField === "tree_id") {
+          filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value, true)}
         } else {
           filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
         }
