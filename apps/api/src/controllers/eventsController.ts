@@ -212,7 +212,7 @@ export const addEvents = async (req: Request, res: Response) => {
         const user_tree_reg_ids: mongoose.Types.ObjectId[] = [];
   
         // Add user to the database if not exists
-        const userDoc = await userHelper.getUserDocumentFromRequestBody(req);
+        const userDoc = await userHelper.getUserDocumentFromRequestBody(fields);
         let user = await UserModel.findOne({ userid: userDoc.userid });
         if (!user) {
           user = await userDoc.save();
