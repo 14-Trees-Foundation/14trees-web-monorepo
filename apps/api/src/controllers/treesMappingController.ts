@@ -133,7 +133,6 @@ export const getAlbums = async (req: Request, res: Response) => {
 };
 
 export const getMappedTrees = async (req: Request, res: Response) => {
-  const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
     let user = await UserModel.find({ email: email });
@@ -239,8 +238,6 @@ export const getMappedTrees = async (req: Request, res: Response) => {
           image: 1,
         },
       },
-      { $skip: offset },
-      { $limit: limit },
     ]);
 
     res.status(status.success).send({
@@ -284,15 +281,18 @@ export const mapTrees = async (req: Request, res: Response) => {
   const filtered_saplings = saplingIds.filter(function (el: string) {
     return el;
   });
-
-  let user = await UserModel.findOne({ email: email_id });
-  if (user === null) {
-    try {
-      let userDoc = await getUserDocumentFromRequestBody(req);
+  
+  let user = null;
+  try {
+    user = await UserModel.findOne({ email: email_id });
+    if (user === null) {
+      let userDoc = getUserDocumentFromRequestBody(req.body);
       user = await userDoc.save();
-    } catch (error: any) {
-      res.status(status.error).send(error);
     }
+  } catch (error: any) {
+    console.log(error);
+    res.status(status.error).send(error);
+    return;
   }
 
   try {
@@ -314,6 +314,7 @@ export const mapTrees = async (req: Request, res: Response) => {
           return;
         }
       } catch (error: any) {
+        console.log(error);
         res.status(status.error).send({
           error: error,
         });
@@ -322,6 +323,7 @@ export const mapTrees = async (req: Request, res: Response) => {
     }
     res.status(status.created).send();
   } catch (error: any) {
+    console.log(error);
     res.status(status.error).send({
       error: error,
     });
