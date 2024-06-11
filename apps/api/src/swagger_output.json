@@ -1,49 +1,16 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "14Trees-API",
+    "title": "14Trees-Postgres-API",
     "description": "Backend APIs for 14Trees-service",
     "version": "1.0.0"
   },
-  "host": "localhost:8088",
+  "host": "dev-api.14trees.org",
   "basePath": "/",
   "schemes": [
-    "http"
+    "https"
   ],
   "paths": {
-    "/api/templates/": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "tree_name": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "name": {
-                  "example": "any"
-                },
-                "sapling_id": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/users/add": {
       "post": {
         "description": "",
@@ -152,27 +119,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "dob": {
-                  "example": "any"
-                },
-                "phone": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -198,7 +144,7 @@
         }
       }
     },
-    "/api/admin/users/treelogging": {
+    "/api/groups/": {
       "get": {
         "description": "",
         "responses": {
@@ -206,9 +152,7 @@
             "description": ""
           }
         }
-      }
-    },
-    "/api/admin/users": {
+      },
       "post": {
         "description": "",
         "parameters": [
@@ -221,16 +165,7 @@
                 "name": {
                   "example": "any"
                 },
-                "phone": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "role": {
-                  "example": "any"
-                },
-                "permissions": {
+                "type": {
                   "example": "any"
                 }
               }
@@ -244,114 +179,7 @@
         }
       }
     },
-    "/api/trees/treetypes": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "sci_name",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "med_use",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "food",
-            "in": "query",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/trees/{search}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "search",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/trees/addtreetype": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "tree_id": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "scientific_name": {
-                  "example": "any"
-                },
-                "family": {
-                  "example": "any"
-                },
-                "habit": {
-                  "example": "any"
-                },
-                "remarkable_char": {
-                  "example": "any"
-                },
-                "med_use": {
-                  "example": "any"
-                },
-                "other_use": {
-                  "example": "any"
-                },
-                "food": {
-                  "example": "any"
-                },
-                "eco_value": {
-                  "example": "any"
-                },
-                "parts_used": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/trees/treetypes/{id}": {
+    "/api/groups/{id}": {
       "put": {
         "description": "",
         "parameters": [
@@ -360,24 +188,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "scientific_name": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -391,6 +201,65 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/user-groups/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "example": "any"
+                },
+                "group_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/user-groups/{user_id}/{group_id}": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "group_id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -431,19 +300,6 @@
         }
       }
     },
-    "/api/trees/bulk": {
-      "post": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
     "/api/trees/{id}": {
       "put": {
         "description": "",
@@ -453,30 +309,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "sapling_id": {
-                  "example": "any"
-                },
-                "tree_id": {
-                  "example": "any"
-                },
-                "plot_id": {
-                  "example": "any"
-                },
-                "lat": {
-                  "example": "any"
-                },
-                "user_id": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -596,16 +428,9 @@
         }
       }
     },
-    "/api/trees/plot/count": {
-      "get": {
+    "/api/plant-types/get": {
+      "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "query",
-            "type": "string"
-          }
-        ],
         "responses": {
           "default": {
             "description": ""
@@ -613,24 +438,7 @@
         }
       }
     },
-    "/api/trees/plot/list": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "plot_name",
-            "in": "query",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/trees/update/photo": {
+    "/api/plant-types/": {
       "post": {
         "description": "",
         "parameters": [
@@ -640,14 +448,48 @@
             "schema": {
               "type": "object",
               "properties": {
-                "sapling_id": {
+                "name": {
                   "example": "any"
                 },
-                "date_added": {
+                "plant_type_id": {
                   "example": "any"
                 }
               }
             }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/{id}": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -920,93 +762,11 @@
                 "sapling_ids": {
                   "example": "any"
                 },
-                "link": {
-                  "example": "any"
-                },
-                "type": {
+                "event_id": {
                   "example": "any"
                 }
               }
             }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/mytrees/albums": {
-      "delete": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "user_id": {
-                  "example": "any"
-                },
-                "album_name": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/mytrees/albums/{email}": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "email",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "album_name": {
-                  "example": "any"
-                },
-                "files": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      },
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "email",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "responses": {
@@ -1040,9 +800,6 @@
                 },
                 "boundaries": {
                   "example": "any"
-                },
-                "center": {
-                  "example": "any"
                 }
               }
             }
@@ -1058,23 +815,6 @@
     "/api/plots/update": {
       "post": {
         "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "shortname": {
-                  "example": "any"
-                },
-                "boundaries": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "default": {
             "description": ""
@@ -1128,48 +868,51 @@
         }
       }
     },
-    "/api/events/addevents": {
+    "/api/sites/get": {
       "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/{id}": {
+      "put": {
         "description": "",
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "sapling_id": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "albumimages": {
-                  "example": "any"
-                },
-                "userimages": {
-                  "example": "any"
-                },
-                "donor": {
-                  "example": "any"
-                },
-                "org": {
-                  "example": "any"
-                },
-                "gifted_by": {
-                  "example": "any"
-                },
-                "planted_by": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "plot_id": {
-                  "example": "any"
-                }
-              }
-            }
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -1182,55 +925,6 @@
     "/api/events/": {
       "get": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      },
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "sapling_id": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "albumimages": {
-                  "example": "any"
-                },
-                "userimages": {
-                  "example": "any"
-                },
-                "donor": {
-                  "example": "any"
-                },
-                "org": {
-                  "example": "any"
-                },
-                "gifted_by": {
-                  "example": "any"
-                },
-                "planted_by": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "plot_id": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "default": {
             "description": ""
@@ -1256,82 +950,6 @@
         }
       }
     },
-    "/api/events/birthday": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "query",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/events/org": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "fromdate",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "todate",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "org",
-            "in": "query",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/events/plot": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "fromdate",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "todate",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "plot",
-            "in": "query",
-            "type": "string"
-          },
-          {
-            "name": "link",
-            "in": "query",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/events/corp/add": {
       "post": {
         "description": "",
@@ -1342,9 +960,6 @@
             "schema": {
               "type": "object",
               "properties": {
-                "sapling_ids": {
-                  "example": "any"
-                },
                 "event_name": {
                   "example": "any"
                 },
@@ -1352,30 +967,6 @@
                   "example": "any"
                 },
                 "long_desc": {
-                  "example": "any"
-                },
-                "logos": {
-                  "example": "any"
-                },
-                "header_img": {
-                  "example": "any"
-                },
-                "memoryimages": {
-                  "example": "any"
-                },
-                "plot_id": {
-                  "example": "any"
-                },
-                "title": {
-                  "example": "any"
-                },
-                "short_desc": {
-                  "example": "any"
-                },
-                "num_people": {
-                  "example": "any"
-                },
-                "date_org": {
                   "example": "any"
                 }
               }
@@ -1415,48 +1006,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "logos": {
-                  "example": "any"
-                },
-                "header_img": {
-                  "example": "any"
-                },
-                "memoryimages": {
-                  "example": "any"
-                },
-                "event_link": {
-                  "example": "any"
-                },
-                "event_name": {
-                  "example": "any"
-                },
-                "sapling_ids": {
-                  "example": "any"
-                },
-                "plot_id": {
-                  "example": "any"
-                },
-                "title": {
-                  "example": "any"
-                },
-                "short_desc": {
-                  "example": "any"
-                },
-                "long_desc": {
-                  "example": "any"
-                },
-                "num_people": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -1494,12 +1043,6 @@
               "properties": {
                 "name": {
                   "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
                 }
               }
             }
@@ -1531,12 +1074,6 @@
               "type": "object",
               "properties": {
                 "name": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "type": {
                   "example": "any"
                 }
               }
@@ -1577,24 +1114,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -1690,102 +1209,6 @@
         }
       }
     },
-    "/api/activity/": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/activity/addactivity": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "title": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "date": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "images": {
-                  "example": "any"
-                },
-                "author": {
-                  "example": "any"
-                },
-                "videolink": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/search/": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/login/user": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "params": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/login/verifytoken": {
-      "post": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/auth/google": {
       "post": {
         "description": "",
@@ -1810,116 +1233,9 @@
         }
       }
     },
-    "/api/contributions/": {
-      "post": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/contributions/verify": {
-      "post": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/contributions/all": {
+    "/api/donations/": {
       "get": {
         "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/ponds/add": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "pond_name": {
-                  "example": "any"
-                },
-                "lengthFt": {
-                  "example": "any"
-                },
-                "length": {
-                  "example": "any"
-                },
-                "widthFt": {
-                  "example": "any"
-                },
-                "width": {
-                  "example": "any"
-                },
-                "depthFt": {
-                  "example": "any"
-                },
-                "depth": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "user_id": {
-                  "example": "any"
-                },
-                "plot_code": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/ponds/update": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "pond_name": {
-                  "example": "any"
-                },
-                "levelFt": {
-                  "example": "any"
-                },
-                "user_id": {
-                  "example": "any"
-                },
-                "date": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "default": {
             "description": ""
@@ -1943,31 +1259,25 @@
                 "pond_name": {
                   "example": "any"
                 },
-                "lengthFt": {
+                "length_ft": {
                   "example": "any"
                 },
                 "length": {
                   "example": "any"
                 },
-                "widthFt": {
+                "width_ft": {
                   "example": "any"
                 },
                 "width": {
                   "example": "any"
                 },
-                "depthFt": {
+                "depth_ft": {
                   "example": "any"
                 },
                 "depth": {
                   "example": "any"
                 },
                 "type": {
-                  "example": "any"
-                },
-                "user_id": {
-                  "example": "any"
-                },
-                "plot_code": {
                   "example": "any"
                 }
               }
@@ -1998,48 +1308,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "tags": {
-                  "example": "any"
-                },
-                "desc": {
-                  "example": "any"
-                },
-                "type": {
-                  "example": "any"
-                },
-                "boundaries": {
-                  "example": "any"
-                },
-                "date_added": {
-                  "example": "any"
-                },
-                "images": {
-                  "example": "any"
-                },
-                "lengthFt": {
-                  "example": "any"
-                },
-                "widthFt": {
-                  "example": "any"
-                },
-                "depthFt": {
-                  "example": "any"
-                },
-                "updates": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -2056,39 +1324,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/ponds/update-pond-level": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "pond_name": {
-                  "example": "any"
-                },
-                "levelFt": {
-                  "example": "any"
-                },
-                "user_id": {
-                  "example": "any"
-                },
-                "date": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -2133,33 +1368,6 @@
         }
       }
     },
-    "/api/images/addmemories": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "date": {
-                  "example": "any"
-                },
-                "memoryimages": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/onsitestaff/": {
       "post": {
         "description": "",
@@ -2171,24 +1379,6 @@
               "type": "object",
               "properties": {
                 "name": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "phone": {
-                  "example": "any"
-                },
-                "permissions": {
-                  "example": "any"
-                },
-                "role": {
-                  "example": "any"
-                },
-                "dob": {
-                  "example": "any"
-                },
-                "date_added": {
                   "example": "any"
                 }
               }
@@ -2203,13 +1393,6 @@
       },
       "get": {
         "description": "",
-        "parameters": [
-          {
-            "name": "role",
-            "in": "query",
-            "type": "string"
-          }
-        ],
         "responses": {
           "default": {
             "description": ""
@@ -2226,33 +1409,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "phone": {
-                  "example": "any"
-                },
-                "dob": {
-                  "example": "any"
-                },
-                "role": {
-                  "example": "any"
-                },
-                "permissions": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
