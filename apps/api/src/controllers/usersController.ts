@@ -235,9 +235,13 @@ export const updateUser = async (req: Request, res: Response) => {
     let result = await user.save();
     res.status(status.success).json(result);
   } catch (error: any) {
+    let errorMsg = error.message;
+    if (error.name === 'MongoServerError' && error.code === 11000) {
+      errorMsg = "User with same name and email already exists";
+    }
     res.status(status.error).json({
       status: status.error,
-      message: error.message,
+      message: errorMsg,
     });
   }
 };

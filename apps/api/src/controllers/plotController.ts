@@ -133,7 +133,7 @@ export const getPlots = async (req: Request,res: Response) => {
     }
     try {
         let result = await getPlotsWithTreesCount(offset, limit, filters);
-        let resultCount = await PlotModel.find(filters).estimatedDocumentCount();
+        let resultCount = await PlotModel.find(filters).count();
         res.status(status.success).send({
             result: result,
             total: resultCount
@@ -157,7 +157,7 @@ export const getPlotsByFilters = async (req: Request,res: Response) => {
     }
     try {
         let result = await getPlotsWithTreesCount(offset, limit, filters);
-        let resultCount = await PlotModel.find(filters).estimatedDocumentCount();
+        let resultCount = await PlotModel.find(filters).count();
         res.status(status.success).send({
             result: result,
             total: resultCount
@@ -178,15 +178,17 @@ const getPlotsWithTreesCount = async (offset: number, limit: number, filters: an
                 from: "trees",
                 localField: "_id",
                 foreignField: "plot_id",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "user_tree_regs",
+                            localField: "_id",
+                            foreignField: "tree",
+                            as: "assigned"
+                        }
+                    }
+                ],
                 as: "trees"
-            }
-        },
-        {
-            $lookup: {
-                from: "user_tree_regs",
-                localField: "trees._id",
-                foreignField: "tree",
-                as: "user_tree_regs"
             }
         },
         {
@@ -197,17 +199,33 @@ const getPlotsWithTreesCount = async (offset: number, limit: number, filters: an
                         $filter: {
                             input: "$trees",
                             as: "tree",
-                            cond: { $ne: ["$$tree.mapped_to", null] }
+                            cond: { $ifNull: ["$$tree.mapped_to", null] }
                         }
                     }
                 },
-                assigned_trees_count: { $size: "$user_tree_regs" }
+                assigned_trees_count: { 
+                    $size: {
+                        $filter: {
+                            input: "$trees",
+                            as: "tree", 
+                            cond: { $gt: [ { $size: "$$tree.assigned" } , 0] }
+                        }
+                    }
+                },
+                available_trees_count: { 
+                    $size: {
+                        $filter: {
+                            input: "$trees",
+                            as: "tree",
+                            cond: { $and: [ { $eq: [ { $size: "$$tree.assigned" } , 0] }, { $eq: [ { $ifNull: ["$$tree.mapped_to", null] }, null]} ] }
+                        }
+                    }
+                }
             }
         },
         {
             $project: {
                 trees: 0,
-                user_tree_regs: 0
             }
         },
         { $skip: offset },
