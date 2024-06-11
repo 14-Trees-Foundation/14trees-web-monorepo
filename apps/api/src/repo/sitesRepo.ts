@@ -1,4 +1,3 @@
-import { Op } from 'sequelize';
 import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
 
 export class SiteRepository {
@@ -10,17 +9,12 @@ export class SiteRepository {
         return sites;
     }
 
-    // static async addSite(data: any): Promise<Site> {
-    //     const siteData: SiteCreationAttributes = {
-    //         name: data.name,
-    //         date_added: new Date(),
-    //         desc: data.desc || '',
-    //         type: data.type || '',
-    //     };
-
-    //     const site = Site.create(siteData);
-    //     return site;
-    // }
+    static async addSite(siteData: SiteCreationAttributes): Promise<Site> {
+        siteData.created_at = new Date();
+        siteData.updated_at = new Date();
+        const site = Site.create(siteData);
+        return site;
+    }
 
     static async updateSite(siteData: SiteAttributes): Promise<Site> {
         const site = await Site.findByPk(siteData.id);

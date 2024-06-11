@@ -29,6 +29,12 @@ interface SiteAttributes {
     temp_copy_of_old_site_key: string | null;
     temp_old_site_name_in_english: string | null;
     temp_old_site_name_in_marathi: string | null;
+    album: string | null;
+    album_contains: string | null;
+    tag: string | null;
+    status: string | null;
+    remark: string | null;
+    hosted_at: string | null;
     created_at?: Date;
     updated_at?: Date;
 }
@@ -122,6 +128,24 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column(DataType.STRING)
     temp_old_site_name_in_marathi!: string | null;
+
+    @Column(DataType.STRING)
+    album!: string | null;
+
+    @Column(DataType.STRING)
+    album_contains!: string | null;
+
+    @Column(DataType.STRING)
+    tag!: string | null;
+
+    @Column(DataType.STRING)
+    status!: string | null;
+
+    @Column(DataType.STRING)
+    remark!: string | null;
+
+    @Column(DataType.STRING)
+    hosted_at!: string | null;
 
     @Column(DataType.DATE)
     created_at?: Date;

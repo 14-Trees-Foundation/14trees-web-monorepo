@@ -23,6 +23,19 @@ export const getSites = async (req: Request, res: Response) => {
     }
 }
 
+export const addSite = async (req: Request, res: Response) => {
+    const reqData = req.body
+    try {
+        let result = await SiteRepository.addSite(reqData);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}
+
 export const updateSite = async (req: Request, res: Response) => {
     try {
         let result = await SiteRepository.updateSite(req.body)
