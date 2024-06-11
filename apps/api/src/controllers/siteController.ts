@@ -1,6 +1,8 @@
 import { status } from "../helpers/status";
+import { FilterItem } from "../models/pagination";
 import { Site } from "../models/sites";
 import { SiteRepository } from "../repo/sitesRepo";
+import { getQueryExpression } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
   
@@ -12,8 +14,17 @@ import { Request, Response } from "express";
 
 export const getSites = async (req: Request, res: Response) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    let whereClause = {};
+    
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+        })
+    }
+
     try {
-        let result = await SiteRepository.getSites(offset, limit);
+        let result = await SiteRepository.getSites(offset, limit, whereClause);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

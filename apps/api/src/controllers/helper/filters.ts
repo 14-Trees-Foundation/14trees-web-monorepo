@@ -1,23 +1,24 @@
+import { Op, WhereOptions } from "sequelize";
 
-export const getQueryExpression = (filedName: string, operatorValue: string, value: string | string[] | undefined) => {
+export const getQueryExpression = (filedName: string, operatorValue: string, value: string | string[] | undefined): WhereOptions => {
 
     switch(operatorValue) {
         case 'contains':
-            return { [filedName]: { $regex: new RegExp((value as string), 'i') } };
+            return { [filedName]: { [Op.like]: `%${value}%` }};
         case 'equals':
             return { [filedName]: value };
         case 'startsWith':
-            return { [filedName]: { $regex: new RegExp( '^' + value, 'i') } };
+            return { [filedName]: { [Op.like]: `${value}%` }};
         case 'endsWith':
-            return { [filedName]: { $regex: new RegExp( value + '$', 'i') } };
+            return { [filedName]: { [Op.like]: `%${value}` }};
         case 'isEmpty':
-            return { $or: [{ [filedName]: { $exists: false } },{ [filedName]: { $exists: true, $eq: null }}] }
+            return { [filedName]: { [Op.is]: null } };
         case 'isNotEmpty':
-            return { [filedName]: { $exists: true, $ne: null } }
+            return { [filedName]: { [Op.not]: null } }
         case 'isAnyOf':
-            return { [filedName]: { $in: value } };
+            return { [filedName]: { [Op.in]: value } };
 
         default:
-            return value
+            return { [filedName]: value }
     }
 }

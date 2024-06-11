@@ -1,12 +1,16 @@
+import { WhereOptions } from 'sequelize';
 import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
+import { PaginatedResponse } from '../models/pagination';
 
 export class SiteRepository {
-    static async getSites(offset: number = 0, limit: number = 20): Promise<Site[]> {
+    static async getSites(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Site>> {
         const sites = await Site.findAll({
+            where: whereClause,
             offset: Number(offset),
             limit: Number(limit),
         });
-        return sites;
+        const count = await Site.count({ where: whereClause });
+        return { results: sites, total: count, offset: offset };
     }
 
     static async addSite(siteData: SiteCreationAttributes): Promise<Site> {
