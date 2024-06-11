@@ -132,7 +132,7 @@ export const getPlots = async (req: Request,res: Response) => {
         filters["name"] = new RegExp(req.query?.name as string, "i")
     }
     try {
-        let result = await PlotModel.find(filters).skip(offset).limit(limit);
+        let result = await getPlotsWithTreesCount(offset, limit, filters);
         let resultCount = await PlotModel.find(filters).estimatedDocumentCount();
         res.status(status.success).send({
             result: result,
@@ -146,8 +146,8 @@ export const getPlots = async (req: Request,res: Response) => {
     }
 }
 
-export const getPlotsByFilters = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+export const getPlotsByFilters = async (req: Request,res: Response) => {
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
     let filterReq = req.body.filters;
     let filters = {};
     if (filterReq && filterReq.length != 0) {
@@ -156,17 +156,64 @@ export const getPlotsByFilters = async (req: Request, res: Response) => {
       });
     }
     try {
-      const plots = await PlotModel.find(filters).skip(offset).limit(limit);
-      const plotCount = await PlotModel.find(filters).count();
-      res.status(status.success).send({
-        result: plots,
-        total: plotCount
-      });
+        let result = await getPlotsWithTreesCount(offset, limit, filters);
+        let resultCount = await PlotModel.find(filters).estimatedDocumentCount();
+        res.status(status.success).send({
+            result: result,
+            total: resultCount
+        });
     } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-      return;
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
     }
-};
+}
+
+const getPlotsWithTreesCount = async (offset: number, limit: number, filters: any) => {
+    return await PlotModel.aggregate([
+        { $match: filters },
+        {
+            $lookup: {
+                from: "trees",
+                localField: "_id",
+                foreignField: "plot_id",
+                as: "trees"
+            }
+        },
+        {
+            $lookup: {
+                from: "user_tree_regs",
+                localField: "trees._id",
+                foreignField: "tree",
+                as: "user_tree_regs"
+            }
+        },
+        {
+            $addFields: {
+                trees_count: { $size: "$trees" },
+                mapped_trees_count: {
+                    $size: {
+                        $filter: {
+                            input: "$trees",
+                            as: "tree",
+                            cond: { $ne: ["$$tree.mapped_to", null] }
+                        }
+                    }
+                },
+                assigned_trees_count: { $size: "$user_tree_regs" }
+            }
+        },
+        {
+            $project: {
+                trees: 0,
+                user_tree_regs: 0
+            }
+        },
+        { $skip: offset },
+        { $limit: limit },
+    ])
+}
 
 export const deletePlot = async (req: Request,res: Response) => {
     try {
