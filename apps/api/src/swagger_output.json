@@ -5,10 +5,10 @@
     "description": "Backend APIs for 14Trees-service",
     "version": "1.0.0"
   },
-  "host": "dev-api.14trees.org",
+  "host": "localhost:8088",
   "basePath": "/",
   "schemes": [
-    "https"
+    "http"
   ],
   "paths": {
     "/api/users/add": {
@@ -776,7 +776,17 @@
         }
       }
     },
-    "/api/plots/add": {
+    "/api/plots/get": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plots/": {
       "post": {
         "description": "",
         "parameters": [
@@ -792,10 +802,10 @@
                 "name": {
                   "example": "any"
                 },
-                "plot_code": {
+                "plot_id": {
                   "example": "any"
                 },
-                "plot_id": {
+                "plot_code": {
                   "example": "any"
                 },
                 "boundaries": {
@@ -812,32 +822,12 @@
         }
       }
     },
-    "/api/plots/update": {
-      "post": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/plots/": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/plots/{search}": {
-      "get": {
+    "/api/plots/{id}": {
+      "put": {
         "description": "",
         "parameters": [
           {
-            "name": "search",
+            "name": "id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -848,9 +838,7 @@
             "description": ""
           }
         }
-      }
-    },
-    "/api/plots/{id}": {
+      },
       "delete": {
         "description": "",
         "parameters": [
