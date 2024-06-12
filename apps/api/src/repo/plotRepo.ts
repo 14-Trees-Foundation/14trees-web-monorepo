@@ -1,5 +1,6 @@
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
+import { PaginatedResponse } from '../models/pagination';
 
 export class PlotRepository {
     public static async updatePlot(plotData: PlotAttributes): Promise<Plot> {
@@ -7,13 +8,13 @@ export class PlotRepository {
         if (!plot) {
             throw new Error("Plot doesn't exist");
         }
-        const updatedPlot = plot.update(plotData);
+        const updatedPlot = await plot.update(plotData);
         return updatedPlot;
     }
 
-    public static async addPlot( plotData: any): Promise<Plot> {
+    public static async addPlot(plotData: any): Promise<Plot> {
         // Check if plot type exists
-        let plotExists = await Plot.findOne({ where: { plot_id: plotData.plot_code } });
+        let plotExists = await Plot.findOne({ where: { plot_id: plotData.plot_id } });
 
         // If plot exists, return error
         if (plotExists) {
@@ -24,22 +25,21 @@ export class PlotRepository {
             plot_id: plotData.plot_code,
             boundaries: plotData.boundaries,
             center: plotData.center,
+            created_at: new Date(),
+            updated_at: new Date()
         };
         const plot = await Plot.create(obj);
         return plot;
     }
 
-    public static async getPlots(name?: string, offset: number = 0, limit: number = 10): Promise<Plot[]> {
-        const whereClause: Record<string, any> = {};
-        if (name) {
-            whereClause["name"] = { [ Op.iLike]: `%${name}%` };
-        }
-        const result = await Plot.findAll({
+    public static async getPlots(offset: number = 0, limit: number = 10, whereClause: WhereOptions): Promise<PaginatedResponse<Plot>> {
+        const plots = await Plot.findAll({
             where: whereClause,
             offset: offset,
             limit: limit
         });
-        return result;
+        const count = await Plot.count({ where: whereClause });
+        return { offset: offset, total: count, results: plots };
     }
 
     public static async deletePlot(plotId: string): Promise<number> {

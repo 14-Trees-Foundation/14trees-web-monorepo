@@ -3,6 +3,8 @@ import { status } from "../helpers/status";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { Plot } from "../models/plot";
+import { FilterItem } from "../models/pagination";
+import { getQueryExpression } from "./helper/filters";
 
 /*
     Model - Plot
@@ -29,11 +31,11 @@ export const addPlot = async (req: Request,res: Response) => {
                 req.body["plot_name"] = req.body.name;
             }
         }
-        if (!req.body.plot_code) {
-            if (!req.body.plot_id) {
+        if (!req.body.plot_id) {
+            if (!req.body.plot_code) {
                 throw new Error("Short plot code is required");
             } else {
-                req.body["plot_code"] = req.body.plot_id;
+                req.body["plot_id"] = req.body.plot_code;
             }
         }
         if (!req.body.boundaries) {
@@ -54,8 +56,16 @@ export const addPlot = async (req: Request,res: Response) => {
 
 export const getPlots = async (req: Request,res: Response) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    let whereClause = {};
+
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+        })
+    }
     try {
-        let result = await PlotRepository.getPlots(req.query?.name?.toString(), offset, limit);
+        let result = await PlotRepository.getPlots(offset, limit, whereClause);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -77,19 +87,19 @@ export const deletePlot = async (req: Request,res: Response) => {
     }
 };
 
-export const searchPlots = async (req: Request, res: Response) => {
-    try {
-      if (!req.params.search || req.params.search.length < 3) {
-        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-        return;
-      }
+// export const searchPlots = async (req: Request, res: Response) => {
+//     try {
+//       if (!req.params.search || req.params.search.length < 3) {
+//         res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+//         return;
+//       }
   
-      const { offset, limit } = getOffsetAndLimitFromRequest(req);
-      const plots = await PlotRepository.getPlots(req.params.search, offset, limit);
-      res.status(status.success).send(plots);
-      return;
-    } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-      return;
-    }
-};
+//       const { offset, limit } = getOffsetAndLimitFromRequest(req);
+//       const plots = await PlotRepository.getPlots(req.params.search, offset, limit);
+//       res.status(status.success).send(plots);
+//       return;
+//     } catch (error: any) {
+//       res.status(status.bad).send({ error: error.message });
+//       return;
+//     }
+// };

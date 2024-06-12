@@ -14,6 +14,8 @@ interface PlotAttributes {
   status?: string;
   land_type?: number;
   category?: number;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface PlotCreationAttributes
@@ -60,6 +62,12 @@ implements PlotAttributes {
 
     @Column({ type: DataType.NUMBER })
     category?: number;
+
+    @Column({ type: DataType.DATE })
+    created_at!: Date;
+
+    @Column({ type: DataType.DATE })
+    updated_at!: Date;
 
 }
 
