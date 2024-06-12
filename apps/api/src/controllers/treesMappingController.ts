@@ -338,9 +338,9 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
 
   try {
     let user = await UserModel.findOne({ email: email_id });
-    if (!user) {
-      res.status(status.error).send({error: "user with given email doesn't exists"});
-      return;
+    if (user === null) {
+      let userDoc = getUserDocumentFromRequestBody(req.body);
+      user = await userDoc.save();
     }
 
     let plot = await PlotModel.findOne({ $or: [
