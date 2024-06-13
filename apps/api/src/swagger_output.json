@@ -11,30 +11,6 @@
     "http"
   ],
   "paths": {
-    "/api/users/add": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/users/": {
       "get": {
         "description": "",
@@ -67,11 +43,24 @@
               "properties": {
                 "name": {
                   "example": "any"
+                },
+                "email": {
+                  "example": "any"
                 }
               }
             }
           }
         ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/users/get": {
+      "post": {
+        "description": "",
         "responses": {
           "default": {
             "description": ""
@@ -144,15 +133,17 @@
         }
       }
     },
-    "/api/groups/": {
-      "get": {
+    "/api/groups/get": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
             "description": ""
           }
         }
-      },
+      }
+    },
+    "/api/groups/": {
       "post": {
         "description": "",
         "parameters": [
@@ -216,6 +207,18 @@
     "/api/user-groups/": {
       "get": {
         "description": "",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "group_id",
+            "in": "query",
+            "type": "string"
+          }
+        ],
         "responses": {
           "default": {
             "description": ""

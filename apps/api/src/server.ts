@@ -1,3 +1,4 @@
+require("dotenv").config();
 import path from "path";
 import express, { Request } from "express";
 const morgan = require("morgan");
@@ -33,8 +34,6 @@ import pondsRoutes from "./routes/pondsRoutes";
 // import imageRoutes from "./routes/imageRoutes";
 import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
 import donationRoutes from "./routes/donationRoutes"
-
-require("dotenv").config();
 
 let swaggerFile: any;
 try {

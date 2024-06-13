@@ -9,10 +9,11 @@ import { Request, Response } from "express";
     CRUD Operations for user groups table
 */
 
-export const getUserGroups = async (req: Request, res: Response) => {
-    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+export const getUserGroup = async (req: Request, res: Response) => {
+    const userId: string = req.query.user_id as string;
+    const groupId: string = req.query.group_id as string;
     try {
-        let result = await UserGroupRepository.getUserGroups(offset, limit);
+        let result = await UserGroupRepository.getUserGroup(userId, groupId);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

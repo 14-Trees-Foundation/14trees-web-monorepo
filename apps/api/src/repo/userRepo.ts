@@ -1,5 +1,6 @@
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { User, UserAttributes, UserCreationAttributes } from '../models/user';
+import { PaginatedResponse } from '../models/pagination';
 
 export const getUserId = (name:string, email: string) => {
     let userId = name.toLowerCase() + email.toLowerCase();
@@ -13,10 +14,10 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
 
     return  {
         name: reqBody.name,
-        phone: reqBody.contact !== undefined ? reqBody.contact : reqBody.phone,
+        phone: reqBody.phone,
         email: reqBody.email,
         user_id: userId,
-        birth_date: reqBody.dob,
+        birth_date: reqBody.birth_date,
         created_at: new Date(),
         updated_at: new Date(),
     } as UserCreationAttributes;
@@ -26,7 +27,6 @@ export class UserRepository {
     public static async addUser(data: any): Promise<User> {
         let obj: UserCreationAttributes = getUserDocumentFromRequestBody(data);
         const user = await User.create(obj);
-        console.log(user);
         return user;
     }
 
@@ -38,36 +38,40 @@ export class UserRepository {
     public static async updateUser(data: UserAttributes): Promise<User> {
         const user = await User.findByPk(data.id);
         if (!user) {
-        throw new Error("User not found")
+            throw new Error("User not found")
         }
+
+        // user validation/invalidation update logic
+        if (data.status === "system_invalidated" || data.status === "user_validated") {
+            data.last_system_updated_at = new Date();
+        } else {
+            data.status = undefined;
+            data.status_message = undefined;
+            data.last_system_updated_at = undefined;
+        }
+        data.updated_at = new Date();
+
         const updatedUser = await user.update(data);
         return updatedUser;
     }
 
-    public static async getUsers(query: any, offset: number, limit: number): Promise<User[]> {
-        const whereClause: Record<string, any> = {};
-        if (query.name) {
-            whereClause.name = { [Op.iLike]: `%${query.name}%` };
-        }
-        if (query.email) {
-            whereClause.email = { [Op.iLike]: `%${query.email}%` };
-        }
-        if (query.phone) {
-            whereClause.phone = { [Op.iLike]: `%${query.phone}%` };
-        }
-    
-        return await User.findAll({
-            where: whereClause,
-            offset,
-            limit,
-        });
+    public static async getUsers(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<User>> {
+        return {
+            offset: offset,
+            total: await User.count({ where: whereClause }),
+            results: await User.findAll({
+                where: whereClause,
+                offset,
+                limit
+            })
+        };
     }
 
     public static async searchUsers(searchStr: string, offset: number, limit: number): Promise<User[]> {
         const whereClause: Record<string, any> = { [Op.or]: [
-            { name: {[Op.like]:`%${searchStr}%` } },
-            { phone: {[Op.like]:`%${searchStr}%` } },
-            { email: {[Op.like]:`%${searchStr}%` } },
+            { name: {[Op.iLike]:`%${searchStr}%` } },
+            { phone: {[Op.iLike]:`%${searchStr}%` } },
+            { email: {[Op.iLike]:`%${searchStr}%` } },
         ]};
     
         return await User.findAll({

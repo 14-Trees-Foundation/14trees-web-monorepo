@@ -4,10 +4,8 @@ import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
-// @deprecated
-routes.post('/add', users.addUser);
-
 routes.get('/', users.getUser);
+routes.post('/get', users.getUsers);
 routes.get('/:search', users.searchUsers);
 routes.post('/', users.addUser);
 routes.post('/bulk', uploadFiles.single('file'),users.addUsersBulk);

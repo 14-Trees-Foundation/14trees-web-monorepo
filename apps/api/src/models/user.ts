@@ -10,6 +10,9 @@ interface UserAttributes {
   phone: string;
   email: string;
   birth_date?: Date;
+  status?: string;
+  status_message?: string[];
+  last_system_updated_at?: Date;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -43,6 +46,15 @@ implements UserAttributes {
 
   @Column(DataType.DATE)
   birth_date?: Date;
+
+  @Column(DataType.ENUM('system_invalidated', 'user_validated'))
+  status?: string;
+
+  @Column(DataType.ARRAY(DataType.STRING))
+  status_message?: string[];
+
+  @Column(DataType.DATE)
+  last_system_updated_at?: Date;
 
   @Column(DataType.DATE)
   created_at?: Date;

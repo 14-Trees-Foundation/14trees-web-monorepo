@@ -1,10 +1,9 @@
 import { UserGroup, UserGroupAttributes, UserGroupCreationAttributes } from '../models/user_group';
 
 export class UserGroupRepository {
-    static async getUserGroups(offset: number = 0, limit: number = 20): Promise<UserGroup[]> {
+    static async getUserGroup(userId: string, groupId: string): Promise<UserGroup[]> {
         const results = await UserGroup.findAll({
-            offset: Number(offset),
-            limit: Number(limit),
+            where: { user_id: userId, group_id: groupId },
         });
         return results;
     }

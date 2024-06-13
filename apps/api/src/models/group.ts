@@ -7,7 +7,9 @@ interface GroupAttributes {
 	id: number;
 	name: string;
 	type: GroupType;
-  description: string;
+  description?: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface GroupCreationAttributes
@@ -21,6 +23,7 @@ implements GroupAttributes {
     type: DataType.NUMBER,
     allowNull: false,
     primaryKey: true,
+    autoIncrement: true,
     unique: true
   })
   id!: number;
@@ -28,11 +31,20 @@ implements GroupAttributes {
   @Column({ type: DataType.STRING, allowNull: false })
   name!: string;
 
-  @Column({ type: DataType.STRING, allowNull: false })
+  @Column({ 
+    type: DataType.ENUM('visitor', 'corporate', 'family', 'ngo', 'onsite_staff', 'alumni', 'donors'), 
+    allowNull: false 
+  })
   type!: GroupType;
 
   @Column(DataType.TEXT)
-  description!: string;
+  description?: string;
+
+  @Column(DataType.DATE)
+  created_at!: Date;
+
+  @Column(DataType.DATE)
+  updated_at!: Date;
 }
 
 export { Group }

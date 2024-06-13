@@ -1,5 +1,7 @@
 import { status } from "../helpers/status";
+import { FilterItem } from "../models/pagination";
 import { GroupRepository } from "../repo/groupRepo";
+import { getQueryExpression } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
   
@@ -11,8 +13,16 @@ import { Request, Response } from "express";
 
 export const getGroups = async (req: Request, res: Response) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    let whereClause = {};
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+        })
+    }
+
     try {
-        let result = await GroupRepository.getGroups(req.query, offset, limit);
+        let result = await GroupRepository.getGroups(offset, limit, whereClause);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -32,9 +42,10 @@ export const addGroup = async (req: Request, res: Response) => {
         res.status(status.bad).send({ error: "Group type is required" });
         return;
     }
+
     try {
-        const org = await GroupRepository.addGroup(req.body);
-        res.status(status.created).send(org);
+        const group = await GroupRepository.addGroup(req.body);
+        res.status(status.created).send(group);
     } catch (error) {
         res.status(status.bad).json({
             error: error,

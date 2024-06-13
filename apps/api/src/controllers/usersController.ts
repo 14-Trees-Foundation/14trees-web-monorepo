@@ -7,23 +7,79 @@ import csvParser from 'csv-parser';
 import { createObjectCsvWriter } from 'csv-writer';
 import fs from 'fs';
 import { constants } from "../constants";
+import { FilterItem } from "../models/pagination";
+import { getQueryExpression } from "./helper/filters";
 
 /*
     Model - User
     CRUD Operations for users collection
 */
 
-export const addUser = async (req: Request, res: Response) => {
+export const getUser = async (req: Request, res: Response) => {
   try {
-    if (!req.body.name) {
-      throw new Error("User name is required");
+    if (!req.query.email || !req.query.name) {
+      throw new Error("User name and email are required");
+    } 
+    
+    let user = await UserRepository.getUser(req.query.name.toString(), req.query.email.toString());
+    if (user === null) {
+      res.status(status.notfound).send();
+    } else {
+      res.status(status.success).json(user);
     }
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
   }
+};
 
+export const getUsers = async (req: Request, res: Response) => {
   try {
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    let whereClause = {};
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+        })
+    }
+    
+    let users = await UserRepository.getUsers(offset, limit, whereClause);
+    res.status(status.success).json(users);
+  } catch (error: any) {
+    res.status(status.error).send({ error: error.message });
+    return;
+  }
+};
+
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    if (!req.params.search || req.params.search.length < 3) {
+      res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+      return;
+    }
+
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const users = await UserRepository.searchUsers(req.params.search, offset, limit);
+    res.status(status.success).send(users);
+    return;
+  } catch (error:any) {
+    res.status(status.bad).send({ error: error.message });
+    return;
+  }
+};
+
+export const addUser = async (req: Request, res: Response) => {
+  try {
+
+    // validation logic
+    if (!req.body.name) {
+      throw new Error("User name is required");
+    }
+    if (!req.body.email) {
+      throw new Error("User email is required");
+    }
+    
     let user = await UserRepository.addUser(req.body);
     res.status(status.created).json(user);
   } catch (error: any) {
@@ -108,61 +164,10 @@ export const addUsersBulk = async (req: Request, res: Response) => {
   }
 };
 
-export const getUser = async (req: Request, res: Response) => {
-  try {
-    if (req.query.email && req.query.name) {
-      let result = await UserRepository.getUser(req.query.name.toString(), req.query.email.toString());
-      if (result === null) {
-        res.status(status.notfound).send();
-      } else {
-        // let lastProfile = await UserTreeModel.find(
-        //   { user: result._id },
-        //   { _id: 0 },
-        // )
-        //   .populate({
-        //     path: "tree",
-        //     select: "sapling_id date_added -_id",
-        //     populate: { path: "tree_id", select: "name -_id" },
-        //   })
-        //   .select("tree");
-        res.status(status.success).json({
-          user: result,
-        //   tree: lastProfile,
-        });
-      }
-    } else {
-      const { offset, limit } = getOffsetAndLimitFromRequest(req);
-      let result = await UserRepository.getUsers(req.query, offset, limit);
-      res.status(status.success).json(result);
-    }
-
-  } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
-  }
-};
-
-export const searchUsers = async (req: Request, res: Response) => {
-  try {
-    if (!req.params.search || req.params.search.length < 3) {
-      res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-      return;
-    }
-
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const users = await UserRepository.searchUsers(req.params.search, offset, limit);
-    res.status(status.success).send(users);
-    return;
-  } catch (error:any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
-  }
-};
-
 export const updateUser = async (req: Request, res: Response) => {
     try {
-        const treeType = await UserRepository.updateUser(req.body)
-        res.status(status.success).json(treeType);
+        const updatedUser = await UserRepository.updateUser(req.body)
+        res.status(status.success).json(updatedUser);
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
     }

@@ -4,13 +4,13 @@ export const getQueryExpression = (filedName: string, operatorValue: string, val
 
     switch(operatorValue) {
         case 'contains':
-            return { [filedName]: { [Op.like]: `%${value}%` }};
+            return { [filedName]: { [Op.iLike]: `%${value}%` }};
         case 'equals':
             return { [filedName]: value };
         case 'startsWith':
-            return { [filedName]: { [Op.like]: `${value}%` }};
+            return { [filedName]: { [Op.iLike]: `${value}%` }};
         case 'endsWith':
-            return { [filedName]: { [Op.like]: `%${value}` }};
+            return { [filedName]: { [Op.iLike]: `%${value}` }};
         case 'isEmpty':
             return { [filedName]: { [Op.is]: null } };
         case 'isNotEmpty':
