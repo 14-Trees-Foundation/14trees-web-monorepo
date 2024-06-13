@@ -8,6 +8,7 @@ export class PlotRepository {
         if (!plot) {
             throw new Error("Plot doesn't exist");
         }
+        plotData.updated_at = new Date();
         const updatedPlot = await plot.update(plotData);
         return updatedPlot;
     }
@@ -22,9 +23,14 @@ export class PlotRepository {
         }
         let obj: PlotCreationAttributes = {
             name: plotData.plot_name,
-            plot_id: plotData.plot_code,
+            plot_id: plotData.plot_id,
+            tags: plotData.tags,
             boundaries: plotData.boundaries,
             center: plotData.center,
+            gat: plotData.gat,
+            status: plotData.status,
+            land_type: plotData.land_type,
+            category: plotData.category,
             created_at: new Date(),
             updated_at: new Date()
         };
