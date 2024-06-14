@@ -2,18 +2,23 @@ import { Tree, TreeAttributes, TreeCreationAttributes } from "../models/tree";
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
-import { OnsiteStaff } from "../models/onsitestaff";
 import { User } from "../models/user";
 import { Center } from "../models/common";
 import { sequelize } from "../config/postgreDB";
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
+import { PaginatedResponse } from "../models/pagination";
 
 class TreeRepository {
-  public static async getTrees(offset: number = 0, limit: number = 20): Promise<Tree[]> {
-    return await Tree.findAll({
-      offset,
-      limit
-    });
+  public static async getTrees(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Tree>> {
+    return {
+      offset: offset,
+      total: await Tree.count({ where: whereClause }),
+      results: await Tree.findAll({
+        where: whereClause,
+        offset,
+        limit
+      })
+    };
   };
 
   public static async getTreeBySaplingId(saplingId: string): Promise<Tree | null> {
@@ -24,7 +29,7 @@ class TreeRepository {
     return await Tree.findByPk(treeId);
   };
 
-  public static async addTree(data: any, files?: Express.Multer.File[]): Promise<Tree> {
+  public static async addTree(data: any): Promise<Tree> {
 
     // Check if tree type exists
     let plantType = await PlantType.findOne({ where: { id: data.plant_type_id } });
@@ -33,7 +38,7 @@ class TreeRepository {
     }
 
     // Check if plot exists
-    let plot = await Plot.findOne({ where: { plot_id: data.plot_id, id: data.plot_id } })
+    let plot = await Plot.findOne({ where: { id: data.plot_id } })
     if (!plot) {
       throw new Error("Plot ID doesn't exist");
     }
@@ -53,8 +58,8 @@ class TreeRepository {
     let imageUrls = [];
     if (data.images && data.images.length > 0) {
       let images = data.images.split(",");
-      for (const image in images) {
-        const location = await UploadFileToS3(images[image], "trees");
+      for (const idx in images) {
+        const location = await UploadFileToS3(images[idx], "trees");
         if (location !== "") {
           imageUrls.push(location);
         }
@@ -72,11 +77,13 @@ class TreeRepository {
 
     let treeObj: TreeCreationAttributes = {
       sapling_id: data.sapling_id,
-      tree_type_id: plantType.id,
+      plant_type_id: plantType.id,
       plot_id: plot.id,
       images: imageUrls,
       location: loc,
       mapped_to_user: mapped_to?.id,
+      created_at: new Date(),
+      updated_at: new Date(),
     };
     const treeResp = Tree.create(treeObj);
     return treeResp;
@@ -96,6 +103,16 @@ class TreeRepository {
       }
       data.images = imageUrls;
     }
+
+    // user validation/invalidation update logic
+    if (data.status === "system_invalidated" || data.status === "user_validated") {
+      data.last_system_updated_at = new Date();
+    } else {
+        data.status = undefined;
+        data.status_message = undefined;
+        data.last_system_updated_at = undefined;
+    }
+    data.updated_at = new Date();
 
     const tree = await Tree.findByPk(data.id);
     if (!tree) {
@@ -121,14 +138,13 @@ class TreeRepository {
       throw new Error("User with given email not found!");
     }
 
-    const query = `select t.sapling_id, t."location", t.link, t.event_type, tt."name" as tree_type, p."name" as plot, u."name" as user from 
-      trees t, tree_types tt, plots p, user_tree_regs utr, users u 
+    const query = `select t.sapling_id, t."location", t.event_id, pt."name" as plant_type, p."name" as plot, u."name" as assigned_to from 
+      trees t, plant_types pt, plots p, users u 
       where
       --t.mapped_to = '${user.id}' and
-      t.tree_id  = tt."_id" and 
-      t.plot_id  = p."_id"  and 
-      t."_id"  = utr.tree and
-      utr."user" = u."_id"
+      t.plant_type_id  = pt.id and 
+      t.plot_id  = p.id  and 
+      t.assigned_to = u.id
       offset ${offset} limit ${limit}
       `;
 
@@ -140,11 +156,10 @@ class TreeRepository {
 
   public static async getUserTreesCount(offset: number, limit: number) {
 
-    const query = `select u."_id", u."name" as user, u.email, count(t."_id"), count(utr."_id") from 
-      trees t, users u, user_tree_regs utr
-      where t.mapped_to = u."_id" and 
-      t."_id" = utr.tree 
-      group by u."_id", u."name", u.email
+    const query = `select u."id", u."name" as user, u.email, count(t."id"), count(t."assigned_to") from 
+      trees t, users u
+      where t.mapped_to = u."id"
+      group by u."id", u."name", u.email
       offset ${offset} limit ${limit}
       `;
 
@@ -153,12 +168,6 @@ class TreeRepository {
     })
     return data;
   };
-
-
-  public static async updateEventDataInTrees(saplingIds: string[], eventId: number) {
-    const resp = await Tree.update({ event_id: eventId}, { where: { sapling_id: { [Op.in]: saplingIds } } });
-    console.log("Update event data in trees response: ", resp);
-  }
 
   public static async mapTrees(saplingIds: string[], emailId: string) {
     let user = await User.findOne({ where: { email: emailId } });

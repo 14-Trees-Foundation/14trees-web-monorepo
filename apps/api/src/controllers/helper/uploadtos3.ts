@@ -12,7 +12,7 @@ function getNewUploadObjectKey(objectName: string) {
     return Date.now().toString() + "_" + removeSpecialCharacters(objectName);
 }
 
-export const UploadFileToS3 = async (filename: string, type: string, folder_name :string = "") => {
+export const UploadFileToS3 = async (filename: string, type: string, folder_name :string = ""): Promise<string> => {
     const readStream = fs.createReadStream(destImg + filename);
     let bucket;
 

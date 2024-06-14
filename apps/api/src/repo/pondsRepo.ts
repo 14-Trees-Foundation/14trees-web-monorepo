@@ -1,30 +1,30 @@
-import { Op } from 'sequelize';
-import { Pond, PondAttributes, PondCreationAttributes } from '../models/pond'; // Assuming PondModel is the Sequelize model for the Pond entity
+import { WhereOptions } from 'sequelize';
+import { Pond, PondAttributes, PondCreationAttributes } from '../models/pond';
 import { status } from '../helpers/status'
-import { OnsiteStaff } from '../models/onsitestaff'
-import { UploadFileToS3 } from "../controllers/helper/uploadtos3"; // Assuming UploadFileToS3 is a function
-import { Sequelize } from 'sequelize'
+import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { User } from '../models/user';
 import { PondWaterLevel, PondWaterLevelCreationAttributes } from '../models/pond_water_level';
-// import { customAlphabet } from 'nanoid'
-// const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 24)
+import { PaginatedResponse } from '../models/pagination';
 
 export class PondRepository {
   public static async addPond(data: any, files?: Express.Multer.File[]): Promise<Pond> {
 
-    let pondImageUrl = "";
+    let pondImageUrls = [];
     if (files && files.length !== 0) {
-      pondImageUrl = await UploadFileToS3(files[0].filename, "ponds", data.pond_name);
+      const location = await UploadFileToS3(files[0].filename, "ponds", data.name);
+      pondImageUrls.push(location)
     }
 
     let obj: PondCreationAttributes = {
-      name: data.pond_name,
-      length_ft: data.length,
-      depth_ft: data.depth,
-      width_ft: data.width,
+      name: data.name,
+      length_ft: data.length_ft,
+      depth_ft: data.depth_ft,
+      width_ft: data.width_ft,
       type: data.type,
-      tags: [],
-      images: [pondImageUrl]
+      tags: data.tags,
+      images: pondImageUrls,
+      created_at: new Date(),
+      updated_at: new Date(),
     };
     const pondRes = await Pond.create(obj);
     return pondRes;
@@ -32,10 +32,9 @@ export class PondRepository {
 
   public static async updatePond(data: PondAttributes, files?: Express.Multer.File[]): Promise<Pond> {
 
-    let pondImageUrl = "";
     if (files && files.length !== 0) {
-      pondImageUrl = await UploadFileToS3(files[0].filename, "ponds", data.name);
-      data.images = [pondImageUrl]
+      const location = await UploadFileToS3(files[0].filename, "ponds", data.name);
+      data.images = [location]
     }
 
     const pond = await Pond.findByPk(data.id);
@@ -46,23 +45,17 @@ export class PondRepository {
     return updatedPond;
   }
 
-  public static async getPonds(filters: Record<string, any>, offset: number, limit: number) {
-    try {
-      const whereClause: Record<string, any> = {};
-  
-      if (filters.name) {
-        whereClause.name = { [Op.iLike]: `%${filters.name}%` };
-      }
-      if (filters.type) {
-        whereClause.type = { [Op.iLike]: `%${filters.type}%` };
-      }
-  
-      return await Pond.findAll({
-        where: whereClause,
-        attributes: { exclude: ['updates'] },
-        offset,
-        limit,
-      });
+  public static async getPonds(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Pond>> {
+    try {  
+      return {
+        offset: offset,
+        total: await Pond.count({ where: whereClause }),
+        results: await Pond.findAll({
+          where: whereClause,
+          offset: offset, 
+          limit: limit
+        })
+      };
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -109,14 +102,8 @@ export class PondRepository {
     }
   }
 
-  public static async deletePond(pondId: string): Promise<void> {
-    const resp = await Pond.destroy({ where: { id: pondId } });
-    console.log("Delete Ponds Response for id: %s", pondId, resp);
-  }
-
-  public static async getHistory(pondName: string): Promise<Pond | null> {
-    const result = await Pond.findOne({ where: { name: pondName } });
-    return result;
+  public static async deletePond(pondId: string): Promise<number> {
+    return await Pond.destroy({ where: { id: pondId } });
   }
 
   public static async pondCount(): Promise<number> {

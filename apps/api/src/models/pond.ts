@@ -14,6 +14,8 @@ interface PondAttributes {
   length_ft: number;
   width_ft: number;
   depth_ft: number;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface PondCreationAttributes
@@ -49,7 +51,7 @@ implements PondAttributes {
     type: DataType.JSON,
     allowNull: true
   })
-  boundaries!: { type: string, coordinates: number[][][] };
+  boundaries!: Boundaries;
 
   @Column(DataType.ARRAY(DataType.STRING))
   images!: string[];
@@ -62,6 +64,12 @@ implements PondAttributes {
 
   @Column(DataType.FLOAT)
   depth_ft!: number;
+
+  @Column(DataType.DATE)
+  created_at!: Date;
+
+  @Column(DataType.DATE)
+  updated_at!: Date;
 }
 
 export type {PondCreationAttributes, PondAttributes}

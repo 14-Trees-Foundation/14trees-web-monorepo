@@ -8,6 +8,8 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { PondRepository } from "../repo/pondsRepo";
 import { isArray } from "lodash";
+import { FilterItem } from "../models/pagination";
+import { getQueryExpression } from "./helper/filters";
 
 /*
     Model - Pond
@@ -16,17 +18,13 @@ import { isArray } from "lodash";
 
 export const addPond = async (req: Request, res: Response) => {
   try {
-    if (req.body.name) req.body.pond_name = req.body.name;
-    if (req.body.length_ft) req.body.length = req.body.length_ft;
-    if (req.body.width_ft) req.body.width = req.body.width_ft;
-    if (req.body.depth_ft) req.body.depth = req.body.depth_ft;
-    if (!req.body.pond_name) {
+    if (!req.body.name) {
       throw new Error("Pond name is required");
-    } else if (!req.body.length && isNaN(parseFloat(req.body.length))) {
+    } else if (!req.body.length_ft && isNaN(parseFloat(req.body.length_ft))) {
       throw new Error("Pond height is required");
-    } else if (!req.body.width && isNaN(parseFloat(req.body.width))) {
+    } else if (!req.body.width_ft && isNaN(parseFloat(req.body.width_ft))) {
       throw new Error("Pond width is required");
-    } else if (!req.body.depth && isNaN(parseFloat(req.body.depth))) {
+    } else if (!req.body.depth_ft && isNaN(parseFloat(req.body.depth_ft))) {
       throw new Error("Pond depth is required");
     } else if (!req.body.type) {
       throw new Error(
@@ -64,16 +62,16 @@ export const updatePond = async (req: Request, res: Response) => {
 
 export const getPonds = async (req: Request ,res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
-  let filters: Record<string,any> = {}
-    if (req.query?.name) {
-        filters["name"] = req.query?.name;
-    }
-    if (req.query?.type) {
-        filters["type"] = req.query?.type;
-    }
-    req.files
+  const filters: FilterItem[] = req.body?.filters;
+  let whereClause = {};
+  if (filters && filters.length > 0) {
+      filters.forEach(filter => {
+          whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+      })
+  }
+
   try {
-    const result = await PondRepository.getPonds(filters, offset, limit);
+    const result = await PondRepository.getPonds(offset, limit, whereClause);
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({
@@ -124,7 +122,6 @@ export const getPonds = async (req: Request ,res: Response) => {
 
 export const deletePond = async (req: any,res: any) => {
   try {
-      // let resp = await Pond.findByIdAndDelete(req.params.id).exec();
       let resp = await PondRepository.deletePond(req.params.id) ;
       console.log("Delete Ponds Response for id: %s", req.params.id, resp);
 
@@ -132,40 +129,24 @@ export const deletePond = async (req: any,res: any) => {
         message: "Pond deleted successfully",
       });
   } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-  }
-};
-
-export const getHistory = async (req: any,res: any) => {
-  if (!req.query.pond_name) {
-    res.status(status.bad).send({ error: "Pond name required!" });
-    return;
-  }
-  try {
-    let result = await PondRepository.getHistory(req.query.pond_name);
-    res.status(status.success).send(result);
-  } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
+      res.status(status.error).send({ error: error.message });
   }
 };
 
 export const searchPonds = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     if (!req.params.search || req.params.search.length < 3) {
       res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
       return;
     }
-    let filters: Record<string,any> = {}
-    filters["name"] = req.params.search;
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const ponds = await PondRepository.getPonds(filters, offset, limit);
+
+    let whereClause = getQueryExpression("name", "contains", req.params.search)
+    const ponds = await PondRepository.getPonds(offset, limit, whereClause);
     res.status(status.success).send(ponds);
     return;
   } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
+    res.status(status.error).send({ error: error.message });
     return;
   }
 };

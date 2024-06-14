@@ -13,15 +13,15 @@ import { Event } from './events';
 interface TreeAttributes {
     id: number,
     sapling_id: string,
-    tree_type_id: number,
+    plant_type_id: number,
     plot_id: number,
     images: string[],
     tags: string[],
     location: Center,
     planted_by?: string,
-    mapped_to_user: number,
-    mapped_to_group: number,
-    mapped_at: Date,
+    mapped_to_user?: number,
+    mapped_to_group?: number,
+    mapped_at?: Date,
     sponsored_by_user?: number,
     sponsored_by_group?: number,
     gifted_by?: number,
@@ -30,7 +30,12 @@ interface TreeAttributes {
     assigned_to?: number,
     user_tree_images: string[],
     event_id?: number,
-    description: string,
+    description?: string,
+    status?: string;
+    status_message?: string[];
+    last_system_updated_at?: Date;
+    created_at?: Date;
+    updated_at?: Date;
 };
 
 interface TreeCreationAttributes
@@ -53,7 +58,7 @@ implements TreeAttributes {
 
   @ForeignKey(() => PlantType)
   @Column
-  tree_type_id!: number;
+  plant_type_id!: number;
 
   @ForeignKey(() => Plot)
   @Column
@@ -111,6 +116,21 @@ implements TreeAttributes {
 
   @Column(DataType.ARRAY(DataType.STRING))
   user_tree_images!: string[];
+
+  @Column(DataType.ENUM('system_invalidated', 'user_validated'))
+  status!: string;
+
+  @Column(DataType.ARRAY(DataType.STRING))
+  status_message!: string[];
+
+  @Column(DataType.DATE)
+  last_system_updated_at!: Date;
+
+  @Column(DataType.DATE)
+  created_at!: Date;
+
+  @Column(DataType.DATE)
+  updated_at!: Date;
 }
 
 
