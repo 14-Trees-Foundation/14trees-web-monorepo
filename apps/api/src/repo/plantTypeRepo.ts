@@ -1,18 +1,10 @@
 import { PlantType, PlantTypeAttributes, PlantTypeCreationAttributes } from "../models/plant_type";
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { PaginatedResponse } from "../models/pagination";
-import { Op } from 'sequelize';
+import { WhereOptions } from 'sequelize';
 
 class PlantTypeRepository {
-    public static async getPlantTypes(query: any, offset: number = 0, limit: number = 20): Promise<PaginatedResponse<PlantType>> {
-        let whereClause: Record<string, any> = {}
-        if (query?.name) {
-            whereClause["name"] = { [Op.like]: query.name.toString() }
-        }
-        if (query?.sci_name) {
-            whereClause["scientific_name"] = { [Op.like]: query.sci_name.toString() }
-        }
-
+    public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<PlantType>> {
         return {
             results: await PlantType.findAll({ where: whereClause, offset, limit }),
             total: await PlantType.count({ where: whereClause }),

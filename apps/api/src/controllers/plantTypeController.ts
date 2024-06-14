@@ -8,11 +8,21 @@ import PlantTypeRepository from "../repo/plantTypeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { status } from "../helpers/status";
 import { isArray } from "lodash";
+import { FilterItem } from "../models/pagination";
+import { getQueryExpression } from "./helper/filters";
 
 export const getPlantTypes = async (req: Request, res: Response) => {
-  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const {offset, limit } = getOffsetAndLimitFromRequest(req);
+  const filters: FilterItem[] = req.body?.filters;
+  let whereClause = {};
+  if (filters && filters.length > 0) {
+      filters.forEach(filter => {
+          whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+      })
+  }
+
   try {
-    let result = await PlantTypeRepository.getPlantTypes(req.query, offset, limit);
+    let result = await PlantTypeRepository.getPlantTypes(offset, limit, whereClause);
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({
@@ -75,10 +85,8 @@ export const searchPlantTypes = async (req: Request, res: Response) => {
     }
 
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const query: Record<string, any> = {
-      "name": req.params.search
-    }
-    const plantTypes = await PlantTypeRepository.getPlantTypes(query, offset, limit);
+    let whereClause = getQueryExpression("name", "contains", req.params.search);
+    const plantTypes = await PlantTypeRepository.getPlantTypes(offset, limit, whereClause);
     res.status(status.success).send(plantTypes);
     return;
   } catch (error: any) {
