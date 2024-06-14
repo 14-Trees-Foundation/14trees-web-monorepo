@@ -8,9 +8,11 @@ console.log("Using NODE_ENV: ", process.env.NODE_ENV);
 export const getMongoDBConnectionString = () => {
   const env = process.env.NODE_ENV;
   if (env === "development") {
+
     if (!process.env.MONGODB_CONNECTION_STRING) {
       throw new Error("MONGO_URL is not provided");
     }
+
     return `mongodb://${process.env.MONGODB_CONNECTION_STRING}`;
   } else {
     if (

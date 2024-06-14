@@ -8,6 +8,7 @@ const S3_UPLOAD_TYPE = 'trees';
 import UserModel from "../models/user";
 import ShiftModel from "../models/shifts";
 import LogsModel from "../models/logs";
+import TreesSnapshotModel from "../models/trees_snapshot";
 const CryptoJS = require('crypto-js');
 import { outerTryCatch } from "../helpers/utilsAppV2";
 import Roles from "./helper/roles";
@@ -335,13 +336,11 @@ export const uploadTrees = async (req, res) => {
                 dataUploaded: false,
                 imagesUploaded: [],
                 imagesFailed: [],
-                existsInDB: false
             }
             let existingMatch = await TreeModel.findOne({ sapling_id: saplingID })
             if (existingMatch) {
                 treeUploadStatuses[saplingID].dataUploaded = true;
                 treeUploadStatuses[saplingID].treeId = existingMatch._id;
-                treeUploadStatuses[saplingID].existsInDB = true;
                 continue;
             }
             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
@@ -376,6 +375,118 @@ export const uploadTrees = async (req, res) => {
         return res.send(treeUploadStatuses);
     })
 }
+
+export const uploadNewImages = async (req, res) => {
+    outerTryCatch(res, async () => {
+        const treesWithImages = req.body;
+        console.log("---------treesWithImages:--------------------- ", treesWithImages);
+        const treeUploadStatuses = {};
+
+        for (let tree of treesWithImages) {
+            const saplingID = tree.sapling_id;
+            treeUploadStatuses[saplingID] = {
+                dataUploaded: false,
+                imagesUploaded: [],
+                imagesFailed: [],
+            }
+
+            let existingMatch = await TreeModel.findOne({ sapling_id: saplingID })
+            if (!existingMatch) {
+                treeUploadStatuses[saplingID].dataUploaded = false;
+                continue;
+            }
+            let user = await OnSiteStaff.findOne({ _id: tree.user_id });
+
+            let imageUrl = await uploadImages([tree.image], treeUploadStatuses, saplingID);
+
+            const location = {
+                type: "Point",
+                coordinates: { lat: tree.lat, lng: tree.lng }
+            }
+            const treesnapshotObj = {
+                sapling_id: saplingID,
+                image: imageUrl[0],
+                location: location,
+                user_id: user._id,
+                date_added: (new Date()).toISOString(),
+            }
+
+            const newTreesnapshotInstance = new TreesSnapshotModel(treesnapshotObj) //treesnapshotObj
+            try {
+                await newTreesnapshotInstance.save();
+                treeUploadStatuses[saplingID].dataUploaded = true;
+            }
+            catch (err) {
+                treeUploadStatuses[saplingID].dataUploaded = false;
+                treeUploadStatuses[saplingID].dataSaveError = err;
+            }
+        }
+        console.log('uploadstatuses: ', treeUploadStatuses);
+        return res.send(treeUploadStatuses);
+    })
+}
+
+export const treesUpdatePlot = async (req, res) => {
+    outerTryCatch(res, async () => {
+        const trees = req.body;
+        console.log("uploadTreesNewPlot: ", trees);
+        const treeUploadStatuses = {};
+
+        for (let tree of trees) {
+            const saplingID = tree.sapling_id;
+            treeUploadStatuses[saplingID] = { dataUploaded: false, message: "" };  // Initialize the status object
+
+            let existingMatch = await TreeModel.findOne({ sapling_id: saplingID });
+
+            if (!existingMatch) {
+                treeUploadStatuses[saplingID].message = "Invalid sapling id";
+                continue;
+            }
+
+            let plot = await PlotModel.findOne({ plot_id: tree.old_plot }); //old plot
+
+            //check uuid are same
+            const id1 = existingMatch.plot_id;
+            const id2 = plot._id;
+            let correctPlot = id1.equals(id2);
+
+            console.log("correct plot---", plot, correctPlot, id1, id2);
+
+            if (!correctPlot) {
+                treeUploadStatuses[saplingID].message = `${saplingID} doesnot belong to plot ${plot.name}`; //Sapling id does not belong to the old plot
+                continue;
+            }
+
+            let user = await OnSiteStaff.findOne({ _id: tree.user_id });
+            let newPlot = await PlotModel.findOne({ plot_id: tree.new_plot });
+
+            console.log("newPlot plot---", newPlot);
+
+            const treesUpdatePlotObj = {
+                plot_id: newPlot._id, //update the old plot with new one
+            };
+
+            // user_id: user._id,
+            // date_added: new Date(),
+
+            try {
+                await TreeModel.updateOne({ sapling_id: saplingID }, { $set: treesUpdatePlotObj });
+                treeUploadStatuses[saplingID].dataUploaded = true;
+                treeUploadStatuses[saplingID].message = "plot updated successfully";
+
+            } catch (err) {
+                console.log(err);
+                treeUploadStatuses[saplingID].dataSaveError = err;
+                treeUploadStatuses[saplingID].message = "plot updation failed";
+            }
+        }
+
+        console.log('uploadstatuses: ', treeUploadStatuses);
+
+        return res.send(treeUploadStatuses);
+    })
+}
+
 
 export const fetchPlotSaplings = async (req, res) => {
     outerTryCatch(res, async () => {
@@ -468,10 +579,12 @@ export const fetchShifts = async (req, res) => {
             return res.status(status.bad).send("Must supply _id of onsite staff for fething shifts")
         }
         const userShifts = await ShiftModel.find({ user_id: userId });
-        console.log("-------------userShifts----------", userShifts)
+
+        //console.log("-------------userShifts----------", userShifts)
         // if (!userShifts) {
         //     return res.status(status.notfound).send("No shifts found for given user_id.");
         // }
+
         const currentHash = CryptoJS.MD5(JSON.stringify(userShifts)).toString();
 
         const response = {
@@ -562,7 +675,7 @@ export const login = async (req, res) => {
         const userPin = userCheck.pin;
         console.log("userPin: ", userPin, typeof userPin, typeof pinNumber, typeof phone, typeof userCheck.phone);
         const pinNo = pinNumber !== undefined ? Number(pinNumber) : pinNumber;
-        
+
         if (!onsitestaff) {
             response.user = {
                 _id: userCheck._id,
