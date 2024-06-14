@@ -1,5 +1,5 @@
 {
-  "extends": "tsconfig/base.json",
+  "extends": "./base.json",
   "exclude": ["./dist/**/*"],
   "include": ["src/**/*.js", "src/**/*.ts"],
   "compilerOptions": {
@@ -9,5 +9,7 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "allowJs": true,
+    "resolveJsonModule": true, //manjur
+    "esModuleInterop": true
   }
 }
