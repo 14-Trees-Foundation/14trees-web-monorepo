@@ -309,8 +309,8 @@ export const uploadShifts = async (req, res) => {
                 }
 
             } catch (error) {
-                console.log("error inserting shift---" , err);
-                shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: false, message: 'Error inserting/updating shift', dataSaveError : err };
+                console.log("error inserting shift---" , error);
+                shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: false, message: 'Error inserting/updating shift', dataSaveError : error };
             }
         }
 
