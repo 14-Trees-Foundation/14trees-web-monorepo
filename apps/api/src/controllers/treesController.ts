@@ -137,9 +137,9 @@ export const addTree = async (req: Request, res: Response) => {
         let tree = await TreeRepository.addTree(req.body);
         res.status(status.created).send(tree);
     } catch (error: any) {
-        console.log("Tree add error : ", error);
+        console.log("Tree add error : ", JSON.stringify(error));
         res.status(status.error).send({
-        error: error,
+          error: error,
         });
     }
 };

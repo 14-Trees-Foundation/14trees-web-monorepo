@@ -28,7 +28,8 @@ interface TreeAttributes {
     gifted_to?: number,
     assigned_at?: Date,
     assigned_to?: number,
-    user_tree_images: string[],
+    user_tree_images?: string[],
+    memory_images?: string[],
     event_id?: number,
     description?: string,
     status?: string;
@@ -116,6 +117,9 @@ implements TreeAttributes {
 
   @Column(DataType.ARRAY(DataType.STRING))
   user_tree_images!: string[];
+
+  @Column(DataType.STRING)
+  memory_images!: string[];
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status!: string;

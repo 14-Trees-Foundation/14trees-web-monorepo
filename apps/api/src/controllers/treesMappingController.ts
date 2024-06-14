@@ -143,34 +143,21 @@ export const getMappedTrees = async (req: Request, res: Response) => {
   }
 };
 
-export const updateEventDataInTrees = async (req: Request, res: Response) => {
-  const sapling_ids = req.body.sapling_ids;
-
-  // let link = req.body.link ? req.body.link : "";
-  // let type = req.body.type ? req.body.type : "";
-  let eventId = req.body.event_id as number;
-  try {
-    await TreeRepository.updateEventDataInTrees(sapling_ids, eventId);
-    res.status(status.created).send();
-  } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
-  }
-};
-
 export const mapTrees = async (req: Request, res: Response) => {
   const fields = req.body;
-  let emailId = fields.email;
-  let saplingIds = fields.sapling_id.split(/[ ,]+/);
+  const id = fields.id;
+  const saplingIds = fields.sapling_ids as string[]
+  const mappingType: string = fields.mapped_to
 
-  const filtered_saplings = saplingIds.filter(function (el: string) {
-    return el;
-  });
+  if (mappingType !== 'user' && mappingType !== 'group') {
+    res.status(status.bad).send({
+      error: "Mapped to is required(user/group)",
+    })
+  }
 
+  const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
-    await TreeRepository.mapTrees(filtered_saplings, emailId);
+    await TreeRepository.mapTrees(mapped_to, saplingIds, id);
     res.status(status.created).send();
   } catch (error: any) {
     res.status(status.error).send({
@@ -181,12 +168,20 @@ export const mapTrees = async (req: Request, res: Response) => {
 
 export const mapTreesInPlot = async (req: Request, res: Response) => {
   const fields = req.body;
-  let emailId = fields.email;
-  let plotId = fields.plot_id;
-  let count = fields.count;
+  const id = fields.id;
+  const plotId = fields.plot_id;
+  const count = fields.count;
+  const mappingType: string = fields.mapped_to
 
+  if (mappingType !== 'user' && mappingType !== 'group') {
+    res.status(status.bad).send({
+      error: "Mapped to is required(user/group)",
+    })
+  }
+
+  const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
-    await TreeRepository.mapTreesInPlot(emailId, plotId, count);
+    await TreeRepository.mapTreesInPlot(mapped_to, id, plotId, count);
     res.status(status.success).send();
   } catch (error) {
     res.status(status.error).send({

@@ -7,6 +7,8 @@ import { Center } from "../models/common";
 import { sequelize } from "../config/postgreDB";
 import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { PaginatedResponse } from "../models/pagination";
+import { getUserDocumentFromRequestBody } from "./userRepo";
+import { Group } from "../models/group";
 
 class TreeRepository {
   public static async getTrees(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Tree>> {
@@ -108,9 +110,9 @@ class TreeRepository {
     if (data.status === "system_invalidated" || data.status === "user_validated") {
       data.last_system_updated_at = new Date();
     } else {
-        data.status = undefined;
-        data.status_message = undefined;
-        data.last_system_updated_at = undefined;
+      data.status = undefined;
+      data.status_message = undefined;
+      data.last_system_updated_at = undefined;
     }
     data.updated_at = new Date();
 
@@ -169,20 +171,47 @@ class TreeRepository {
     return data;
   };
 
-  public static async mapTrees(saplingIds: string[], emailId: string) {
-    let user = await User.findOne({ where: { email: emailId } });
-    if (user === null) {
-      throw new Error("User with given email not found");
+  public static async mapTrees(mapped_to: 'user' | 'group', saplingIds: string[], id: string) {
+
+    const updateConfig: any = {
+      mapped_at: new Date(),
     }
 
-    const resp = await Tree.update({ mapped_to_user: user.id, mapped_at: new Date() }, { where: { sapling_id: { [Op.in]: saplingIds } } });
-    console.log("mapped trees response for email: %s", emailId, resp);
+    if (mapped_to === "user") {
+      let user = await User.findByPk(id);
+      if (user === null) {
+        throw new Error("User with given id not found");
+      }
+      updateConfig["mapped_to_user"] = user.id;
+    } else {
+      let group = await Group.findByPk(id);
+      if (group === null) {
+        throw new Error("Group with given id not found");
+      }
+      updateConfig["mapped_to_group"] = group.id;
+    }
+
+    const resp = await Tree.update( updateConfig, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    console.log("mapped trees %d for %s: %d", resp, mapped_to, id);
   }
 
-  public static async mapTreesInPlot(emailId: string, plotId: string, count: number) {
-    const user = await User.findOne({ where: { email: emailId } });
-    if (user === null) {
-      throw new Error("User with given email not found");
+  public static async mapTreesInPlot(mapped_to: 'user' | 'group', id: string, plotId: string, count: number) {
+    const updateConfig: any = {
+      mapped_at: new Date(),
+    }
+
+    if (mapped_to === "user") {
+      let user = await User.findByPk(id);
+      if (user === null) {
+        throw new Error("User with given id not found");
+      }
+      updateConfig["mapped_to_user"] = user.id;
+    } else {
+      let group = await Group.findByPk(id);
+      if (group === null) {
+        throw new Error("Group with given id not found");
+      }
+      updateConfig["mapped_to_group"] = group.id;
     }
 
     const plot = await Plot.findOne({ where: { [Op.or]: [{ plot_id: plotId }, { id: plotId }] } });
@@ -190,7 +219,7 @@ class TreeRepository {
       throw new Error("plot with given plot_id doesn't exists");
     }
 
-    let trees: any[] = await Tree.findAll({
+    let trees: Tree[] = await Tree.findAll({
       where: {
         mapped_to_user: { [Op.is]: undefined },
         mapped_to_group: { [Op.is]: undefined },
@@ -205,14 +234,93 @@ class TreeRepository {
     }
 
     for (let i = 0; i < count; i++) {
-      trees[i].mapped_to = user.id;
-      await trees[i].save();
+      await trees[i].update(updateConfig);
     }
   }
 
   public static async unMapTrees(saplingIds: string[]) {
     const resp = await Tree.update({ mapped_to_user: undefined, mapped_at: undefined, mapped_to_group: undefined }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("un mapped trees response: %s", resp);
+  }
+
+  public static async assignTree(saplingId: string, reqBody: any): Promise<Tree> {
+    let tree = await Tree.findOne({ where: { sapling_id: saplingId } });
+    if (tree === null) {
+      throw new Error("Tree with given sapling id not found");
+    } else if (tree.assigned_to !== null) {
+      throw new Error("Tree is already assigned to someone");
+    }
+
+    // Get the user
+    let userDoc = await getUserDocumentFromRequestBody(reqBody);
+    let user = await User.findOne({ where: { user_id: userDoc.user_id } });
+    if (!user) {
+      user = await User.create(userDoc);
+    }
+
+    // Upload images to S3
+    let userImageUrls = []
+    let memoryImageUrls = []
+
+    // User Profile images
+    if (reqBody.user_images !== undefined) {
+      if (reqBody.user_images.length > 0) {
+        let userImages = reqBody.user_images as string[]
+        for (const image in userImages) {
+          if (userImages[image] !== "") {
+            const location = await UploadFileToS3(userImages[image], "users");
+            if (location != "") {
+              userImageUrls.push(location);
+            }
+          }
+        }
+      }
+    }
+
+    // Memories for the visit
+    if (reqBody.memory_images !== undefined) {
+        if (reqBody.memory_images.length > 0) {
+            let memoryImages = reqBody.memory_images as string []
+            for (const image in memoryImages) {
+              if (memoryImages[image] !== "") {
+                const location = await UploadFileToS3(memoryImages[image], "memories");
+                if (location != "") {
+                  memoryImageUrls.push(location);
+                }
+              }
+            }
+        }
+    }
+
+    const updateFields: any = {
+      assigned_to: user.id,
+      assigned_at: new Date(),
+      user_tree_images: userImageUrls,
+      memory_images: memoryImageUrls,
+    }
+    if (reqBody.desc) {
+      updateFields["description"] = reqBody.desc;
+    }
+
+    const result = await tree.update(updateFields);
+
+    return result;
+  }
+
+  public static async unassignTree(saplingId: string): Promise<Tree> {
+    let tree = await Tree.findOne({ where: { sapling_id: saplingId } });
+    if (tree === null) {
+      throw new Error("Tree with given sapling id not found");
+    }
+
+    const updateFields: any = {
+      assigned_to: null,
+      assigned_at: null,
+      user_tree_images: null,
+      memory_images: null,
+    }
+
+    return await tree.update(updateFields);
   }
 }
 
