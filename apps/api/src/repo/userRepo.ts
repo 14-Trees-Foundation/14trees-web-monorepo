@@ -93,7 +93,7 @@ export class UserRepository {
         return resp;
     }
 
-    public static async userCount(): Promise<number> {
+    public static async usersCount(): Promise<number> {
         return await User.count()
     }
 }

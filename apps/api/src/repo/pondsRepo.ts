@@ -106,7 +106,7 @@ export class PondRepository {
     return await Pond.destroy({ where: { id: pondId } });
   }
 
-  public static async pondCount(): Promise<number> {
+  public static async pondsCount(): Promise<number> {
     return await Pond.count()
   }
 }

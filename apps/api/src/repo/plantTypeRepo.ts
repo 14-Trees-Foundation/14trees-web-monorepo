@@ -84,7 +84,7 @@ class PlantTypeRepository {
         return resp;
     };
 
-    public static async plantTypeCount(): Promise<number> {
+    public static async plantTypesCount(): Promise<number> {
         return await PlantType.count();
     }
 }

@@ -2,7 +2,6 @@ import express from "express";
 import {
   mapTrees,
   unMapTrees,
-  updateEventDataInTrees,
   getMappedTrees,
 //   deleteAlbum,
 //   createAlbum,
@@ -21,7 +20,7 @@ routes.post("/unmap", unMapTrees);
 routes.get("/:email", getMappedTrees);
 routes.get("/count/usertreescount", getUserMappedTreesCount);
 
-routes.post("/update", updateEventDataInTrees);
+// routes.post("/update", updateEventDataInTrees);
 
 // routes.delete("/albums", deleteAlbum);
 // routes.post("/albums/:email", uploadFiles.array("images", 10), createAlbum);

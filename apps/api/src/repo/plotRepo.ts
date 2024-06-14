@@ -53,7 +53,7 @@ export class PlotRepository {
         return resp;
     }
 
-    public static async plotCount(): Promise<number> {
+    public static async plotsCount(): Promise<number> {
         return await Plot.count()
     }
 }

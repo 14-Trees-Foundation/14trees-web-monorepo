@@ -129,8 +129,12 @@ class TreeRepository {
     return resp;
   };
 
-  public static async treeCount(): Promise<number> {
+  public static async treesCount(): Promise<number> {
     return await Tree.count()
+  }
+
+  public static async assignedTreesCount(): Promise<number> {
+    return await Tree.count({ where: { assigned_to: { [Op.not]: null } } })
   }
 
   public static async getMappedTrees(email: string, offset: number, limit: number) {
