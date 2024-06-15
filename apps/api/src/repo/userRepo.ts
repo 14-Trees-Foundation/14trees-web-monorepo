@@ -61,6 +61,7 @@ export class UserRepository {
             total: await User.count({ where: whereClause }),
             results: await User.findAll({
                 where: whereClause,
+                order: [['created_at', 'DESC']],
                 offset,
                 limit
             })

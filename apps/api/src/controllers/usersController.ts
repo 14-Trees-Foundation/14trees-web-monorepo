@@ -97,7 +97,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
       throw new Error('No file uploaded. Bulk operation requires data as csv file.');
     }
 
-    let csvData: any[];
+    let csvData: any[] = [];
     let failedRows: any[] = [];
     fs.createReadStream(constants.DEST_FOLDER + req.file.filename)
       .pipe(csvParser())
