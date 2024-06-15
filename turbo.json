@@ -16,17 +16,11 @@
     "MONGO_URL",
     "DEST_IMG_FOLDER"
   ],
-  "globalDotEnv": [
-    ".env.local",
-    ".env.development",
-    ".env"
-  ],
-  "pipeline": {
+  "tasks": {
     "clear-content": {
       "outputs": ["content/**"]
     },
     "fetch-content": {
-      "dotEnv": [".env"],
       "inputs": ["src/scripts/fetchContent.ts"],
       "outputs": ["src/data/content/**", "public/content/**"]
     },
@@ -34,6 +28,9 @@
       "cache": false,
       "dependsOn": ["^build", "fetch-content"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "start": {
+      "dependsOn": ["build"]
     },
     "lint": {},
     "check-types": {},

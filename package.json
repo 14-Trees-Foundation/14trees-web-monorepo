@@ -1,5 +1,6 @@
 {
   "private": true,
+  "name": "14trees-web-monorepo",
   "scripts": {
     "build": "NODE_ENV=production dotenv -- turbo run build",
     "dev": "NODE_ENV=development dotenv -- turbo dev",
