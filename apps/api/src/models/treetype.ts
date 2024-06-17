@@ -6,6 +6,7 @@ const Schema = mongoose.Schema;
 const treeTypeSchema = new Schema({
   name: { type: String, required: true },
   scientific_name: { type: String },
+  name_english: { type: String },
   tree_id: { type: String, equired: true, index: true, unique: true },
   image: [{ type: String }],
   family: { type: String },

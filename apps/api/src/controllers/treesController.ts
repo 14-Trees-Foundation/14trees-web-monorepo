@@ -158,7 +158,8 @@ export const updateTreeType = async (req: Request, res: Response) => {
     if (req.body.scientific_name) {
       treeType.scientific_name = req.body.scientific_name;
     }
-    // Update other fields similarly
+    if (req.body.name_english) treeType.name_english = req.body.name_english;
+    if (req.body.habit) treeType.habit = req.body.habit;
 
     // Upload images to S3
     if (req.files && isArray(req.files) && req.files[0]) {
