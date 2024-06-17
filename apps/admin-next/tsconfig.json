@@ -4,7 +4,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "../../scripts/notion.ts"
+    "../../scripts/notion.ts",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
@@ -14,7 +15,16 @@
     "paths": {
       "~/*": [
         "src/*"
-      ]
-    }
+      ],
+      "components/*": [
+        "components/*"
+      ],
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "strictNullChecks": true
   }
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import { ImageUpload } from "./GiftCardContainer";
 import { useAtom } from "jotai";
-import { filesAtom, logosAtom } from "../../pages/giftcards";
+import { filesAtom, logosAtom } from "~/jotaiStore";
 
 function Instructions({ onNext }) {
   return (

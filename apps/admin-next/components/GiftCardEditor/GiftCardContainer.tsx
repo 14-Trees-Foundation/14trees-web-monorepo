@@ -6,7 +6,7 @@ import {
   ArrowRightCircleIcon,
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
-import { CardData, logosAtom } from "../../pages/giftcards";
+import { CardData, logosAtom } from "~/jotaiStore";
 import { useScreenshot, createFileName } from "use-react-screenshot";
 import EditorContainer from "./CardEditor";
 import { useAtom } from "jotai";
@@ -40,10 +40,10 @@ export default function GiftCardsContainer({
   const ref = useRef<HTMLCanvasElement>(null);
 
   const onDownload = () => {
-    const url = ref.current.toDataURL("image/png");
+    const url = ref?.current?.toDataURL("image/png");
     const link = document.createElement("a");
     link.download = `${name}_card.png`;
-    link.href = url;
+    link.href = url || "";
     link.click();
   };
 
