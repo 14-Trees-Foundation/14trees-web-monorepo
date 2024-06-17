@@ -1,7 +1,8 @@
 //Model in postgresql db
-import { Table, Column, Model, DataType, Unique, Index } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, Unique, Index, BelongsTo, HasMany } from 'sequelize-typescript';
 import { Boundaries, Center } from './common';
 import { Optional } from 'sequelize';
+import { Tree } from './tree';
 
 interface PlotAttributes {
   id: number;
@@ -69,6 +70,8 @@ implements PlotAttributes {
     @Column({ type: DataType.DATE })
     updated_at!: Date;
 
+    @HasMany(() => Tree, 'plot_id') // Move HasMany decorator here
+    trees!: Tree[];
 }
 
 export { Plot }

@@ -65,7 +65,7 @@ export const getPlots = async (req: Request,res: Response) => {
         })
     }
     try {
-        let result = await PlotRepository.getPlots(offset, limit, whereClause);
+        let result = await PlotRepository.getPlotsNew(offset, limit, filters);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

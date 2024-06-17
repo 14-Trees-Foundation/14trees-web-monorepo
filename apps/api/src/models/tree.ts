@@ -65,6 +65,9 @@ implements TreeAttributes {
   @Column
   plot_id!: number;
 
+  @BelongsTo(() => Plot, 'plot_id')
+  plot!: Plot;
+
   @Column(DataType.ARRAY(DataType.STRING))
   images!: string[];
 

@@ -18,7 +18,7 @@ const routes = Router();
 // @deprecated
 routes.post('/addtree', uploadFiles.array('files', 1), trees.addTree);
 
-routes.get('/', trees.getTrees);
+routes.post('/get', trees.getTrees);
 routes.post('/', uploadFiles.array('files', 1), trees.addTree);
 // routes.post('/bulk', uploadFiles.fields([{name: 'files', maxCount: 1}, {name: 'csvFile', maxCount: 1}]), trees.addTreesBulk);
 routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
