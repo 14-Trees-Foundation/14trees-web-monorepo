@@ -5,22 +5,71 @@ import { Plot } from "../models/plot";
 import { User } from "../models/user";
 import { Center } from "../models/common";
 import { sequelize } from "../config/postgreDB";
-import { Op, QueryTypes, WhereOptions } from "sequelize";
-import { PaginatedResponse } from "../models/pagination";
+import { Op, QueryTypes } from "sequelize";
+import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getUserDocumentFromRequestBody } from "./userRepo";
 import { Group } from "../models/group";
+import { getWhereOptions, getSqlQueryExpression } from "../controllers/helper/filters";
 
 class TreeRepository {
-  public static async getTrees(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Tree>> {
-    return {
-      offset: offset,
-      total: await Tree.count({ where: whereClause }),
-      results: await Tree.findAll({
-        where: whereClause,
-        offset,
-        limit
-      })
-    };
+  public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[]): Promise<PaginatedResponse<Tree>> {
+
+    let whereCondition = "";
+    let replacements: any = {}
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            let columnField = "t." + filter.columnField
+            let valuePlaceHolder = filter.columnField
+            if (filter.columnField === "assigned_to_name") {
+              columnField = 'au."name"'
+            } else if (filter.columnField === "mapped_user_name") {
+              columnField = 'mu."name"'
+            } else if (filter.columnField === "plot") {
+              columnField = 'p."name"'
+            } else if (filter.columnField === "plant_type") {
+              columnField = 'pt."name"'
+            }
+            const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+            whereCondition = whereCondition + " " + condition + " AND";
+            replacements = { ...replacements, ...replacement }
+        })
+        whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+    }
+
+    let query = `
+    SELECT t.*, 
+      pt."name" as plant_type, 
+      p."name" as plot, 
+      mu."name" as mapped_user_name, 
+      au."name" as assigned_to_name
+    FROM "14trees".trees t 
+    LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+    LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+    LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+    LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
+    WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+    `
+
+    if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
+    
+    const trees: any = await sequelize.query(query, {
+        replacements: replacements,
+        type: QueryTypes.SELECT
+    })
+
+    const countQuery = `
+    SELECT count(*)
+    FROM "14trees".trees t 
+    LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+    LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+    LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+    LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
+    WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
+    `
+    const resp = await sequelize.query(countQuery, {
+        replacements: replacements,
+    });
+    return { offset: offset, total: (resp[0][0] as any)?.count, results: trees as Tree[]};
   };
 
   public static async getTreeBySaplingId(saplingId: string): Promise<Tree | null> {
@@ -218,7 +267,7 @@ class TreeRepository {
       updateConfig["mapped_to_group"] = group.id;
     }
 
-    const plot = await Plot.findOne({ where: { [Op.or]: [{ plot_id: plotId }, { id: plotId }] } });
+    const plot = await Plot.findOne({ where: { id: plotId } });
     if (!plot) {
       throw new Error("plot with given plot_id doesn't exists");
     }
@@ -243,7 +292,7 @@ class TreeRepository {
   }
 
   public static async unMapTrees(saplingIds: string[]) {
-    const resp = await Tree.update({ mapped_to_user: undefined, mapped_at: undefined, mapped_to_group: undefined }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("un mapped trees response: %s", resp);
   }
 
@@ -299,9 +348,9 @@ class TreeRepository {
     const updateFields: any = {
       assigned_to: user.id,
       assigned_at: new Date(),
-      user_tree_images: userImageUrls,
-      memory_images: memoryImageUrls,
-    }
+      user_tree_images: userImageUrls.join(","),
+      memory_images: memoryImageUrls.join(","),
+    } 
     if (reqBody.desc) {
       updateFields["description"] = reqBody.desc;
     }
@@ -311,20 +360,13 @@ class TreeRepository {
     return result;
   }
 
-  public static async unassignTree(saplingId: string): Promise<Tree> {
-    let tree = await Tree.findOne({ where: { sapling_id: saplingId } });
-    if (tree === null) {
-      throw new Error("Tree with given sapling id not found");
-    }
-
-    const updateFields: any = {
+  public static async unassignTrees(saplingIds: string[]): Promise<void> {
+    await Tree.update({
       assigned_to: null,
       assigned_at: null,
       user_tree_images: null,
       memory_images: null,
-    }
-
-    return await tree.update(updateFields);
+    }, { where: { sapling_id: { [Op.in]: saplingIds } } });
   }
 }
 

@@ -19,17 +19,17 @@ interface TreeAttributes {
     tags: string[],
     location: Center,
     planted_by?: string,
-    mapped_to_user?: number,
-    mapped_to_group?: number,
-    mapped_at?: Date,
+    mapped_to_user?: number | null,
+    mapped_to_group?: number | null,
+    mapped_at?: Date | null,
     sponsored_by_user?: number,
     sponsored_by_group?: number,
     gifted_by?: number,
     gifted_to?: number,
     assigned_at: Date | null,
     assigned_to: number | null,
-    user_tree_images?: string[],
-    memory_images?: string[],
+    user_tree_images?: string | null,
+    memory_images?: string | null,
     event_id?: number,
     description?: string,
     status?: string;
@@ -118,11 +118,11 @@ implements TreeAttributes {
   @Column(DataType.NUMBER)
   event_id!: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  user_tree_images!: string[];
+  @Column(DataType.STRING)
+  user_tree_images!: string;
 
   @Column(DataType.STRING)
-  memory_images!: string[];
+  memory_images!: string;
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status!: string;

@@ -168,15 +168,9 @@ export const getTree = async (req: Request, res: Response) => {
 export const getTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req); 
     const filters: FilterItem[] = req.body?.filters;
-    let whereClause = {};
-    if (filters && filters.length > 0) {
-      filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-      })
-    }
     
     try {
-        let result = await TreeRepository.getTrees(offset, limit, whereClause);
+        let result = await TreeRepository.getTrees(offset, limit, filters);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

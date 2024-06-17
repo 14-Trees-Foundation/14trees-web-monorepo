@@ -153,6 +153,7 @@ export const mapTrees = async (req: Request, res: Response) => {
     res.status(status.bad).send({
       error: "Mapped to is required(user/group)",
     })
+    return;
   }
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
@@ -177,6 +178,7 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
     res.status(status.bad).send({
       error: "Mapped to is required(user/group)",
     })
+    return;
   }
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';

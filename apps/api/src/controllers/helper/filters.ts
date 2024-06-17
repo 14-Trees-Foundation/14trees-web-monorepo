@@ -1,29 +1,29 @@
 import { Op, WhereOptions } from "sequelize";
 
-export const getWhereOptions = (filedName: string, operatorValue: string, value: string | string[] | undefined): WhereOptions => {
+export const getWhereOptions = (fieldName: string, operatorValue: string, value: string | string[] | undefined): WhereOptions => {
 
     switch(operatorValue) {
         case 'contains':
-            return { [filedName]: { [Op.iLike]: `%${value}%` }};
+            return { [fieldName]: { [Op.iLike]: `%${value}%` }};
         case 'equals':
-            return { [filedName]: value };
+            return { [fieldName]: value };
         case 'startsWith':
-            return { [filedName]: { [Op.iLike]: `${value}%` }};
+            return { [fieldName]: { [Op.iLike]: `${value}%` }};
         case 'endsWith':
-            return { [filedName]: { [Op.iLike]: `%${value}` }};
+            return { [fieldName]: { [Op.iLike]: `%${value}` }};
         case 'isEmpty':
-            return { [filedName]: { [Op.is]: null } };
+            return { [fieldName]: { [Op.is]: null } };
         case 'isNotEmpty':
-            return { [filedName]: { [Op.not]: null } }
+            return { [fieldName]: { [Op.not]: null } }
         case 'isAnyOf':
-            return { [filedName]: { [Op.in]: value } };
+            return { [fieldName]: { [Op.in]: value } };
 
         default:
-            return { [filedName]: value }
+            return { [fieldName]: value }
     }
 }
 
-export const getSqlQueryExpression = (filedName: string, operatorValue: string, valuePlaceHolder: string, value?: any): { condition: string, replacement: any } => {
+export const getSqlQueryExpression = (fieldName: string, operatorValue: string, valuePlaceHolder: string, value?: any): { condition: string, replacement: any } => {
 
     if (operatorValue !== 'isEmpty' && operatorValue !== 'isNotEmpty' && value === undefined) {
         throw new Error("Value is required");
@@ -31,21 +31,21 @@ export const getSqlQueryExpression = (filedName: string, operatorValue: string, 
 
     switch(operatorValue) {
         case 'contains':
-            return { condition: `${filedName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}%` } };
+            return { condition: `${fieldName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}%` } };
         case 'equals':
-            return { condition: `${filedName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };
+            return { condition: `${fieldName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };
         case 'startsWith':
-            return { condition: `${filedName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `${value}%` } };
+            return { condition: `${fieldName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `${value}%` } };
         case 'endsWith':
-            return { condition: `${filedName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}` } };
+            return { condition: `${fieldName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}` } };
         case 'isEmpty':
-            return { condition: `${filedName} IS NULL`, replacement: {} };
+            return { condition: `${fieldName} IS NULL`, replacement: {} };
         case 'isNotEmpty':
-            return { condition: `${filedName} IS NOT NULL`, replacement: {} }
+            return { condition: `${fieldName} IS NOT NULL`, replacement: {} }
         case 'isAnyOf':
-            return { condition: `${filedName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
+            return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
 
         default:
-            return { condition: `${filedName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };
+            return { condition: `${fieldName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };
     }
 }

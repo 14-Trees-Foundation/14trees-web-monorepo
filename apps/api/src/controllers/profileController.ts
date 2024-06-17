@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserTreeRepository } from "../repo/userTreeRepo";
+import TreeRepository from "../repo/treeRepo";
 
 const { status } = require("../helpers/status");
 
@@ -68,7 +69,7 @@ export const getProfileById = async  (req: Request, res: Response) => {
 
 export const assignTreeToUser = async  (req: Request, res: Response) => {
   try {
-    let result = await UserTreeRepository.addUserTree(
+    let result = await TreeRepository.assignTree(
       req.body.sapling_id,
       req.body
     );
@@ -81,15 +82,13 @@ export const assignTreeToUser = async  (req: Request, res: Response) => {
 
 export const assignTreesToUser = async  (req: Request, res: Response) => {
   try {
-    let saplingIds = req.body.sapling_id.split(/[ ,]+/);
-    let userTreeRegs = [];
+    let saplingIds: string[] = req.body.sapling_ids;
+    let trees = [];
     for (let i = 0; i < saplingIds.length; i++) {
-      const result = await UserTreeRepository.addUserTree(saplingIds[i], req.body);
-      userTreeRegs.push(result);
+      const result = await TreeRepository.assignTree(saplingIds[i], req.body);
+      trees.push(result);
     }
-    res.status(status.created).json({
-      usertreereg: userTreeRegs,
-    });
+    res.status(status.created).json(trees);
   } catch (error: any) {
     res.status(status.error).send({ error: error.message });
     return;
@@ -103,7 +102,7 @@ export const unassignTrees = async  (req: Request, res: Response) => {
   }
 
   try {
-    await UserTreeRepository.removeUserTrees(req.body.sapling_ids)
+    await TreeRepository.unassignTrees(req.body.sapling_ids)
     res.status(status.success).send();
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });

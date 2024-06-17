@@ -81,18 +81,12 @@ export class PlotRepository {
         OFFSET ${offset} LIMIT ${limit};
         `
         
-        try {
-            const plots: any = await sequelize.query(query, {
-                replacements: replacements,
-                type: QueryTypes.SELECT
-            })
-            const count = await Plot.count({where: whereClause});
-            return { offset: offset, total: count, results: plots as Plot[]};
-        } catch (error: any) {
-            console.log(error)
-            return { offset: 0, total: 0, results: [] }
-        }
-
+        const plots: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const count = await Plot.count({where: whereClause});
+        return { offset: offset, total: count, results: plots as Plot[]};
     }
 
     public static async deletePlot(plotId: string): Promise<number> {
