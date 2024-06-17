@@ -15,7 +15,7 @@ const routes = express.Router();
 
 // below route should be /map
 routes.post("/map-plot-trees", mapTreesInPlot);
-routes.post("/assign", mapTrees);
+routes.post("/map", mapTrees);
 routes.post("/unmap", unMapTrees);
 routes.get("/:email", getMappedTrees);
 routes.get("/count/usertreescount", getUserMappedTreesCount);

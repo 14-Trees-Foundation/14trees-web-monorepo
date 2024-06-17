@@ -97,7 +97,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/trees", treeRoutes);
   app.use("/api/plant-types", plantTypeRoutes);
   app.use("/api/profile", profileRoute);
-  app.use("/api/mytrees", treesMappingRoutes);
+  app.use("/api/mapping", treesMappingRoutes);
   app.use("/api/plots", plotRoutes);
   app.use("/api/sites", siteRoutes);
   app.use("/api/events", eventRoutes);

@@ -9,7 +9,7 @@ import { Request, Response } from "express";
 import { PondRepository } from "../repo/pondsRepo";
 import { isArray } from "lodash";
 import { FilterItem } from "../models/pagination";
-import { getQueryExpression } from "./helper/filters";
+import { getWhereOptions } from "./helper/filters";
 
 /*
     Model - Pond
@@ -66,7 +66,7 @@ export const getPonds = async (req: Request ,res: Response) => {
   let whereClause = {};
   if (filters && filters.length > 0) {
       filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
       })
   }
 
@@ -141,7 +141,7 @@ export const searchPonds = async (req: Request, res: Response) => {
       return;
     }
 
-    let whereClause = getQueryExpression("name", "contains", req.params.search)
+    let whereClause = getWhereOptions("name", "contains", req.params.search)
     const ponds = await PondRepository.getPonds(offset, limit, whereClause);
     res.status(status.success).send(ponds);
     return;

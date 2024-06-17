@@ -8,7 +8,7 @@ import { createObjectCsvWriter } from 'csv-writer';
 import fs from 'fs';
 import { constants } from "../constants";
 import { FilterItem } from "../models/pagination";
-import { getQueryExpression } from "./helper/filters";
+import { getWhereOptions } from "./helper/filters";
 
 /*
     Model - User
@@ -40,7 +40,7 @@ export const getUsers = async (req: Request, res: Response) => {
     let whereClause = {};
     if (filters && filters.length > 0) {
         filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
         })
     }
     

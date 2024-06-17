@@ -29,7 +29,7 @@ import { Plot } from "../models/plot";
 import { QueryTypes, Sequelize } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
-import { getQueryExpression } from "./helper/filters";
+import { getWhereOptions } from "./helper/filters";
   
   /*
     Model - Tree
@@ -171,7 +171,7 @@ export const getTrees = async (req: Request, res: Response) => {
     let whereClause = {};
     if (filters && filters.length > 0) {
       filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
       })
     }
     

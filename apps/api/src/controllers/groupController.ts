@@ -1,7 +1,7 @@
 import { status } from "../helpers/status";
 import { FilterItem } from "../models/pagination";
 import { GroupRepository } from "../repo/groupRepo";
-import { getQueryExpression } from "./helper/filters";
+import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
   
@@ -17,7 +17,7 @@ export const getGroups = async (req: Request, res: Response) => {
     let whereClause = {};
     if (filters && filters.length > 0) {
         filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
         })
     }
 

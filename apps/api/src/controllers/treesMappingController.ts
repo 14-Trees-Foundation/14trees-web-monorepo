@@ -3,7 +3,7 @@ import TreeRepository from "../repo/treeRepo";
 
 const { status } = require("../helpers/status");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
-const { getQueryExpression } = require("./helper/filters");
+const { getWhereOptions } = require("./helper/filters");
 
 // module.exports.createAlbum = async (req, res) => {
 //   let email = req.params["email"];
@@ -205,9 +205,9 @@ export const getUserMappedTreesCount = async (req: Request, res: Response) => {
   let filters;
   if (filterReq && filterReq.length != 0) {
     if (filterReq[0].columnField === "name") {
-      filters = getQueryExpression("user.name", filterReq[0].operatorValue, filterReq[0].value)
+      filters = getWhereOptions("user.name", filterReq[0].operatorValue, filterReq[0].value)
     } else if (filterReq[0].columnField === "plot") {
-      filters = getQueryExpression("plot.name", filterReq[0].operatorValue, filterReq[0].value)
+      filters = getWhereOptions("plot.name", filterReq[0].operatorValue, filterReq[0].value)
     }
   }
 

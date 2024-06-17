@@ -9,7 +9,7 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { status } from "../helpers/status";
 import { isArray } from "lodash";
 import { FilterItem } from "../models/pagination";
-import { getQueryExpression } from "./helper/filters";
+import { getWhereOptions } from "./helper/filters";
 
 export const getPlantTypes = async (req: Request, res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -17,7 +17,7 @@ export const getPlantTypes = async (req: Request, res: Response) => {
   let whereClause = {};
   if (filters && filters.length > 0) {
       filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value) }
+          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
       })
   }
 
@@ -85,7 +85,7 @@ export const searchPlantTypes = async (req: Request, res: Response) => {
     }
 
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    let whereClause = getQueryExpression("name", "contains", req.params.search);
+    let whereClause = getWhereOptions("name", "contains", req.params.search);
     const plantTypes = await PlantTypeRepository.getPlantTypes(offset, limit, whereClause);
     res.status(status.success).send(plantTypes);
     return;
