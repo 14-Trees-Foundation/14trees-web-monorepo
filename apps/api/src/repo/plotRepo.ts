@@ -1,7 +1,6 @@
-import { Op, QueryTypes, WhereOptions, col, fn, literal } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
 import { FilterItem, PaginatedResponse } from '../models/pagination';
-import { Tree } from '../models/tree';
 import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression, getWhereOptions } from '../controllers/helper/filters';
 
@@ -28,11 +27,11 @@ export class PlotRepository {
             name: plotData.plot_name,
             plot_id: plotData.plot_id,
             tags: plotData.tags,
-            boundaries: plotData.boundaries,
-            center: plotData.center,
+            // boundaries: plotData.boundaries,
+            // center: plotData.center,
             gat: plotData.gat,
-            status: plotData.status,
-            land_type: plotData.land_type,
+            // status: plotData.status,
+            // land_type: plotData.land_type,
             category: plotData.category,
             created_at: new Date(),
             updated_at: new Date()
@@ -80,13 +79,24 @@ export class PlotRepository {
         GROUP BY p.id
         OFFSET ${offset} LIMIT ${limit};
         `
+
+        const countPlotsQuery = 
+            `SELECT count(p.id)
+                FROM "14trees".plots AS p
+                WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
         
         const plots: any = await sequelize.query(query, {
             replacements: replacements,
             type: QueryTypes.SELECT
         })
-        const count = await Plot.count({where: whereClause});
-        return { offset: offset, total: count, results: plots as Plot[]};
+
+        const countPlots: any = await sequelize.query(countPlotsQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countPlots[0].count)
+
+        return { offset: offset, total: totalResults, results: plots as Plot[]};
     }
 
     public static async deletePlot(plotId: string): Promise<number> {
@@ -96,5 +106,28 @@ export class PlotRepository {
 
     public static async plotsCount(): Promise<number> {
         return await Plot.count()
+    }
+
+    public static async getPlotTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
+        const tags: string[] = [];
+
+        const getUniqueTagsQuery = 
+            `SELECT DISTINCT tag
+                FROM "14trees".plots p,
+                unnest(p.tags) AS tag
+                ORDER BY tag
+                OFFSET ${offset} LIMIT ${limit};`;
+
+        const countUniqueTagsQuery = 
+            `SELECT count(DISTINCT tag)
+                FROM "14trees".plots p,
+                unnest(p.tags) AS tag;`;
+
+        const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        tagsResp.forEach(r => tags.push(r.tag));
+
+        const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        const total = parseInt(countResp[0].count);
+        return { offset: offset, total: total, results: tags };
     }
 }

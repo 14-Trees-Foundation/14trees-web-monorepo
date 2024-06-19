@@ -29,6 +29,13 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
         throw new Error("Value is required");
     }
 
+    if (fieldName.endsWith('.tags') && operatorValue === 'isAnyOf') {
+        return {
+            condition: `exists ( SELECT 1 FROM unnest(${fieldName}) AS t(tag) WHERE t.tag = ANY(ARRAY[:${valuePlaceHolder}]))`,
+            replacement: { [valuePlaceHolder]: value }
+        }
+    }
+
     switch(operatorValue) {
         case 'contains':
             return { condition: `${fieldName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}%` } };

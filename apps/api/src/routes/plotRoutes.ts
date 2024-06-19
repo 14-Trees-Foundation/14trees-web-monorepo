@@ -1,12 +1,13 @@
 import { Router } from 'express';
-import { addPlot, updatePlot, getPlots, deletePlot } from '../controllers/plotController';
+import * as plot from '../controllers/plotController';
 
 const routes = Router();
 
-routes.post('/get', getPlots);
-routes.post('/', addPlot);
-routes.put('/:id', updatePlot);
-routes.delete('/:id', deletePlot);
+routes.post('/get', plot.getPlots);
+routes.post('/', plot.addPlot);
+routes.put('/:id', plot.updatePlot);
+routes.delete('/:id', plot.deletePlot);
+routes.get('/tags', plot.getPlotTags);
 // routes.get('/:search', searchPlots);
 
 export default routes;

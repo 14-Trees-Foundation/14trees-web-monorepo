@@ -77,3 +77,13 @@ export const deletePlot = async (req: Request,res: Response) => {
         res.status(status.bad).send({ error: error.message });
     }
 };
+
+export const getPlotTags = async (req: Request,res: Response) => {
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    try {
+        let data = await PlotRepository.getPlotTags(offset, limit);
+        res.status(status.success).json(data);
+    } catch (error: any) {
+        res.status(status.error).send({ error: error.message });
+    }
+};
