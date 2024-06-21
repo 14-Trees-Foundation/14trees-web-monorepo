@@ -182,7 +182,8 @@ export const getProfile = async  (req: Request, res: Response) => {
                 event_type: 1,
                 link: 1,
                 mapped_to: 1,
-                desc: 1
+                desc: 1,
+                date_added: 1,
               }
             }
           ],
@@ -451,9 +452,8 @@ export const addUserTree = async (sapling_id: string, req: Request, res: Respons
         donor
       );
     } catch (error: any) {
-      res.status(status.error).json({
-        error,
-      });
+      console.log(error);
+      err = error;
     }
     return [user_tree_reg_res, err];
   } catch (error: any) {
