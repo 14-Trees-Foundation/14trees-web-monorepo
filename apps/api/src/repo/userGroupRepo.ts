@@ -1,4 +1,4 @@
-import { UserGroup, UserGroupAttributes, UserGroupCreationAttributes } from '../models/user_group';
+import { UserGroup, UserGroupCreationAttributes } from '../models/user_group';
 
 export class UserGroupRepository {
     static async getUserGroup(userId: string, groupId: string): Promise<UserGroup[]> {
@@ -20,15 +20,20 @@ export class UserGroupRepository {
         return userGroup;
     }
 
-    // static async updateUserGroup(data: UserGroupAttributes): Promise<UserGroup> {
-    //     const org = await UserGroup.findByPk(data.id);
-    //     if (!org) {
-    //         throw new Error('UserGroupanization not found for given id');
-    //     }
+    static async bulkAddUserGroups(userIds: number[], groupId: number): Promise<UserGroup[]> {
+        const userGroupsData: UserGroupCreationAttributes[] = [];
+        userIds.forEach( userId => {
+            userGroupsData.push({ 
+                user_id: userId, 
+                group_id: groupId, 
+                created_at: new Date(), 
+                updated_at: new Date() 
+            })
+        });
 
-    //     const updatedUserGroup = org.update(orgData);
-    //     return updatedUserGroup;
-    // }
+        const userGroups = UserGroup.bulkCreate(userGroupsData);
+        return userGroups;
+    }
 
     static async deleteUserGroup(userId: string, groupId: string): Promise<number> {
         const response = await UserGroup.destroy({ where: { user_id: userId, group_id: groupId } });
