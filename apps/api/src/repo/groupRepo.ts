@@ -37,11 +37,11 @@ export class GroupRepository {
         };
     }
 
-    public static async getGroup(id: string): Promise<Group | null> {
+    public static async getGroup(id: number): Promise<Group | null> {
         return await Group.findByPk(id);
     }
 
-    public static async deleteGroup(id: string): Promise<number> {
+    public static async deleteGroup(id: number): Promise<number> {
         const resp = await Group.destroy({ where: { id: id } });
         return resp;
     }

@@ -13,7 +13,6 @@ export class UserGroupRepository {
             user_id: data.user_id,
             group_id: data.group_id,
             created_at: new Date(),
-            updated_at: new Date(),
         };
 
         const userGroup = UserGroup.create(userGroupData);
@@ -27,7 +26,6 @@ export class UserGroupRepository {
                 user_id: userId, 
                 group_id: groupId, 
                 created_at: new Date(), 
-                updated_at: new Date() 
             })
         });
 

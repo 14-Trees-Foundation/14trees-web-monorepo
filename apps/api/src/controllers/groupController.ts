@@ -67,7 +67,7 @@ export const updateGroup = async (req: Request, res: Response) => {
 
 export const deleteGroup = async (req: Request, res: Response) => {
     try {
-        let resp = await GroupRepository.deleteGroup(req.params.id);
+        let resp = await GroupRepository.deleteGroup(parseInt(req.params.id));
         console.log("Delete group response for id: %s", req.params.id, resp);
         res.status(status.success).json({
           message: "Group deleted successfully",

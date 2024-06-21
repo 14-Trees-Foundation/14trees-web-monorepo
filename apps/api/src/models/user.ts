@@ -9,7 +9,7 @@ interface UserAttributes {
 	user_id: string;
   phone: string;
   email: string;
-  birth_date?: Date;
+  birth_date?: Date | null;
   status?: string;
   status_message?: string[];
   last_system_updated_at?: Date;

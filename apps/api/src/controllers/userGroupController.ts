@@ -58,7 +58,7 @@ export const deleteUserGroup = async (req: Request, res: Response) => {
     }
 }
 
-export const addUsersBulk = async (req: Request, res: Response) => {
+export const addUserGroupsBulk = async (req: Request, res: Response) => {
 
     try {
       if (!req.file) {
@@ -68,7 +68,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
         throw new Error('Group id is required');
       }
 
-      const groupId = req.body.group_id;
+      const groupId = parseInt(req.body.group_id);
       const { path } = req.file
       const data = await validateCSV<UserCreationAttributes>(path);
 
@@ -79,7 +79,7 @@ export const addUsersBulk = async (req: Request, res: Response) => {
       }
 
       let users: User[] = [];
-      data.valid_records.forEach( async (row: UserCreationAttributes) => {
+      for (const row of data.valid_records) {
         try {
             const resp = await UserRepository.getUsers(0, 1, { email: row.email });
             if (resp.results.length > 0) {
@@ -93,11 +93,11 @@ export const addUsersBulk = async (req: Request, res: Response) => {
           let error_record = { ...row, error: "Failed to create user", status: "error" };
           data.invalid_records.push(error_record);
         }
-      })
+      }
       const userIds = users.map(user => user.id);
 
-      const userGroups = await UserGroupRepository.bulkAddUserGroups(userIds, groupId);
-      res.status(201).json({ success: userGroups.length, failed: data.invalid_records.length, failed_records: data.valid_records });
+      const userGroups = await UserGroupRepository.bulkAddUserGroups(userIds, group.id);
+      res.status(201).json({ success: userGroups.length, failed: data.invalid_records.length, failed_records: data.invalid_records });
 
     } catch (error:any) {
       console.error('Error processing CSV:', error);

@@ -11,13 +11,13 @@ export const getUserId = (name:string, email: string) => {
 
 export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttributes => {
     let userId = getUserId(reqBody.name, reqBody.email)
-
+    const birthDate = new Date(reqBody.birth_date);
     return  {
         name: reqBody.name,
         phone: reqBody.phone,
         email: reqBody.email,
         user_id: userId,
-        birth_date: reqBody.birth_date,
+        birth_date: isNaN(birthDate?.getDate()) ? null : birthDate,
         created_at: new Date(),
         updated_at: new Date(),
     } as UserCreationAttributes;
