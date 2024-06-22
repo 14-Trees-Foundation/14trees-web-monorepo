@@ -1,26 +1,31 @@
 /** @type {import('tailwindcss').Config} */
 const colors = {
-    'dark-grey': '#1b1f23',
-    'darker-grey': '#181d21',
-    'darkish-grey': '#16191c',
-    'primary-green': {
-        1 : '#1b1f23',
-        2 : '#9acd9a',
-    },
-    'secondary-green': {
-        1 : '#d4dfd9',
-        2 : '#929f98', 
-    }
-}
+  "dark-grey": "#1b1f23",
+  "darker-grey": "#181d21",
+  "darkish-grey": "#16191c",
+  "primary-green": {
+    1: "#1b1f23",
+    2: "#9acd9a",
+  },
+  "secondary-green": {
+    1: "#d4dfd9",
+    2: "#929f98",
+  },
+  "admin-green": {
+    1: "rgba(76,94,81,255)",
+    2: "#9faca3",
+    3: "#bdccc2",
+  },
+};
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
     "../../packages/ui/**/*{.js,.ts,.jsx,.tsx}",
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-	],
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   theme: {
     container: {
       center: true,
@@ -31,7 +36,7 @@ module.exports = {
     },
     extend: {
       colors: {
-          ...colors,
+        ...colors,
       },
       keyframes: {
         "accordion-down": {
@@ -50,4 +55,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};

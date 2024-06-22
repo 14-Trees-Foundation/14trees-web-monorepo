@@ -21,7 +21,7 @@ export default function HomeLayout({
       <body className={font.className}>
         <NavHeader />
         <div className="mt-18">{children}</div>
-        <Footer/>
+        <Footer />
       </body>
     </html>
   );

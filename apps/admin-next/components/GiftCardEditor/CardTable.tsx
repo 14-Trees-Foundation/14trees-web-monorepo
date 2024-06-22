@@ -1,5 +1,5 @@
 import React from "react";
-import { CardData } from "../../pages/giftcards";
+import { CardData } from "../../app/gift-cards/page";
 import Image from "next/image";
 import { treeNamesMain } from "./utils";
 

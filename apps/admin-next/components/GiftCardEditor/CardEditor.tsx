@@ -13,7 +13,7 @@ import logo from "../../src/assets/images/logo.png";
 import { ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import QRCode from "qrcode";
 import { getTreeTemplateImage } from "./utils";
-import { CardData } from "pages/giftcards";
+import { CardData } from "app/gift-cards/page";
 
 const MARGIN = 20;
 const QR_WIDTH = 128;

@@ -7,6 +7,7 @@
       "baseUrl": ".",
       "paths": {
         "@shadcn/*": ["src/shadcn/*"],
+        "src/*": ["src/*"],
         "ui/lib/*": ["src/shadcn/lib/*.ts"],
         "ui/components/*": ["src/shadcn/components/ui/*.tsx"],
       }
