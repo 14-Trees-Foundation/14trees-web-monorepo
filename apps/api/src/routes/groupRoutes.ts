@@ -3,6 +3,7 @@ import * as group from '../controllers/groupController';
 
 const routes = express.Router();
 
+routes.get('/:search', group.searchGroups);
 routes.post('/get', group.getGroups);
 routes.post('/', group.addGroup);
 routes.put('/:id', group.updateGroup);

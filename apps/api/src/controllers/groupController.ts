@@ -76,3 +76,19 @@ export const deleteGroup = async (req: Request, res: Response) => {
         res.status(status.bad).send({ error: error.message });
     }
 }
+
+export const searchGroups = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const searchStr = req.params.search;
+    let whereClause = getWhereOptions("name", "contains", searchStr);
+
+    try {
+        let result = await GroupRepository.getGroups(offset, limit, whereClause);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}

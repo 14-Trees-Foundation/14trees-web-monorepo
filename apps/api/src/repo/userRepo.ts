@@ -1,6 +1,8 @@
-import { Op, WhereOptions } from 'sequelize';
+import { Op, QueryTypes, WhereOptions } from 'sequelize';
 import { User, UserAttributes, UserCreationAttributes } from '../models/user';
-import { PaginatedResponse } from '../models/pagination';
+import { FilterItem, PaginatedResponse } from '../models/pagination';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
+import { sequelize } from '../config/postgreDB';
 
 export const getUserId = (name:string, email: string) => {
     let userId = name.toLowerCase() + email.toLowerCase();
@@ -55,16 +57,53 @@ export class UserRepository {
         return updatedUser;
     }
 
-    public static async getUsers(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<User>> {
+    public static async getUsers(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<User>> {
+        let whereConditions: string = "";
+        let replacements: any = {}
+
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "u." + filter.columnField
+                if (filter.columnField === "group_id") {
+                    columnField = "ug.group_id"
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereConditions = whereConditions + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+        }
+
+        const getQuery = `
+            SELECT u.*, ug.created_at as user_group_created_at 
+            FROM "14trees".users u 
+            LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+            OFFSET ${offset} LIMIT ${limit};
+        `
+
+        const countQuery = `
+            SELECT COUNT(*) 
+            FROM "14trees".users u 
+            LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+        `
+
+        const users: any = await sequelize.query(getQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countUsers: any = await sequelize.query(countQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countUsers[0].count)
+
         return {
             offset: offset,
-            total: await User.count({ where: whereClause }),
-            results: await User.findAll({
-                where: whereClause,
-                order: [['created_at', 'DESC']],
-                offset,
-                limit
-            })
+            total: totalResults,
+            results: users
         };
     }
 

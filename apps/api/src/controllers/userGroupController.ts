@@ -13,8 +13,8 @@ import { GroupRepository } from "../repo/groupRepo";
 */
 
 export const getUserGroup = async (req: Request, res: Response) => {
-    const userId: string = req.query.user_id as string;
-    const groupId: string = req.query.group_id as string;
+    const userId: number = parseInt(req.query.user_id as string);
+    const groupId: number = parseInt(req.query.group_id as string);
     try {
         let result = await UserGroupRepository.getUserGroup(userId, groupId);
         res.status(status.success).send(result);
@@ -28,17 +28,31 @@ export const getUserGroup = async (req: Request, res: Response) => {
 
 export const addUserGroup = async (req: Request, res: Response) => {
 
-    if (!req.body.user_id) {
-        res.status(status.bad).send({ error: "user_id is required" });
-        return;
-    }
     if (!req.body.group_id) {
         res.status(status.bad).send({ error: "group_id is required" });
         return;
     }
+    if (!req.body.user_id && (!req.body.name || !req.body.email || !req.body.phone)) {
+        res.status(status.bad).send({ error: "user_id pr new user details are required" });
+        return;
+    }
+    
     try {
-        const org = await UserGroupRepository.addUserGroup(req.body);
-        res.status(status.created).send(org);
+        let userId = req.body.user_id;
+        let groupId = req.body.group_id;
+        if (userId) {
+            let userGroup = await UserGroupRepository.getUserGroup(userId, groupId);
+            if (userGroup.length !== 0) {
+                res.status(status.duplicate).send({ "message": "UserGroup already exists" });
+                return;
+            }
+        } else {
+            let user = await UserRepository.addUser(req.body);
+            userId = user.id;
+        }
+
+        const userGroup = await UserGroupRepository.addUserGroup(userId, groupId);
+        res.status(status.created).send(userGroup);
     } catch (error) {
         res.status(status.bad).json({
             error: error,
@@ -46,12 +60,17 @@ export const addUserGroup = async (req: Request, res: Response) => {
     }
 }
 
-export const deleteUserGroup = async (req: Request, res: Response) => {
+export const deleteGroupUsers = async (req: Request, res: Response) => {
     try {
-        let resp = await UserGroupRepository.deleteUserGroup(req.params.user_id, req.params.group_id);
-        console.log("Delete user group response for id: %s %s", req.params.user_id, req.params.group_id, resp);
+        const { user_ids, group_id } = req.body
+        if (!user_ids || !group_id) {
+            res.status(status.bad).send({ error: "user_ids and group_id are required" });
+            return;
+        }
+        let resp = await UserGroupRepository.deleteGroupUsers(user_ids, group_id);
+        console.log("Delete user group response for user_ids: %s and group_id: %s", user_ids, group_id, resp);
         res.status(status.success).json({
-          message: "UserGroup deleted successfully",
+          message: "Group users deleted successfully",
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
@@ -81,7 +100,7 @@ export const addUserGroupsBulk = async (req: Request, res: Response) => {
       let users: User[] = [];
       for (const row of data.valid_records) {
         try {
-            const resp = await UserRepository.getUsers(0, 1, { email: row.email });
+            const resp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: row.email, operatorValue: 'equals' }]);
             if (resp.results.length > 0) {
                 users.push(resp.results[0]);
             } else {

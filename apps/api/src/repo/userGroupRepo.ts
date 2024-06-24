@@ -1,17 +1,18 @@
+import { Op } from 'sequelize';
 import { UserGroup, UserGroupCreationAttributes } from '../models/user_group';
 
 export class UserGroupRepository {
-    static async getUserGroup(userId: string, groupId: string): Promise<UserGroup[]> {
+    static async getUserGroup(userId: number, groupId: number): Promise<UserGroup[]> {
         const results = await UserGroup.findAll({
             where: { user_id: userId, group_id: groupId },
         });
         return results;
     }
 
-    static async addUserGroup(data: any): Promise<UserGroup> {
+    static async addUserGroup(userId: number, groupId: number): Promise<UserGroup> {
         const userGroupData: UserGroupCreationAttributes = {
-            user_id: data.user_id,
-            group_id: data.group_id,
+            user_id: userId,
+            group_id: groupId,
             created_at: new Date(),
         };
 
@@ -33,8 +34,8 @@ export class UserGroupRepository {
         return userGroups;
     }
 
-    static async deleteUserGroup(userId: string, groupId: string): Promise<number> {
-        const response = await UserGroup.destroy({ where: { user_id: userId, group_id: groupId } });
+    static async deleteGroupUsers(userIds: number[], groupId: number): Promise<number> {
+        const response = await UserGroup.destroy({ where: { user_id: {[Op.in]: userIds}, group_id: groupId } });
         return response;
     }
 }

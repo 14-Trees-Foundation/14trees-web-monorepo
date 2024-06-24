@@ -7,6 +7,6 @@ const routes = express.Router();
 routes.get('/', userGroup.getUserGroup);
 routes.post('/', userGroup.addUserGroup);
 routes.post('/bulk', uploadFiles.single('file'), userGroup.addUserGroupsBulk);
-routes.delete('/:user_id/:group_id', userGroup.deleteUserGroup);
+routes.delete('/', userGroup.deleteGroupUsers);
 
 export default routes;

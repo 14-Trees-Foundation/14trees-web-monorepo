@@ -8,7 +8,6 @@ import { createObjectCsvWriter } from 'csv-writer';
 import fs from 'fs';
 import { constants } from "../constants";
 import { FilterItem } from "../models/pagination";
-import { getWhereOptions } from "./helper/filters";
 
 /*
     Model - User
@@ -37,14 +36,8 @@ export const getUsers = async (req: Request, res: Response) => {
   try {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
-    let whereClause = {};
-    if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-        })
-    }
     
-    let users = await UserRepository.getUsers(offset, limit, whereClause);
+    let users = await UserRepository.getUsers(offset, limit, filters);
     res.status(status.success).json(users);
   } catch (error: any) {
     res.status(status.error).send({ error: error.message });
