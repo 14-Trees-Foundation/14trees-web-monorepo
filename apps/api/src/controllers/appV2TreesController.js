@@ -181,7 +181,6 @@ async function uploadImages(images, status, saplingID) {
         const metadata = {
             capturetimestamp: image.meta.capturetimestamp,
             uploadtimestamp: (new Date()).toISOString(),
-
             //convertible to Date object using: new Date(Date.parse(timestamp));
             remark: image.meta.remark,
         };
@@ -295,11 +294,8 @@ export const uploadShifts = async (req, res) => {
 
             try {
                 if (shift_id) {
-                    // const shiftD = await ShiftModel.findOne({ _id: shift_id });
-                    // console.log("shiftndata found---", shiftD);
-
                     console.log("updating the shift document----");
-                    const result = await ShiftModel.updateOne({ _id: shift_id }, shiftData);
+                    await ShiftModel.updateOne({ _id: shift_id }, shiftData);
                     shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: true, message: 'Shift updated successfully' };
                 } else {
                     console.log("inserting into the shift document----");
@@ -309,8 +305,8 @@ export const uploadShifts = async (req, res) => {
                 }
 
             } catch (error) {
-                console.log("error inserting shift---" , error);
-                shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: false, message: 'Error inserting/updating shift', dataSaveError : error };
+                console.log("error inserting shift---", error);
+                shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: false, message: 'Error inserting/updating shift', dataSaveError: error };
             }
         }
 
@@ -398,18 +394,23 @@ export const uploadNewImages = async (req, res) => {
             }
             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
 
-            let imageUrl = await uploadImages([tree.image], treeUploadStatuses, saplingID);
+            let imageUrl;
+            if (!tree.inActive || tree.inActive === 0) {
+                imageUrl = await uploadImages([tree.image], treeUploadStatuses, saplingID);
+            }
 
             const location = {
                 type: "Point",
                 coordinates: { lat: tree.lat, lng: tree.lng }
             }
+
             const treesnapshotObj = {
                 sapling_id: saplingID,
-                image: imageUrl[0],
+                image: (!tree.inActive || tree.inActive === 0) ? imageUrl[0] : null,
                 location: location,
                 user_id: user._id,
                 date_added: (new Date()).toISOString(),
+                inActive: (!tree.inActive || tree.inActive === 0) ? false : true
             }
 
             const newTreesnapshotInstance = new TreesSnapshotModel(treesnapshotObj) //treesnapshotObj
@@ -454,7 +455,7 @@ export const treesUpdatePlot = async (req, res) => {
             console.log("correct plot---", plot, correctPlot, id1, id2);
 
             if (!correctPlot) {
-                treeUploadStatuses[saplingID].message = `${saplingID} doesnot belong to plot ${plot.name}`; //Sapling id does not belong to the old plot
+                treeUploadStatuses[saplingID].message = `${saplingID} does not belong to plot ${plot.name}`; //Sapling id does not belong to the old plot
                 continue;
             }
 
