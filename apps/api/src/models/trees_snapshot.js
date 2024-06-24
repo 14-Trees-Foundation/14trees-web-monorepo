@@ -9,6 +9,7 @@ let treesSnapshotSchema = new Schema({
     image: { type: String },
     timestamp: { type: String },
     date_added: { type: Date },
+    inActive: { type: Boolean }
 });
 
 const TreesSnapshotModel = mongoose.model("trees_snapshot", treesSnapshotSchema);
