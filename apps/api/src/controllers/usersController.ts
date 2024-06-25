@@ -9,6 +9,7 @@ import csvParser from 'csv-parser';
 import { createObjectCsvWriter } from 'csv-writer';
 import { getQueryExpression } from "./helper/filters";
 import fs from 'fs';
+import TreeModel from "../models/tree";
 
 /*
     Model - User
@@ -248,6 +249,28 @@ export const updateUser = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
+
+      // check for assigned trees
+      let assignedCount = await UserTreeModel.count({ user: req.params.id });
+      if (assignedCount > 0) {
+        res.status(status.error).json({
+          status: status.error,
+          message: "Cannot delete user with assigned trees",
+        });
+        return;
+      }
+      
+      // check for mapped trees
+      let mappedCount = await TreeModel.count({ mapped_to: req.params.id });
+      if (mappedCount > 0) {
+        res.status(status.error).json({
+          status: status.error,
+          message: "Cannot delete user with mapped trees",
+        });
+        return;
+      }
+
+
       let resp = await UserModel.findByIdAndDelete(req.params.id).exec();
       console.log(`Deleted User with id: ${req.params.id}`, resp);
       res.status(status.success).json(resp);
