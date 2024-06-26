@@ -368,6 +368,14 @@ class TreeRepository {
       memory_images: null,
     }, { where: { sapling_id: { [Op.in]: saplingIds } } });
   }
+
+  public static async countUserMappedTrees(userId: number): Promise<number> {
+    return await Tree.count({ where: { mapped_to_user: userId } });
+  }
+
+  public static async countUserAssignedTrees(userId: number): Promise<number> {
+    return await Tree.count({ where: { assigned_to: userId } });
+  }
 }
 
 export default TreeRepository;

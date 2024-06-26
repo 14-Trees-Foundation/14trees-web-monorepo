@@ -8,6 +8,8 @@ import { createObjectCsvWriter } from 'csv-writer';
 import fs from 'fs';
 import { constants } from "../constants";
 import { FilterItem } from "../models/pagination";
+import TreeRepository from "../repo/treeRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
 
 /*
     Model - User
@@ -167,7 +169,27 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 export const deleteUser = async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id)
+    if (isNaN(userId)) {
+        res.status(status.bad).send({ message: "User id is required" });
+        return;
+    }
     try {
+      const mapped = await TreeRepository.countUserMappedTrees(userId);
+      if (mapped > 0) {
+        throw new Error("User has mapped trees!");
+      }
+
+      const assigned = await TreeRepository.countUserAssignedTrees(userId);
+      if (assigned > 0) {
+        throw new Error("User has assigned trees!");
+      }
+
+      const userGroups = await UserGroupRepository.countUserGroups(userId);
+      if (userGroups > 0) {
+        throw new Error("User is part of groups!");
+      }
+
       let resp = await UserRepository.deleteUser(parseInt(req.params.id));
       console.log(`Deleted User with id: ${req.params.id}`, resp);
       res.status(status.success).json("User deleted successfully");

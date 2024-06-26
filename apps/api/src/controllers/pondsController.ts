@@ -1,9 +1,4 @@
-
-// const uploadHelper = require("./helper/uploadtos3");
-
 import { status } from "../helpers/status";
-import { UploadFileToS3 } from "./helper/uploadtos3"; // Assuming UploadFileToS3 is a function
-// import {OnsiteStaff}  from "../models/onsitestaff";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { PondRepository } from "../repo/pondsRepo";
@@ -80,45 +75,6 @@ export const getPonds = async (req: Request ,res: Response) => {
     });
   }
 };
-
-// export const addWaterLevelUpdate = async (req: any,res: any) => {
-//   try {
-//     if (!req.body.pond_name) {
-//       throw new Error("Pond name is required");
-//     } else if (!req.body.levelFt) {
-//       throw new Error("Water level is required");
-//     }
-//   } catch (error: any) {
-//     res.status(status.bad).send({ error: error.message });
-//     return;
-//   }
-
-//   let user = null;
-//   if (req.body.user_id) {
-//     user = await OnSiteStaff.findOne({ user_id: req.body.user_id });
-//   }
-
-//   let pondImageUrl: string = "";
-//   if (req.files && req.files.length !== 0) {
-//     pondImageUrl = await UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
-//   }
-
-//   let obj = {
-//     date: req.body.date === null ? new Date().toISOString() : req.body.date,
-//     levelFt: req.body.levelFt,
-//     user: user === null ? null : user,
-//     images: pondImageUrl,
-//   };
-//   try {
-//     let result = await Pond.updateOne(
-//       { name: req.body.pond_name },
-//       { $push: { updates: obj } }
-//     );
-//     res.status(status.success).send(result);
-//   } catch (error) {
-//     res.status(status.error).json({ error });
-//   }
-// };
 
 export const deletePond = async (req: any,res: any) => {
   try {

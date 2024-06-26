@@ -8,11 +8,12 @@ interface PondWaterLevelAttributes {
 	level_ft: number;
 	user_id?: number;
   pond_id: number;
-  images: string[];
+  image: string | null;
+  updated_at: Date;
 }
 
 interface PondWaterLevelCreationAttributes
-	extends Optional<PondWaterLevelAttributes, 'images' | 'id'> {}
+	extends Optional<PondWaterLevelAttributes, 'image' | 'id'> {}
 
 @Table({ tableName: 'pond_water_level' })
 class PondWaterLevel extends Model<PondWaterLevelAttributes, PondWaterLevelCreationAttributes>
@@ -21,6 +22,7 @@ implements PondWaterLevelAttributes {
   @Column({
     type: DataType.NUMBER,
     allowNull: false,
+    autoIncrement: true,
     primaryKey: true,
     unique: true
   })
@@ -35,8 +37,11 @@ implements PondWaterLevelAttributes {
   @Column(DataType.NUMBER)
   pond_id!: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  images!: string[];
+  @Column(DataType.STRING)
+  image!: string;
+
+  @Column({ type: DataType.DATE })
+  updated_at!: Date;
 }
 
 export { PondWaterLevel }

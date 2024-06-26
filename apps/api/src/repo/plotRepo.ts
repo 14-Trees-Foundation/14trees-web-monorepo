@@ -77,6 +77,7 @@ export class PlotRepository {
         LEFT JOIN "14trees".trees t ON p.id = t.plot_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id
+        ORDER BY p.id DESC
         OFFSET ${offset} LIMIT ${limit};
         `
 

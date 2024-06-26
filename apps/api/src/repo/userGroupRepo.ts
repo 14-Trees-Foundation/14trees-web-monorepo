@@ -38,4 +38,8 @@ export class UserGroupRepository {
         const response = await UserGroup.destroy({ where: { user_id: {[Op.in]: userIds}, group_id: groupId } });
         return response;
     }
+
+    public static async countUserGroups(userId: number): Promise<number> {
+        return await UserGroup.count({ where: { user_id: userId } });
+    }
 }

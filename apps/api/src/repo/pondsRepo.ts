@@ -22,6 +22,7 @@ export class PondRepository {
       width_ft: data.width_ft,
       type: data.type,
       tags: data.tags,
+      boundaries: data.boundaries,
       images: pondImageUrls,
       created_at: new Date(),
       updated_at: new Date(),
@@ -58,47 +59,6 @@ export class PondRepository {
       };
     } catch (error: any) {
       throw new Error(error.message);
-    }
-  }
-
-  public static async addWaterLevelUpdate(req: any, res: any): Promise<void> {
-    try {
-      // Validation logic...
-    } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-      return;
-    }
-    try {
-      let user = null;
-      if (req.body.user_id) {
-        user = await User.findOne({ where: { id: req.body.user_id } });
-      }
-  
-      let pond = null;
-      if (req.body.pond_id) {
-        pond = await User.findByPk(req.body.pond_id);
-      }
-  
-      if (!pond) {
-        throw new Error("Invalid pond id. Pond with given id not found!")
-      }
-  
-      let pondImageUrl = "";
-      if (req.files[0]) {
-        pondImageUrl = await UploadFileToS3(req.files[0].filename, "ponds", req.body.pond_name);
-      }
-  
-      let obj: PondWaterLevelCreationAttributes = {
-        level_ft: req.body.levelFt,
-        user_id: user?.id,
-        pond_id: pond?.id,
-        images: pondImageUrl === ""? undefined : [pondImageUrl],
-      };
-
-      const result = await PondWaterLevel.create(obj);
-      res.status(status.success).send(result);
-    } catch (error) {
-      res.status(status.error).json({ error });
     }
   }
 

@@ -14,7 +14,7 @@ interface PlotAttributes {
   gat?: string;
   status?: string;
   land_type?: number;
-  category?: number;
+  category: 'Public' | 'Foundation' | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -61,8 +61,8 @@ implements PlotAttributes {
     @Column({ type: DataType.NUMBER })
     land_type?: number;
 
-    @Column({ type: DataType.NUMBER })
-    category?: number;
+    @Column({ type: DataType.STRING })
+    category!: 'Public' | 'Foundation' | null;
 
     @Column({ type: DataType.DATE })
     created_at!: Date;
