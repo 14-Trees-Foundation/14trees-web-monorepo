@@ -393,6 +393,31 @@ class TreeRepository {
   public static async countUserAssignedTrees(userId: number): Promise<number> {
     return await Tree.count({ where: { assigned_to: userId } });
   }
+
+  public static async getUserProfileForSaplingId(saplingId: string): Promise<any[]> {
+    const query =  `
+      SELECT 
+        t.sapling_id, t.images, t."location", t.mapped_to_user, t.description, 
+        t.user_tree_images, t.sponsored_by_user, du."name" AS spomsored_by_user_name, 
+        t.gifted_by, t.planted_by, t.memory_images, t.created_at, 
+        pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_image, 
+        p."name" AS plot, p.boundaries,
+        au."name" AS assigned_to,
+        au."id" AS assigned_to_id, gu."name" AS gifted_by_name, t.created_at
+      FROM "14trees".trees t
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".users du ON du.id = t.sponsored_by_user
+      LEFT JOIN "14trees".users au ON au.id = t.assigned_to
+      LEFT JOIN "14trees".users gu ON gu.id = t.gifted_by
+      WHERE t.sapling_id = '${saplingId}';
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT
+    })
+    return data;
+  }
 }
 
 export default TreeRepository;

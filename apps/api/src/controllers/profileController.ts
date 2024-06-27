@@ -44,10 +44,42 @@ export const getProfile = async  (req: Request, res: Response) => {
   }
 
   try {
-    const usertrees = await UserTreeRepository.getUserProfileForSamplingId(req.query.id.toString());
-    res.status(status.success).json({ ...usertrees});
+    const data = await TreeRepository.getUserProfileForSaplingId(req.query.id.toString());
+    const parsedData = data.map((item: any) => {
+      const newData = { ...item }
+      if (item.images) {
+        let images = JSON.parse(item.images.replace(/'/g, '"'));
+        if (images && images.length > 0) {
+          newData.images = images;
+        }
+      }
+
+      if (item.user_tree_images) {
+        let images = JSON.parse(item.user_tree_images.replace(/'/g, '"'));
+        if (images && images.length > 0) {
+          newData.profile_image = images[0];
+        }
+      }
+
+      if (item.memory_images) {
+        let images = JSON.parse(item.memory_images.replace(/'/g, '"'));
+        if (images && images.length > 0) {
+          newData.memory_images = images;
+        }
+      }
+
+      if (item.plant_type_image) {
+        let images = JSON.parse(item.plant_type_image.replace(/}/g, '').replace(/{/g, '').replace(/"/g, '').replace(/'/g, '"'));
+        if (images && images.length > 0) {
+          newData.plant_type_image = images[0];
+        }
+      }
+
+      return newData;
+    })
+    res.status(status.success).json({ user_trees: parsedData });
   } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
+    res.status(status.bad).send({ message: error.message });
     return;
   }
 };
