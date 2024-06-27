@@ -217,11 +217,6 @@ export const getUserMappedTreesCount = async (req: Request, res: Response) => {
     
     let result = await TreeRepository.getUserTreesCount(offset, limit);
     
-    // var defaultObj = result.reduce(
-    //   (m, o) => (Object.keys(o).forEach((key) => (m[key] = 0)), m),
-    //   {}
-    // );
-    // result = result.map((e) => Object.assign({}, defaultObj, e));
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({

@@ -21,7 +21,7 @@ import analyticsRoutes from "./routes/analyticsRoutes";
 import plotRoutes from "./routes/plotRoutes";
 import siteRoutes from "./routes/siteRoutes";
 // import activityRoutes from "./routes/activityRoutes";
-// import searchRoutes from "./routes/searchRoutes";
+import searchRoutes from "./routes/searchRoutes";
 import eventRoutes from "./routes/eventRoutes";
 import orgRoutes from "./routes/orgRoutes";
 // import loginRoutes from "./routes/loginRoutes";
@@ -104,7 +104,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/organizations", orgRoutes);
   app.use("/api/analytics", analyticsRoutes);
   // // app.use("/api/activity", activityRoutes);
-  // app.use("/api/search", searchRoutes);
+  app.use("/api/search", searchRoutes);
   // app.use("/api/login", loginRoutes);
   app.use("/api/auth", authRoutes);
   app.use('/api/donations', donationRoutes);

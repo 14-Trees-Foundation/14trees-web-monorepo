@@ -136,4 +136,23 @@ export class UserRepository {
     public static async usersCount(): Promise<number> {
         return await User.count()
     }
+
+    public static async search(searchStr: string): Promise<any[]> {
+
+        const { condition, replacement } = getSqlQueryExpression("u.name", "contains", "name", searchStr);
+
+        const getQuery = `
+            SELECT u.*, jsonb_agg(jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_images)) AS assigned_trees
+            FROM "14trees".users u
+            JOIN "14trees".trees t ON t.assigned_to = u.id
+            WHERE ${condition}
+            GROUP BY u.id;
+        `
+    
+        return await sequelize.query(getQuery, {
+            replacements: replacement,
+            type: QueryTypes.SELECT
+        })
+
+    }
 }

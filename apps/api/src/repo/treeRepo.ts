@@ -193,20 +193,37 @@ class TreeRepository {
       throw new Error("User with given email not found!");
     }
 
-    const query = `select t.sapling_id, t."location", t.event_id, pt."name" as plant_type, p."name" as plot, u."name" as assigned_to from 
-      trees t, plant_types pt, plots p, users u 
-      where
-      --t.mapped_to = '${user.id}' and
-      t.plant_type_id  = pt.id and 
-      t.plot_id  = p.id  and 
-      t.assigned_to = u.id
-      offset ${offset} limit ${limit}
-      `;
+    const query = `
+      SELECT t.sapling_id, t."location", t.event_id, pt."name" AS plant_type, p."name" AS plot, u."name" AS assigned_to
+      FROM "14trees".trees AS t
+      LEFT JOIN "14trees".plant_types AS pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plots AS p ON p.id = t.plot_id
+      LEFT JOIN "14trees".users AS u ON u.id = t.assigned_to
+      WHERE t.mapped_to_user = ${user.id}
+      OFFSET ${offset} LIMIT ${limit};
+    `;
+
+    const countQuery = `
+      SELECT count(t."id")
+      FROM "14trees".trees AS t
+      WHERE t.mapped_to_user = ${user.id};
+    `;
 
     const data = await sequelize.query(query, {
       type: QueryTypes.SELECT
     })
-    return { trees: data, user: user };
+
+    const total: any[] = await sequelize.query(countQuery, {
+      type: QueryTypes.SELECT
+    })
+    return {
+      user: user,
+      trees: {
+        offset: offset,
+        total: parseInt(total[0].count),
+        results: data
+      }
+    };
   };
 
   public static async getUserTreesCount(offset: number, limit: number) {
