@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize-typescript";
 
 import { Pond } from "../models/pond";
+import { PondWaterLevel } from "../models/pond_water_level";
 import { Plot } from "../models/plot";
 import { Org } from "../models/org";
 import { PlantType } from "../models/plant_type";
@@ -58,7 +59,8 @@ class Database {
         CorpEvent,
         Site,
         Group,
-        UserGroup
+        UserGroup,
+        PondWaterLevel
       ]
     });
 

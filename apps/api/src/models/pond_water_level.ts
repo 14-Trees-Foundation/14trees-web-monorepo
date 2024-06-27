@@ -31,7 +31,7 @@ implements PondWaterLevelAttributes {
   @Column({ type: DataType.NUMBER, allowNull: false })
   level_ft!: number;
 
-  @Column({ type: DataType.NUMBER, allowNull: false, unique: true })
+  @Column({ type: DataType.NUMBER, allowNull: false })
   user_id?: number;
 
   @Column(DataType.NUMBER)

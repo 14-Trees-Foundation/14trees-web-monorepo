@@ -8,11 +8,11 @@ import { PondWaterLevelAttributes } from "../models/pond_water_level";
 export const addPondWaterLevelUpdate = async (req: Request, res: Response) => {
 
     try {
-        if (!req.body.pond_id) {
+        if (!req.body.pond_id || isNaN(parseInt(req.body.pond_id))) {
             throw new Error("Pond id is required");
-        } else if (!req.body.level_ft && isNaN(parseFloat(req.body.level_ft))) {
+        } else if (!req.body.level_ft || isNaN(parseFloat(req.body.level_ft))) {
             throw new Error("Pond level is required");
-        } else if (!req.body.user_id) {
+        } else if (!req.body.user_id || isNaN(parseInt(req.body.user_id))) {
             throw new Error("User id is required");
         }
     } catch (error: any) {

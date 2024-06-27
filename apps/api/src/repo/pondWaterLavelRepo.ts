@@ -5,6 +5,18 @@ import { PaginatedResponse } from '../models/pagination';
 export class PondWaterLevelRepository {
 
     public static async getPondWaterLevelUpdates(pondId: number, offset: number, limit: number): Promise<PaginatedResponse<PondWaterLevel>> {
+        if (limit === -1) {
+            const updates = await PondWaterLevel.findAll({
+                where: { pond_id: pondId },
+                offset: offset
+            })
+            return {
+                offset: offset,
+                total: updates.length,
+                results: updates
+            }
+        }
+
         return {
             offset: offset,
             total: await PondWaterLevel.count({ where: { pond_id: pondId } }),
@@ -24,9 +36,9 @@ export class PondWaterLevelRepository {
         }
 
         let obj: PondWaterLevelCreationAttributes = {
-            user_id: data.user_id,
-            pond_id: data.pond_id,
-            level_ft: data.level_ft,
+            user_id: parseInt(data.user_id),
+            pond_id: parseInt(data.pond_id),
+            level_ft: parseFloat(data.level_ft),
             image: pondImageUrl,
             updated_at: new Date(),
         }
@@ -41,6 +53,7 @@ export class PondWaterLevelRepository {
             const location = await UploadFileToS3(files[0].filename, "ponds", pondName);
             data.image = location
         }
+        data.updated_at = new Date();
 
         const waterLevelUpdate = await PondWaterLevel.findByPk(data.id);
         if (!waterLevelUpdate) {

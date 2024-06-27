@@ -58,13 +58,18 @@ const migratePondWaterLevelData = async () => {
               const pond: any[] = await sequelize.query(selectPond, {type: QueryTypes.SELECT});
               
               for (let i = 0; i < dataArray.length; i++) {
-                const selectUser = `SELECT id FROM "14trees".users WHERE mongo_id = '${dataArray[i]["user"]}'`;
-                const user: any[] = await sequelize.query(selectUser, {type: QueryTypes.SELECT});
+                const userId = dataArray[i]["user"];
+                let user: any = null;
+                if (userId !== null) {
+                  const selectUser = `SELECT id FROM "14trees".users WHERE mongo_id = '${dataArray[i]["user"]}'`;
+                  const users: any[] = await sequelize.query(selectUser, {type: QueryTypes.SELECT});
+                  if (users.length > 0) user = users[0];
+                } 
 
-                const insertWaterLevel = `INSERT INTO "14trees".tree_update_photos (level_ft, user_id, pond_id, images, mongo_id, mongo_user_id, updated_at)
-                VALUES (${dataArray[i]['levelFt']}, ${user[0]['id']}, ${pond[0]['id']}, ARRAY${dataArray[i]['images']}, '${pondId}', '${dataArray[i]["user"]}', ${dataArray[i]["date"]})`
+                const insertWaterLevel = `INSERT INTO "14trees".pond_water_level (id, level_ft, user_id, pond_id, image, mongo_id, mongo_user_id, updated_at)
+                VALUES (DEFAULT, ${dataArray[i]['levelFt']}, ${user ? user.id : null}, ${pond[0]['id']}, ${dataArray[i]['images']?.length > 0 ? "'" + dataArray[i]['images'][0] + "'" : null}, '${pondId}', ${dataArray[i]["user"] ? "'" + dataArray[i]["user"] + "'" : null}, '${dataArray[i]["date"]}')`
 
-                console.log(insertWaterLevel);
+                await sequelize.query(insertWaterLevel, {type: QueryTypes.INSERT});
               }
             }
         })
