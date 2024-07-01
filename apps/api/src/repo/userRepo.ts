@@ -79,6 +79,7 @@ export class UserRepository {
             FROM "14trees".users u 
             LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+            ORDER BY u.id DESC
             OFFSET ${offset} LIMIT ${limit};
         `
 

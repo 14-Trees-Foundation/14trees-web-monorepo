@@ -48,6 +48,7 @@ class TreeRepository {
     LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+    ORDER BY t.id DESC
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
@@ -331,20 +332,15 @@ class TreeRepository {
     }
 
     // Upload images to S3
-    let userImageUrls = []
+    let userImageUrl: string | null = null;
     let memoryImageUrls = []
 
     // User Profile images
-    if (reqBody.user_images !== undefined) {
-      if (reqBody.user_images.length > 0) {
-        let userImages = reqBody.user_images as string[]
-        for (const image in userImages) {
-          if (userImages[image] !== "") {
-            const location = await UploadFileToS3(userImages[image], "users");
-            if (location != "") {
-              userImageUrls.push(location);
-            }
-          }
+    if (reqBody.user_image !== undefined) {
+      if (reqBody.user_image.length > 0) {
+        const location = await UploadFileToS3(reqBody.user_image, "users");
+        if (location != "") {
+          userImageUrl = location;
         }
       }
     }
@@ -367,7 +363,7 @@ class TreeRepository {
     const updateFields: any = {
       assigned_to: user.id,
       assigned_at: new Date(),
-      user_tree_images: userImageUrls.join(","),
+      user_tree_images: userImageUrl,
       memory_images: memoryImageUrls.join(","),
     } 
     if (reqBody.desc) {

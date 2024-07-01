@@ -53,6 +53,7 @@ export class PondRepository {
         total: await Pond.count({ where: whereClause }),
         results: await Pond.findAll({
           where: whereClause,
+          order: [['id', 'DESC']],
           offset: offset, 
           limit: limit
         })

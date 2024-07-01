@@ -24,12 +24,9 @@ import { status } from "../helpers/status";
 import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { isArray } from "lodash";
-import { Tree } from "../models/tree";
-import { Plot } from "../models/plot";
-import { QueryTypes, Sequelize } from "sequelize";
+import { QueryTypes } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
-import { getWhereOptions } from "./helper/filters";
   
   /*
     Model - Tree
