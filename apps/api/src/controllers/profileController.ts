@@ -49,33 +49,6 @@ export const getProfile = async  (req: Request, res: Response) => {
     const data = await TreeRepository.getUserProfileForSaplingId(req.query.id.toString());
     const parsedData = data.map((item: any) => {
       const newData = { ...item }
-      if (item.images) {
-        let images = JSON.parse(item.images.replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.images = images;
-        }
-      }
-
-      if (item.user_tree_images) {
-        let images = JSON.parse(item.user_tree_images.replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.profile_image = images[0];
-        }
-      }
-
-      if (item.memory_images) {
-        let images = JSON.parse(item.memory_images.replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.memory_images = images;
-        }
-      }
-
-      if (item.plant_type_image) {
-        let images = JSON.parse(item.plant_type_image.replace(/}/g, '').replace(/{/g, '').replace(/"/g, '').replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.plant_type_image = images[0];
-        }
-      }
 
       return newData;
     })

@@ -143,7 +143,7 @@ export class UserRepository {
         const { condition, replacement } = getSqlQueryExpression("u.name", "contains", "name", searchStr);
 
         const getQuery = `
-            SELECT u.*, jsonb_agg(jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_images)) AS assigned_trees
+            SELECT u.*, jsonb_agg(jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_image)) AS assigned_trees
             FROM "14trees".users u
             JOIN "14trees".trees t ON t.assigned_to = u.id
             WHERE ${condition}

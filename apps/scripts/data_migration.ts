@@ -31,6 +31,24 @@ sequelize
       console.error("❌ Unable to connect to the PostgreSQL database:", err);
     });
 
+const migrateUsersData = async (): Promise<boolean> => {
+    console.log("Migrating users data...");
+
+    try {
+      const query = `
+        INSERT INTO "14trees".users (mongo_id, name, email, user_id, phone, birth_date, created_at, updated_at)
+        SELECT u."_id", u."name", u.email, u.userid, u.phone, u.dob, u.date_added, u.date_added  \
+        FROM public.users AS u WHERE email IS NOT NULL;
+      `
+
+      const resp = await sequelize.query(query, {type: QueryTypes.INSERT});
+      console.log('Success! Users: %d', resp[0]);
+      return true;
+    } catch(error: any) {
+      console.log(error);
+      return false;
+    }
+}
 
 const migratePondWaterLevelData = async () => {
     console.log("Migrating pond water level data...");

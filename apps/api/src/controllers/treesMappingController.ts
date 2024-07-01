@@ -10,11 +10,6 @@ export const getMappedTrees = async (req: Request, res: Response) => {
   let email = req.params["email"];
   try {
     const {trees, user} = await TreeRepository.getMappedTrees(email, offset, limit);
-
-    trees.results = trees.results.map((item: any) => {
-      item.images = JSON.parse((item.images as string).replace(/'/g, '"'))
-      return item;
-    })
     res.status(status.success).send({
       user: user,
       trees: trees,

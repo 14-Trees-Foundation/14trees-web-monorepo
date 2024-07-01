@@ -107,14 +107,12 @@ class TreeRepository {
     }
 
     // Upload images to S3
-    let imageUrls = [];
-    if (data.images && data.images.length > 0) {
-      let images = data.images.split(",");
-      for (const idx in images) {
-        const location = await UploadFileToS3(images[idx], "trees");
-        if (location !== "") {
-          imageUrls.push(location);
-        }
+    let imageUrl: string | null = null;
+    if (data.image && data.image.length > 0) {
+      let image = data.image
+      const location = await UploadFileToS3(image, "trees");
+      if (location !== "") {
+        imageUrl = location;
       }
     }
 
@@ -131,7 +129,7 @@ class TreeRepository {
       sapling_id: data.sapling_id,
       plant_type_id: plantType.id,
       plot_id: plot.id,
-      images: imageUrls,
+      image: imageUrl,
       location: loc,
       mapped_to_user: mapped_to?.id,
       created_at: new Date(),
@@ -145,15 +143,11 @@ class TreeRepository {
   public static async updateTree(data: TreeAttributes, files?: Express.Multer.File[]): Promise<Tree> {
 
     // Upload images to S3
-    let imageUrls: string[] = [];
-    if (files) {
-      for (const file of files) {
-        const location = await UploadFileToS3(file.filename, "trees");
+    if (files && files.length !== 0) {
+        const location = await UploadFileToS3(files[0].filename, "trees");
         if (location !== "") {
-          imageUrls.push(location);
+          data.image = location;
         }
-      }
-      data.images = imageUrls;
     }
 
     // user validation/invalidation update logic
@@ -195,7 +189,7 @@ class TreeRepository {
     }
 
     const query = `
-      SELECT t.sapling_id, t."location", t.event_id, t.images,
+      SELECT t.sapling_id, t."location", t.event_id, t.image,
         pt."name" AS plant_type, p."name" AS plot, 
         u."name" AS assigned_to
       FROM "14trees".trees AS t
@@ -380,7 +374,7 @@ class TreeRepository {
     await Tree.update({
       assigned_to: null,
       assigned_at: null,
-      user_tree_images: null,
+      user_tree_image: null,
       memory_images: null,
     }, { where: { sapling_id: { [Op.in]: saplingIds } } });
   }
@@ -396,10 +390,10 @@ class TreeRepository {
   public static async getUserProfileForSaplingId(saplingId: string): Promise<any[]> {
     const query =  `
       SELECT 
-        t.sapling_id, t.images, t."location", t.mapped_to_user, t.description, 
-        t.user_tree_images, t.sponsored_by_user, du."name" AS spomsored_by_user_name, 
+        t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
+        t.user_tree_image, t.sponsored_by_user, du."name" AS sponsored_by_user_name, 
         t.gifted_by, t.planted_by, t.memory_images, t.created_at, 
-        pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_image, 
+        pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_images, 
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
         au."id" AS assigned_to_id, gu."name" AS gifted_by_name, t.created_at
