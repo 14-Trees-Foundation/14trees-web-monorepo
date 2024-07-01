@@ -473,8 +473,8 @@ export const deleteTree = async (req: Request, res: Response) => {
         const query = `SELECT DATE(t.date_added) AS "_id", COUNT(t._id)
                         FROM trees AS t
                         GROUP BY DATE(t.date_added)
-                        ORDER BY DATE(t.date_added) DESC
-                        OFFSET ${offset} LIMIT ${limit};
+                        ORDER BY DATE(t.date_added) DESC;
+                        -- OFFSET ${offset} LIMIT ${limit};
         `
     //   let result = await TreeModel.aggregate([
     //     {
