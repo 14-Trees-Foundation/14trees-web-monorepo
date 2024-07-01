@@ -134,8 +134,9 @@ const initExpressApp = (app: express.Application) => {
       },
     });
   });
-  app.listen(port, function () {
+  app.listen(port, function() {
     console.log("API Server listening on port " + port + "!");
+    
   });
 
   return app;

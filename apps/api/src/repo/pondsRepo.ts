@@ -48,6 +48,7 @@ export class PondRepository {
 
   public static async getPonds(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Pond>> {
     try {  
+      console.log('Pond where clause : ' , whereClause)
       return {
         offset: offset,
         total: await Pond.count({ where: whereClause }),
