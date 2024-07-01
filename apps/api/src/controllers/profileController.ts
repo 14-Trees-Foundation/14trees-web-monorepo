@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserTreeRepository } from "../repo/userTreeRepo";
 import TreeRepository from "../repo/treeRepo";
+import { Event, EventCreationAttributes } from "../models/events";
+import EventRepository from "../repo/eventsRepo";
 
 const { status } = require("../helpers/status");
 
@@ -113,11 +115,27 @@ export const assignTreeToUser = async  (req: Request, res: Response) => {
 };
 
 export const assignTreesToUser = async  (req: Request, res: Response) => {
+  const fields = req.body;
+  let event: Event | undefined;
   try {
-    let saplingIds: string[] = req.body.sapling_ids;
+    if (fields.type && fields.type != "") {
+      const data: EventCreationAttributes = {
+        name: fields.name,
+        type: fields.type,
+        assigned_by: fields.assigned_by,
+        site_id: fields.site_id,
+        description: fields.description,
+        tags: fields.tags,
+        event_date: fields.event_date ?? new Date(),
+        event_location: fields.event_location ?? 'onsite',
+      }
+      event = await EventRepository.addEvent(data);
+    }
+
+    let saplingIds: string[] = fields.sapling_ids.split(",");
     let trees = [];
     for (let i = 0; i < saplingIds.length; i++) {
-      const result = await TreeRepository.assignTree(saplingIds[i], req.body);
+      const result = await TreeRepository.assignTree(saplingIds[i], fields, event?.id);
       trees.push(result);
     }
     res.status(status.created).json(trees);

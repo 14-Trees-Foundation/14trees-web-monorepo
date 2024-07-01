@@ -33,6 +33,7 @@ import authRoutes from "./routes/authRoutes";
 import pondsRoutes from "./routes/pondsRoutes";
 // import imageRoutes from "./routes/imageRoutes";
 import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
+import albumRoutes from "./routes/albumRoutes";
 import donationRoutes from "./routes/donationRoutes"
 
 let swaggerFile: any;
@@ -112,6 +113,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/ponds", pondsRoutes);
   // app.use("/api/images", imageRoutes);
   app.use("/api/onsitestaff", onSiteStaffRoutes);
+  app.use("/api/albums", albumRoutes);
 
   // swagger doc
   if (swaggerFile) {

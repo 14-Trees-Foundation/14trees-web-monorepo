@@ -15,6 +15,7 @@ import { CorpEvent } from "../models/corp_events";
 import { Site } from "../models/sites";
 import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
+import { Album } from "../models/albums";
 
 
 class Database {
@@ -60,7 +61,8 @@ class Database {
         Site,
         Group,
         UserGroup,
-        PondWaterLevel
+        PondWaterLevel,
+        Album
       ]
     });
 

@@ -5,132 +5,16 @@ const { status } = require("../helpers/status");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
 const { getWhereOptions } = require("./helper/filters");
 
-// module.exports.createAlbum = async (req, res) => {
-//   let email = req.params["email"];
-//   try {
-//     let user = await UserModel.find({ email: email, name: req.body.name });
-//     if (user === null || user.length === 0) {
-//       res
-//         .status(status.notfound)
-//         .send({ error: "User not registered! Contact Admin." });
-//       return;
-//     }
-
-//     if (req.body.album_name === undefined) {
-//       res.status(status.bad).send({ error: "Album name required!." });
-//       return;
-//     }
-
-//     let date = new Date().toISOString().slice(0, 10);
-//     let album_name =
-//       req.body.name.split(" ")[0] + "/" + date + "/" + req.body.album_name;
-
-//     let memoryImageUrls = [];
-//     if (req.body.files !== undefined) {
-//       if (req.body.files.length > 0) {
-//         let imagesAll = req.body.files.split(",");
-//         for (const image in imagesAll) {
-//           const location = await uploadHelper.UploadFileToS3(imagesAll[image],"albums",album_name);
-//           if (location !== "") {
-//             memoryImageUrls.push(location);
-//           }
-//         }
-//       }
-//     }
-
-//     const album = new AlbumModel({
-//       user_id: user[0].id,
-//       album_name: album_name,
-//       images: memoryImageUrls,
-//       date_added: date,
-//       status: "active",
-//     });
-
-//     try {
-//       let result = await album.save();
-//       res.status(status.created).send({
-//         albums: result,
-//       });
-//     } catch (error) {
-//       res.status(status.error).send({
-//         error: error,
-//       });
-//       return;
-//     }
-//   } catch (error) {
-//     res.status(status.error).json({
-//       status: status.error,
-//       message: error.message,
-//     });
-//   }
-// };
-
-// module.exports.deleteAlbum = async (req, res) => {
-//   try {
-//     let user = await UserModel.find({ user_id: req.body.user_id });
-//     let album = await AlbumModel.find({
-//       user_id: user._id,
-//       album_name: req.body.album_name,
-//     });
-
-//     if (!album) {
-//       res.status(status.notfound).send({ error: "Album not found." });
-//       return;
-//     }
-
-//     try {
-//       let result = await AlbumModel.updateOne(
-//         { album_name: req.body.album_name },
-//         { $set: { status: "unused" } }
-//       );
-//       res.status(status.nocontent).send();
-//       return;
-//     } catch (error) {
-//       res.status(status.error).send({
-//         error: error,
-//       });
-//       return;
-//     }
-//   } catch (error) {
-//     res.status(status.error).json({
-//       status: status.error,
-//       message: error.message,
-//     });
-//   }
-// };
-
-// module.exports.getAlbums = async (req, res) => {
-//   let email = req.params["email"];
-//   try {
-//     let user = await UserModel.find({ email: email });
-//     if (user === null || user.length === 0) {
-//       res
-//         .status(status.notfound)
-//         .send({ error: "User not registered! Contact Admin." });
-//       return;
-//     }
-
-//     let albums = await AlbumModel.find({
-//       user_id: user[0]._id,
-//       status: "active",
-//     });
-
-//     res.status(status.success).send({
-//       albums: albums,
-//     });
-//   } catch (error) {
-//     res.status(status.error).json({
-//       status: status.error,
-//       message: error.message,
-//     });
-//   }
-// };
-
 export const getMappedTrees = async (req: Request, res: Response) => {
   const {offset, limit} = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
     const {trees, user} = await TreeRepository.getMappedTrees(email, offset, limit);
+
+    trees.results = trees.results.map((item: any) => {
+      item.images = JSON.parse((item.images as string).replace(/'/g, '"'))
+      return item;
+    })
     res.status(status.success).send({
       user: user,
       trees: trees,

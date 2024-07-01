@@ -194,13 +194,15 @@ class TreeRepository {
     }
 
     const query = `
-      SELECT t.sapling_id, t."location", t.event_id, pt."name" AS plant_type, p."name" AS plot, u."name" AS assigned_to
+      SELECT t.sapling_id, t."location", t.event_id, t.images,
+        pt."name" AS plant_type, p."name" AS plot, 
+        u."name" AS assigned_to
       FROM "14trees".trees AS t
       LEFT JOIN "14trees".plant_types AS pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees".plots AS p ON p.id = t.plot_id
       LEFT JOIN "14trees".users AS u ON u.id = t.assigned_to
-      WHERE t.mapped_to_user = ${user.id}
-      OFFSET ${offset} LIMIT ${limit};
+      WHERE t.mapped_to_user = ${user.id};
+      -- OFFSET ${offset} LIMIT ${limit};
     `;
 
     const countQuery = `
@@ -313,7 +315,7 @@ class TreeRepository {
     console.log("un mapped trees response: %s", resp);
   }
 
-  public static async assignTree(saplingId: string, reqBody: any): Promise<Tree> {
+  public static async assignTree(saplingId: string, reqBody: any, eventId?: number): Promise<Tree> {
     let tree = await Tree.findOne({ where: { sapling_id: saplingId } });
     if (tree === null) {
       throw new Error("Tree with given sapling id not found");
@@ -371,6 +373,7 @@ class TreeRepository {
     if (reqBody.desc) {
       updateFields["description"] = reqBody.desc;
     }
+    if (eventId) updateFields['event_id'] = eventId
 
     const result = await tree.update(updateFields);
 

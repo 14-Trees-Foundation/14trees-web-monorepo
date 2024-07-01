@@ -2,24 +2,9 @@ import { Op } from 'sequelize';
 import { Event, EventAttributes, EventCreationAttributes } from '../models/events';
 
 export class EventRepository {
-  public async addEvent(fields: any): Promise<Event> {
-    if (fields.type === "1" || fields.type === "2" || fields.type === "3") {
-
-      const event = await Event.create({
-        name: fields.name,
-        assigned_by: fields.assigned_by,
-        plot_id: fields.plot_id as number,
-        type: fields.type,
-        description: fields.description,
-        event_location: fields.event_location ?? 'onsite',
-        site_id: fields.site_id,
-        event_date: fields.event_date ?? new Date(),
-      } as EventCreationAttributes);
-
-      return event;
-    } else {
-      throw new Error("Invalid event type");
-    }
+  public static async addEvent(data: EventCreationAttributes): Promise<Event> {
+    data.created_at = data.updated_at = new Date();
+    return await Event.create(data);
   }
 
   public static async getEvents(query: any, offset: number, limit: number): Promise<Event[]> {
