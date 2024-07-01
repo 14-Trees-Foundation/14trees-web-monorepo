@@ -20,11 +20,15 @@ export const getAll = async (req: Request, res: Response): Promise<void> => {
             return {
                 id: user.id,
                 name: user.name,
-                assigned_trees: user.assigned_trees.map((tree: any) => {
+                assigned_trees: user.assigned_trees?.map((tree: any) => {
                     let profileImage = ""
-                    const jsonStr = JSON.parse(tree.profile_image.replace(/'/g, '"'))
-                    if (jsonStr && jsonStr.length > 0) {
-                        profileImage = jsonStr[0]
+                    try {
+                        const jsonStr = JSON.parse(tree.profile_image.replace(/'/g, '"'))
+                        if (jsonStr && jsonStr.length > 0) {
+                            profileImage = jsonStr[0]
+                        }
+                    } catch (error) {
+                        console.log("profile image error", error, `| ${tree.profile_image} |`)
                     }
                     return {
                         sapling_id: tree.sapling_id,
