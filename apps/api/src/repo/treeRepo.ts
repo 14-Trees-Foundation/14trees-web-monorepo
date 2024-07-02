@@ -327,7 +327,7 @@ class TreeRepository {
 
     // Upload images to S3
     let userImageUrl: string | null = null;
-    let memoryImageUrls = []
+    let memoryImageUrls: string[] | null = null;
 
     // User Profile images
     if (reqBody.user_image !== undefined) {
@@ -340,16 +340,11 @@ class TreeRepository {
     }
 
     // Memories for the visit
-    if (reqBody.memory_images !== undefined) {
-        if (reqBody.memory_images.length > 0) {
-            let memoryImages = reqBody.memory_images as string []
-            for (const image in memoryImages) {
-              if (memoryImages[image] !== "") {
-                const location = await UploadFileToS3(memoryImages[image], "memories");
-                if (location != "") {
-                  memoryImageUrls.push(location);
-                }
-              }
+    if (reqBody.album_images !== undefined) {
+        if (reqBody.album_images.length > 0) {
+            let memoryImages = reqBody.album_images.split(",");
+            if (memoryImages.length > 0) {
+                memoryImageUrls = memoryImages;
             }
         }
     }
@@ -357,12 +352,13 @@ class TreeRepository {
     const updateFields: any = {
       assigned_to: user.id,
       assigned_at: new Date(),
-      user_tree_images: userImageUrl,
-      memory_images: memoryImageUrls.join(","),
+      sponsored_by_user: reqBody.sponsored_by_user ?? null,
+      gifted_by: reqBody.donated_by ?? null,
+      planted_by: reqBody.planted_by ?? null,
+      user_tree_image: userImageUrl,
+      memory_images: memoryImageUrls,
     } 
-    if (reqBody.desc) {
-      updateFields["description"] = reqBody.desc;
-    }
+    if (reqBody.description) updateFields["description"] = reqBody.description;
     if (eventId) updateFields['event_id'] = eventId
 
     const result = await tree.update(updateFields);

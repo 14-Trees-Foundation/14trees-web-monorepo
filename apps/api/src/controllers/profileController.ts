@@ -93,9 +93,9 @@ export const assignTreesToUser = async  (req: Request, res: Response) => {
   try {
     if (fields.type && fields.type != "") {
       const data: EventCreationAttributes = {
-        name: fields.name,
+        name: fields.description,
         type: fields.type,
-        assigned_by: fields.assigned_by,
+        assigned_by: fields.sponsored_by_user,
         site_id: fields.site_id,
         description: fields.description,
         tags: fields.tags,
