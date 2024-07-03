@@ -1,62 +1,49 @@
-// import mongoose from "mongoose";
-// import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
+import { Optional } from 'sequelize';
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-// const Schema = mongoose.Schema;
+interface AlbumAttributes {
+	id: number;
+	album_name: string;
+	user_id: number;
+  images: string[];
+  status: 'active' | 'unused';
+  created_at?: Date;
+  updated_at?: Date;
+}
 
-// const albuumsSchema = new Schema({
-//   user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-//   album_name: { type: String },
-//   images: [{ type: String }],
-//   date_added: { type: Date },
-//   status: { type: String, default: "active" },
-// });
+interface AlbumCreationAttributes
+	extends Optional<AlbumAttributes, 'id'> {}
 
-// const abumsModel = mongoose.model("albums", albuumsSchema);
+@Table({ tableName: 'albums' })
+class Album extends Model<AlbumAttributes, AlbumCreationAttributes>
+implements AlbumAttributes {
 
-// abumsModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
-
-// module.exports = abumsModel;
-
-
-// Model in postgreSQL db written inn typescript
-
-import { Model, Table, Column, DataType } from 'sequelize-typescript';
-
-
-@Table({
-  tableName: 'albums'
-})
-export class Album extends Model {
- 
-  @Column({          //this will take reference from user collection and its type will also be from user collection
+  @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    autoIncrement: true,
+    primaryKey: true,
+    unique: true
   })
-  userId!: string;
+  id!: number;
 
-  @Column({
-    type: DataType.STRING,
-    
-  })
-  albumname!: string;
+  @Column({ type: DataType.STRING, allowNull: false })
+  album_name!: string;
 
-  @Column({
-    type: DataType.ARRAY(DataType.STRING),
-  })
+  @Column({ type: DataType.INTEGER, allowNull: false })
+  user_id!: number;
+
+  @Column(DataType.STRING)
+  status!: 'active' | 'unused';
+
+  @Column(DataType.ARRAY(DataType.STRING))
   images!: string[];
 
+  @Column(DataType.DATE)
+  created_at?: Date;
 
-  @Column({
-    type: DataType.DATE,
-  
-  })
-  date!: Date;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  status!: string;
-
+  @Column(DataType.DATE)
+  updated_at?: Date;
 }
-export default Album;
+
+export { Album }
+export type { AlbumAttributes, AlbumCreationAttributes }

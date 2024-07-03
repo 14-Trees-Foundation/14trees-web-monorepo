@@ -1,4 +1,3 @@
-import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Org, OrgAttributes, OrgCreationAttributes } from '../models/org'; // Import your Sequelize model for Org
 

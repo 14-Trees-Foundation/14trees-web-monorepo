@@ -15,7 +15,11 @@ import { CorpEvent } from "../models/corp_events";
 import { Site } from "../models/sites";
 import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
+<<<<<<< HEAD
 import { Donations } from "../models/donation";
+=======
+import { Album } from "../models/albums";
+>>>>>>> sample_feature/backend
 
 
 class Database {
@@ -63,7 +67,11 @@ class Database {
         Group,
         UserGroup,
         PondWaterLevel,
+<<<<<<< HEAD
         Donations
+=======
+        Album
+>>>>>>> sample_feature/backend
       ]
     });
 

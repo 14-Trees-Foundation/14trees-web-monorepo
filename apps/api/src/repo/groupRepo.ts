@@ -31,6 +31,7 @@ export class GroupRepository {
             total: await Group.count({ where: whereClause }),
             results: await Group.findAll({
                 where: whereClause,
+                order: [['id', 'DESC']],
                 offset,
                 limit
             })

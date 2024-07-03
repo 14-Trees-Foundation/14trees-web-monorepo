@@ -48,6 +48,7 @@ class TreeRepository {
     LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+    ORDER BY t.id DESC
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
@@ -106,14 +107,12 @@ class TreeRepository {
     }
 
     // Upload images to S3
-    let imageUrls = [];
-    if (data.images && data.images.length > 0) {
-      let images = data.images.split(",");
-      for (const idx in images) {
-        const location = await UploadFileToS3(images[idx], "trees");
-        if (location !== "") {
-          imageUrls.push(location);
-        }
+    let imageUrl: string | null = null;
+    if (data.image && data.image.length > 0) {
+      let image = data.image
+      const location = await UploadFileToS3(image, "trees");
+      if (location !== "") {
+        imageUrl = location;
       }
     }
 
@@ -130,7 +129,7 @@ class TreeRepository {
       sapling_id: data.sapling_id,
       plant_type_id: plantType.id,
       plot_id: plot.id,
-      images: imageUrls,
+      image: imageUrl,
       location: loc,
       mapped_to_user: mapped_to?.id,
       created_at: new Date(),
@@ -144,15 +143,11 @@ class TreeRepository {
   public static async updateTree(data: TreeAttributes, files?: Express.Multer.File[]): Promise<Tree> {
 
     // Upload images to S3
-    let imageUrls: string[] = [];
-    if (files) {
-      for (const file of files) {
-        const location = await UploadFileToS3(file.filename, "trees");
+    if (files && files.length !== 0) {
+        const location = await UploadFileToS3(files[0].filename, "trees");
         if (location !== "") {
-          imageUrls.push(location);
+          data.image = location;
         }
-      }
-      data.images = imageUrls;
     }
 
     // user validation/invalidation update logic
@@ -194,13 +189,15 @@ class TreeRepository {
     }
 
     const query = `
-      SELECT t.sapling_id, t."location", t.event_id, pt."name" AS plant_type, p."name" AS plot, u."name" AS assigned_to
+      SELECT t.sapling_id, t."location", t.event_id, t.image,
+        pt."name" AS plant_type, p."name" AS plot, 
+        u."name" AS assigned_to
       FROM "14trees".trees AS t
       LEFT JOIN "14trees".plant_types AS pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees".plots AS p ON p.id = t.plot_id
       LEFT JOIN "14trees".users AS u ON u.id = t.assigned_to
-      WHERE t.mapped_to_user = ${user.id}
-      OFFSET ${offset} LIMIT ${limit};
+      WHERE t.mapped_to_user = ${user.id};
+      -- OFFSET ${offset} LIMIT ${limit};
     `;
 
     const countQuery = `
@@ -313,7 +310,7 @@ class TreeRepository {
     console.log("un mapped trees response: %s", resp);
   }
 
-  public static async assignTree(saplingId: string, reqBody: any): Promise<Tree> {
+  public static async assignTree(saplingId: string, reqBody: any, eventId?: number): Promise<Tree> {
     let tree = await Tree.findOne({ where: { sapling_id: saplingId } });
     if (tree === null) {
       throw new Error("Tree with given sapling id not found");
@@ -329,35 +326,25 @@ class TreeRepository {
     }
 
     // Upload images to S3
-    let userImageUrls = []
-    let memoryImageUrls = []
+    let userImageUrl: string | null = null;
+    let memoryImageUrls: string[] | null = null;
 
     // User Profile images
-    if (reqBody.user_images !== undefined) {
-      if (reqBody.user_images.length > 0) {
-        let userImages = reqBody.user_images as string[]
-        for (const image in userImages) {
-          if (userImages[image] !== "") {
-            const location = await UploadFileToS3(userImages[image], "users");
-            if (location != "") {
-              userImageUrls.push(location);
-            }
-          }
+    if (reqBody.user_image !== undefined) {
+      if (reqBody.user_image.length > 0) {
+        const location = await UploadFileToS3(reqBody.user_image, "users");
+        if (location != "") {
+          userImageUrl = location;
         }
       }
     }
 
     // Memories for the visit
-    if (reqBody.memory_images !== undefined) {
-        if (reqBody.memory_images.length > 0) {
-            let memoryImages = reqBody.memory_images as string []
-            for (const image in memoryImages) {
-              if (memoryImages[image] !== "") {
-                const location = await UploadFileToS3(memoryImages[image], "memories");
-                if (location != "") {
-                  memoryImageUrls.push(location);
-                }
-              }
+    if (reqBody.album_images !== undefined) {
+        if (reqBody.album_images.length > 0) {
+            let memoryImages = reqBody.album_images.split(",");
+            if (memoryImages.length > 0) {
+                memoryImageUrls = memoryImages;
             }
         }
     }
@@ -365,12 +352,14 @@ class TreeRepository {
     const updateFields: any = {
       assigned_to: user.id,
       assigned_at: new Date(),
-      user_tree_images: userImageUrls.join(","),
-      memory_images: memoryImageUrls.join(","),
+      sponsored_by_user: reqBody.sponsored_by_user ?? null,
+      gifted_by: reqBody.donated_by ?? null,
+      planted_by: reqBody.planted_by ?? null,
+      user_tree_image: userImageUrl,
+      memory_images: memoryImageUrls,
     } 
-    if (reqBody.desc) {
-      updateFields["description"] = reqBody.desc;
-    }
+    if (reqBody.description) updateFields["description"] = reqBody.description;
+    if (eventId) updateFields['event_id'] = eventId
 
     const result = await tree.update(updateFields);
 
@@ -381,7 +370,7 @@ class TreeRepository {
     await Tree.update({
       assigned_to: null,
       assigned_at: null,
-      user_tree_images: null,
+      user_tree_image: null,
       memory_images: null,
     }, { where: { sapling_id: { [Op.in]: saplingIds } } });
   }
@@ -397,10 +386,10 @@ class TreeRepository {
   public static async getUserProfileForSaplingId(saplingId: string): Promise<any[]> {
     const query =  `
       SELECT 
-        t.sapling_id, t.images, t."location", t.mapped_to_user, t.description, 
-        t.user_tree_images, t.sponsored_by_user, du."name" AS spomsored_by_user_name, 
+        t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
+        t.user_tree_image, t.sponsored_by_user, du."name" AS sponsored_by_user_name, 
         t.gifted_by, t.planted_by, t.memory_images, t.created_at, 
-        pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_image, 
+        pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_images, 
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
         au."id" AS assigned_to_id, gu."name" AS gifted_by_name, t.created_at

@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserTreeRepository } from "../repo/userTreeRepo";
 import TreeRepository from "../repo/treeRepo";
+import { Event, EventCreationAttributes } from "../models/events";
+import EventRepository from "../repo/eventsRepo";
 
 const { status } = require("../helpers/status");
 
@@ -47,33 +49,6 @@ export const getProfile = async  (req: Request, res: Response) => {
     const data = await TreeRepository.getUserProfileForSaplingId(req.query.id.toString());
     const parsedData = data.map((item: any) => {
       const newData = { ...item }
-      if (item.images) {
-        let images = JSON.parse(item.images.replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.images = images;
-        }
-      }
-
-      if (item.user_tree_images) {
-        let images = JSON.parse(item.user_tree_images.replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.profile_image = images[0];
-        }
-      }
-
-      if (item.memory_images) {
-        let images = JSON.parse(item.memory_images.replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.memory_images = images;
-        }
-      }
-
-      if (item.plant_type_image) {
-        let images = JSON.parse(item.plant_type_image.replace(/}/g, '').replace(/{/g, '').replace(/"/g, '').replace(/'/g, '"'));
-        if (images && images.length > 0) {
-          newData.plant_type_image = images[0];
-        }
-      }
 
       return newData;
     })
@@ -113,11 +88,27 @@ export const assignTreeToUser = async  (req: Request, res: Response) => {
 };
 
 export const assignTreesToUser = async  (req: Request, res: Response) => {
+  const fields = req.body;
+  let event: Event | undefined;
   try {
-    let saplingIds: string[] = req.body.sapling_ids;
+    if (fields.type && fields.type != "") {
+      const data: EventCreationAttributes = {
+        name: fields.description,
+        type: fields.type,
+        assigned_by: fields.sponsored_by_user,
+        site_id: fields.site_id,
+        description: fields.description,
+        tags: fields.tags,
+        event_date: fields.event_date ?? new Date(),
+        event_location: fields.event_location ?? 'onsite',
+      }
+      event = await EventRepository.addEvent(data);
+    }
+
+    let saplingIds: string[] = fields.sapling_ids.split(",");
     let trees = [];
     for (let i = 0; i < saplingIds.length; i++) {
-      const result = await TreeRepository.assignTree(saplingIds[i], req.body);
+      const result = await TreeRepository.assignTree(saplingIds[i], fields, event?.id);
       trees.push(result);
     }
     res.status(status.created).json(trees);

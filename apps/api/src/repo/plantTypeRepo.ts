@@ -6,7 +6,7 @@ import { WhereOptions } from 'sequelize';
 class PlantTypeRepository {
     public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<PlantType>> {
         return {
-            results: await PlantType.findAll({ where: whereClause, offset, limit }),
+            results: await PlantType.findAll({ where: whereClause, order: [['id', 'DESC']], offset, limit }),
             total: await PlantType.count({ where: whereClause }),
             offset: offset
         }

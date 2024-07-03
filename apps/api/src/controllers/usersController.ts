@@ -109,7 +109,13 @@ export const addUsersBulk = async (req: Request, res: Response) => {
           let batchRows = [];
           for (const row of csvData) {
             batchRows.push(row);
-            let user = getUserDocumentFromRequestBody(row);
+            const data = {
+              name: row['Name'],
+              email: row['Email ID'],
+              phone: row['Phone'],
+              birth_date: row['Date of Birth (optional)']
+            }
+            let user = getUserDocumentFromRequestBody(data);
             users.push(user);
             if (users.length === constants.ADD_DB_BATCH_SIZE) {
               try {

@@ -66,7 +66,7 @@ export const updatePlantType = async (req: Request, res: Response) => {
 
 export const deletePlantType = async (req: Request, res: Response) => {
   try {
-    const resp = PlantTypeRepository.deletePlantType(req.params.id)
+    const resp = await PlantTypeRepository.deletePlantType(req.params.id)
     console.log("Delete PlantTypes Response for id: %s", req.params.id, resp);
 
     res.status(status.success).json({

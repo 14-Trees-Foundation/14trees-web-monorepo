@@ -15,7 +15,7 @@ interface TreeAttributes {
     sapling_id: string,
     plant_type_id: number,
     plot_id: number,
-    images: string[],
+    image: string | null,
     tags: string[],
     location: Center,
     planted_by?: string,
@@ -28,8 +28,8 @@ interface TreeAttributes {
     gifted_to?: number,
     assigned_at: Date | null,
     assigned_to: number | null,
-    user_tree_images?: string | null,
-    memory_images?: string | null,
+    user_tree_image?: string | null,
+    memory_images?: string[] | null,
     event_id?: number,
     description?: string,
     status?: string;
@@ -40,7 +40,7 @@ interface TreeAttributes {
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'images' | 'user_tree_images'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>
@@ -68,8 +68,8 @@ implements TreeAttributes {
   @BelongsTo(() => Plot, 'plot_id')
   plot!: Plot;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  images!: string[];
+  @Column(DataType.STRING)
+  image!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
   tags!: string[];
@@ -119,10 +119,10 @@ implements TreeAttributes {
   event_id!: number;
 
   @Column(DataType.STRING)
-  user_tree_images!: string;
+  user_tree_image!: string;
 
-  @Column(DataType.STRING)
-  memory_images!: string;
+  @Column(DataType.ARRAY(DataType.STRING))
+  memory_images!: string[];
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status!: string;

@@ -15,10 +15,12 @@ interface EventAttributes {
   event_date: Date;
   memories?: string[];
   event_location: EventLocation;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'description' | 'id'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'description' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -60,6 +62,12 @@ implements EventAttributes {
 
   @Column(DataType.DATE)
   event_date!: Date;
+
+  @Column(DataType.DATE)
+  created_at!: Date;
+
+  @Column(DataType.DATE)
+  updated_at!: Date;
 }
 
 export type {EventAttributes, EventCreationAttributes}
