@@ -37,6 +37,7 @@ interface SiteAttributes {
     hosted_at: string | null;
     created_at?: Date;
     updated_at?: Date;
+    maintenance_type: Enumerator  | null;
 }
 
 interface SiteCreationAttributes extends Optional<SiteAttributes, 'id' | 'created_at' | 'updated_at'> {}
@@ -152,6 +153,10 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column(DataType.DATE)
     updated_at?: Date;
+
+    @Column({type : DataType.ENUM , values: ['FULL' , 'PARTIAL']})
+    maintenance_type!: Enumerator | null;
+
 }
 
 export { Site };

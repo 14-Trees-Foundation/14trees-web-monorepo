@@ -3,13 +3,10 @@ import { status } from "../helpers/status";
 import CorpEventRepository from "../repo/corp_event_Repo";
 import EventRepository from "../repo/eventsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
-<<<<<<< HEAD
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 
-=======
 import { EventCreationAttributes } from "../models/events";
->>>>>>> sample_feature/backend
 
 // export const getOverallOrgDashboard = async (req: Request, res: Response) => {
 //   try {
