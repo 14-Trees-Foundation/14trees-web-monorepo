@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import CryptoJS from 'crypto-js';
 import TreeRepository from "../repo/treeRepo";
 import PlantTypeRepository from "../repo/plantTypeRepo";
 import { PlotRepository } from "../repo/plotRepo";
@@ -6,6 +7,11 @@ import { attachMetaData, uploadBase64DataToS3 } from "./helper/uploadtos3";
 import { UserRepository } from "../repo/userRepo";
 import { LogsInfoRepository } from "../repo/logsInfoRepo";
 import { status } from "../helpers/status";
+import { UpdateTreeRequest } from "../models/app_v2";
+import { GroupRepository } from "../repo/groupRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
+import { PlantType } from "../models/plant_type";
+import { Plot } from "../models/plot";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -165,6 +171,63 @@ export const uploadLogs = async (req: Request, res: Response) => {
     }
 }
 
+export const updateSaplingByAdmin = async (req: Request, res: Response) => {
+    const sapling: UpdateTreeRequest = req.body;
+
+    if (!sapling) {
+        const message = 'Please pass a sapling details in the body.'
+        console.log('[INFO] appV2::updateSaplingByAdmin:', message);
+        return res.status(status.bad).send({ success: false, message: message });
+    }
+
+    try {
+        
+        const saplingId = sapling.tree.sapling_id;
+        let existingTree = await TreeRepository.getTreeBySaplingId(saplingId);
+        if (!existingTree) {
+            const message = `Tree with sapling id ${saplingId} not found`;
+            console.log('[INFO] appV2::updateSaplingByAdmin:', message);
+            return res.status(status.notfound).send(message);
+        }
+
+        // let treetype = await TreeTypeModel.findOne({ tree_id: sapling.tree.tree_id });
+        // let plot = await PlotModel.findOne({ plot_id: sapling.tree.plot_id })
+        // sapling.tree.plot_id = plot._id;
+        // sapling.tree.tree_id = treetype._id;
+
+        // DO NOT copy over old list of image urls
+        // sapling.data.image = existingSapling.image;
+        // prunes images which are not found.
+
+        const imageToDelete = sapling.delete_image; //s3 url to delete.
+        const newImage = sapling.new_image; // format same as the one used during upload
+
+        const metadata = {
+            capturetimestamp: newImage.meta.capturetimestamp,
+            uploadtimestamp: (new Date()).toISOString(),
+            remark: newImage.meta.remark,
+        };
+        const imageUploadResponse = await uploadBase64DataToS3(newImage.name, "tree", newImage.data, metadata);
+        if (imageUploadResponse.success) {
+            sapling.tree.image = imageUploadResponse.location;
+        } else {
+            console.log("[ERROR] appV2::updateSaplingByAdmin: Image upload failed.", imageUploadResponse.error);
+        }
+
+        // TODO: delete old image from S3?
+        
+        const savedData = await existingTree.update(sapling.tree);
+        let response: any = {
+            ...savedData
+        }
+        response.image = await attachMetaData(savedData.image, 'trees');
+        res.status(status.success).json(response);
+    } catch (err) {
+        console.log("[ERROR] appV2::updateSaplingByAdmin:", err);
+        res.status(status.error).send({ success: false, message: 'Error updating sapling' });
+    }
+}
+
 
 // Not using this controller in app
 // TODO: Get confirmation on this are they going to use this controller or not
@@ -211,6 +274,156 @@ export const uploadLogs = async (req: Request, res: Response) => {
 //     return res.send(response);
 // }
 
+export const login = async (req: Request, res: Response) => {
+    
+    const credentials = req.body;
+    let { phone, pinNumber } = credentials;
+
+    console.log("[INFO] appV2::login: Authenticating user with credentials: ", credentials);
+
+    const response: any = {
+        success: false,
+        user: null,
+        error: null
+    }
+
+    if (!phone) {
+        console.log("[INFO] appV2::login: Phone not found");
+        response.error = {
+            errorCode: 2,
+            errorMsg: "Please fill all fields."
+        };
+        return res.status(status.bad).send(response);
+    }
+
+    if (phone.startsWith("91") && phone.length > 10) phone = phone.substring(2);
+
+    let userCheck = await UserRepository.getUsers(0, 1, [{ columnField: 'phone', value: phone, operatorValue: 'equals'}]);
+    if (userCheck.results.length === 0) {
+        response.error = {
+            errorCode: 2,
+            errorMsg: "Incorrect User"
+        }
+        console.log("[INFO] appV2::login: User not found for given phone number");
+        return res.status(status.notfound).send(response);
+    }
+
+    const user = userCheck.results[0];
+    response.user = {
+        id: user.id,
+        name: user.name,
+        user_id: user.user_id,
+        phone: user.phone,
+        email: user.email,
+        roles: user.roles
+    }
+    const groupCheck = await GroupRepository.getGroups(0, 1, {
+        type: "onsite_staff"
+    });
+    let isAuthorized = false;
+    if (groupCheck.results.length !== 0) {
+        const userGroup = await UserGroupRepository.getUserGroup(user.id, groupCheck.results[0].id);
+        if (userGroup) isAuthorized = true;
+    }
+
+    if (user.roles?.includes("admin")) isAuthorized = true;
+    if (user.roles?.includes("treelogging")) isAuthorized = true;
+    if (!isAuthorized) {
+        console.log("[INFO] appV2::login: User is not part of onsite staff group.");
+        response.error = {
+            errorCode: 2,
+            errorMsg: `user not authorized to access app. contact admin`
+        }
+        return res.status(status.success).send(response);
+    } else if ( user.pin !== pinNumber) {
+        console.log("[INFO] appV2::login: Incorrect pin number");
+        response.error = {
+            errorCode: 2,
+            errorMsg: `Incorrect pin number`
+        }
+        return res.status(status.success).send(response);
+    }
+
+    
+
+    response.success = true;
+    return res.status(status.success).send(response);
+};
+
+export const fetchHelperData = async (req: Request, res: Response) => {
+    
+    const { last_hash } = req.body;
+
+    const helperData = {
+        plant_types: [] as PlantType[],
+        plots: [] as Plot[],
+        sapling_ids: [] as {sapling_id: string}[],
+    }
+    const plantTypeResp = await PlantTypeRepository.getPlantTypes(0, -1, {});
+    helperData.plant_types = plantTypeResp.results;
+    const plotResp = await PlotRepository.getPlots(0, -1, []);
+    helperData.plots = plotResp.results;
+    const treeResponse = await TreeRepository.getTrees(0, -1, [])
+    helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
+
+    const currentHash = CryptoJS.MD5(JSON.stringify(helperData)).toString();
+    const response = {
+        data: helperData as any,
+        hash: currentHash,
+    }
+
+    if (last_hash === currentHash) {
+        //empty data from response payload:
+        response.data = null;
+    }
+    return res.send(response);
+}
+
+// export const uploadNewImages = async (req: Request, res: Response) => {
+//     const treesWithImages = req.body;
+//     const treeUploadStatuses: any = {};
+
+//     for (let tree of treesWithImages) {
+//         const saplingId = tree.sapling_id;
+//         treeUploadStatuses[saplingId] = {
+//             dataUploaded: false,
+//             imagesUploaded: [],
+//             imagesFailed: [],
+//         }
+
+//         let existingMatch = await TreeRepository.getTreeBySaplingId(saplingId)
+//         if (existingMatch) {
+//             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
+    
+//             let imageUrl = await uploadImages([tree.image], treeUploadStatuses, saplingId);
+    
+//             const location = {
+//                 type: "Point",
+//                 coordinates: { lat: tree.lat, lng: tree.lng }
+//             }
+//             const treesnapshotObj = {
+//                 sapling_id: saplingId,
+//                 image: imageUrl[0],
+//                 location: location,
+//                 user_id: user._id,
+//                 date_added: (new Date()).toISOString(),
+//             }
+    
+//             const newTreesnapshotInstance = new TreesSnapshotModel(treesnapshotObj) //treesnapshotObj
+//             try {
+//                 await newTreesnapshotInstance.save();
+//                 treeUploadStatuses[saplingId].dataUploaded = true;
+//             }
+//             catch (err) {
+//                 treeUploadStatuses[saplingId].dataUploaded = false;
+//                 treeUploadStatuses[saplingId].dataSaveError = err;
+//             }
+//         }
+//     }
+//     console.log('uploadstatuses: ', treeUploadStatuses);
+//     return res.send(treeUploadStatuses);
+// }
+
 // import { status } from "../helpers/status";
 // import OnSiteStaff from "../models/onsitestaff";
 // import PlotModel from "../models/plot";
@@ -226,105 +439,7 @@ export const uploadLogs = async (req: Request, res: Response) => {
 // import { outerTryCatch } from "../helpers/utilsAppV2";
 // import Roles from "./helper/roles";
 
-// const updateSaplingByAdmin = async (sapling, adminID) => {
-//     const response = {
-//         success: false,
-//         error: null,
-//         data: null,
-//         status: status.bad
-//     }
-//     const responseStatus = {};
-//     try {
-//         if (!adminID || !sapling) {
-//             response.success = false;
-//             response.status = status.bad;
-//             response.error = 'Include both adminID and sapling fields in the body.';
-//             return response;
-//         }
-//         /*
-//         sapling:{
-//             data:{
-//                 //tree object fields....
-//             },
-//             newImages:[
-//                 {
-//                     name:"",
-//                     meta:{
-//                         capturetimestamp:"",
-//                         remark:""
-//                     }
-//                     data:"",
-//                 }
-//             ],
-//             deletedImages:[
-//                 //s3 urls
-//             ]//may be empty
-//         }        
-//         */
-//         let admin = await OnSiteStaff.findOne({ _id: adminID });
-//         if (!admin) {
-//             response.success = false;
-//             response.status = status.unauthorized;
-//             response.error = `No onSiteStaff found with _id: ${adminID}`;
-//             return response;
-//         }
-//         //valid admin.
-//         const saplingID = sapling.data.sapling_id;
-//         let existingSapling = await TreeModel.findOne({ sapling_id: saplingID });
-//         if (!existingSapling) {
-//             response.success = false;
-//             response.status = status.bad;
-//             response.error = `Sapling with sapling_id: ${saplingID} does not exist.`
-//             return response;
-//         }
 
-
-
-//         let treetype = await TreeTypeModel.findOne({ tree_id: sapling.data.tree_id });
-//         let plot = await PlotModel.findOne({ plot_id: sapling.data.plot_id })
-//         sapling.data.plot_id = plot._id;
-//         sapling.data.tree_id = treetype._id;
-//         if (sapling.data.user_id) {
-//             delete sapling.data.user_id;
-//         }
-//         //DO NOT copy over old list of image urls
-//         // sapling.data.image = existingSapling.image;
-//         //prunes images which are not found.
-//         console.log(sapling.data.image)
-//         responseStatus[saplingID] = {
-//             dataUploaded: false,
-//             imagesUploaded: [],
-//             imagesFailed: [],
-//         }
-//         const imagesToDelete = sapling.deletedImages;//list of s3 urls to delete.
-//         const newImages = sapling.newImages;//format same as the one used during upload
-//         const newImageUrls = await uploadImages(newImages, responseStatus, saplingID);
-//         const deletedUrls = await deleteImages(imagesToDelete, saplingID);
-//         console.log('deleted urls', deletedUrls);
-//         for (let url of deletedUrls) {
-//             const urlIndex = sapling.data.image.indexOf(url);
-//             sapling.data.image.splice(urlIndex, 1);
-//         }
-//         for (let url of newImageUrls) {
-//             sapling.data.image.push(url);
-//         }
-//         console.log(sapling.data)
-//         console.log(newImageUrls);
-//         //updated sapling.images array.
-//         await TreeModel.updateOne({ sapling_id: saplingID }, sapling.data);
-//         response.success = true;
-//         const savedData = await TreeModel.findOne({ sapling_id: saplingID });
-//         response.data = await formatTreeDataForApp(savedData);
-//         return response;
-//     }
-//     catch (err) {
-//         console.log(err)
-//         response.success = false;
-//         response.error = err;
-//         response.status = status.error;
-//         return response;
-//     }
-// }
 // async function formatTreeDataForApp(sapling) {
 //     sapling = JSON.parse(JSON.stringify(sapling));
 //     let treetype = await TreeTypeModel.findOne({ _id: sapling.tree_id });
@@ -428,113 +543,6 @@ export const uploadLogs = async (req: Request, res: Response) => {
 //     });
 // };
 
-
-// export const uploadTrees = async (req, res) => {
-//     //There are no checks for valid plot, user, type, as 
-//     //the app is expected to make the right selections.
-//     outerTryCatch(res, async () => {
-//         const trees = req.body;
-//         console.log("trees: ", trees);
-//         const treeUploadStatuses = {};
-//         for (let tree of trees) {
-//             let treetype = await TreeTypeModel.findOne({ tree_id: tree.type_id });
-//             let plot = await PlotModel.findOne({ plot_id: tree.plot_id })
-//             console.log("plot--", plot, "treetype: ", treetype);
-//             const saplingID = tree.sapling_id;
-//             treeUploadStatuses[saplingID] = {
-//                 dataUploaded: false,
-//                 imagesUploaded: [],
-//                 imagesFailed: [],
-//             }
-//             let existingMatch = await TreeModel.findOne({ sapling_id: saplingID })
-//             if (existingMatch) {
-//                 treeUploadStatuses[saplingID].dataUploaded = true;
-//                 treeUploadStatuses[saplingID].treeId = existingMatch._id;
-//                 continue;
-//             }
-//             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
-//             let imageUrls = await uploadImages(tree.images, treeUploadStatuses, saplingID);
-//             const location = {
-//                 type: "Point",
-//                 coordinates: tree.coordinates
-//             }
-//             const treeObj = {
-//                 sapling_id: saplingID,
-//                 tree_id: treetype._id,
-//                 plot_id: plot._id,
-//                 image: imageUrls,
-//                 location: location,
-//                 user_id: user._id,
-//                 date_added: (new Date()).toISOString(),
-//             }
-//             //console.log("final tree treeOBj----", treeObj); //{"23123" :{ dataUploaded: false, imagesUploaded: [], imagesFailed: [], existsInDb -> false}}
-//             const treeInstance = new TreeModel(treeObj)
-//             try {
-//                 await treeInstance.save();
-//                 treeUploadStatuses[saplingID].dataUploaded = true;
-//                 treeUploadStatuses[saplingID].treeId = (await TreeModel.find({ sapling_id: saplingID }))._id;
-//             }
-//             catch (err) {
-//                 console.log(err)
-//                 treeUploadStatuses[saplingID].dataUploaded = false;
-//                 treeUploadStatuses[saplingID].dataSaveError = err;
-//             }
-//         }
-//         console.log('uploadstatuses: ', treeUploadStatuses);
-//         return res.send(treeUploadStatuses);
-//     })
-// }
-
-// export const uploadNewImages = async (req, res) => {
-//     outerTryCatch(res, async () => {
-//         const treesWithImages = req.body;
-//         console.log("---------treesWithImages:--------------------- ", treesWithImages);
-//         const treeUploadStatuses = {};
-
-//         for (let tree of treesWithImages) {
-//             const saplingID = tree.sapling_id;
-//             treeUploadStatuses[saplingID] = {
-//                 dataUploaded: false,
-//                 imagesUploaded: [],
-//                 imagesFailed: [],
-//             }
-
-//             let existingMatch = await TreeModel.findOne({ sapling_id: saplingID })
-//             if (!existingMatch) {
-//                 treeUploadStatuses[saplingID].dataUploaded = false;
-//                 continue;
-//             }
-//             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
-
-//             let imageUrl = await uploadImages([tree.image], treeUploadStatuses, saplingID);
-
-//             const location = {
-//                 type: "Point",
-//                 coordinates: { lat: tree.lat, lng: tree.lng }
-//             }
-//             const treesnapshotObj = {
-//                 sapling_id: saplingID,
-//                 image: imageUrl[0],
-//                 location: location,
-//                 user_id: user._id,
-//                 date_added: (new Date()).toISOString(),
-//             }
-
-//             const newTreesnapshotInstance = new TreesSnapshotModel(treesnapshotObj) //treesnapshotObj
-//             try {
-//                 await newTreesnapshotInstance.save();
-//                 treeUploadStatuses[saplingID].dataUploaded = true;
-//             }
-//             catch (err) {
-//                 treeUploadStatuses[saplingID].dataUploaded = false;
-//                 treeUploadStatuses[saplingID].dataSaveError = err;
-//             }
-//         }
-//         console.log('uploadstatuses: ', treeUploadStatuses);
-//         return res.send(treeUploadStatuses);
-//     })
-// }
-
 // export const treesUpdatePlot = async (req, res) => {
 //     outerTryCatch(res, async () => {
 //         const trees = req.body;
@@ -596,40 +604,6 @@ export const uploadLogs = async (req: Request, res: Response) => {
 //     })
 // }
 
-
-// export const fetchHelperData = async (req, res) => {
-//     console.log("inside fetch Helper")
-//     outerTryCatch(res, async () => {
-//         console.log("----inside fetchHelper Data :-----", req.body.userId)
-//         const { userId, lastHash } = req.body;
-//         if (!userId) {
-//             return res.status(status.bad).send("Must supply _id of onsite staff for helper data")
-//         }
-//         // const user = await onSiteStaff.findOne({ _id: userId });
-//         // if (!user) {
-//         //     return res.status(status.unauthorized).send("No onsite staff found with supplied _id.");
-//         // }
-//         const helperData = {};
-//         helperData.treeTypes = await TreeTypeModel.find();
-//         helperData.plots = await PlotModel.find();
-//         const saplings = await TreeModel.find()
-
-//         helperData.saplings = saplings.map(doc => ({ sapling_id: doc.sapling_id }))
-//         //console.log("saplings ",helperData.saplings)
-//         const currentHash = CryptoJS.MD5(JSON.stringify(helperData)).toString();
-//         const response = {
-//             data: helperData,
-//             hash: currentHash,
-//         }
-
-//         if (lastHash === currentHash) {
-//             //empty data from response payload:
-//             response.data = null;
-//         }
-//         return res.send(response);
-//     })
-// }
-
 // export const fetchShifts = async (req, res) => {
 //     console.log("inside fetch Shifts")
 //     outerTryCatch(res, async () => {
@@ -687,125 +661,4 @@ export const uploadLogs = async (req: Request, res: Response) => {
 //         }
 //     })
 // }
-
-// export const login = async (req, res) => {
-//     console.log("in login");
-
-//     outerTryCatch(res, async () => {
-//         const credentials = req.body;
-//         console.log(req.body)
-//         let { phone, pinNumber } = credentials;
-
-//         console.log("phone: ", phone, "pin: ", pinNumber);
-
-//         const response = {
-//             success: false,
-//             user: null,
-//             error: null
-//         }
-
-//         if (!phone) {
-//             console.log(phone)
-//             response.error = {
-//                 errorCode: 2,
-//                 errorMsg: "Please fill all fields."
-//             };
-//             return res.send(response);
-//         }
-
-//         if (phone.startsWith("91") && phone.length > 10) {
-//             phone = phone.substring(2);
-//             console.log("phone: ", phone);
-//         }
-
-//         let userCheck = await UserModel.findOne({ phone: phone });
-//         console.log("user: ", userCheck);
-
-//         if (!userCheck) {
-//             response.error = {
-//                 errorCode: 2,
-//                 errorMsg: "Incorrect User"
-//             }
-//             console.log("error: ", response);
-//             return res.send(response);
-//         }
-
-//         let onsitestaff = await OnSiteStaff.findOne({ phone: phone });
-//         console.log("userCheck._id: ", userCheck._id);
-//         const userPin = userCheck.pin;
-//         console.log("userPin: ", userPin, typeof userPin, typeof pinNumber, typeof phone, typeof userCheck.phone);
-//         const pinNo = pinNumber !== undefined ? Number(pinNumber) : pinNumber;
-
-//         if (!onsitestaff) {
-//             response.user = {
-//                 _id: userCheck._id,
-//                 name: userCheck.name,
-//                 userid: userCheck.userid,
-//                 phone: userCheck.phone,
-//                 email: userCheck.email,
-//                 userRole: null
-//             };
-//             response.error = {
-//                 errorCode: 2,
-//                 errorMsg: `user not authorized to access app. contact admin`
-//             }
-//             return res.send(response);
-
-//         } else {
-//             //console.log("inside onsite staff table: ", onsitestaff);
-//             const userRole = onsitestaff.role;
-//             console.log("onsitestaffCheck: ", userRole);
-
-//             if (userRole === Roles.NO_ROLE || userRole === Roles.UNVERIFIED) {
-//                 response.user = {
-//                     _id: userCheck._id,
-//                     name: userCheck.name,
-//                     userid: userCheck.userid,
-//                     phone: userCheck.phone,
-//                     email: userCheck.email,
-//                     userRole: userRole,
-//                 };
-//                 response.error = {
-//                     errorCode: 2,
-//                     errorMsg: "user not set up correctly. contact admin"
-//                 }
-//             } else if (userRole === Roles.TREELOGGING && (pinNo === undefined || userPin === pinNo)) {
-//                 response.success = true;
-//                 response.user = {
-//                     _id: onsitestaff._id,
-//                     name: onsitestaff.name,
-//                     userid: onsitestaff.user_id,
-//                     phone: onsitestaff.phone,
-//                     email: onsitestaff.email,
-//                     userRole: userRole,
-//                     adminID: null
-//                 };
-//                 response.error = null;
-//             } else if (userRole === Roles.ADMIN && (pinNo === undefined || userPin === pinNo)) {
-//                 response.success = true;
-//                 response.user = {
-//                     _id: onsitestaff._id,
-//                     name: onsitestaff.name,
-//                     userid: onsitestaff.user_id,
-//                     phone: onsitestaff.phone,
-//                     email: onsitestaff.email,
-//                     userRole: userRole,
-//                     adminID: onsitestaff._id
-//                 };
-//                 response.error = null;
-//             } else {
-//                 response.error = {
-//                     errorCode: 2,
-//                     errorMsg: "Incorrect User"
-//                 }
-//                 console.log("error: ", response);
-//                 return res.send(response);
-//             }
-
-//             return res.send(response);
-//         }
-
-
-//     })
-// };
 

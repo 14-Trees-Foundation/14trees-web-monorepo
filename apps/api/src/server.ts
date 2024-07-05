@@ -11,6 +11,7 @@ import { getMongoDBConnectionString } from "./services/mongo";
 import Database from "./config/postgreDB";
 
 // Routes
+import appV2Routes from "./routes/appv2Routes";
 import userRoutes from "./routes/userRoutes";
 import groupRoutes from "./routes/groupRoutes";
 import userGroupRoutes from "./routes/userGroupRoutes";
@@ -91,6 +92,7 @@ const initExpressApp = (app: express.Application) => {
   });
 
   // app.use("/api/templates", templateRoutes);
+  app.use("/api/appv2", appV2Routes);
   app.use("/api/users", userRoutes);
   app.use("/api/groups", groupRoutes);
   app.use("/api/user-groups", userGroupRoutes);

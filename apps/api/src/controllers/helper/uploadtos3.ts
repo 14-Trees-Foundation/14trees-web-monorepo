@@ -1,7 +1,7 @@
-const fs = require("fs");
-const AWS = require('aws-sdk');
+import fs from "fs";
+import AWS from 'aws-sdk';
 import { Readable } from 'stream';
-const { removeSpecialCharacters } = require("../../helpers/utils");
+import { removeSpecialCharacters } from "../../helpers/utils";
 const s3 = new AWS.S3({
     accessKeyId: process.env.ACCESS_KEY_ID_S3,
     secretAccessKey: process.env.SECRET_ACCESS_KEY_S3
@@ -35,6 +35,11 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
         bucket = process.env.BUCKET_LOGOS
     } else if (type === 'tree_update') {
         bucket = process.env.BUCKET_TREE_UPDATE
+    }
+
+    if (!bucket) {
+        console.log("[ERROR] UploadFileToS3: bucket not found for type: ", type);
+        return "";
     }
 
     const params = {
@@ -155,7 +160,7 @@ export const attachMetaData = async (imageURL: string, type: string, folder_name
     try {
         const updated = {
             name: imageURL,
-            meta: emptyImageMetaData
+            meta: emptyImageMetaData as any
         }
         const data = await s3.headObject({ Bucket: bucket, Key: objectKey }).promise();
         const metaData = data.Metadata;

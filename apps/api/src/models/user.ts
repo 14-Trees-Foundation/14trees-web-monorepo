@@ -10,6 +10,8 @@ interface UserAttributes {
   phone: string;
   email: string;
   birth_date?: Date | null;
+  pin: string | null;
+  roles: string[] | null;
   status?: string;
   status_message?: string[];
   last_system_updated_at?: Date;
@@ -18,7 +20,7 @@ interface UserAttributes {
 }
 
 interface UserCreationAttributes
-	extends Optional<UserAttributes, 'birth_date' | 'id'> {}
+	extends Optional<UserAttributes, 'birth_date' | 'id' | 'pin' | 'roles'> {}
 
 @Table({ tableName: 'users' })
 class User extends Model<UserAttributes, UserCreationAttributes>
@@ -46,6 +48,12 @@ implements UserAttributes {
 
   @Column(DataType.DATE)
   birth_date?: Date;
+
+  @Column(DataType.STRING)
+  pin!: string | null;
+
+  @Column(DataType.ARRAY(DataType.STRING))
+  roles!: string[] | null;
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status?: string;

@@ -78,7 +78,7 @@ export class PlotRepository {
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id
         ORDER BY p.id DESC
-        OFFSET ${offset} LIMIT ${limit};
+        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
         const countPlotsQuery = 
