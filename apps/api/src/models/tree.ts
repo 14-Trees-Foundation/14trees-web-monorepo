@@ -48,6 +48,7 @@ implements TreeAttributes {
 
   @Column({
     type: DataType.NUMBER,
+    autoIncrement: true,
     allowNull: false,
     primaryKey: true,
     unique: true

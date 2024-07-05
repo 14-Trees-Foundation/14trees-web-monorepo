@@ -16,6 +16,9 @@ import { Site } from "../models/sites";
 import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
 import { Album } from "../models/albums";
+import { Shift } from "../models/shift";
+import { LogsInfo } from "../models/logs_info";
+import { TreesSnapshots } from "../models/trees_snapshots";
 
 
 class Database {
@@ -62,7 +65,10 @@ class Database {
         Group,
         UserGroup,
         PondWaterLevel,
-        Album
+        Album,
+        Shift,
+        LogsInfo,
+        TreesSnapshots,
       ]
     });
 

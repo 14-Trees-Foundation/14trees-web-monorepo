@@ -12,6 +12,10 @@ import { GroupRepository } from "../repo/groupRepo";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
+import { ShiftRepository } from "../repo/shiftRepo";
+import { Shift, ShiftCreationAttributes } from "../models/shift";
+import { TreesSnapshotsCreationAttributes } from "../models/trees_snapshots";
+import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -52,9 +56,6 @@ export const uploadTrees = async (req: Request, res: Response) => {
     console.log("trees: ", trees);
     const treeUploadStatuses = {} as any;
     for (let tree of trees) {
-        const plantTypes = await PlantTypeRepository.getPlantTypes(0, 1, { id: tree.tree_id })
-        const plots = await PlotRepository.getPlots(0, 1, [{ columnField: 'plot_id', value: tree.plot_id, operatorValue: 'equals' }]);
-        console.log("plot--", plots, "plant_types: ", plantTypes);
         const saplingID = tree.sapling_id;
         treeUploadStatuses[saplingID] = {
             dataUploaded: false,
@@ -67,19 +68,19 @@ export const uploadTrees = async (req: Request, res: Response) => {
             treeUploadStatuses[saplingID].treeId = existingMatch.id;
             continue;
         }
-        let user = await UserRepository.getUsers( 0, 1, [{ columnField: 'id', value: tree.user_id, operatorValue: 'equals' }]);
-        let imageUrl = await uploadImage(tree.image, treeUploadStatuses, saplingID);
+
+        let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
         const location = {
             type: "Point",
             coordinates: tree.coordinates
         }
         const treeObj = {
             sapling_id: saplingID,
-            plant_type_id: plantTypes.results[0].id,
-            plot_id: plots.results[0].id,
+            plant_type_id: tree.plant_type_id,
+            plot_id: tree.plot_id,
             image: imageUrl,
             location: location,
-            user_id: user.results[0].id,
+            user_id: tree.user_id,
             created_at: (new Date()).toISOString(),
             updated_at: (new Date()).toISOString(),
         }
@@ -99,8 +100,11 @@ export const uploadTrees = async (req: Request, res: Response) => {
     return res.status(status.success).send(treeUploadStatuses);
 }
 
-async function uploadImage(image: any, status: any, saplingID: string) {
-
+async function uploadImage(images: any, status: any, saplingID: string) {
+    if (!images || images.length === 0) {
+        return null;
+    }
+    const image = images[0];
     const imageName = image.name; //must be passed.
 
     const data = image.data; //base64 encoding.
@@ -111,7 +115,7 @@ async function uploadImage(image: any, status: any, saplingID: string) {
         //convertible to Date object using: new Date(Date.parse(timestamp));
         remark: image.meta.remark,
     };
-    const imageUploadResponse = await uploadBase64DataToS3(imageName, 'tree', data, metadata);
+    const imageUploadResponse = await uploadBase64DataToS3(imageName, 'trees', data, metadata);
     if (imageUploadResponse.success) {
         status[saplingID].imagesUploaded.push({
             name: imageName,
@@ -136,7 +140,7 @@ async function uploadImage(image: any, status: any, saplingID: string) {
 export const uploadLogs = async (req: Request, res: Response) => {
     const logsArray = req.body;
 
-    if (!logsArray || logsArray.length === 0) {
+    if (!logsArray) {
         console.log("[INFO] appV2::uploadLogs:", "No logs found in request body!");
         return res.status(status.bad).send({ error: "No logs found in request body!" });
     }
@@ -379,50 +383,157 @@ export const fetchHelperData = async (req: Request, res: Response) => {
     return res.send(response);
 }
 
-// export const uploadNewImages = async (req: Request, res: Response) => {
-//     const treesWithImages = req.body;
-//     const treeUploadStatuses: any = {};
 
-//     for (let tree of treesWithImages) {
-//         const saplingId = tree.sapling_id;
-//         treeUploadStatuses[saplingId] = {
-//             dataUploaded: false,
-//             imagesUploaded: [],
-//             imagesFailed: [],
-//         }
+/*
+    Sifts: Onsite staff shift details
+*/
 
-//         let existingMatch = await TreeRepository.getTreeBySaplingId(saplingId)
-//         if (existingMatch) {
-//             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
+export const fetchShifts = async (req: Request, res: Response) => {
+
+    const { user_id, last_hash } = req.body;
+    if (!user_id) {
+        const message = "User id of onsite staff is required."
+        console.log("[INFO] appV2::fetchShifts: " + message);
+        res.status(status.bad).send({ error: message });
+    }
+
+    try {
+        const userShifts = await ShiftRepository.getShifts({ user_id: user_id });
+        const currentHash = CryptoJS.MD5(JSON.stringify(userShifts)).toString();
+        const response = {
+            data: userShifts as any,
+            hash: currentHash,
+        }
     
-//             let imageUrl = await uploadImages([tree.image], treeUploadStatuses, saplingId);
+        //empty data from response payload:
+        if (last_hash === currentHash) response.data = null;
+        res.status(status.success).send(response);
+    } catch (err: any) {
+        const message = "Error fetching shifts."
+        console.log("[ERROR] appV2::fetchShifts: " + message, err);
+        res.status(status.error).send({ error: message });
+    }
+}
+
+export const uploadShifts = async (req: Request, res: Response) => {
     
-//             const location = {
-//                 type: "Point",
-//                 coordinates: { lat: tree.lat, lng: tree.lng }
-//             }
-//             const treesnapshotObj = {
-//                 sapling_id: saplingId,
-//                 image: imageUrl[0],
-//                 location: location,
-//                 user_id: user._id,
-//                 date_added: (new Date()).toISOString(),
-//             }
-    
-//             const newTreesnapshotInstance = new TreesSnapshotModel(treesnapshotObj) //treesnapshotObj
-//             try {
-//                 await newTreesnapshotInstance.save();
-//                 treeUploadStatuses[saplingId].dataUploaded = true;
-//             }
-//             catch (err) {
-//                 treeUploadStatuses[saplingId].dataUploaded = false;
-//                 treeUploadStatuses[saplingId].dataSaveError = err;
-//             }
-//         }
-//     }
-//     console.log('uploadstatuses: ', treeUploadStatuses);
-//     return res.send(treeUploadStatuses);
-// }
+    const shiftArray = req.body;
+    let shiftUploadStatuses: any = {};
+
+    for (const shift of shiftArray) {
+        const { shift_id, id, user_id, shift_type, saplings, trees_planted, start_time, plot_selected, time_taken, end_time, timestamp } = shift;
+        console.log(shift)
+        const shiftData: ShiftCreationAttributes | Shift = {
+            start_time: start_time,
+            end_time: end_time,
+            user_id: user_id,
+            saplings,
+            shift_type: shift_type,
+            plot_selected: plot_selected,
+            time_taken: time_taken,
+            trees_planted: parseInt(trees_planted),
+            timestamp,
+        };
+
+        try {
+            if (shift_id) {
+                shiftData.id = shift_id;
+                await ShiftRepository.updateSift(shiftData as Shift);
+                shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: true, message: 'Shift updated successfully' };
+            } else {
+                const result= await ShiftRepository.addShift(shiftData)
+                shiftUploadStatuses[id] = { shiftID: result.id, shiftUploaded: true, message: 'Shift inserted successfully' };
+            }
+        } catch (err: any) {
+            console.log("[ERROR] appV2::uploadShifts: ", shift, err);
+            shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: false, message: 'Error inserting/updating shift' };
+        }
+    }
+    res.send(shiftUploadStatuses);
+};
+
+export const uploadNewImages = async (req: Request, res: Response) => {
+    const treesWithImages = req.body;
+    const treeUploadStatuses: any = {};
+
+    for (let tree of treesWithImages) {
+        console.log(JSON.stringify(tree, null, 2))
+        const saplingId = tree.sapling_id;
+        treeUploadStatuses[saplingId] = {
+            dataUploaded: false,
+            imagesUploaded: [],
+            imagesFailed: [],
+        }
+
+        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingId)
+        if (existingMatch) {    
+            let imageUrl = await uploadImage([tree.image], treeUploadStatuses, saplingId);
+            if (imageUrl) {
+                // const location = {
+                //     type: "Point",
+                //     coordinates: { lat: tree.lat, lng: tree.lng }
+                // }
+                const treeSnapshotObj: TreesSnapshotsCreationAttributes = {
+                    sapling_id: saplingId,
+                    image: imageUrl,
+                    user_id: tree.user_id,
+                    created_at: new Date(),
+                    is_active: true,
+                }
+        
+                try {
+                    await TreesSnapshotsRepository.addTreesSnapshots(treeSnapshotObj);
+                    treeUploadStatuses[saplingId].dataUploaded = true;
+                }
+                catch (err) {
+                    treeUploadStatuses[saplingId].dataUploaded = false;
+                    treeUploadStatuses[saplingId].dataSaveError = err;
+                }
+            }
+            
+        }
+    }
+    console.log('uploadstatuses: ', JSON.stringify(treeUploadStatuses));
+    return res.send(treeUploadStatuses);
+}
+
+export const treesUpdatePlot = async (req: Request, res: Response) => {
+    const trees = req.body;
+    console.log("uploadTreesNewPlot: ", trees);
+    const treeUploadStatuses: any = {};
+
+    for (let tree of trees) {
+        const saplingID = tree.sapling_id;
+        treeUploadStatuses[saplingID] = { dataUploaded: false, message: "" };  // Initialize the status object
+
+        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID);
+        if (!existingMatch) {
+            treeUploadStatuses[saplingID].message = "Invalid sapling id";
+            continue;
+        }
+
+        if (existingMatch.plot_id != tree.old_plot) {
+            treeUploadStatuses[saplingID].message = `${saplingID} does not belong to plot ${tree.old_plot} plot`; //Sapling id does not belong to the old plot
+            continue;
+        }
+
+        existingMatch.plot_id = tree.new_plot;
+        try {
+            await existingMatch.save();
+            treeUploadStatuses[saplingID].dataUploaded = true;
+            treeUploadStatuses[saplingID].message = "plot updated successfully";
+
+        } catch (err) {
+            console.log(err);
+            treeUploadStatuses[saplingID].dataSaveError = err;
+            treeUploadStatuses[saplingID].message = "plot updation failed";
+        }
+    }
+
+    console.log('uploadstatuses: ', treeUploadStatuses);
+
+    return res.send(treeUploadStatuses);
+}
 
 // import { status } from "../helpers/status";
 // import OnSiteStaff from "../models/onsitestaff";
@@ -493,147 +604,6 @@ export const fetchHelperData = async (req: Request, res: Response) => {
 //         }
 //     }
 //     return deletedUrls;
-// }
-
-// export const uploadShifts = async (req, res) => {
-//     outerTryCatch(res, async () => {
-//         const shiftArray = req.body;
-//         console.log("request body upload shifts: ", shiftArray);
-//         let shiftUploadStatuses = {};
-
-//         for (const shift of shiftArray) {
-//             const { shift_id, id, user_id, shifttype, saplings, treesplanted, starttime, plotselected, timetaken, endtime, timestamp } = shift;
-//             console.log("shiftid--", shift_id, "saplings arr---", saplings, "id---", id);
-
-//             const shiftData = {
-//                 start_time: starttime,
-//                 end_time: endtime,
-//                 user_id: user_id,
-//                 saplings,
-//                 shift_type: shifttype,
-//                 plot_selected: plotselected,
-//                 time_taken: timetaken,
-//                 trees_planted: treesplanted,
-//                 timestamp
-//             };
-
-//             try {
-//                 if (shift_id) {
-//                     // const shiftD = await ShiftModel.findOne({ _id: shift_id });
-//                     // console.log("shiftndata found---", shiftD);
-
-//                     console.log("updating the shift document----");
-//                     const result = await ShiftModel.updateOne({ _id: shift_id }, shiftData);
-//                     shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: true, message: 'Shift updated successfully' };
-//                 } else {
-//                     console.log("inserting into the shift document----");
-//                     const newShift = new ShiftModel(shiftData);
-//                     const savedShift = await newShift.save();
-//                     shiftUploadStatuses[id] = { shiftID: savedShift._id, shiftUploaded: true, message: 'Shift inserted successfully' };
-//                 }
-
-//             } catch (error) {
-//                 shiftUploadStatuses[id] = { shiftID: shift_id, shiftUploaded: false, message: 'Error inserting/updating shift' };
-//             }
-//         }
-
-//         console.log("shift upload statuses--- ", shiftUploadStatuses);
-
-//         res.send(shiftUploadStatuses);
-//     });
-// };
-
-// export const treesUpdatePlot = async (req, res) => {
-//     outerTryCatch(res, async () => {
-//         const trees = req.body;
-//         console.log("uploadTreesNewPlot: ", trees);
-//         const treeUploadStatuses = {};
-
-//         for (let tree of trees) {
-//             const saplingID = tree.sapling_id;
-//             treeUploadStatuses[saplingID] = { dataUploaded: false, message: "" };  // Initialize the status object
-
-//             let existingMatch = await TreeModel.findOne({ sapling_id: saplingID });
-
-//             if (!existingMatch) {
-//                 treeUploadStatuses[saplingID].message = "Invalid sapling id";
-//                 continue;
-//             }
-
-//             let plot = await PlotModel.findOne({ plot_id: tree.old_plot }); //old plot
-
-//             //check uuid are same
-//             const id1 = existingMatch.plot_id;
-//             const id2 = plot._id;
-//             let correctPlot = id1.equals(id2);
-
-//             console.log("correct plot---", plot, correctPlot, id1, id2);
-
-//             if (!correctPlot) {
-//                 treeUploadStatuses[saplingID].message = `${saplingID} doesnot belong to plot ${plot.name}`; //Sapling id does not belong to the old plot
-//                 continue;
-//             }
-
-//             let user = await OnSiteStaff.findOne({ _id: tree.user_id });
-//             let newPlot = await PlotModel.findOne({ plot_id: tree.new_plot });
-
-//             console.log("newPlot plot---", newPlot);
-
-//             const treesUpdatePlotObj = {
-//                 plot_id: newPlot._id, //update the old plot with new one
-//             };
-
-//             // user_id: user._id,
-//             // date_added: new Date(),
-
-//             try {
-//                 await TreeModel.updateOne({ sapling_id: saplingID }, { $set: treesUpdatePlotObj });
-//                 treeUploadStatuses[saplingID].dataUploaded = true;
-//                 treeUploadStatuses[saplingID].message = "plot updated successfully";
-
-//             } catch (err) {
-//                 console.log(err);
-//                 treeUploadStatuses[saplingID].dataSaveError = err;
-//                 treeUploadStatuses[saplingID].message = "plot updation failed";
-//             }
-//         }
-
-//         console.log('uploadstatuses: ', treeUploadStatuses);
-
-//         return res.send(treeUploadStatuses);
-//     })
-// }
-
-// export const fetchShifts = async (req, res) => {
-//     console.log("inside fetch Shifts")
-//     outerTryCatch(res, async () => {
-//         console.log("----inside fetchSHift :-----", req.body.userId)
-//         const { userId, lastHash } = req.body;
-//         if (!userId) {
-//             return res.status(status.bad).send("Must supply _id of onsite staff for fething shifts")
-//         }
-//         const userShifts = await ShiftModel.find({ user_id: userId });
-
-//         //console.log("-------------userShifts----------", userShifts)
-//         // if (!userShifts) {
-//         //     return res.status(status.notfound).send("No shifts found for given user_id.");
-//         // }
-
-//         const currentHash = CryptoJS.MD5(JSON.stringify(userShifts)).toString();
-
-//         const response = {
-//             data: userShifts,
-//             hash: currentHash,
-//         }
-
-//         console.log("current hash shifts-----", currentHash);
-//         if (lastHash === currentHash) {
-//             //empty data from response payload:
-//             response.data = null;
-//         }
-//         return res.send(response);
-
-//     })
 // }
 
 // export const getSapling = async (req, res) => {
