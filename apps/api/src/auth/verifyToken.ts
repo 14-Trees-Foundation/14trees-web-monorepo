@@ -21,16 +21,16 @@ const tokenPayloadFromRequest = (req: Request, res: Response) => {
   let payload: any = null;
   const key = process.env.SECRET_KEY || 'secret';
   let token = req.headers['x-access-token'];
-  if (!token)
-    return res.status(403).send({ auth: false, message: 'No token provided.' }); 
-
-  jwt.verify(token as string, key, function (err: any, decoded: any) {
-    if (err) {
-      return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
-    }
-
-    payload = decoded;
-  });
+  if (!token) res.status(403).send({ auth: false, message: 'No token provided.' }); 
+  else {
+      jwt.verify(token as string, key, function (err: any, decoded: any) {
+      if (err) {
+        res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+      } else {
+        payload = decoded;
+      }
+    });
+  }
 
   return payload;
 }

@@ -27,20 +27,22 @@ export const healthCheck = async (req: Request, res: Response) => {
 export const getTreeBySaplingId = async (req: Request, res: Response) => {
     const { sapling_id } = req.body;
     if (!sapling_id || sapling_id === '') {
-        return res.status(status.bad).send('Please pass a sapling_id in the body.');
+        res.status(status.bad).send('Please pass a sapling_id in the body.');
+        return;
     }
 
     try {
         let tree = await TreeRepository.getTreeBySaplingId(sapling_id);
         if (!tree) {
-            return res.status(status.notfound).send('Tree not found for sapling_id: ' + sapling_id);
+            res.status(status.notfound).send('Tree not found for sapling_id: ' + sapling_id);
+            return;
         }
 
         // const plantTypes = await PlantTypeRepository.getPlantTypes(0, 1, { id: tree.plant_type_id })
         // const plots = await PlotRepository.getPlots(0, 1, [{ columnField: 'id', value: tree.plot_id.toString(), operatorValue: 'equals' }]);
-
+        const parsedTree = JSON.parse(JSON.stringify(tree));
         let response: any = {
-            ...tree
+            ...parsedTree
         }
         // response.tree_id = plantTypes.results[0].plant_type_id;
         // response.plot_id = plots.results[0].plot_id;
@@ -214,9 +216,10 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
             uploadtimestamp: (new Date()).toISOString(),
             remark: newImage.meta.remark,
         };
-        const imageUploadResponse = await uploadBase64DataToS3(newImage.name, "tree", newImage.data, metadata);
+        const imageUploadResponse = await uploadBase64DataToS3(newImage.name, "trees", newImage.data, metadata);
         if (imageUploadResponse.success) {
             sapling.tree.image = imageUploadResponse.location;
+            sapling.tree.updated_at = new Date();
         } else {
             console.log("[ERROR] appV2::updateSaplingByAdmin: Image upload failed.", imageUploadResponse.error);
         }
@@ -224,9 +227,12 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         // TODO: delete old image from S3?
         
         const savedData = await existingTree.update(sapling.tree);
+        const str = JSON.stringify(savedData);
+        const json = JSON.parse(str);
         let response: any = {
-            ...savedData
+            ...json,
         }
+
         response.image = await attachMetaData(savedData.image, 'trees');
         res.status(status.success).json(response);
     } catch (err) {

@@ -10,6 +10,8 @@ import {
     uploadTrees,
     uploadNewImages,
     treesUpdatePlot,
+    getTreeBySaplingId,
+    updateSaplingByAdmin,
 } from "../controllers/appV2TreesController";
 
 const routes = express.Router();
@@ -23,5 +25,7 @@ routes.post("/uploadLogs", uploadLogs);
 routes.post("/uploadTrees", uploadTrees);
 routes.post("/uploadNewImages", uploadNewImages);
 routes.post("/treesUpdatePlot", treesUpdatePlot);
+routes.post("/getSapling", verifyAdmin, getTreeBySaplingId);
+routes.post("/updateSapling", verifyAdmin, updateSaplingByAdmin);
 
 export default routes;
