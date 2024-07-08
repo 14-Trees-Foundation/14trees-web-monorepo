@@ -83,7 +83,7 @@ const initExpressApp = (app: express.Application) => {
   app.use(cors<Request>());
   // Add middleware for parsing JSON and urlencoded data and populating `req.body`
   app.use(express.urlencoded({ extended: false }));
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
   app.use(function (req, res, next) {
     // Website you wish to allow to connect
     res.setHeader("Access-Control-Allow-Origin", "*");
