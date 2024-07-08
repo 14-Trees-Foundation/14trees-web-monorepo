@@ -17,6 +17,7 @@ export class PondRepository {
 
     let obj: PondCreationAttributes = {
       name: data.name,
+      site_id: data.site_id,
       length_ft: data.length_ft,
       depth_ft: data.depth_ft,
       width_ft: data.width_ft,

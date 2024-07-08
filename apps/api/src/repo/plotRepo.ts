@@ -33,6 +33,7 @@ export class PlotRepository {
             // status: plotData.status,
             // land_type: plotData.land_type,
             category: plotData.category,
+            site_id: plotData.site_id,
             created_at: new Date(),
             updated_at: new Date()
         };
@@ -57,6 +58,7 @@ export class PlotRepository {
 
         const query = `
         SELECT p.*,
+            
             COUNT(t.id) as trees_count, 
             COUNT(t.assigned_to) as assigned_trees_count,
             SUM(CASE 
@@ -75,6 +77,7 @@ export class PlotRepository {
                END) AS available_trees_count
         FROM "14trees".plots p
         LEFT JOIN "14trees".trees t ON p.id = t.plot_id
+        
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id
         ORDER BY p.id DESC
