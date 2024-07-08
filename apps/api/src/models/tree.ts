@@ -72,6 +72,9 @@ implements TreeAttributes {
   @Column(DataType.STRING)
   image!: string;
 
+  @Column(DataType.STRING)
+  planted_by!: string;
+
   @Column(DataType.ARRAY(DataType.STRING))
   tags!: string[];
 

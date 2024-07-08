@@ -139,6 +139,11 @@ class TreeRepository {
     return treeResp;
   };
 
+  public static async addTreeObject(data: TreeCreationAttributes): Promise<Tree> {
+
+    const treeResp = Tree.create(data);
+    return treeResp;
+  };
 
   public static async updateTree(data: TreeAttributes, files?: Express.Multer.File[]): Promise<Tree> {
 

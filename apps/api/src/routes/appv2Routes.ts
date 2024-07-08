@@ -1,4 +1,5 @@
 import express from "express";
+import { verifyAdmin, verifyTreeLogger } from "../auth/verifyToken";
 import {
     healthCheck,
     login,
@@ -15,8 +16,8 @@ const routes = express.Router();
 
 routes.get("/healthCheck", healthCheck);
 routes.post("/login", login);
-routes.post("/fetchHelperData", fetchHelperData);
-routes.post("/fetchShifts", fetchShifts);
+routes.post("/fetchHelperData", verifyTreeLogger, fetchHelperData);
+routes.post("/fetchShifts", verifyTreeLogger, fetchShifts);
 routes.post("/uploadShifts", uploadShifts);
 routes.post("/uploadLogs", uploadLogs);
 routes.post("/uploadTrees", uploadTrees);

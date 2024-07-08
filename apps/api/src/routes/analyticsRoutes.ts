@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as analytics from '../controllers/analyticsController';
-import verifyToken from '../auth/verifyToken';
+import { verifyToken } from '../auth/verifyToken';
 
 const routes = Router();
 

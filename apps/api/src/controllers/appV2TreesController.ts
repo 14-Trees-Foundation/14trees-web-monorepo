@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import CryptoJS from 'crypto-js';
+import * as jwt from 'jsonwebtoken';
 import TreeRepository from "../repo/treeRepo";
 import PlantTypeRepository from "../repo/plantTypeRepo";
 import { PlotRepository } from "../repo/plotRepo";
@@ -16,6 +17,7 @@ import { ShiftRepository } from "../repo/shiftRepo";
 import { Shift, ShiftCreationAttributes } from "../models/shift";
 import { TreesSnapshotsCreationAttributes } from "../models/trees_snapshots";
 import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
+import { TreeCreationAttributes } from "../models/tree";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -74,19 +76,20 @@ export const uploadTrees = async (req: Request, res: Response) => {
             type: "Point",
             coordinates: tree.coordinates
         }
-        const treeObj = {
+
+        const treeObj: TreeCreationAttributes = {
             sapling_id: saplingID,
             plant_type_id: tree.plant_type_id,
             plot_id: tree.plot_id,
             image: imageUrl,
             location: location,
-            user_id: tree.user_id,
-            created_at: (new Date()).toISOString(),
-            updated_at: (new Date()).toISOString(),
+            planted_by: tree.planted_by,
+            created_at: new Date(),
+            updated_at: new Date(),
         }
 
         try {
-            const tree = await TreeRepository.addTree(treeObj);
+            const tree = await TreeRepository.addTreeObject(treeObj);
             treeUploadStatuses[saplingID].dataUploaded = true;
             treeUploadStatuses[saplingID].treeId = tree.id;
         }
@@ -319,7 +322,8 @@ export const login = async (req: Request, res: Response) => {
         user_id: user.user_id,
         phone: user.phone,
         email: user.email,
-        roles: user.roles
+        roles: user.roles,
+        token: ""
     }
     const groupCheck = await GroupRepository.getGroups(0, 1, {
         type: "onsite_staff"
@@ -332,6 +336,7 @@ export const login = async (req: Request, res: Response) => {
 
     if (user.roles?.includes("admin")) isAuthorized = true;
     if (user.roles?.includes("treelogging")) isAuthorized = true;
+
     if (!isAuthorized) {
         console.log("[INFO] appV2::login: User is not part of onsite staff group.");
         response.error = {
@@ -348,8 +353,9 @@ export const login = async (req: Request, res: Response) => {
         return res.status(status.success).send(response);
     }
 
-    
+    const jwtToken = jwt.sign({ user_id: user.id, roles: user.roles }, process.env.SECRET_KEY as string);
 
+    response.user.token = jwtToken;
     response.success = true;
     return res.status(status.success).send(response);
 };
