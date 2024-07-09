@@ -211,21 +211,23 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         const imageToDelete = sapling.delete_image; //s3 url to delete.
         const newImage = sapling.new_image; // format same as the one used during upload
 
-        const metadata = {
-            capturetimestamp: newImage.meta.capturetimestamp,
-            uploadtimestamp: (new Date()).toISOString(),
-            remark: newImage.meta.remark,
-        };
-        const imageUploadResponse = await uploadBase64DataToS3(newImage.name, "trees", newImage.data, metadata);
-        if (imageUploadResponse.success) {
-            sapling.tree.image = imageUploadResponse.location;
-            sapling.tree.updated_at = new Date();
-        } else {
-            console.log("[ERROR] appV2::updateSaplingByAdmin: Image upload failed.", imageUploadResponse.error);
+        if (newImage) {
+            const metadata = {
+                capturetimestamp: newImage.meta.capturetimestamp,
+                uploadtimestamp: (new Date()).toISOString(),
+                remark: newImage.meta.remark,
+            };
+            const imageUploadResponse = await uploadBase64DataToS3(newImage.name, "trees", newImage.data, metadata);
+            if (imageUploadResponse.success) {
+                sapling.tree.image = imageUploadResponse.location;
+            } else {
+                console.log("[ERROR] appV2::updateSaplingByAdmin: Image upload failed.", imageUploadResponse.error);
+            }
         }
-
+        
         // TODO: delete old image from S3?
         
+        sapling.tree.updated_at = new Date();
         const savedData = await existingTree.update(sapling.tree);
         const str = JSON.stringify(savedData);
         const json = JSON.parse(str);
