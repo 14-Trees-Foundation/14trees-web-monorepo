@@ -32,6 +32,7 @@ interface TreeAttributes {
     memory_images?: string[] | null,
     event_id?: number,
     description?: string,
+    tree_status?: string;
     status?: string;
     status_message?: string[];
     last_system_updated_at?: Date;
@@ -127,6 +128,9 @@ implements TreeAttributes {
 
   @Column(DataType.ARRAY(DataType.STRING))
   memory_images!: string[];
+
+  @Column({type: DataType.ENUM('alive', 'dead', 'lost'), defaultValue: 'alive'})
+  tree_status!: string;
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status!: string;
