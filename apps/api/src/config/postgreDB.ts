@@ -17,6 +17,7 @@ import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
 import { Donations } from "../models/donation";
 import { Album } from "../models/albums";
+import { Visit } from "../models/visits"
 
 
 class Database {
@@ -65,7 +66,8 @@ class Database {
         UserGroup,
         PondWaterLevel,
         Donations,
-        Album
+        Album,
+        Visit
       ]
     });
 
