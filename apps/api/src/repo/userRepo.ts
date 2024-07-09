@@ -79,8 +79,7 @@ export class UserRepository {
             FROM "14trees".users u 
             LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            ORDER BY u.id DESC
-            OFFSET ${offset} LIMIT ${limit};
+            ORDER BY u.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `
@@ -154,6 +153,22 @@ export class UserRepository {
             replacements: replacement,
             type: QueryTypes.SELECT
         })
-
     }
+
+    public static async getDeletedUsersFromList(userIds: number[]): Promise<number[]> {
+        const query = `SELECT num
+        FROM unnest(array[:user_ids]::int[]) AS num
+        WHERE num NOT IN (
+            SELECT u.id
+            FROM "14trees".users as u
+        );`
+
+        const result = await sequelize.query(query, {
+            replacements: { user_ids: userIds },
+            type: QueryTypes.SELECT
+        })
+
+        return result.map((user: any) => user.num);
+    }
+
 }

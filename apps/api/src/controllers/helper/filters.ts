@@ -17,6 +17,8 @@ export const getWhereOptions = (fieldName: string, operatorValue: string, value:
             return { [fieldName]: { [Op.not]: null } }
         case 'isAnyOf':
             return { [fieldName]: { [Op.in]: value } };
+        case 'greaterThan':
+            return { [fieldName]: { [Op.gt]: value } };
 
         default:
             return { [fieldName]: value }
@@ -51,6 +53,8 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
             return { condition: `${fieldName} IS NOT NULL`, replacement: {} }
         case 'isAnyOf':
             return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
+        case 'greaterThan':
+            return { condition: `${fieldName} > :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };;
 
         default:
             return { condition: `${fieldName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };

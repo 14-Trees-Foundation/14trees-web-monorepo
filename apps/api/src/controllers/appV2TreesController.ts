@@ -18,6 +18,7 @@ import { Shift, ShiftCreationAttributes } from "../models/shift";
 import { TreesSnapshotsCreationAttributes } from "../models/trees_snapshots";
 import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
 import { TreeCreationAttributes } from "../models/tree";
+import { isValidDateString } from "../helpers/utils";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -38,15 +39,13 @@ export const getTreeBySaplingId = async (req: Request, res: Response) => {
             return;
         }
 
-        // const plantTypes = await PlantTypeRepository.getPlantTypes(0, 1, { id: tree.plant_type_id })
-        // const plots = await PlotRepository.getPlots(0, 1, [{ columnField: 'id', value: tree.plot_id.toString(), operatorValue: 'equals' }]);
         const parsedTree = JSON.parse(JSON.stringify(tree));
         let response: any = {
             ...parsedTree
         }
-        // response.tree_id = plantTypes.results[0].plant_type_id;
-        // response.plot_id = plots.results[0].plot_id;
-        response.image = await attachMetaData(tree.image, 'trees');
+
+        const metadata = await attachMetaData(tree.image, 'trees');
+        if (metadata.length > 0) response.image = metadata[0];
         res.status(status.success).json(response);
     } catch(err: any) {
         console.log("[ERROR]", "appV2::getTreeBySaplingId: ", err);
@@ -86,6 +85,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
             image: imageUrl,
             location: location,
             planted_by: tree.planted_by,
+            tree_status: tree.tree_status,
             created_at: new Date(),
             updated_at: new Date(),
         }
@@ -199,10 +199,6 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
             return res.status(status.notfound).send(message);
         }
 
-        // let treetype = await TreeTypeModel.findOne({ tree_id: sapling.tree.tree_id });
-        // let plot = await PlotModel.findOne({ plot_id: sapling.tree.plot_id })
-        // sapling.tree.plot_id = plot._id;
-        // sapling.tree.tree_id = treetype._id;
 
         // DO NOT copy over old list of image urls
         // sapling.data.image = existingSapling.image;
@@ -235,7 +231,8 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
             ...json,
         }
 
-        response.image = await attachMetaData(savedData.image, 'trees');
+        const metadata = await attachMetaData(savedData.image, 'trees');
+        if (metadata.length > 0) response.image = metadata[0];
         res.status(status.success).json(response);
     } catch (err) {
         console.log("[ERROR] appV2::updateSaplingByAdmin:", err);
@@ -549,100 +546,56 @@ export const treesUpdatePlot = async (req: Request, res: Response) => {
     return res.send(treeUploadStatuses);
 }
 
-// import { status } from "../helpers/status";
-// import OnSiteStaff from "../models/onsitestaff";
-// import PlotModel from "../models/plot";
-// import TreeModel from "../models/tree";
-// import TreeTypeModel from "../models/treetype";
-// import { uploadBase64DataToS3, deleteFileByUrl, attachMetaData } from "./helper/uploadtos3AppV2";
-// const S3_UPLOAD_TYPE = 'trees';
-// import UserModel from "../models/user";
-// import ShiftModel from "../models/shifts";
-// import LogsModel from "../models/logs";
-// import TreesSnapshotModel from "../models/trees_snapshot";
-// const CryptoJS = require('crypto-js');
-// import { outerTryCatch } from "../helpers/utilsAppV2";
-// import Roles from "./helper/roles";
+/*
+    Users Helper Data
+*/
+
+export const getDeltaUsers = async (req: Request, res: Response) => {
+    const { timestamp, user_ids } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let userIds: number[] = [];
 
 
-// async function formatTreeDataForApp(sapling) {
-//     sapling = JSON.parse(JSON.stringify(sapling));
-//     let treetype = await TreeTypeModel.findOne({ _id: sapling.tree_id });
-//     let plot = await PlotModel.findOne({ _id: sapling.plot_id });
-//     sapling.tree_id = treetype.tree_id;
-//     sapling.plot_id = plot.plot_id;
-//     sapling.image = await attachMetaData(sapling.image, S3_UPLOAD_TYPE);
-//     return sapling;
-// }
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (user_ids && user_ids.length > 0) userIds = user_ids;
 
-// async function uploadImages(images, status, saplingID) {
-//     let imageUrls = [];
 
-//     for (const image of images) {
-//         const imageName = image.name; //must be passed.
+    try {
+        // fetch created and updated users after given time
+        const result = await UserRepository.getUsers(0, -1, [
+            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+        ])
+    
+        // fetch deleted users
+        const deleted = await UserRepository.getDeletedUsersFromList(userIds);
+        res.status(status.success).json({ users: result.results, deleted_user_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaUsers: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
 
-//         const data = image.data; //base64 encoding.
-//         const metadata = {
-//             capturetimestamp: image.meta.capturetimestamp,
-//             uploadtimestamp: (new Date()).toISOString(),
+export const getDeltaTrees = async (req: Request, res: Response) => {
+    const { timestamp, tree_ids } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let treeIds: number[] = [];
 
-//             //convertible to Date object using: new Date(Date.parse(timestamp));
-//             remark: image.meta.remark,
-//         };
-//         const imageUploadResponse = await uploadBase64DataToS3(imageName, S3_UPLOAD_TYPE, data, metadata);
-//         if (imageUploadResponse.success) {
-//             imageUrls.push(imageUploadResponse.location);
-//             status[saplingID].imagesUploaded.push({
-//                 name: imageName,
-//                 location: imageUploadResponse.location
-//             });
-//         }
-//         else {
-//             status[saplingID].imagesFailed.push({
-//                 name: imageName,
-//                 error: imageUploadResponse.error
-//             });
-//         }
-//     }
-//     return imageUrls;
-// }
-// async function deleteImages(imagesToDelete) {
-//     const deletedUrls = [];
-//     for (let url of imagesToDelete) {
-//         const deleteResponse = await deleteFileByUrl(url, S3_UPLOAD_TYPE);
-//         if (deleteResponse.success) {
-//             deletedUrls.push(url);
-//         }
-//         else {
-//             console.log('failed to delete: ', url, '\nWith error: ', deleteResponse.error);
-//         }
-//     }
-//     return deletedUrls;
-// }
 
-// export const getSapling = async (req, res) => {
-//     outerTryCatch(res, async () => {
-//         const { adminID, saplingID } = req.body;
-//         const saplingData = await getSaplingById(saplingID, adminID);
-//         if (saplingData.success) {
-//             console.log(saplingData.data)
-//             return res.send(saplingData.data);
-//         }
-//         else {
-//             return res.status(saplingData.status).send(saplingData.error);
-//         }
-//     })
-// }
-// export const updateSapling = async (req, res) => {
-//     outerTryCatch(res, async () => {
-//         const { adminID, sapling } = req.body;
-//         const updateResponse = await updateSaplingByAdmin(sapling, adminID);
-//         if (updateResponse.success) {
-//             return res.send(updateResponse.data);
-//         }
-//         else {
-//             return res.status(updateResponse.status).send(updateResponse.error);
-//         }
-//     })
-// }
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (tree_ids && tree_ids.length > 0) treeIds = tree_ids;
 
+
+    try {
+        // fetch created and updated trees after given time
+        const result = await TreeRepository.getTrees(0, -1, [
+            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+        ])
+    
+        // fetch deleted trees
+        const deleted = await TreeRepository.getDeletedTreesFromList(treeIds);
+        res.status(status.success).json({ trees: result.results, deleted_tree_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaTree: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}

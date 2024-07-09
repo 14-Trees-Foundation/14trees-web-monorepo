@@ -12,6 +12,8 @@ import {
     treesUpdatePlot,
     getTreeBySaplingId,
     updateSaplingByAdmin,
+    getDeltaUsers,
+    getDeltaTrees,
 } from "../controllers/appV2TreesController";
 
 const routes = express.Router();
@@ -27,5 +29,7 @@ routes.post("/uploadNewImages", uploadNewImages);
 routes.post("/treesUpdatePlot", treesUpdatePlot);
 routes.post("/getSapling", verifyAdmin, getTreeBySaplingId);
 routes.post("/updateSapling", verifyAdmin, updateSaplingByAdmin);
+routes.post("/fetchHelperData/users", getDeltaUsers);
+routes.post("/fetchHelperData/trees", getDeltaTrees);
 
 export default routes;
