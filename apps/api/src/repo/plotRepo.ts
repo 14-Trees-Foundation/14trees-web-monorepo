@@ -59,7 +59,7 @@ export class PlotRepository {
 
         const query = `
         SELECT p.*,
-            s.name_english,
+            s.name_english as site_name_english,
             COUNT(t.id) as trees_count, 
             COUNT(t.assigned_to) as assigned_trees_count,
             SUM(CASE 
