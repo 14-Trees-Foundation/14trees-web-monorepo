@@ -115,13 +115,13 @@ async function uploadImage(images: any, status: any, saplingID: string) {
     const imageName = image.name; //must be passed.
 
     const data = image.data; //base64 encoding.
-    const metadata = {
+    const metadata = image.meta ? {
         capturetimestamp: image.meta.capturetimestamp,
         uploadtimestamp: (new Date()).toISOString(),
 
         //convertible to Date object using: new Date(Date.parse(timestamp));
         remark: image.meta.remark,
-    };
+    } : null;
     const imageUploadResponse = await uploadBase64DataToS3(imageName, 'trees', data, metadata);
     if (imageUploadResponse.success) {
         status[saplingID].imagesUploaded.push({
@@ -210,11 +210,11 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         const newImage = sapling.new_image; // format same as the one used during upload
 
         if (newImage) {
-            const metadata = {
+            const metadata = newImage.meta ? {
                 capturetimestamp: newImage.meta.capturetimestamp,
                 uploadtimestamp: (new Date()).toISOString(),
                 remark: newImage.meta.remark,
-            };
+            } : null;
             const imageUploadResponse = await uploadBase64DataToS3(newImage.name, "trees", newImage.data, metadata);
             if (imageUploadResponse.success) {
                 sapling.tree.image = imageUploadResponse.location;
