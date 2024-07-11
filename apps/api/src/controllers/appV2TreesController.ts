@@ -86,6 +86,8 @@ export const uploadTrees = async (req: Request, res: Response) => {
             location: location,
             planted_by: tree.planted_by,
             tree_status: tree.tree_status,
+            assigned_at: tree.assigned_at,
+            assigned_to: tree.assigned_to,
             created_at: new Date(),
             updated_at: new Date(),
         }
