@@ -17,6 +17,7 @@ export class PondRepository {
 
     let obj: PondCreationAttributes = {
       name: data.name,
+      site_id: data.site_id,
       length_ft: data.length_ft,
       depth_ft: data.depth_ft,
       width_ft: data.width_ft,
@@ -48,6 +49,7 @@ export class PondRepository {
 
   public static async getPonds(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Pond>> {
     try {  
+      console.log('Pond where clause : ' , whereClause)
       return {
         offset: offset,
         total: await Pond.count({ where: whereClause }),

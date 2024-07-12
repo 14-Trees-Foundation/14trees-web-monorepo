@@ -3,6 +3,9 @@ import { status } from "../helpers/status";
 import CorpEventRepository from "../repo/corp_event_Repo";
 import EventRepository from "../repo/eventsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { FilterItem } from "../models/pagination";
+import { getWhereOptions } from "./helper/filters";
+
 import { EventCreationAttributes } from "../models/events";
 
 // export const getOverallOrgDashboard = async (req: Request, res: Response) => {
@@ -312,8 +315,19 @@ export const addEvent = async (req: Request, res: Response) => {
   
   export const getEvents = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
+
+
+    const filters: FilterItem[] = req.body?.filters;
+    let whereClause = {};
+    
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
+        })
+    }
+
     try {
-      let result = await EventRepository.getEvents(req.query, offset, limit);
+      let result = await EventRepository.getEvents(req.query, offset, limit ,whereClause);
       res.status(status.success).send(result);
     } catch (error: any) {
       res.status(status.error).json({

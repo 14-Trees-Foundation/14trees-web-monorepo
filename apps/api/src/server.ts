@@ -34,7 +34,8 @@ import pondsRoutes from "./routes/pondsRoutes";
 // import imageRoutes from "./routes/imageRoutes";
 import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
 import albumRoutes from "./routes/albumRoutes";
-import donationRoutes from "./routes/donationRoutes"
+import donationRoutes from "./routes/donationRoutes";
+import visitRoutes from "./routes/visitRoutes";
 
 let swaggerFile: any;
 try {
@@ -114,6 +115,7 @@ const initExpressApp = (app: express.Application) => {
   // app.use("/api/images", imageRoutes);
   app.use("/api/onsitestaff", onSiteStaffRoutes);
   app.use("/api/albums", albumRoutes);
+  app.use("/api/visits", visitRoutes );
 
   // swagger doc
   if (swaggerFile) {
@@ -136,8 +138,9 @@ const initExpressApp = (app: express.Application) => {
       },
     });
   });
-  app.listen(port, function () {
+  app.listen(port, function() {
     console.log("API Server listening on port " + port + "!");
+    
   });
 
   return app;

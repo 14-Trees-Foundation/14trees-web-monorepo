@@ -17,19 +17,18 @@ class PlantTypeRepository {
         // Tree type object to be saved
         let plantTypeObj: PlantTypeCreationAttributes = {
             name: data.name,
-            name_english: data.name_english,
-            common_name_english: data.common_name_english,
-            common_name_marathi: data.common_name_marathi,
+            english_name: data.english_name,
+            common_name_in_english: data.common_name_in_english,
+            common_name_in_marathi: data.common_name_in_marathi,
             plant_type_id: data.plant_type_id,
-            description: data.description,
+           
             scientific_name: data.scientific_name,
             family: data.family,
             tags: data.tags,
             habit: data.habit,
-            med_use: data.med_use,
-            other_use: data.other_use,
-            food: data.food,
-            eco_value: data.eco_value,
+            known_as: data.known_as,
+            
+            use:data.use,
             category: data.category,
             names_index: data.names_index,
             created_at: new Date(),

@@ -36,6 +36,11 @@ export const getSites = async (req: Request, res: Response) => {
 
 export const addSite = async (req: Request, res: Response) => {
     const reqData = req.body
+  
+    if(reqData.maintenance_type){
+        reqData.maintenance_type = reqData.maintenance_type.toUpperCase();
+    }
+   
     try {
         let result = await SiteRepository.addSite(reqData);
         res.status(status.success).send(result);
@@ -48,6 +53,11 @@ export const addSite = async (req: Request, res: Response) => {
 }
 
 export const updateSite = async (req: Request, res: Response) => {
+    
+    if(req.body.maintenance_type){
+        req.body.maintenance_type =  req.body.maintenance_type.toUpperCase();
+    }
+
     try {
         let result = await SiteRepository.updateSite(req.body)
         res.status(status.created).json(result);

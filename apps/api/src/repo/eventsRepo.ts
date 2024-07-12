@@ -1,5 +1,8 @@
 import { Op } from 'sequelize';
 import { Event, EventAttributes, EventCreationAttributes } from '../models/events';
+import { WhereOptions } from 'sequelize';
+import { PaginatedResponse } from '../models/pagination';
+
 
 export class EventRepository {
   public static async addEvent(data: EventCreationAttributes): Promise<Event> {
@@ -7,8 +10,9 @@ export class EventRepository {
     return await Event.create(data);
   }
 
-  public static async getEvents(query: any, offset: number, limit: number): Promise<Event[]> {
-    const whereClause: Record<string, any> = {};
+  public static async getEvents(query: any, offset: number, limit: number  , whereClause: any): Promise<PaginatedResponse<Event>> {
+    
+    // const whereClause: Record<string, any> = {};
     if (query.name) {
       whereClause.name = { [Op.iLike]: `%${query.name}%` };
     }
@@ -16,12 +20,17 @@ export class EventRepository {
       whereClause.type = { [Op.iLike]: `%${query.type}%` };
     }
 
+    const count = await Event.count({ where: whereClause });
+
     const events = await Event.findAll({
       where: whereClause,
+      
       offset: offset,
       limit: limit
     })
-    return events;
+
+
+    return {  results :  events ,total: count, offset: offset };
   }
 
   static async updateEvent(eventData: EventAttributes): Promise<Event> {

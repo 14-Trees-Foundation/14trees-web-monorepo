@@ -1,3 +1,4 @@
+
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
@@ -18,17 +19,14 @@ interface SiteAttributes {
     photo_album: string | null;
     consent_letter: string | null;
     grove_type: string | null;
-    map_to: string | null;
-    notion_db_pictures: string | null;
-    split_village_name_1: string;
-    split_village_name_2: boolean | null;
-    create_id: string | null;
-    site_key: string | null;
-    site_key_2: string | null;
-    temp_backup_copy_of_old_site_name_english_marathi: string | null;
-    temp_copy_of_old_site_key: string | null;
-    temp_old_site_name_in_english: string | null;
-    temp_old_site_name_in_marathi: string | null;
+    consent_document_link:  string| null;
+    google_earth_link: string|null;
+    trees_planted: Number|null;
+    account: string|null;
+    data_errors: string|null;
+    date_planted: Date|null;
+    site_data_check: Enumerator|null;
+
     album: string | null;
     album_contains: string | null;
     tag: string | null;
@@ -37,6 +35,7 @@ interface SiteAttributes {
     hosted_at: string | null;
     created_at?: Date;
     updated_at?: Date;
+    maintenance_type: Enumerator  | null;
 }
 
 interface SiteCreationAttributes extends Optional<SiteAttributes, 'id' | 'created_at' | 'updated_at'> {}
@@ -97,37 +96,28 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
     grove_type!: string | null;
 
     @Column(DataType.STRING)
-    map_to!: string | null;
+    consent_document_link!: string | null;
 
     @Column(DataType.STRING)
-    notion_db_pictures!: string | null;
+    google_earth_link!: string | null;
+
+    @Column(DataType.NUMBER)
+    trees_planted!: number | null;
 
     @Column(DataType.STRING)
-    split_village_name_1!: string;
+    account!: string | null;
 
-    @Column(DataType.BOOLEAN)
-    split_village_name_2!: boolean | null;
-
+    
     @Column(DataType.STRING)
-    create_id!: string | null;
+    data_errors!: string | null;
 
-    @Column(DataType.STRING)
-    site_key!: string | null;
+    @Column(DataType.DATE)
+    date_planted!: Date | null;
 
-    @Column(DataType.STRING)
-    site_key_2!: string | null;
+    @Column({type:DataType.ENUM , values:["Yes" , "No"]})
+    site_data_check!: Enumerator | null;
 
-    @Column(DataType.STRING)
-    temp_backup_copy_of_old_site_name_english_marathi!: string | null;
-
-    @Column(DataType.STRING)
-    temp_copy_of_old_site_key!: string | null;
-
-    @Column(DataType.STRING)
-    temp_old_site_name_in_english!: string | null;
-
-    @Column(DataType.STRING)
-    temp_old_site_name_in_marathi!: string | null;
+   
 
     @Column(DataType.STRING)
     album!: string | null;
@@ -152,6 +142,12 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column(DataType.DATE)
     updated_at?: Date;
+
+    @Column({type : DataType.ENUM , values: ['FULL_MAINTENANCE',
+	'PLANTATION_ONLY',
+	'DISTRIBUTION_ONLY']})
+    maintenance_type!: Enumerator | null;
+
 }
 
 export { Site };

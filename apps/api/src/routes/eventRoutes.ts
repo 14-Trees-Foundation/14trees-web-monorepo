@@ -7,7 +7,7 @@ const routes = Router();
 // @deprecated
 // routes.post('/addevents', uploadFiles.array('files',1), events.addEvents);
 
-routes.get('/', events.getEvents);
+routes.post('/get', events.getEvents);
 // routes.post('/', uploadFiles.array('files', 1), events.addEvents);
 routes.delete('/:id', events.deleteEvent);
 // routes.get("/birthday", events.getBirthdayEvent);

@@ -16,6 +16,8 @@ import * as donations from '../controllers/donationsController';
 
 const routes = express.Router();
 
-routes.get('/', donations.getDonations);
-
+routes.post('/getDonations', donations.getDonations);
+routes.post('/add' , donations.addDonation);  //to add a new donation
+routes.delete('/:id' , donations.deleteDonation);
+routes.put('/:id' , donations.updateDonation);
 export default routes;
