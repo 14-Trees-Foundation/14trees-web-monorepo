@@ -1,29 +1,30 @@
 //Model in postgresql db
-import { Table, Column, Model, DataType, Unique, Index } from 'sequelize-typescript';
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
 import { Optional } from 'sequelize';
 
 interface DonationAttributes {
   id: number;
-  Date_Recieved: string;
-  Name: string;
-  Donor_type: string;
-  Phone: string;
-  Email_Address: string;
-  PAN: string;
-  Pledged: string;
-  Land_type: string;
-  Zone: string;
-  Grove: string;
-  PlantationLandType: string;
-  DashboardStatus: string;
-  Assigned_plot: string;
-  Tree_planted: string;
-  Assigner_dashboard: string;
-  Remarks_for_inventory: string;
-    
+  date_received: string;
+  name: string;
+  donor_type: string;
+  phone: string;
+  email_address: string;
+  pan: string;
+  pledged: string;
+  land_type: string;
+  zone: string;
+  grove: string;
+  plantation_land_type: string;
+  dashboard_status: string;
+  assigned_plot: string;
+  tree_planted: string;
+  assigner_dashboard: string;
+  remarks_for_inventory: string;
+  created_at: Date;
+  updated_at: Date;  
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes,  'Date_Recieved'> {}
+interface DonationCreationAttributes extends Optional<DonationAttributes,  'date_received'> {}
 
 @Table({ tableName: 'donations' })
 class Donations extends Model<DonationAttributes, DonationCreationAttributes>
@@ -37,82 +38,59 @@ implements DonationAttributes {
     })
     id!: number;
 
-    @Column({
-      type: DataType.STRING,
-      allowNull: true,
-      field: 'Date received'
-    })
-    Date_Recieved!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    date_received!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Name' })
-    Name!: string;
+    @Column({ type: DataType.STRING, allowNull: true  })
+    name!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    phone!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true  , field: 'Phone'})
-    Phone!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    donor_type!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    email_address!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true  , field: 'Donor Type'})
-    Donor_type!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    pan!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    pledged!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Email Address' })
-    Email_Address!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    land_type!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    zone!: string;
 
-    @Column({ 
-      type: DataType.STRING, 
-      allowNull: true,
-      field: 'PAN number needed to qualify for 80G benefit (and  for audit an' 
-    
-    })
-    PAN!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    grove!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    plantation_land_type!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true  , field: 'Pledged'})
-    Pledged!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    dashboard_status!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    assigned_plot!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Land type' })
-    Land_type!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    tree_planted!: string;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    assigner_dashboard!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Zone' })
-    Zone!: string;
+    @Column({ type: DataType.STRING, allowNull: true })
+    remarks_for_inventory!: string;
 
+    @Column({ type: DataType.DATE, allowNull: true })
+    created_at!: Date;
 
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Grove' })
-    Grove!: string;
-
-
-    @Column({ type: DataType.STRING, allowNull: true ,field: 'Please select your preference (if you want to spread your trees' })
-    PlantationLandType!: string;
-
-    
-   
-    @Column({ type: DataType.STRING, allowNull: true  , field: 'Status'})
-    DashboardStatus!: string;
-
-
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Assigned plot' })
-    Assigned_plot!: string;
-
-
-    @Column({ type: DataType.STRING, allowNull: true , field: 'Tree planted' })
-    Tree_planted!: string;
-
-
-
-    @Column({ type: DataType.STRING, allowNull: true  , field:  `Assigner's dashboard`})
-    Assigner_dashboard!: string;
-
-
-
-    @Column({ type: DataType.STRING, allowNull: true  , field:`Remarks for inventory`})
-    Remarks_for_inventory!: string;
-
-
-    
+    @Column({ type: DataType.DATE, allowNull: true })
+    updated_at!: Date;
 }
 
 export { Donations }

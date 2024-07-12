@@ -1,4 +1,3 @@
-import { sequelize } from "../config/postgreDB";
 import { Donations , DonationAttributes, DonationCreationAttributes} from '../models/donation'
 import { PaginatedResponse } from "../models/pagination";
 import { WhereOptions } from 'sequelize';
@@ -8,31 +7,11 @@ export class DonationRepository {
     public static async getDonations(offset: number = 0, limit: number = 20 , whereClause: WhereOptions): Promise<PaginatedResponse<Donations>> {
         // Fetching data using Sequelize's findAll method with pagination
         const response = await Donations.findAll({
-            attributes: [
-                'id',
-                'Donor Type',
-                'Name',
-                'Phone',
-                'Email Address',
-                'PAN',
-                'Pledged',
-                'Land type',
-                'Zone',
-                'Grove',
-                'PlantationLandType',
-                'DashboardStatus',
-                'Assigned plot',
-                'Tree planted',
-                "Assigner's dashboard",
-                'Remarks for inventory'
-            ],
             where: whereClause,
             offset: Number(offset),
             limit: Number(limit),
         });
 
-        console.log(response)
-        console.log('Where clause : ' , whereClause)
         return {
             results : response,
             total: await Donations.count({ where : whereClause}),
