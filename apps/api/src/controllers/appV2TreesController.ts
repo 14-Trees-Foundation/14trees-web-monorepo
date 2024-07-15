@@ -435,6 +435,15 @@ export const uploadShifts = async (req: Request, res: Response) => {
 
     for (const shift of shiftArray) {
         const { shift_id, id, user_id, shift_type, saplings, trees_planted, start_time, plot_selected, time_taken, end_time, timestamp } = shift;
+
+        let time = new Date();
+        if (timestamp) {
+            const date = (timestamp as string).split('-');
+            if (date.length === 3) {
+                const dt = new Date(`${date[2]}-${date[1]}-${date[1]}`);
+                if (!isNaN(dt.getTime())) time = dt;
+            }
+        }
         console.log(shift)
         const shiftData: ShiftCreationAttributes | Shift = {
             start_time: start_time,
@@ -445,7 +454,7 @@ export const uploadShifts = async (req: Request, res: Response) => {
             plot_selected: plot_selected,
             time_taken: time_taken,
             trees_planted: parseInt(trees_planted),
-            timestamp,
+            timestamp: time,
         };
 
         try {
