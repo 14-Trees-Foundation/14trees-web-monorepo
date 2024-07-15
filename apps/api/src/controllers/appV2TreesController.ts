@@ -408,13 +408,20 @@ export const fetchShifts = async (req: Request, res: Response) => {
         const message = "User id of onsite staff is required."
         console.log("[INFO] appV2::fetchShifts: " + message);
         res.status(status.bad).send({ error: message });
+        return;
     }
 
     try {
-        const userShifts = await ShiftRepository.getShifts({ user_id: user_id });
+        let userShifts: any[] = await ShiftRepository.getShifts({ user_id: user_id });
+        userShifts = JSON.parse(JSON.stringify(userShifts))
+        console.log(userShifts)
         const currentHash = CryptoJS.MD5(JSON.stringify(userShifts)).toString();
         const response = {
-            data: userShifts as any,
+            data: userShifts.map(shift => {
+                let timestamp = shift.timestamp.split('T')[0];
+                timestamp = timestamp.split('-').reverse().join('-');
+                return { ...shift, timestamp: timestamp };
+            }) as any,
             hash: currentHash,
         }
     
@@ -440,7 +447,7 @@ export const uploadShifts = async (req: Request, res: Response) => {
         if (timestamp) {
             const date = (timestamp as string).split('-');
             if (date.length === 3) {
-                const dt = new Date(`${date[2]}-${date[1]}-${date[0]}`);
+                const dt = new Date(`${date[2]}-${date[1]}-${date[0]}T00:00:00.000Z`);
                 if (!isNaN(dt.getTime())) time = dt;
             }
         }
