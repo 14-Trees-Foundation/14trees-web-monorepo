@@ -578,10 +578,12 @@ export const getDeltaUsers = async (req: Request, res: Response) => {
 }
 
 export const getDeltaTrees = async (req: Request, res: Response) => {
-    const { timestamp, tree_ids } = req.body;
+    let { timestamp, tree_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let treeIds: number[] = [];
 
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (tree_ids && tree_ids.length > 0) treeIds = tree_ids;
@@ -589,13 +591,13 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
 
     try {
         // fetch created and updated trees after given time
-        const result = await TreeRepository.getTrees(0, -1, [
+        const result = await TreeRepository.getTrees(offset, limit, [
             { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
         ])
     
         // fetch deleted trees
         const deleted = await TreeRepository.getDeletedTreesFromList(treeIds);
-        res.status(status.success).json({ trees: result.results, deleted_tree_ids: deleted });
+        res.status(status.success).json({ total: result.total, trees: result.results, deleted_tree_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaTree: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
