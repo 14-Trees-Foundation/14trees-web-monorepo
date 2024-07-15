@@ -11,7 +11,7 @@ interface PondAttributes {
 	type: string;
   site_id: number;
 	boundaries: Boundaries;
-  images: string[];
+  image: string | null;
   length_ft: number;
   width_ft: number;
   depth_ft: number;
@@ -58,8 +58,8 @@ implements PondAttributes {
   })
   boundaries!: Boundaries;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  images!: string[];
+  @Column(DataType.STRING)
+  image!: string;
 
   @Column(DataType.FLOAT)
   length_ft!: number;
