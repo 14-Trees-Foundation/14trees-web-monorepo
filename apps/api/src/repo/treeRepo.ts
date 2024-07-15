@@ -139,6 +139,11 @@ class TreeRepository {
     return treeResp;
   };
 
+  public static async addTreeObject(data: TreeCreationAttributes): Promise<Tree> {
+
+    const treeResp = Tree.create(data);
+    return treeResp;
+  };
 
   public static async updateTree(data: TreeAttributes, files?: Express.Multer.File[]): Promise<Tree> {
 
@@ -406,6 +411,22 @@ class TreeRepository {
       type: QueryTypes.SELECT
     })
     return data;
+  }
+
+  public static async getDeletedTreesFromList(treeIds: number[]): Promise<number[]> {
+    const query = `SELECT num
+    FROM unnest(array[:tree_ids]::int[]) AS num
+    WHERE num NOT IN (
+        SELECT t.id
+        FROM "14trees".trees as t
+    );`
+
+    const result = await sequelize.query(query, {
+        replacements: { tree_ids: treeIds },
+        type: QueryTypes.SELECT
+    })
+
+    return result.map((row: any) => row.num);
   }
 }
 

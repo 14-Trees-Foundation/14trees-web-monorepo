@@ -17,6 +17,9 @@ import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
 import { Donations } from "../models/donation";
 import { Album } from "../models/albums";
+import { Shift } from "../models/shift";
+import { LogsInfo } from "../models/logs_info";
+import { TreesSnapshots } from "../models/trees_snapshots";
 import { Visit } from "../models/visits"
 
 
@@ -67,6 +70,9 @@ class Database {
         PondWaterLevel,
         Donations,
         Album,
+        Shift,
+        LogsInfo,
+        TreesSnapshots,
         Visit
       ]
     });
