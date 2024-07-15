@@ -6,6 +6,8 @@ import { User, UserCreationAttributes } from "../models/user";
 import { validateCSV } from "./helper/parsecsv";
 import { VisitUsersCreationAttributes } from "../models/visit_users";
 import { VisitRepository} from "../repo/visitsRepo"
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { FilterItem } from "../models/pagination";
 
 /*
     Model - VisitUserGroup
@@ -13,16 +15,17 @@ import { VisitRepository} from "../repo/visitsRepo"
 */
 
 export const getVisitUsers = async (req: Request, res: Response) => {
-  const userId: number = parseInt(req.query.user_id as string);
   const visitId: number = parseInt(req.query.visit_id as string);
+
   try {
-      let result = await VisitUsersRepository.getVisitUsers(userId, visitId);
-      res.status(status.success).send(result);
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    
+    let users = await VisitUsersRepository.getVisitUsers(visitId, offset, limit, filters);
+    res.status(status.success).json(users);
   } catch (error: any) {
-      res.status(status.error).json({
-          status: status.error,
-          message: error.message,
-      });
+    res.status(status.error).send({ error: error.message });
+    return;
   }
 }
 
@@ -33,7 +36,7 @@ export const addVisitUsers = async (req: Request, res: Response) => {
       return;
   }
   if (!req.body.user_id && (!req.body.name || !req.body.email || !req.body.phone)) {
-      res.status(status.bad).send({ error: "user_id pr new user details are required" });
+      res.status(status.bad).send({ error: "user_id or new user details are required" });
       return;
   }
   
@@ -41,9 +44,10 @@ export const addVisitUsers = async (req: Request, res: Response) => {
       let userId = req.body.user_id;
       let visitId = req.body.visit_id;
       if (userId) {
-          let visituserGroup = await VisitUsersRepository.getVisitUsers(userId, visitId);
-          if (visituserGroup.length !== 0) {
-              res.status(status.duplicate).send({ "message": "VisitUserGroup already exists" });
+        // TODO: change below implementation
+          let visituserGroup = await VisitUsersRepository.getVisitUsers(visitId,0,1000,[]);
+          if (visituserGroup.total !== 0) {
+              res.status(status.duplicate).send({ "message": "User is already part of the Visit" });
               return;
           }
       } else {

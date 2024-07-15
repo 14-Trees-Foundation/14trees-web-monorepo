@@ -1,13 +1,63 @@
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { VisitUsers, VisitUsersCreationAttributes } from '../models/visit_users';
+import { FilterItem, PaginatedResponse } from '../models/pagination';
+import { User } from '../models/user';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
+import { sequelize } from '../config/postgreDB';
 
 export class VisitUsersRepository {
 
-  static async getVisitUsers(userId: number, visitId: number): Promise<VisitUsers[]> {
-    const results = await VisitUsers.findAll({
-        where: { user_id: userId, visit_id: visitId },
-    });
-    return results;
+  static async getVisitUsers(visitId: number, offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<User>> {
+    // const results = await VisitUsers.findAll({
+    //     where: { user_id: userId, visit_id: visitId },
+    // });
+    // return results;
+
+    let whereConditions: string = "";
+        let replacements: any = {}
+
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "u." + filter.columnField
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereConditions = whereConditions + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+        }
+
+        const getQuery = `
+            SELECT u.*, vg.created_at as visit_user_created_at 
+            FROM "14trees_old".users u 
+            JOIN "14trees_old".visit_users vg ON u.id = vg.user_id
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+            ORDER BY u.id DESC
+            OFFSET ${offset} LIMIT ${limit};
+        `
+
+        const countQuery = `
+            SELECT COUNT(*) 
+            FROM "14trees_old".users u 
+            JOIN "14trees_old".visit_users vg ON u.id = vg.user_id
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+        `
+
+        const users: any = await sequelize.query(getQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countUsers: any = await sequelize.query(countQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countUsers[0].count)
+
+        return {
+            offset: offset,
+            total: totalResults,
+            results: users
+        };
 }
 
 static async addUser(userId: number, visitId: number): Promise<VisitUsers> {
