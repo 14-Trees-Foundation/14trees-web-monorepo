@@ -29,7 +29,7 @@ interface SiteAttributes {
 
     album: string | null;
     album_contains: string | null;
-    tag: string | null;
+    tags: string[] | null;
     status: string | null;
     remark: string | null;
     hosted_at: string | null;
@@ -126,7 +126,7 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
     album_contains!: string | null;
 
     @Column(DataType.STRING)
-    tag!: string | null;
+    tags!: string[] | null;
 
     @Column(DataType.STRING)
     status!: string | null;
