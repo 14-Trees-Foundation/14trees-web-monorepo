@@ -582,7 +582,7 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let treeIds: number[] = [];
 
-    if (!limit) limit = 10000;
+    if (!limit) limit = 1000;
     if (!offset) offset = 0;
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
