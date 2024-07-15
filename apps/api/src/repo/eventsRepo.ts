@@ -33,7 +33,7 @@ export class EventRepository {
     return {  results :  events ,total: count, offset: offset };
   }
 
-  static async updateEvent(eventData: EventAttributes): Promise<Event> {
+  public static async updateEvent(eventData: EventAttributes): Promise<Event> {
     const event = await Event.findByPk(eventData.id);
     if (!event) {
         throw new Error('Event not found for given id');

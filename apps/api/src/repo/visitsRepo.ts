@@ -38,4 +38,9 @@ export class VisitRepository {
       return resp;
   }
 
+  public static async getVisit(id: number): Promise<Visit | null> {
+    return await Visit.findByPk(id);
+}
+
+
 }

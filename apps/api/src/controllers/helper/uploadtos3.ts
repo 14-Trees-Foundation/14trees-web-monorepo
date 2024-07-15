@@ -26,6 +26,8 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
         bucket = process.env.ACTIVITY_MEMORIES
     } else if (type === 'trees') {
         bucket = process.env.BUCKET_TREES
+    } else if (type === 'sites') {
+        bucket = process.env.BUCKET_TREES + "/" + folder_name
     } else if (type === 'ponds') {
         bucket = process.env.BUCKET_PONDS + "/" + folder_name
     } else if (type === 'albums') {

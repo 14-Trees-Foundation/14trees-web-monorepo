@@ -24,7 +24,7 @@ class PlantTypeRepository {
            
             scientific_name: data.scientific_name,
             family: data.family,
-            tags: data.tags,
+            tags: data.tags!=""?data.tags.split(','):null,
             habit: data.habit,
             known_as: data.known_as,
             
@@ -38,12 +38,14 @@ class PlantTypeRepository {
         // Upload images to S3
         let imageUrls: string[] = [];
         if (files && files.length !== 0) {
-            files.forEach( async (file) => {
-                const url = await UploadFileToS3(files[0].filename, "plant_type");
+           
+                const url = await UploadFileToS3(files[0].filename, "plant_type" , data.name);
+                console.log("Url : ", url);
                 imageUrls.push(url);
-            } )
+            } 
+            console.log("Image urls : ", imageUrls);
             plantTypeObj.images = imageUrls;
-        }
+        
         
         const plantType = await PlantType.create(plantTypeObj);
         return plantType;

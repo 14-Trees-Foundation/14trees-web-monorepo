@@ -12,7 +12,7 @@ interface PlantTypeAttributes {
 	scientific_name: string;
 	plant_type_id: string;
   images: string[];
-	tags: string[];
+	tags?: string[];
   habit: string;
   family?: string;
   category?: string;

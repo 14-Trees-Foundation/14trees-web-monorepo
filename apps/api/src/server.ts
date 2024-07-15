@@ -36,6 +36,7 @@ import onSiteStaffRoutes from "./routes/onSiteStaffRoutes";
 import albumRoutes from "./routes/albumRoutes";
 import donationRoutes from "./routes/donationRoutes";
 import visitRoutes from "./routes/visitRoutes";
+import visitUserRoutes from "./routes/visitUsersRoutes";
 
 let swaggerFile: any;
 try {
@@ -116,6 +117,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/onsitestaff", onSiteStaffRoutes);
   app.use("/api/albums", albumRoutes);
   app.use("/api/visits", visitRoutes );
+  app.use("/api/visit-users/" , visitUserRoutes);
 
   // swagger doc
   if (swaggerFile) {
