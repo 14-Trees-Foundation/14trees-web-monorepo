@@ -416,10 +416,9 @@ class TreeRepository {
   public static async getDeletedTreesFromList(treeIds: number[]): Promise<number[]> {
     const query = `SELECT num
     FROM unnest(array[:tree_ids]::int[]) AS num
-    WHERE num NOT IN (
-        SELECT t.id
-        FROM "14trees".trees as t
-    );`
+    LEFT JOIN "14trees".trees AS t
+    ON num = t.id
+    WHERE t.id IS NULL;`
 
     const result = await sequelize.query(query, {
         replacements: { tree_ids: treeIds },
