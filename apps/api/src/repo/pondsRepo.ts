@@ -1,10 +1,9 @@
-import { WhereOptions } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 import { Pond, PondAttributes, PondCreationAttributes } from '../models/pond';
-import { status } from '../helpers/status'
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
-import { User } from '../models/user';
-import { PondWaterLevel, PondWaterLevelCreationAttributes } from '../models/pond_water_level';
-import { PaginatedResponse } from '../models/pagination';
+import { FilterItem, PaginatedResponse } from '../models/pagination';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
+import { sequelize } from '../config/postgreDB';
 
 export class PondRepository {
   public static async addPond(data: any, files?: Express.Multer.File[]): Promise<Pond> {
@@ -29,7 +28,9 @@ export class PondRepository {
       updated_at: new Date(),
     };
     const pondRes = await Pond.create(obj);
-    return pondRes;
+
+    const pondResp = await this.getPonds(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: pondRes.id.toString() }])
+    return pondResp.results[0] || pondRes;
   }
 
   public static async updatePond(data: PondAttributes, files?: Express.Multer.File[]): Promise<Pond> {
@@ -44,25 +45,52 @@ export class PondRepository {
       throw new Error("Pond not found")
     }
     const updatedPond = await pond.update(data);
-    return updatedPond;
+    const pondResp = await this.getPonds(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: updatedPond.id.toString() }])
+    return pondResp.results[0] || updatedPond;
   }
 
-  public static async getPonds(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Pond>> {
-    try {  
-      console.log('Pond where clause : ' , whereClause)
-      return {
-        offset: offset,
-        total: await Pond.count({ where: whereClause }),
-        results: await Pond.findAll({
-          where: whereClause,
-          order: [['id', 'DESC']],
-          offset: offset, 
-          limit: limit
-        })
-      };
-    } catch (error: any) {
-      throw new Error(error.message);
+  public static async getPonds(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<Pond>> {
+    let whereCondition = "";
+    let replacements: any = {}
+    if (filters && filters.length > 0) {
+      filters.forEach(filter => {
+        let columnField = "p." + filter.columnField
+        if (filter.columnField === 'site_name') columnField = 's.name_english';
+        const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+        whereCondition = whereCondition + " " + condition + " AND";
+        replacements = { ...replacements, ...replacement }
+      })
+      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
     }
+
+    const query = `
+        SELECT p.*,
+            s.name_english as site_name
+        FROM "14trees".ponds p
+        LEFT JOIN "14trees".sites s ON p.site_id = s.id
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        ORDER BY p.id DESC
+        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+        `
+
+    const countPondsQuery =
+      `SELECT count(p.id)
+        FROM "14trees".ponds AS p
+        LEFT JOIN "14trees".sites s ON p.site_id = s.id
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
+
+    const ponds: any = await sequelize.query(query, {
+      replacements: replacements,
+      type: QueryTypes.SELECT
+    })
+
+    const countPonds: any = await sequelize.query(countPondsQuery, {
+      replacements: replacements,
+      type: QueryTypes.SELECT
+    })
+    const totalResults = parseInt(countPonds[0].count)
+
+    return { offset: offset, total: totalResults, results: ponds as Pond[] };
   }
 
   public static async deletePond(pondId: string): Promise<number> {

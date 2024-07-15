@@ -58,15 +58,9 @@ export const updatePond = async (req: Request, res: Response) => {
 export const getPonds = async (req: Request ,res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
   const filters: FilterItem[] = req.body?.filters;
-  let whereClause = {};
-  if (filters && filters.length > 0) {
-      filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-      })
-  }
 
   try {
-    const result = await PondRepository.getPonds(offset, limit, whereClause);
+    const result = await PondRepository.getPonds(offset, limit, filters);
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({
@@ -97,8 +91,8 @@ export const searchPonds = async (req: Request, res: Response) => {
       return;
     }
 
-    let whereClause = getWhereOptions("name", "contains", req.params.search)
-    const ponds = await PondRepository.getPonds(offset, limit, whereClause);
+    let filters: FilterItem[] = [{columnField: 'name', operatorValue: 'contains', value: req.params.search }]
+    const ponds = await PondRepository.getPonds(offset, limit, filters);
     res.status(status.success).send(ponds);
     return;
   } catch (error: any) {

@@ -2,7 +2,7 @@ import { QueryTypes } from 'sequelize';
 import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
-import { getSqlQueryExpression, getWhereOptions } from '../controllers/helper/filters';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
 
 export class PlotRepository {
     public static async updatePlot(plotData: PlotAttributes): Promise<Plot> {
@@ -12,7 +12,10 @@ export class PlotRepository {
         }
         plotData.updated_at = new Date();
         const updatedPlot = await plot.update(plotData);
-        return updatedPlot;
+
+        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot.id.toString()}];
+        const plotsResp = await this.getPlots(0, 1, filters);
+        return plotsResp.results[0] || updatedPlot;
     }
 
     public static async addPlot(plotData: any): Promise<Plot> {
@@ -38,19 +41,21 @@ export class PlotRepository {
             updated_at: new Date()
         };
         const plot = await Plot.create(obj);
-        console.log("plot created: ", plot);
-        return plot;
+        
+        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: plot.id.toString()}];
+        const plotsResp = await this.getPlots(0, 1, filters);
+        return plotsResp.results[0] || plot;
     }
 
     public static async getPlots(offset: number = 0, limit: number = 10, filters: FilterItem[]): Promise<PaginatedResponse<Plot>> {
 
         let whereCondition = "";
-        let whereClause = {};
         let replacements: any = {}
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
-                whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-                const { condition, replacement } = getSqlQueryExpression("p." + filter.columnField, filter.operatorValue, filter.columnField, filter.value);
+                let columnField = "p." + filter.columnField
+                if (filter.columnField === 'site_name') columnField = 's.name_english';
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
             })
@@ -59,7 +64,7 @@ export class PlotRepository {
 
         const query = `
         SELECT p.*,
-            s.name_english as site_name_english,
+            s.name_english as site_name,
             COUNT(t.id) as trees_count, 
             COUNT(t.assigned_to) as assigned_trees_count,
             SUM(CASE 
@@ -76,19 +81,19 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
                END) AS available_trees_count
-        FROM "14trees_old".plots p
-        LEFT JOIN "14trees_old".trees t ON p.id = t.plot_id
-       
-        LEFT JOIN "14trees_old".sites s ON p.site_id = s.id
+        FROM "14trees".plots p
+        LEFT JOIN "14trees".trees t ON p.id = t.plot_id
+        LEFT JOIN "14trees".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-        GROUP BY p.id,s.name_english
+        GROUP BY p.id, s.name_english
         ORDER BY p.id DESC
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
         const countPlotsQuery = 
             `SELECT count(p.id)
-                FROM "14trees_old".plots AS p
+                FROM "14trees".plots AS p
+                LEFT JOIN "14trees".sites s ON p.site_id = s.id
                 WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
         
         const plots: any = await sequelize.query(query, {
