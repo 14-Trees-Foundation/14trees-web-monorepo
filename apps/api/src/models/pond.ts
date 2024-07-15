@@ -9,8 +9,9 @@ interface PondAttributes {
 	name: string;
 	tags: string[];
 	type: string;
+  site_id: number;
 	boundaries: Boundaries;
-  images: string[];
+  image: string | null;
   length_ft: number;
   width_ft: number;
   depth_ft: number;
@@ -47,14 +48,18 @@ implements PondAttributes {
   @Column(DataType.STRING)
   type!: string;
 
+  
+  @Column({ type :DataType.NUMBER , allowNull: true})
+  site_id!: number;
+
   @Column({
     type: DataType.JSON,
     allowNull: true
   })
   boundaries!: Boundaries;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  images!: string[];
+  @Column(DataType.STRING)
+  image!: string;
 
   @Column(DataType.FLOAT)
   length_ft!: number;

@@ -9,21 +9,22 @@ import { PaginatedResponse } from '../models/pagination';
 export class PondRepository {
   public static async addPond(data: any, files?: Express.Multer.File[]): Promise<Pond> {
 
-    let pondImageUrls = [];
+    let pondImageUrl: string | null = null;
     if (files && files.length !== 0) {
       const location = await UploadFileToS3(files[0].filename, "ponds", data.name);
-      pondImageUrls.push(location)
+      if (location !== "") pondImageUrl = location;
     }
 
     let obj: PondCreationAttributes = {
       name: data.name,
+      site_id: data.site_id,
       length_ft: data.length_ft,
       depth_ft: data.depth_ft,
       width_ft: data.width_ft,
       type: data.type,
       tags: data.tags,
       boundaries: data.boundaries,
-      images: pondImageUrls,
+      image: pondImageUrl,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -35,7 +36,7 @@ export class PondRepository {
 
     if (files && files.length !== 0) {
       const location = await UploadFileToS3(files[0].filename, "ponds", data.name);
-      data.images = [location]
+      if (location !== "") data.image = location
     }
 
     const pond = await Pond.findByPk(data.id);
@@ -48,6 +49,7 @@ export class PondRepository {
 
   public static async getPonds(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Pond>> {
     try {  
+      console.log('Pond where clause : ' , whereClause)
       return {
         offset: offset,
         total: await Pond.count({ where: whereClause }),

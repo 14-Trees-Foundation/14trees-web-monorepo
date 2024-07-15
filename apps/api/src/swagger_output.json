@@ -133,6 +133,24 @@
         }
       }
     },
+    "/api/groups/{search}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/groups/get": {
       "post": {
         "description": "",
@@ -234,7 +252,41 @@
             "schema": {
               "type": "object",
               "properties": {
+                "group_id": {
+                  "example": "any"
+                },
                 "user_id": {
+                  "example": "any"
+                },
+                "name": {
+                  "example": "any"
+                },
+                "email": {
+                  "example": "any"
+                },
+                "phone": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_ids": {
                   "example": "any"
                 },
                 "group_id": {
@@ -251,26 +303,32 @@
         }
       }
     },
-    "/api/user-groups/{user_id}/{group_id}": {
-      "delete": {
+    "/api/user-groups/bulk": {
+      "post": {
         "description": "",
         "parameters": [
           {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "group_id",
-            "in": "path",
-            "required": true,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "group_id": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
-          "default": {
-            "description": ""
+          "201": {
+            "description": "Created"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
@@ -285,15 +343,17 @@
         }
       }
     },
-    "/api/trees/": {
-      "get": {
+    "/api/trees/get": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
             "description": ""
           }
         }
-      },
+      }
+    },
+    "/api/trees/": {
       "post": {
         "description": "",
         "responses": {
@@ -619,7 +679,28 @@
             "schema": {
               "type": "object",
               "properties": {
-                "sapling_id": {
+                "type": {
+                  "example": "any"
+                },
+                "description": {
+                  "example": "any"
+                },
+                "sponsored_by_user": {
+                  "example": "any"
+                },
+                "site_id": {
+                  "example": "any"
+                },
+                "tags": {
+                  "example": "any"
+                },
+                "event_date": {
+                  "example": "any"
+                },
+                "event_location": {
+                  "example": "any"
+                },
+                "sapling_ids": {
                   "example": "any"
                 }
               }
@@ -643,7 +724,7 @@
         }
       }
     },
-    "/api/mytrees/map-plot-trees": {
+    "/api/mapping/map-plot-trees": {
       "post": {
         "description": "",
         "parameters": [
@@ -653,7 +734,7 @@
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
+                "id": {
                   "example": "any"
                 },
                 "plot_id": {
@@ -661,6 +742,9 @@
                 },
                 "count": {
                   "example": "any"
+                },
+                "mapped_to": {
+                  "example": "any"
                 }
               }
             }
@@ -673,7 +757,7 @@
         }
       }
     },
-    "/api/mytrees/assign": {
+    "/api/mapping/map": {
       "post": {
         "description": "",
         "parameters": [
@@ -683,10 +767,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
+                "id": {
                   "example": "any"
                 },
-                "sapling_id": {
+                "sapling_ids": {
+                  "example": "any"
+                },
+                "mapped_to": {
                   "example": "any"
                 }
               }
@@ -700,7 +787,7 @@
         }
       }
     },
-    "/api/mytrees/unmap": {
+    "/api/mapping/unmap": {
       "post": {
         "description": "",
         "parameters": [
@@ -724,7 +811,7 @@
         }
       }
     },
-    "/api/mytrees/{email}": {
+    "/api/mapping/{email}": {
       "get": {
         "description": "",
         "parameters": [
@@ -742,36 +829,9 @@
         }
       }
     },
-    "/api/mytrees/count/usertreescount": {
+    "/api/mapping/count/usertreescount": {
       "get": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/mytrees/update": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "sapling_ids": {
-                  "example": "any"
-                },
-                "event_id": {
-                  "example": "any"
-                }
-              }
-            }
-          }
-        ],
         "responses": {
           "default": {
             "description": ""
@@ -859,6 +919,16 @@
         }
       }
     },
+    "/api/plots/tags": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/sites/get": {
       "post": {
         "description": "",
@@ -872,6 +942,20 @@
     "/api/sites/": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "maintenance_type": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -888,6 +972,18 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "maintenance_type": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -913,8 +1009,8 @@
         }
       }
     },
-    "/api/events/": {
-      "get": {
+    "/api/events/get": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
@@ -1140,7 +1236,7 @@
         }
       }
     },
-    "/api/analytics/totaltreetypes": {
+    "/api/analytics/totalplanttypes": {
       "get": {
         "description": "",
         "responses": {
@@ -1200,6 +1296,16 @@
         }
       }
     },
+    "/api/search/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/auth/google": {
       "post": {
         "description": "",
@@ -1224,8 +1330,80 @@
         }
       }
     },
-    "/api/donations/": {
+    "/api/donations/getDonations": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/add": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/{id}": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/ponds/{search}": {
       "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/ponds/get": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
@@ -1247,25 +1425,13 @@
                 "name": {
                   "example": "any"
                 },
-                "pond_name": {
-                  "example": "any"
-                },
                 "length_ft": {
-                  "example": "any"
-                },
-                "length": {
                   "example": "any"
                 },
                 "width_ft": {
                   "example": "any"
                 },
-                "width": {
-                  "example": "any"
-                },
                 "depth_ft": {
-                  "example": "any"
-                },
-                "depth": {
                   "example": "any"
                 },
                 "type": {
@@ -1275,14 +1441,6 @@
             }
           }
         ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      },
-      "get": {
-        "description": "",
         "responses": {
           "default": {
             "description": ""
@@ -1324,12 +1482,12 @@
         }
       }
     },
-    "/api/ponds/{search}": {
+    "/api/ponds/waterlevel/{pond_id}": {
       "get": {
         "description": "",
         "parameters": [
           {
-            "name": "search",
+            "name": "pond_id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1342,13 +1500,75 @@
         }
       }
     },
-    "/api/ponds/history": {
-      "get": {
+    "/api/ponds/waterlevel": {
+      "post": {
         "description": "",
         "parameters": [
           {
-            "name": "pond_name",
-            "in": "query",
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "pond_id": {
+                  "example": "any"
+                },
+                "level_ft": {
+                  "example": "any"
+                },
+                "user_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/ponds/waterlevel/{id}": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                },
+                "pond_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -1392,6 +1612,127 @@
       }
     },
     "/api/onsitestaff/{id}": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/albums/{id}": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/albums/{email}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "album_name": {
+                  "example": "any"
+                },
+                "file_names": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/visits/get": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/visits/": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/visits/{id}": {
       "put": {
         "description": "",
         "parameters": [

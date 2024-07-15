@@ -6,9 +6,9 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 interface PlantTypeAttributes {
 	id: number;
 	name: string;
-  name_english: string;
-  common_name_english?: string;
-  common_name_marathi?: string;
+  english_name: string;
+  common_name_in_english?: string;
+  common_name_in_marathi?: string;
 	scientific_name: string;
 	plant_type_id: string;
   images: string[];
@@ -16,11 +16,8 @@ interface PlantTypeAttributes {
   habit: string;
   family?: string;
   category?: string;
-  med_use?: string;
-  other_use?: string;
-  food?: string;
-  eco_value?: string;
-  description?: string;
+  known_as: string;
+  use?:string;
   names_index?: string;
   status?: string;
   status_message?: string[];
@@ -30,7 +27,7 @@ interface PlantTypeAttributes {
 }
 
 interface PlantTypeCreationAttributes
-	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'med_use' | 'other_use' | 'food' | 'eco_value' | 'description' | 'status'> {}
+	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'use' | 'status'> {}
 
 @Table({ tableName: 'plant_types' })
 class PlantType extends Model<PlantTypeAttributes, PlantTypeCreationAttributes>
@@ -50,16 +47,19 @@ implements PlantTypeAttributes {
   name!: string;
 
   @Column(DataType.STRING)
-  name_english!: string;
+  english_name!: string;
 
   @Column(DataType.STRING)
-  common_name_english!: string;
+  common_name_in_english!: string;
 
   @Column(DataType.STRING)
-  common_name_marathi!: string;
+  common_name_in_marathi!: string;
 
   @Column(DataType.STRING)
   scientific_name!: string;
+
+  @Column(DataType.STRING)
+  known_as!: string;
 
   @Column({
     type: DataType.STRING,
@@ -87,20 +87,8 @@ implements PlantTypeAttributes {
   category!: string;
 
   @Column(DataType.STRING)
-  med_use!: string;
-
-  @Column(DataType.STRING)
-  other_use!: string;
-
-  @Column(DataType.STRING)
-  food!: string;
-
-  @Column(DataType.STRING)
-  eco_value!: string;
-
-  @Column(DataType.STRING)
-  description!: string;
-
+  use!: string;
+  
   @Column(DataType.STRING)
   names_index!: string;
   

@@ -33,10 +33,12 @@ export class PlotRepository {
             // status: plotData.status,
             // land_type: plotData.land_type,
             category: plotData.category,
+            site_id: plotData.site_id,
             created_at: new Date(),
             updated_at: new Date()
         };
         const plot = await Plot.create(obj);
+        console.log("plot created: ", plot);
         return plot;
     }
 
@@ -57,6 +59,7 @@ export class PlotRepository {
 
         const query = `
         SELECT p.*,
+            s.name_english as site_name_english,
             COUNT(t.id) as trees_count, 
             COUNT(t.assigned_to) as assigned_trees_count,
             SUM(CASE 
@@ -73,17 +76,19 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
                END) AS available_trees_count
-        FROM "14trees".plots p
-        LEFT JOIN "14trees".trees t ON p.id = t.plot_id
+        FROM "14trees_old".plots p
+        LEFT JOIN "14trees_old".trees t ON p.id = t.plot_id
+       
+        LEFT JOIN "14trees_old".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-        GROUP BY p.id
+        GROUP BY p.id,s.name_english
         ORDER BY p.id DESC
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
         const countPlotsQuery = 
             `SELECT count(p.id)
-                FROM "14trees".plots AS p
+                FROM "14trees_old".plots AS p
                 WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
         
         const plots: any = await sequelize.query(query, {
@@ -114,14 +119,14 @@ export class PlotRepository {
 
         const getUniqueTagsQuery = 
             `SELECT DISTINCT tag
-                FROM "14trees".plots p,
+                FROM "14trees_old".plots p,
                 unnest(p.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
         const countUniqueTagsQuery = 
             `SELECT count(DISTINCT tag)
-                FROM "14trees".plots p,
+                FROM "14trees_old".plots p,
                 unnest(p.tags) AS tag;`;
 
         const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });

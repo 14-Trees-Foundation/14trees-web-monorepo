@@ -4,6 +4,7 @@ import { Boundaries, Center } from './common';
 import { Optional } from 'sequelize';
 import { Tree } from './tree';
 
+
 interface PlotAttributes {
   id: number;
   name: string;
@@ -17,6 +18,7 @@ interface PlotAttributes {
   category: 'Public' | 'Foundation' | null;
   created_at: Date;
   updated_at: Date;
+  site_id: number | null;
 }
 
 interface PlotCreationAttributes
@@ -42,6 +44,9 @@ implements PlotAttributes {
     @Index
     @Column({ type: DataType.STRING, allowNull: false })
     plot_id!: string;
+
+    @Column({ type: DataType.INTEGER })
+    site_id!: number | null;
 
     @Column({ type: DataType.ARRAY(DataType.STRING) })
     tags?: string[];
@@ -72,6 +77,8 @@ implements PlotAttributes {
 
     @HasMany(() => Tree, 'plot_id') // Move HasMany decorator here
     trees!: Tree[];
+
+
 }
 
 export { Plot }

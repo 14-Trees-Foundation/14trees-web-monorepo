@@ -15,10 +15,12 @@ import { CorpEvent } from "../models/corp_events";
 import { Site } from "../models/sites";
 import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
+import { Donations } from "../models/donation";
 import { Album } from "../models/albums";
 import { Shift } from "../models/shift";
 import { LogsInfo } from "../models/logs_info";
 import { TreesSnapshots } from "../models/trees_snapshots";
+import { Visit } from "../models/visits"
 
 
 class Database {
@@ -39,6 +41,7 @@ class Database {
       host: this.POSTGRES_HOST,
       schema: '14trees',
       port: this.POSTGRES_PORT,
+      attributeBehavior: 'escape',
       dialect: "postgres",
       dialectOptions: {
         ssl: {
@@ -65,10 +68,12 @@ class Database {
         Group,
         UserGroup,
         PondWaterLevel,
+        Donations,
         Album,
         Shift,
         LogsInfo,
         TreesSnapshots,
+        Visit
       ]
     });
 
