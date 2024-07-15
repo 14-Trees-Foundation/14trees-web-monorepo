@@ -86,11 +86,8 @@ implements PlantTypeAttributes {
   @Column(DataType.STRING)
   category!: string;
 
- 
-
   @Column(DataType.STRING)
   use!: string;
-
   
   @Column(DataType.STRING)
   names_index!: string;

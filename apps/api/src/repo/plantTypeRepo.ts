@@ -38,10 +38,11 @@ class PlantTypeRepository {
         // Upload images to S3
         let imageUrls: string[] = [];
         if (files && files.length !== 0) {
-            files.forEach( async (file) => {
-                const url = await UploadFileToS3(files[0].filename, "plant_type");
+            for (const file of files) {
+                const url = await UploadFileToS3(file.filename, "plant_type");
                 imageUrls.push(url);
-            } )
+
+            }
             plantTypeObj.images = imageUrls;
         }
         
