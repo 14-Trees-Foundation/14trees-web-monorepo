@@ -440,7 +440,7 @@ export const uploadShifts = async (req: Request, res: Response) => {
         if (timestamp) {
             const date = (timestamp as string).split('-');
             if (date.length === 3) {
-                const dt = new Date(`${date[2]}-${date[1]}-${date[1]}`);
+                const dt = new Date(`${date[2]}-${date[1]}-${date[0]}`);
                 if (!isNaN(dt.getTime())) time = dt;
             }
         }
