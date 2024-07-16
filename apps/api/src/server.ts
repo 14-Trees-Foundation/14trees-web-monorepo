@@ -27,7 +27,7 @@ import eventRoutes from "./routes/eventRoutes";
 import orgRoutes from "./routes/orgRoutes";
 // import loginRoutes from "./routes/loginRoutes";
 import treesMappingRoutes from "./routes/treesMappingRoutes";
-// import adminRoutes from "./routes/adminRoutes";
+import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 // import templateRoutes from "./routes/templateRoute";
 // import contributionRoutes from "./routes/contributeRoutes";
@@ -97,7 +97,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/users", userRoutes);
   app.use("/api/groups", groupRoutes);
   app.use("/api/user-groups", userGroupRoutes);
-  // app.use("/api/admin", adminRoutes);
+  app.use("/api/admin", adminRoutes);
   app.use("/api/trees", treeRoutes);
   app.use("/api/plant-types", plantTypeRoutes);
   app.use("/api/profile", profileRoute);

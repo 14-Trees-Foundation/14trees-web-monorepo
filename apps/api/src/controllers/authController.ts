@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { errorMessage, successMessage, status } from '../helpers/status';
+import { status } from '../helpers/status';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { OnsiteStaffRepository } from '../repo/onSiteStaffRepo';
+import { UserRepository } from '../repo/userRepo';
 
 dotenv.config();
 
@@ -36,8 +36,8 @@ export const signin = async (req: CustomRequest, res: Response) => {
 
         const { email } = payload;
         if (email) {
-            const user = await OnsiteStaffRepository.getOnsiteStaffByEmail(email);
-            if (user === null) {
+            const user = await UserRepository.getUsers(0, 1, [{ columnField: 'email', operatorValue: 'equals', value: email }]);
+            if (user.results.length === 0) {
                 res.status(status.notfound).send();
                 return;
             }
@@ -46,7 +46,7 @@ export const signin = async (req: CustomRequest, res: Response) => {
             });
     
             res.status(201).json({
-                user: user,
+                user: user.results[0],
                 token: jwtToken,
             });
         } else {

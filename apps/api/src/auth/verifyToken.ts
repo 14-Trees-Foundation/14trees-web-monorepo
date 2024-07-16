@@ -4,26 +4,26 @@ import * as jwt from 'jsonwebtoken';
 require('dotenv').config();
 
 export function verifyToken(req: Request, res: Response, next: any) {
-  next();
-  // var token = req.headers['x-access-token'];
-  // if (!token)
-  //   return res.status(403).send({ auth: false, message: 'No token provided.' });
+  var token = req.headers['x-access-token'] as string;
+  if (!token)
+    return res.status(403).send({ auth: false, message: 'No token provided.' });
 
-  // jwt.verify(token, process.env.SECRET_KEY, function (err, decoded) {
-  //   if (err) {
-  //     return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
-  //   }
-  //   next();
-  // });
+  const key = process.env.SECRET_KEY || 'secret';
+  jwt.verify(token, key, function (err, decoded) {
+    if (err) {
+      return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+    }
+    next();
+  });
 }
 
 const tokenPayloadFromRequest = (req: Request, res: Response) => {
   let payload: any = null;
   const key = process.env.SECRET_KEY || 'secret';
   let token = req.headers['x-access-token'];
-  if (!token) res.status(403).send({ auth: false, message: 'No token provided.' }); 
+  if (!token) res.status(403).send({ auth: false, message: 'No token provided.' });
   else {
-      jwt.verify(token as string, key, function (err: any, decoded: any) {
+    jwt.verify(token as string, key, function (err: any, decoded: any) {
       if (err) {
         res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
       } else {
