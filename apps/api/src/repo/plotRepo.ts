@@ -81,9 +81,9 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
                END) AS available_trees_count
-        FROM "14trees".plots p
-        LEFT JOIN "14trees".trees t ON p.id = t.plot_id
-        LEFT JOIN "14trees".sites s ON p.site_id = s.id
+        FROM "14trees_2".plots p
+        LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+        LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.name_english
         ORDER BY p.id DESC
@@ -92,8 +92,8 @@ export class PlotRepository {
 
         const countPlotsQuery = 
             `SELECT count(p.id)
-                FROM "14trees".plots AS p
-                LEFT JOIN "14trees".sites s ON p.site_id = s.id
+                FROM "14trees_2".plots AS p
+                LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
                 WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
         
         const plots: any = await sequelize.query(query, {
@@ -124,14 +124,14 @@ export class PlotRepository {
 
         const getUniqueTagsQuery = 
             `SELECT DISTINCT tag
-                FROM "14trees".plots p,
+                FROM "14trees_2".plots p,
                 unnest(p.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
         const countUniqueTagsQuery = 
             `SELECT count(DISTINCT tag)
-                FROM "14trees".plots p,
+                FROM "14trees_2".plots p,
                 unnest(p.tags) AS tag;`;
 
         const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
