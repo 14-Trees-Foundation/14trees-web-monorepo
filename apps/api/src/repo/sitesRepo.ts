@@ -1,6 +1,7 @@
-import { WhereOptions } from 'sequelize';
+import { QueryTypes, WhereOptions } from 'sequelize';
 import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
 import { PaginatedResponse } from '../models/pagination';
+import { sequelize } from '../config/postgreDB';
 
 export class SiteRepository {
     static async getSites(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Site>> {
@@ -34,4 +35,19 @@ export class SiteRepository {
         const response = await Site.destroy({ where: { id: siteId } });
         return response;
     }
+
+    public static async getDeletedSitesFromList(siteIds: number[]): Promise<number[]> {
+        const query = `SELECT num
+        FROM unnest(array[:site_ids]::int[]) AS num
+        LEFT JOIN "14trees".sites AS s
+        ON num = s.id
+        WHERE s.id IS NULL;`
+    
+        const result = await sequelize.query(query, {
+            replacements: { site_ids: siteIds },
+            type: QueryTypes.SELECT
+        })
+    
+        return result.map((row: any) => row.num);
+      }
 }

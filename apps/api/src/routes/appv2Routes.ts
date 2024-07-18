@@ -14,6 +14,7 @@ import {
     updateSaplingByAdmin,
     getDeltaUsers,
     getDeltaTrees,
+    getDeltaSites
 } from "../controllers/appV2TreesController";
 
 const routes = express.Router();
@@ -31,5 +32,6 @@ routes.post("/getSapling", verifyAdmin, getTreeBySaplingId);
 routes.post("/updateSapling", verifyAdmin, updateSaplingByAdmin);
 routes.post("/fetchHelperData/users", getDeltaUsers);
 routes.post("/fetchHelperData/trees", getDeltaTrees);
+routes.post("/fetchHelperData/sites", getDeltaSites);
 
 export default routes;

@@ -19,6 +19,7 @@ import { TreesSnapshotsCreationAttributes } from "../models/trees_snapshots";
 import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
 import { TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
+import { SiteRepository } from "../repo/sitesRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -616,6 +617,33 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, trees: result.results, deleted_tree_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaTree: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaSites = async (req: Request, res: Response) => {
+    let { timestamp, site_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let siteIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (site_ids && site_ids.length > 0) siteIds = site_ids;
+
+
+    try {
+        // fetch created and updated sites after given time
+        const result = await SiteRepository.getSites(offset, limit, [
+            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+        ])
+    
+        // fetch deleted sites
+        const deleted = await SiteRepository.getDeletedSitesFromList(siteIds);
+        res.status(status.success).json({ total: result.total, sites: result.results, deleted_site_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaSites: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }
