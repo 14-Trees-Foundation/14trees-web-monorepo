@@ -26,6 +26,10 @@ export class PlotRepository {
         if (plotExists) {
             throw new Error("plot already exists");
         }
+        let siteId: number | null = null;
+        if (!isNaN(parseInt(plotData.site_id))) {
+            siteId = parseInt(plotData.site_id);
+        }
         let obj: PlotCreationAttributes = {
             name: plotData.plot_name,
             plot_id: plotData.plot_id,
@@ -36,7 +40,7 @@ export class PlotRepository {
             // status: plotData.status,
             // land_type: plotData.land_type,
             category: plotData.category,
-            site_id: plotData.site_id,
+            site_id: siteId,
             created_at: new Date(),
             updated_at: new Date()
         };

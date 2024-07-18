@@ -47,8 +47,8 @@ export const addPlot = async (req: Request,res: Response) => {
     try {
         const plot = await PlotRepository.addPlot(req.body);
         res.status(status.created).json(plot);
-    } catch (error) {
-        res.status(status.error).json({ error });
+    } catch (error: any) {
+        res.status(status.error).json({ error: error.message });
     }
 }
 
