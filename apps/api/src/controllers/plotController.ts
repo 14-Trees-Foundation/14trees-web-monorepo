@@ -36,9 +36,6 @@ export const addPlot = async (req: Request,res: Response) => {
                 req.body["plot_id"] = req.body.plot_code;
             }
         }
-        if (!req.body.boundaries) {
-            throw new Error("Boundaries Lat Lng required");
-        }
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
         return;

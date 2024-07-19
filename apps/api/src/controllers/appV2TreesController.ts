@@ -20,6 +20,7 @@ import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
 import { TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
 import { SiteRepository } from "../repo/sitesRepo";
+import { Op } from "sequelize";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -636,7 +637,7 @@ export const getDeltaSites = async (req: Request, res: Response) => {
     try {
         // fetch created and updated sites after given time
         const result = await SiteRepository.getSites(offset, limit, [
-            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+            { "updated_at": { [Op.gt]: lowerBound.toISOString() }},
         ])
     
         // fetch deleted sites
@@ -644,6 +645,33 @@ export const getDeltaSites = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, sites: result.results, deleted_site_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaSites: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaPlots = async (req: Request, res: Response) => {
+    let { timestamp, plot_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let plotIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (plot_ids && plot_ids.length > 0) plotIds = plot_ids;
+
+
+    try {
+        // fetch created and updated plots after given time
+        const result = await PlotRepository.getPlots(offset, limit, [
+            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+        ])
+    
+        // fetch deleted plots
+        const deleted = await PlotRepository.getDeletedPlotsFromList(plotIds);
+        res.status(status.success).json({ total: result.total, plots: result.results, deleted_plot_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaPlots: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }

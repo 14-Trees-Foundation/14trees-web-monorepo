@@ -39,7 +39,7 @@ export class SiteRepository {
     public static async getDeletedSitesFromList(siteIds: number[]): Promise<number[]> {
         const query = `SELECT num
         FROM unnest(array[:site_ids]::int[]) AS num
-        LEFT JOIN "14trees".sites AS s
+        LEFT JOIN "14trees_2".sites AS s
         ON num = s.id
         WHERE s.id IS NULL;`
     
@@ -49,5 +49,5 @@ export class SiteRepository {
         })
     
         return result.map((row: any) => row.num);
-      }
+    }
 }
