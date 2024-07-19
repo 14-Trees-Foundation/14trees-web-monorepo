@@ -75,6 +75,11 @@ export const addUser = async (req: Request, res: Response) => {
       throw new Error("User email is required");
     }
     
+    let userExists = await UserRepository.getUsers(0, 1, [{ columnField: 'email', operatorValue: 'equals', value: req.body.email }]);
+    if (userExists.results.length !== 0) {
+      throw new Error("User already exists");
+    }
+
     let user = await UserRepository.addUser(req.body);
     res.status(status.created).json(user);
   } catch (error: any) {
