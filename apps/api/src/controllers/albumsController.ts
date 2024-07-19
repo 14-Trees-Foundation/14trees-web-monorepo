@@ -48,7 +48,7 @@ export  const createAlbum = async (req: Request, res: Response) => {
     }
 
     const data: AlbumCreationAttributes = {
-        album_name: req.body.album_name,
+        album_name: album_name,
         user_id: user.id,
         images: memoryImageUrls,
         status: 'active'

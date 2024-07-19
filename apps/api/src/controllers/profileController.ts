@@ -106,6 +106,9 @@ export const assignTreesToUser = async  (req: Request, res: Response) => {
     }
 
     let saplingIds: string[] = fields.sapling_ids.split(",");
+    saplingIds = saplingIds.map((saplingId: string) => {
+      return saplingId.trim();
+    })
     let trees = [];
     for (let i = 0; i < saplingIds.length; i++) {
       const result = await TreeRepository.assignTree(saplingIds[i], fields, event?.id);
