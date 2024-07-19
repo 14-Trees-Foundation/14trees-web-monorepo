@@ -21,6 +21,7 @@ import { TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
 import { SiteRepository } from "../repo/sitesRepo";
 import { Op } from "sequelize";
+import { VisitRepository } from "../repo/visitsRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -672,6 +673,33 @@ export const getDeltaPlots = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, plots: result.results, deleted_plot_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaPlots: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaVisits = async (req: Request, res: Response) => {
+    let { timestamp, visit_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let visitIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (visit_ids && visit_ids.length > 0) visitIds = visit_ids;
+
+
+    try {
+        // fetch created and updated visits after given time
+        const result = await VisitRepository.getVisits(offset, limit, [
+            { "updated_at": { [Op.gt]: lowerBound.toISOString() } },
+        ])
+    
+        // fetch deleted visits
+        const deleted = await VisitRepository.getDeletedVisitsFromList(visitIds);
+        res.status(status.success).json({ total: result.total, visits: result.results, deleted_visit_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaVisits: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }
