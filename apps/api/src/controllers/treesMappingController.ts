@@ -25,7 +25,8 @@ export const getMappedTrees = async (req: Request, res: Response) => {
 export const mapTrees = async (req: Request, res: Response) => {
   const fields = req.body;
   const id = fields.id;
-  const saplingIds = fields.sapling_ids as string[]
+  let saplingIds = fields.sapling_ids as string[]
+  saplingIds = saplingIds.map((saplingId) => saplingId.trim());
   const mappingType: string = fields.mapped_to
 
   if (mappingType !== 'user' && mappingType !== 'group') {
