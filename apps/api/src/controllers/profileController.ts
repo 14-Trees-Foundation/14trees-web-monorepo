@@ -46,13 +46,12 @@ export const getProfile = async  (req: Request, res: Response) => {
   }
 
   try {
-    const data = await TreeRepository.getUserProfileForSaplingId(req.query.id.toString());
-    const parsedData = data.map((item: any) => {
-      const newData = { ...item }
-
-      return newData;
-    })
-    res.status(status.success).json({ user_trees: parsedData });
+    let userTrees: any[] = [];
+    const tree = await TreeRepository.getTreeBySaplingId(req.query.id.toString())
+    if (tree && tree.assigned_to) {
+      userTrees = await TreeRepository.getUserProfilesForUserId(tree.assigned_to);
+    }
+    res.status(status.success).json({ user_trees: userTrees });
   } catch (error: any) {
     res.status(status.bad).send({ message: error.message });
     return;
