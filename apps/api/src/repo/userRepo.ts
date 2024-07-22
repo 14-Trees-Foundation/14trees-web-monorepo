@@ -171,4 +171,17 @@ export class UserRepository {
         return result.map((user: any) => user.num);
     }
 
+    public static async upsertUser(data: any): Promise<User> {
+        let obj: UserCreationAttributes = getUserDocumentFromRequestBody(data);
+        const users = await User.findAll({
+            where: {
+                email: obj.email
+            }
+        });
+        
+        if (users.length > 0) return users[0];
+        
+        return await User.create(obj);
+    }
+
 }

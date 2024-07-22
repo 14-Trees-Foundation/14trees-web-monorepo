@@ -250,17 +250,9 @@ class TreeRepository {
     }
 
     if (mapped_to === "user") {
-      let user = await User.findByPk(id);
-      if (user === null) {
-        throw new Error("User with given id not found");
-      }
-      updateConfig["mapped_to_user"] = user.id;
+      updateConfig["mapped_to_user"] = id;
     } else {
-      let group = await Group.findByPk(id);
-      if (group === null) {
-        throw new Error("Group with given id not found");
-      }
-      updateConfig["mapped_to_group"] = group.id;
+      updateConfig["mapped_to_group"] = id;
     }
 
     const resp = await Tree.update( updateConfig, { where: { sapling_id: { [Op.in]: saplingIds } } });
@@ -273,17 +265,9 @@ class TreeRepository {
     }
 
     if (mapped_to === "user") {
-      let user = await User.findByPk(id);
-      if (user === null) {
-        throw new Error("User with given id not found");
-      }
-      updateConfig["mapped_to_user"] = user.id;
+      updateConfig["mapped_to_user"] = id;
     } else {
-      let group = await Group.findByPk(id);
-      if (group === null) {
-        throw new Error("Group with given id not found");
-      }
-      updateConfig["mapped_to_group"] = group.id;
+      updateConfig["mapped_to_group"] = id;
     }
 
     const plot = await Plot.findOne({ where: { id: plotId } });

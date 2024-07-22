@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import TreeRepository from "../repo/treeRepo";
+import { UserRepository } from "../repo/userRepo";
+import { GroupRepository } from "../repo/groupRepo";
 
 const { status } = require("../helpers/status");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
@@ -24,7 +26,7 @@ export const getMappedTrees = async (req: Request, res: Response) => {
 
 export const mapTrees = async (req: Request, res: Response) => {
   const fields = req.body;
-  const id = fields.id;
+  let id = fields.id;
   let saplingIds = fields.sapling_ids as string[]
   saplingIds = saplingIds.map((saplingId) => saplingId.trim());
   const mappingType: string = fields.mapped_to
@@ -37,19 +39,36 @@ export const mapTrees = async (req: Request, res: Response) => {
   }
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
+  
   try {
+    if (mapped_to === "user") {
+      let userResp = await UserRepository.getUsers(0, 1, [{ columnField: "id", operatorValue: "equals", value: id }]);
+      if (userResp.results.length === 0) {
+        if (!fields.name || !fields.email) {
+          throw new Error("name and email are required");
+        } else {
+          const user = await UserRepository.upsertUser(fields);
+          id = user.id;
+        }
+      }
+    } else {
+      let group = await GroupRepository.getGroup(id);
+      if (group === null) {
+        throw new Error("Group with given id not found");
+      }
+    }
     await TreeRepository.mapTrees(mapped_to, saplingIds, id);
     res.status(status.created).send();
   } catch (error: any) {
     res.status(status.error).send({
-      error: error,
+      error: error.message,
     });
   }
 };
 
 export const mapTreesInPlot = async (req: Request, res: Response) => {
   const fields = req.body;
-  const id = fields.id;
+  let id = fields.id;
   const plotId = fields.plot_id;
   const count = fields.count;
   const mappingType: string = fields.mapped_to
@@ -63,6 +82,22 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
+    if (mapped_to === "user") {
+      let userResp = await UserRepository.getUsers(0, 1, [{ columnField: "id", operatorValue: "equals", value: id }]);
+      if (userResp.results.length === 0) {
+        if (!fields.name || !fields.email) {
+          throw new Error("name and email are required");
+        } else {
+          const user = await UserRepository.upsertUser(fields);
+          id = user.id;
+        }
+      }
+    } else {
+      let group = await GroupRepository.getGroup(id);
+      if (group === null) {
+        throw new Error("Group with given id not found");
+      }
+    }
     await TreeRepository.mapTreesInPlot(mapped_to, id, plotId, count);
     res.status(status.success).send();
   } catch (error) {
