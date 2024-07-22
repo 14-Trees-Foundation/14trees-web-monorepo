@@ -358,7 +358,7 @@ class TreeRepository {
       assigned_to: user.id,
       assigned_at: new Date(),
       sponsored_by_user: reqBody.sponsored_by_user ?? null,
-      gifted_by: reqBody.donated_by ?? null,
+      gifted_by: reqBody.gifted_by ?? null,
       planted_by: reqBody.planted_by ?? null,
       user_tree_image: userImageUrl,
       memory_images: memoryImageUrls,
