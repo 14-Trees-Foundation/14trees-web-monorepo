@@ -76,6 +76,8 @@ export const uploadTrees = async (req: Request, res: Response) => {
         }
 
         let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
+        let userTreeImageUrl = await uploadImage([tree.user_tree_image], treeUploadStatuses, saplingID);
+        let userTreeCardUrl = await uploadImage([tree.user_card_image], treeUploadStatuses, saplingID);
         const location = {
             type: "Point",
             coordinates: tree.coordinates
@@ -91,6 +93,8 @@ export const uploadTrees = async (req: Request, res: Response) => {
             tree_status: tree.tree_status,
             assigned_at: tree.assigned_at,
             assigned_to: tree.assigned_to,
+            user_tree_image: userTreeImageUrl,
+            user_card_image: userTreeCardUrl,
             created_at: new Date(),
             updated_at: new Date(),
         }
@@ -111,7 +115,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
 }
 
 async function uploadImage(images: any, status: any, saplingID: string) {
-    if (!images || images.length === 0) {
+    if (!images || images.length === 0 || !images[0]) {
         return null;
     }
     const image = images[0];
