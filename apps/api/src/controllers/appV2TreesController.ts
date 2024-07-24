@@ -22,6 +22,7 @@ import { isValidDateString } from "../helpers/utils";
 import { SiteRepository } from "../repo/sitesRepo";
 import { Op } from "sequelize";
 import { VisitRepository } from "../repo/visitsRepo";
+import { VisitImagesRepository } from "../repo/visitImagesRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -95,6 +96,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
             assigned_to: tree.assigned_to,
             user_tree_image: userTreeImageUrl,
             user_card_image: userTreeCardUrl,
+            visit_id: tree.visit_id,
             created_at: new Date(),
             updated_at: new Date(),
         }
@@ -704,6 +706,33 @@ export const getDeltaVisits = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, visits: result.results, deleted_visit_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaVisits: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaVisitImages = async (req: Request, res: Response) => {
+    let { timestamp, visit_image_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let visitImageIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (visit_image_ids && visit_image_ids.length > 0) visitImageIds = visit_image_ids;
+
+
+    try {
+        // fetch created and updated visit images after given time
+        const result = await VisitImagesRepository.getVisitImages(offset, limit, [
+            { "created_at": { [Op.gt]: lowerBound.toISOString() } },
+        ])
+    
+        // fetch deleted visit images
+        const deleted = await VisitImagesRepository.getDeletedVisitImagesFromList(visitImageIds);
+        res.status(status.success).json({ total: result.total, visit_images: result.results, deleted_visit_image_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaVisitImages: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }

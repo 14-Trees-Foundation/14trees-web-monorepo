@@ -109,6 +109,8 @@ function getBucketFromTypeAndFolderName(type: string, folder_name: string) {
         bucket = process.env.BUCKET_PONDS + "/" + folder_name;
     } else if (type === 'albums') {
         bucket = process.env.BUCKET_MEMORIES + "/" + folder_name;
+    } else if (type === 'visits') {
+        bucket = process.env.BUCKET_MEMORIES + "/" + folder_name;
     } else if (type === 'logos') {
         bucket = process.env.BUCKET_LOGOS;
     } else if (type === 'tree_update') {

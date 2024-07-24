@@ -21,6 +21,7 @@ import { Shift } from "../models/shift";
 import { LogsInfo } from "../models/logs_info";
 import { TreesSnapshots } from "../models/trees_snapshots";
 import { Visit } from "../models/visits"
+import { VisitImage } from "../models/visit_images"
 
 
 class Database {
@@ -73,7 +74,8 @@ class Database {
         Shift,
         LogsInfo,
         TreesSnapshots,
-        Visit
+        Visit,
+        VisitImage
       ]
     });
 
