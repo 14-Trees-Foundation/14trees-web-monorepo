@@ -595,7 +595,7 @@ export const getDeltaUsers = async (req: Request, res: Response) => {
     
         // fetch deleted users
         const deleted = await UserRepository.getDeletedUsersFromList(userIds);
-        res.status(status.success).json({ users: result.results, deleted_user_ids: deleted });
+        res.status(status.success).json({ total: result.total, users: result.results, deleted_user_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaUsers: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
