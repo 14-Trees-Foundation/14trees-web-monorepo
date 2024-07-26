@@ -17,7 +17,8 @@ import {
     getDeltaSites,
     getDeltaPlots,
     getDeltaVisits,
-    getDeltaVisitImages
+    getDeltaVisitImages,
+    getDeltaTreeSnapshots
 } from "../controllers/appV2TreesController";
 
 const routes = express.Router();
@@ -39,5 +40,6 @@ routes.post("/fetchHelperData/sites", getDeltaSites);
 routes.post("/fetchHelperData/plots", getDeltaPlots);
 routes.post("/fetchHelperData/visits", getDeltaVisits);
 routes.post("/fetchHelperData/visit-images", getDeltaVisitImages);
+routes.post("/fetchHelperData/tree-snapshots", getDeltaTreeSnapshots);
 
 export default routes;

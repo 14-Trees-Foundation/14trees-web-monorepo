@@ -1,7 +1,7 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-interface TreesSnapshotsAttributes {
+interface TreesSnapshotAttributes {
 	id: number;
 	sapling_id: string;
 	image: string;
@@ -10,12 +10,12 @@ interface TreesSnapshotsAttributes {
     created_at: Date;
 }
 
-interface TreesSnapshotsCreationAttributes
-	extends Optional<TreesSnapshotsAttributes, 'id'> {}
+interface TreesSnapshotCreationAttributes
+	extends Optional<TreesSnapshotAttributes, 'id'> {}
 
 @Table({ tableName: 'trees_snapshots' })
-class TreesSnapshots extends Model<TreesSnapshotsAttributes, TreesSnapshotsCreationAttributes>
-implements TreesSnapshotsAttributes {
+class TreesSnapshot extends Model<TreesSnapshotAttributes, TreesSnapshotCreationAttributes>
+implements TreesSnapshotAttributes {
 
   @Column({
     type: DataType.INTEGER,
@@ -42,5 +42,5 @@ implements TreesSnapshotsAttributes {
 
 }
 
-export { TreesSnapshots }
-export type { TreesSnapshotsAttributes, TreesSnapshotsCreationAttributes }
+export { TreesSnapshot }
+export type { TreesSnapshotAttributes, TreesSnapshotCreationAttributes }

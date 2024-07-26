@@ -19,7 +19,7 @@ import { Donations } from "../models/donation";
 import { Album } from "../models/albums";
 import { Shift } from "../models/shift";
 import { LogsInfo } from "../models/logs_info";
-import { TreesSnapshots } from "../models/trees_snapshots";
+import { TreesSnapshot } from "../models/trees_snapshots";
 import { Visit } from "../models/visits"
 import { VisitImage } from "../models/visit_images"
 
@@ -73,7 +73,7 @@ class Database {
         Album,
         Shift,
         LogsInfo,
-        TreesSnapshots,
+        TreesSnapshot,
         Visit,
         VisitImage
       ]

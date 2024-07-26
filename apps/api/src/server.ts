@@ -38,6 +38,7 @@ import albumRoutes from "./routes/albumRoutes";
 import donationRoutes from "./routes/donationRoutes";
 import visitRoutes from "./routes/visitRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
+import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 
 let swaggerFile: any;
 try {
@@ -120,6 +121,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/albums", albumRoutes);
   app.use("/api/visits", visitRoutes );
   app.use("/api/visit-images", visitImageRoutes );
+  app.use("/api/tree-snapshots", treeSnapshotRoutes );
 
   // swagger doc
   if (swaggerFile) {

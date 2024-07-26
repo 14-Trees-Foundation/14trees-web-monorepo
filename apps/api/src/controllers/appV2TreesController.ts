@@ -15,8 +15,8 @@ import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
 import { ShiftRepository } from "../repo/shiftRepo";
 import { Shift, ShiftCreationAttributes } from "../models/shift";
-import { TreesSnapshotsCreationAttributes } from "../models/trees_snapshots";
-import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
+import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
+import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
 import { TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
 import { SiteRepository } from "../repo/sitesRepo";
@@ -242,11 +242,9 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
             ...json,
         }
 
-        const metadata = await attachMetaData(savedData.image, 'trees');
-        if (metadata.length > 0) response.image = metadata[0];
         res.status(status.success).json(response);
     } catch (err) {
-        console.log("[ERROR] appV2::updateSaplingByAdmin:", err);
+        console.log("[ERROR] appV2::updateSaplingByAdmin:", err, sapling);
         res.status(status.error).send({ success: false, message: 'Error updating sapling' });
     }
 }
@@ -511,7 +509,7 @@ export const uploadNewImages = async (req: Request, res: Response) => {
                 //     type: "Point",
                 //     coordinates: { lat: tree.lat, lng: tree.lng }
                 // }
-                const treeSnapshotObj: TreesSnapshotsCreationAttributes = {
+                const treeSnapshotObj: TreesSnapshotCreationAttributes = {
                     sapling_id: saplingId,
                     image: imageUrl,
                     user_id: tree.user_id,
@@ -520,7 +518,7 @@ export const uploadNewImages = async (req: Request, res: Response) => {
                 }
         
                 try {
-                    await TreesSnapshotsRepository.addTreesSnapshots(treeSnapshotObj);
+                    await TreesSnapshotRepository.addTreesSnapshot(treeSnapshotObj);
                     treeUploadStatuses[saplingId].dataUploaded = true;
                 }
                 catch (err) {
@@ -578,18 +576,19 @@ export const treesUpdatePlot = async (req: Request, res: Response) => {
 */
 
 export const getDeltaUsers = async (req: Request, res: Response) => {
-    const { timestamp, user_ids } = req.body;
+    let  { timestamp, user_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let userIds: number[] = [];
 
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (user_ids && user_ids.length > 0) userIds = user_ids;
 
-
     try {
         // fetch created and updated users after given time
-        const result = await UserRepository.getUsers(0, -1, [
+        const result = await UserRepository.getUsers(offset, limit, [
             { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
         ])
     
@@ -733,6 +732,32 @@ export const getDeltaVisitImages = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, visit_images: result.results, deleted_visit_image_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaVisitImages: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
+    let { timestamp, tree_snapshot_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let treeSnapshotIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (tree_snapshot_ids && tree_snapshot_ids.length > 0) treeSnapshotIds = tree_snapshot_ids;
+
+    try {
+        // fetch created and updated tree snapshots after given time
+        const result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, [
+            { "created_at": { [Op.gt]: lowerBound.toISOString() } },
+        ])
+    
+        // fetch deleted tree snapshots
+        const deleted = await TreesSnapshotRepository.getDeletedTreesSnapshotsFromList(treeSnapshotIds);
+        res.status(status.success).json({ total: result.total, tree_snapshots: result.results, deleted_tree_snapshot_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaTreeSnapshots: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }
