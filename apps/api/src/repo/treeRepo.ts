@@ -5,7 +5,7 @@ import { Plot } from "../models/plot";
 import { User } from "../models/user";
 import { Center } from "../models/common";
 import { sequelize } from "../config/postgreDB";
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getUserDocumentFromRequestBody } from "./userRepo";
 import { Group } from "../models/group";
@@ -178,8 +178,8 @@ class TreeRepository {
     return resp;
   };
 
-  public static async treesCount(): Promise<number> {
-    return await Tree.count()
+  public static async treesCount(whereClause?: WhereOptions): Promise<number> {
+    return await Tree.count({ where: whereClause });
   }
 
   public static async assignedTreesCount(): Promise<number> {

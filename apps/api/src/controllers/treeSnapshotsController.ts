@@ -4,6 +4,7 @@ import { uploadBase64DataToS3 } from "./helper/uploadtos3";
 import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
+import { isValidDateString } from "../helpers/utils";
 
 /*
     Model - Tree Snapshots
@@ -49,10 +50,16 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
         for (let image of images) {
             const resp = await uploadBase64DataToS3(image.name, 'trees', image.data, null)
             if (resp.success) {
+                let imageDate = new Date();
+                if (!isValidDateString(image.image_date)) {
+                    imageDate = new Date();
+                }
                 requests.push({
                     sapling_id: sapling_id,
                     user_id: userId,
                     image: resp.location,
+                    image_date: imageDate,
+                    tree_status: image.tree_status,
                     is_active: true,
                     created_at: new Date()
                 })

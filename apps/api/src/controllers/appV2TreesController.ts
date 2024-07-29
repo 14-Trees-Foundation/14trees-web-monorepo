@@ -249,52 +249,6 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
     }
 }
 
-
-// Not using this controller in app
-// TODO: Get confirmation on this are they going to use this controller or not
-// export const fetchPlotSaplings = async (req: Request, res: Response) => {
-
-//     const { lastHash } = req.body;
-    
-//     const plots = await PlotRepository.find();
-//     console.log('Fetching plot saplings');
-//     let plotSaplings = await Promise.all((plots).map(async (plot) => {
-//         const plotData = {
-//             plot_id: plot.plot_id,
-//             saplings: []
-//         }
-//         plotData.saplings = (await TreeModel.find({ plot_id: plot })).filter((sapling) => {
-//             return sapling.location && (sapling.location.coordinates[0] + sapling.location.coordinates[1] > 0)
-//         }).map((sapling) => {
-//             return [
-//                 sapling.sapling_id,
-//                 sapling.location.coordinates[0],
-//                 sapling.location.coordinates[1],
-//             ]
-//         })
-//         if (plotData.saplings.length > 0) {
-//             plotData.saplings.sort((a, b) => (a[0] < b[0]));
-//             return plotData;
-//         }
-//         return null
-//     }));
-
-//     plotSaplings = plotSaplings.filter((data) => (data !== null));
-//     plotSaplings.sort((plot1, plot2) => (plot1.plot_id < plot2.plot_id))
-//     const currentHash = CryptoJS.MD5(JSON.stringify(plotSaplings)).toString();
-
-//     const response = {
-//         data: plotSaplings,
-//         hash: currentHash,
-//     }
-//     if (lastHash === currentHash) {
-//         //empty data from response payload:
-//         response.data = null;
-//     }
-//     console.log('sending response, ', response.data ? response.data.length : null);
-//     return res.send(response);
-// }
-
 export const login = async (req: Request, res: Response) => {
     
     const credentials = req.body;
@@ -505,13 +459,11 @@ export const uploadNewImages = async (req: Request, res: Response) => {
         if (existingMatch) {    
             let imageUrl = await uploadImage([tree.image], treeUploadStatuses, saplingId);
             if (imageUrl) {
-                // const location = {
-                //     type: "Point",
-                //     coordinates: { lat: tree.lat, lng: tree.lng }
-                // }
                 const treeSnapshotObj: TreesSnapshotCreationAttributes = {
                     sapling_id: saplingId,
                     image: imageUrl,
+                    image_date: new Date(),
+                    tree_status: tree.tree_status,
                     user_id: tree.user_id,
                     created_at: new Date(),
                     is_active: true,
@@ -758,6 +710,29 @@ export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, tree_snapshots: result.results, deleted_tree_snapshot_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaTreeSnapshots: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+/*
+    Analytics
+*/
+
+export const treesCount = async (req: Request, res: Response) => {
+    const { name } = req.query
+    const year = new Date(new Date().getFullYear(), 0, 1);
+    const month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    try {
+        const result = {
+            total_trees_planted: await TreeRepository.treesCount(),
+            trees_planted_this_year: await TreeRepository.treesCount({ created_at: { [Op.gte]:  year} }),
+            trees_planted_this_month: await TreeRepository.treesCount({ created_at: { [Op.gte]:  month} }),
+            trees_planted_by_you: name ? await TreeRepository.treesCount({ planted_by: name }) : 0,
+        };
+        res.status(status.success).json(result);
+    } catch(err: any) {
+        console.log("[ERROR] appV2::treesCount: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }
