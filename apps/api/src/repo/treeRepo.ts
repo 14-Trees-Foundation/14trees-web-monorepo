@@ -308,8 +308,8 @@ class TreeRepository {
     }
 
     // Get the user
-    let userDoc = await getUserDocumentFromRequestBody(reqBody);
-    let user = await User.findOne({ where: { user_id: userDoc.user_id } });
+    let userDoc = getUserDocumentFromRequestBody(reqBody);
+    let user = await User.findOne({ where: { email: userDoc.email } });
     if (!user) {
       user = await User.create(userDoc);
     }
