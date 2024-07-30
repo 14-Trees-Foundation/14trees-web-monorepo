@@ -1,4 +1,4 @@
-import { QueryTypes, WhereOptions } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { VisitImage, VisitImageCreationAttributes } from "../models/visit_images";
 import { sequelize } from "../config/postgreDB";
 import { PaginatedResponse } from "../models/pagination";
@@ -30,5 +30,9 @@ export class VisitImagesRepository {
         })
 
         return result.map((row: any) => row.num);
+    }
+
+    static async deleteVisitImages(imageIds: number[]): Promise<void> {
+        await VisitImage.destroy({ where: { id: { [Op.in]: imageIds } } })
     }
 }

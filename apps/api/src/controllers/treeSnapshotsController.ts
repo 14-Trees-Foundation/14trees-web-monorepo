@@ -76,3 +76,16 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const deleteTreeSnapshots = async (req: Request, res: Response) => {
+    const { image_ids } = req.body
+    try {
+        await TreesSnapshotRepository.deleteTreeSnapshots(image_ids);
+        res.status(status.success).send();
+    } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}

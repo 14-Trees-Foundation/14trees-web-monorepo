@@ -5,6 +5,7 @@ const routes = express.Router();
 
 routes.get('/:visit_id', visitImages.getVisitImages);
 routes.post('/', visitImages.addVisitImages);
+routes.post('/delete', visitImages.deleteVisitImages);
 
 
 export default routes;

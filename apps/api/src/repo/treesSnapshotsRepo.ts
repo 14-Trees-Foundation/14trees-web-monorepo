@@ -1,7 +1,7 @@
 import { sequelize } from '../config/postgreDB';
 import { PaginatedResponse } from '../models/pagination';
 import { TreesSnapshot, TreesSnapshotCreationAttributes } from '../models/trees_snapshots';
-import { QueryTypes, WhereOptions } from 'sequelize'
+import { Op, QueryTypes, WhereOptions } from 'sequelize'
 export class TreesSnapshotRepository {
 
     static async addTreesSnapshot(data: TreesSnapshotCreationAttributes): Promise<TreesSnapshot> {
@@ -33,5 +33,9 @@ export class TreesSnapshotRepository {
         })
 
         return result.map((row: any) => row.num);
+    }
+
+    public static async deleteTreeSnapshots(imageIds: number[]): Promise<void> {
+        await TreesSnapshot.destroy({ where: { id: { [Op.in]: imageIds } } })
     }
 }
