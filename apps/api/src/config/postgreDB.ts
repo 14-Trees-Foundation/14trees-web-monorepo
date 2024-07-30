@@ -20,7 +20,8 @@ import { Album } from "../models/albums";
 import { Shift } from "../models/shift";
 import { LogsInfo } from "../models/logs_info";
 import { TreesSnapshot } from "../models/trees_snapshots";
-import { Visit } from "../models/visits"
+import { Visit } from "../models/visits";
+import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
 
 
@@ -75,7 +76,8 @@ class Database {
         LogsInfo,
         TreesSnapshot,
         Visit,
-        VisitImage
+        VisitImage,
+        VisitUsers,
       ]
     });
 

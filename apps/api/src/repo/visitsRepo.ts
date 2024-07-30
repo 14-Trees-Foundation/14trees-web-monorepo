@@ -1,6 +1,7 @@
 import { sequelize } from '../config/postgreDB';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
-
+import { QueryTypes } from 'sequelize';
+import { sequelize } from '../config/postgreDB';
 import { Visit, VisitAttributes, VisitCreationAttributes } from '../models/visits';
 import { QueryTypes, WhereOptions } from 'sequelize';
 
@@ -26,19 +27,25 @@ export class VisitRepository {
 
     public static async getVisits(offset: number = 0, limit: number = 10, whereClause: WhereOptions): Promise<PaginatedResponse<Visit>> {
 
-        const sites = await Visit.findAll({
-            where: whereClause,
-            offset: Number(offset),
-            limit: Number(limit),
-        });
-        const count = await Visit.count({ where: whereClause });
-        return { results: sites, total: count, offset: offset };
-    }
+    const visits = await Visit.findAll({
+      where: whereClause,
+      offset: Number(offset),
+      limit: Number(limit),
+  });
+
+  const count = await Visit.count({ where: whereClause });
+  return { results: visits, total: count, offset: offset };
+  }
 
     public static async deleteVisit(visitId: string): Promise<number> {
         const resp = await Visit.destroy({ where: { id: visitId } });
         return resp;
     }
+
+  public static async getVisit(id: number): Promise<Visit | null> {
+    return await Visit.findByPk(id);
+}
+
 
     public static async getDeletedVisitsFromList(visitIds: number[]): Promise<number[]> {
         const query = `SELECT num

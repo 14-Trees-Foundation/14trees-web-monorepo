@@ -20,7 +20,7 @@ interface SiteAttributes {
     consent_letter: string | null;
     grove_type: string | null;
     consent_document_link:  string| null;
-    google_earth_link: string|null;
+    google_earth_link: string[] | null;
     trees_planted: Number|null;
     account: string|null;
     data_errors: string|null;
@@ -98,8 +98,8 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
     @Column(DataType.STRING)
     consent_document_link!: string | null;
 
-    @Column(DataType.STRING)
-    google_earth_link!: string | null;
+    @Column(DataType.ARRAY(DataType.STRING))
+    google_earth_link!: string[] | null;
 
     @Column(DataType.NUMBER)
     trees_planted!: number | null;
@@ -125,7 +125,7 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
     @Column(DataType.STRING)
     album_contains!: string | null;
 
-    @Column(DataType.STRING)
+    @Column(DataType.ARRAY(DataType.STRING))
     tags!: string[] | null;
 
     @Column(DataType.STRING)

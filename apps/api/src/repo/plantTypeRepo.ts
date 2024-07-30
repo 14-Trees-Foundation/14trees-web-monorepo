@@ -31,7 +31,7 @@ class PlantTypeRepository {
            
             scientific_name: data.scientific_name,
             family: data.family,
-            tags: data.tags,
+            tags: data.tags!=""?data.tags.split(','):null,
             habit: data.habit,
             known_as: data.known_as,
             
@@ -51,7 +51,7 @@ class PlantTypeRepository {
 
             }
             plantTypeObj.images = imageUrls;
-        }
+        
         
         const plantType = await PlantType.create(plantTypeObj);
         return plantType;

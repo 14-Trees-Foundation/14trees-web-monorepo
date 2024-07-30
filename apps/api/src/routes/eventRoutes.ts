@@ -10,6 +10,8 @@ const routes = Router();
 routes.post('/get', events.getEvents);
 // routes.post('/', uploadFiles.array('files', 1), events.addEvents);
 routes.delete('/:id', events.deleteEvent);
+routes.post('/' , events.addEvent);
+routes.put('/:id' , events.updateEvent);
 // routes.get("/birthday", events.getBirthdayEvent);
 // routes.get("/org", events.getOverallOrgDashboard);
 // routes.get("/plot", events.getOverallPlotDashboard);

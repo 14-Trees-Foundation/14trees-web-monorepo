@@ -347,6 +347,18 @@ export const addEvent = async (req: Request, res: Response) => {
       res.status(status.bad).send({ error: error.message });
     }
   };
+
+  export const updateEvent = async (req: Request , res:Response)=>{
+    try{
+      await EventRepository.updateEvent(req.body);
+      res.status(status.success).json({
+        message: "Event updated successfully"
+      })
+
+    }catch(error : any){
+      res.status(status.bad).send({ error: error.message });
+    }
+  }
   
   export const addCorpEvent = async (req: Request, res: Response) => {
     const fields = req.body;
