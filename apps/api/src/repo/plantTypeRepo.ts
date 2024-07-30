@@ -51,7 +51,7 @@ class PlantTypeRepository {
 
             }
             plantTypeObj.images = imageUrls;
-        
+        }
         
         const plantType = await PlantType.create(plantTypeObj);
         return plantType;

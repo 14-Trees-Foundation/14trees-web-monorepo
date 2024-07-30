@@ -1,7 +1,5 @@
 import { sequelize } from '../config/postgreDB';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
-import { QueryTypes } from 'sequelize';
-import { sequelize } from '../config/postgreDB';
 import { Visit, VisitAttributes, VisitCreationAttributes } from '../models/visits';
 import { QueryTypes, WhereOptions } from 'sequelize';
 
