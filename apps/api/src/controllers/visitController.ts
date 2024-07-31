@@ -13,16 +13,9 @@ import { VisitRepository } from "../repo/visitsRepo";
 export const getVisits = async (req: Request, res: Response) => {
   const {offset, limit } = getOffsetAndLimitFromRequest(req);
   const filters: FilterItem[] = req.body?.filters;
-  let whereClause = {};
-  
-  if (filters && filters.length > 0) {
-      filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-      })
-  }
 
   try {
-      let result = await VisitRepository.getVisits(offset, limit, whereClause);
+      let result = await VisitRepository.getVisits(offset, limit, filters);
       res.status(status.success).send(result);
   } catch (error: any) {
       res.status(status.error).json({
@@ -49,8 +42,6 @@ export const addVisit = async (req: Request, res: Response) => {
 
 
 export const updateVisit = async (req: Request, res: Response) => {
-    
-
 
   try {
       let result = await VisitRepository.updateVisit(req.body)

@@ -44,7 +44,7 @@ export const addVisitImages = async (req: Request, res: Response) => {
     }
 
     try {
-        const resp = await VisitRepository.getVisits(0, 1, { id: visitId });
+        const resp = await VisitRepository.getVisits(0, 1, [ { columnField: "id", operatorValue: "equals", value: visitId.toString() } ]);
         if (!resp || resp.results.length === 0) {
             res.status(status.notfound).json({
                 status: status.notfound,

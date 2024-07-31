@@ -649,7 +649,7 @@ export const getDeltaVisits = async (req: Request, res: Response) => {
     try {
         // fetch created and updated visits after given time
         const result = await VisitRepository.getVisits(offset, limit, [
-            { "updated_at": { [Op.gt]: lowerBound.toISOString() } },
+            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
         ])
     
         // fetch deleted visits
