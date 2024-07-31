@@ -2,12 +2,9 @@ require("dotenv").config();
 import path from "path";
 import express, { Request } from "express";
 const morgan = require("morgan");
-import mongoose from "mongoose";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express"
 import { readFileSync } from "fs"
-import { MongoClient } from "mongodb";
-import { getMongoDBConnectionString } from "./services/mongo";
 import Database from "./config/postgreDB";
 
 // Routes
@@ -52,27 +49,6 @@ try {
 interface ResponseError extends Error {
   status?: number;
 }
-mongoose.Promise = global.Promise;
-
-// Connect MongoDB
-const connectDB = async () => {
-  try {
-    const mongo_connection_string = getMongoDBConnectionString();
-    if (!mongo_connection_string) {
-      throw new Error("MongoDB connection string is not provided");
-    }
-    const _client = new MongoClient(mongo_connection_string);
-    await mongoose.connect(mongo_connection_string, { autoIndex: false });
-  } catch (err: any) {
-    console.error("Failed to connect to MongoDB - exiting", err.message);
-    console.error(
-      "Check if the MongoDB server is running and the connection string is correct."
-    );
-    process.exit(1);
-  }
-};
-
-
 
 const port = process.env.SERVER_PORT ?? 8088;
 
@@ -157,10 +133,6 @@ const initExpressApp = (app: express.Application) => {
 const app = express();
 
 const initServer = async () => {
-  console.log("Connecting to MongoDB...");
-  await connectDB();
-  console.log("Connected to MongoDB");
-
    new Database()
   initExpressApp(app);
 };
