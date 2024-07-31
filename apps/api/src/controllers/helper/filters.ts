@@ -19,6 +19,10 @@ export const getWhereOptions = (fieldName: string, operatorValue: string, value:
             return { [fieldName]: { [Op.in]: value } };
         case 'greaterThan':
             return { [fieldName]: { [Op.gt]: value } };
+        case 'lessThan':
+            return { [fieldName]: { [Op.lt]: value } };
+        case 'between':
+            return { [fieldName]: { [Op.between]: value } };
 
         default:
             return { [fieldName]: value }
@@ -55,6 +59,10 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
             return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
         case 'greaterThan':
             return { condition: `${fieldName} > :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };;
+        case 'lessThan':
+            return { condition: `${fieldName} < :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };;
+        case 'between':
+            return { condition: `${fieldName} BETWEEN :${valuePlaceHolder}_0 AND :${valuePlaceHolder}_1`, replacement: { [valuePlaceHolder+'_0']: value[0], [valuePlaceHolder+'_1']: value[1] } };;
 
         default:
             return { condition: `${fieldName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };
