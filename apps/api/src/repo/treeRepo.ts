@@ -341,14 +341,15 @@ class TreeRepository {
     const updateFields: any = {
       assigned_to: user.id,
       assigned_at: new Date(),
-      sponsored_by_user: reqBody.sponsored_by_user ?? null,
-      gifted_by: reqBody.gifted_by ?? null,
-      planted_by: reqBody.planted_by ?? null,
+      sponsored_by_user: reqBody.sponsored_by_user || null,
+      gifted_by: reqBody.gifted_by || null,
+      planted_by: reqBody.planted_by || null,
       user_tree_image: userImageUrl,
       memory_images: memoryImageUrls,
+      description: reqBody.description || null,
+      event_id: eventId || null,
+      event_type: reqBody.type || null
     } 
-    if (reqBody.description) updateFields["description"] = reqBody.description;
-    if (eventId) updateFields['event_id'] = eventId
 
     const result = await tree.update(updateFields);
 
@@ -377,7 +378,7 @@ class TreeRepository {
       SELECT 
         t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
         t.user_tree_image, t.sponsored_by_user, du."name" AS sponsored_by_user_name, 
-        t.gifted_by, t.planted_by, t.memory_images, t.created_at, 
+        t.gifted_by, t.planted_by, t.memory_images, t.created_at, t.event_type,
         pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_images, 
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
