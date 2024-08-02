@@ -20,11 +20,12 @@ interface DonationAttributes {
   tree_planted: string;
   assigner_dashboard: string;
   remarks_for_inventory: string;
+  associated_tag: string;
   created_at: Date;
   updated_at: Date;  
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'phone' | 'donor_type' | 'plantation_land_type' | 'zone' | 'dashboard_status' | 'assigned_plot' | 'tree_planted' | 'assigner_dashboard' | 'remarks_for_inventory' | 'date_received'> {}
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'phone' | 'donor_type' | 'plantation_land_type' | 'zone' | 'dashboard_status' | 'assigned_plot' | 'tree_planted' | 'assigner_dashboard' | 'remarks_for_inventory' | 'date_received'  |'associated_tag'> {}
 
 @Table({ tableName: 'donations' })
 class Donations extends Model<DonationAttributes, DonationCreationAttributes>
@@ -85,6 +86,9 @@ implements DonationAttributes {
 
     @Column({ type: DataType.STRING, allowNull: true })
     remarks_for_inventory!: string;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    associated_tag!: string;
 
     @Column({ type: DataType.DATE, allowNull: true })
     created_at!: Date;

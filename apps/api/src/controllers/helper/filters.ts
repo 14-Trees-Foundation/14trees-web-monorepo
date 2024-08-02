@@ -1,6 +1,6 @@
 import { Op, WhereOptions } from "sequelize";
 
-export const getWhereOptions = (fieldName: string, operatorValue: string, value: string | string[] | undefined): WhereOptions => {
+export const getWhereOptions = (fieldName: string, operatorValue: string, value?: any): WhereOptions => {
 
     switch(operatorValue) {
         case 'contains':

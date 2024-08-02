@@ -173,6 +173,11 @@ class TreeRepository {
     return updatedTree;
   };
 
+  public static async updateTrees(fields: any, whereClause: WhereOptions): Promise<number> {
+    const resp = await Tree.update(fields, { where: whereClause });
+    return resp[0];
+  }
+
   public static async deleteTree(treeId: string): Promise<number> {
     const resp = await Tree.destroy({ where: { id: treeId } });
     return resp;
