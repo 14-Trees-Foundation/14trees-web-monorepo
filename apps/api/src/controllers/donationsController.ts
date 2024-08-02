@@ -47,7 +47,7 @@ export const addDonation = async (req: Request , res: Response) =>{
         pledged: data.no_of_trees ? data.no_of_trees : data.no_of_acres ? data.no_of_acres + ' acres' : null,
         email_address: data.email_address,
         grove: data.grove,
-        plantation_land_type: data.site_type,
+        land_type: data.site_type,
         pan: data.pan,
         date_received: new Date().toISOString(),
         created_at: new Date(),
