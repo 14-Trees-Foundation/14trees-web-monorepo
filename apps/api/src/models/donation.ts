@@ -24,7 +24,7 @@ interface DonationAttributes {
   updated_at: Date;  
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes,  'date_received'> {}
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'phone' | 'donor_type' | 'land_type' | 'zone' | 'dashboard_status' | 'assigned_plot' | 'tree_planted' | 'assigner_dashboard' | 'remarks_for_inventory' | 'date_received'> {}
 
 @Table({ tableName: 'donations' })
 class Donations extends Model<DonationAttributes, DonationCreationAttributes>

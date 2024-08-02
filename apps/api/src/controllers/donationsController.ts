@@ -5,6 +5,7 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { getWhereOptions } from "./helper/filters";
 import { FilterItem } from "../models/pagination";
+import { DonationCreationAttributes } from "../models/donation";
 
   
 
@@ -40,9 +41,21 @@ export const getDonations = async (req: Request, res: Response) => {
 export const addDonation = async (req: Request , res: Response) =>{
     
     const data = req.body;
+    
+    let obj: DonationCreationAttributes = {
+        name: data.name,
+        pledged: data.no_of_trees ? data.no_of_trees : data.no_of_acres ? data.no_of_acres + ' acres' : null,
+        email_address: data.email_address,
+        grove: data.grove,
+        plantation_land_type: data.site_type,
+        pan: data.pan,
+        date_received: new Date().toISOString(),
+        created_at: new Date(),
+        updated_at: new Date(),
+    } 
 
     try {
-        let result = await DonationRepository.addDonation(data) 
+        let result = await DonationRepository.addDonation(obj) 
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
