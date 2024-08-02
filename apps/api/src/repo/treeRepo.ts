@@ -341,14 +341,14 @@ class TreeRepository {
     const updateFields: any = {
       assigned_to: user.id,
       assigned_at: new Date(),
-      sponsored_by_user: reqBody.sponsored_by_user ?? null,
-      gifted_by: reqBody.gifted_by ?? null,
-      planted_by: reqBody.planted_by ?? null,
+      sponsored_by_user: reqBody.sponsored_by_user || null,
+      gifted_by: reqBody.gifted_by || null,
+      planted_by: reqBody.planted_by || null,
       user_tree_image: userImageUrl,
       memory_images: memoryImageUrls,
-    } 
-    if (reqBody.description) updateFields["description"] = reqBody.description;
-    if (eventId) updateFields['event_id'] = eventId
+      description: reqBody.description || null,
+      event_id: eventId || null
+    }
 
     const result = await tree.update(updateFields);
 
