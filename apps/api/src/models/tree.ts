@@ -124,6 +124,9 @@ implements TreeAttributes {
   event_id!: number;
 
   @Column(DataType.STRING)
+  event_type!: string;
+
+  @Column(DataType.STRING)
   user_tree_image!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
