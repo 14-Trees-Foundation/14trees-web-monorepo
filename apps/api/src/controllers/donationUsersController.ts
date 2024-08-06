@@ -29,7 +29,7 @@ export const addDonationUsersBulk = async (req: Request, res: Response) => {
     const { path } = req.file
     const data = await validateCSV<UserCreationAttributes>(path);
 
-    const donationResp = await DonationRepository.getDonations(0, 1, { id: donationId });
+    const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', value: donationId, operatorValue: 'equals' }]);
     if (donationResp.results.length === 0) {
       res.status(404).json({ error: 'Donation not found' });
       return;
