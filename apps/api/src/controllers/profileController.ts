@@ -145,34 +145,36 @@ export const update = async (req: Request, res: Response) => {
 };
 
 export const assignTreesBulk = async (req: Request, res: Response) => {
-
   const donationId = req.params.donation_id
-  const donationResp = await DonationRepository.getDonations(0, 1, { id: donationId })
-  const donation = donationResp.results[0];
-  console.log('donation:', donation);
-
-  const tags: string[] = donation.associated_tag ? [donation.associated_tag] : [];
-  const plotsFilter: FilterItem[] = [{ columnField: 'tags', operatorValue: 'isAnyOf', value: tags }]
-  const plotResp = await PlotRepository.getPlots(0, -1, plotsFilter)
-  const plotIds = plotResp.results.map(plot => plot.id);
-  console.log('plot:', plotIds);
-
-  const user = await UserRepository.getUser(donation.name, donation.email_address);
-  if (!user) {
-    res.status(status.error).send();
-    return;
+  if (isNaN(parseInt(donationId))) {
+    res.status(status.bad).send({ message: 'Invalid request' })
   }
 
-  console.log('Donor', user);
-  const success = await assignTrees(donation.id, user.id, parseInt(donation.pledged), plotIds);
-
-  if (success) {
-    res.status(status.success).send();
-    return;
-  } else {
-    res.status(status.error).send();
-    return;
+  try {
+    const donationResp = await DonationRepository.getDonations(0, 1, { id: donationId })
+    const donation = donationResp.results[0];
+  
+    const tags: string[] = donation.associated_tag ? [donation.associated_tag] : [];
+    const plotsFilter: FilterItem[] = [{ columnField: 'tags', operatorValue: 'isAnyOf', value: tags }]
+    const plotResp = await PlotRepository.getPlots(0, -1, plotsFilter)
+    const plotIds = plotResp.results.map(plot => plot.id);
+  
+    const user = await UserRepository.getUser(donation.name, donation.email_address);
+    if (!user) {
+      res.status(status.error).send({ message: 'Donor user not found. Please create user first.' })
+      return;
+    }
+  
+    const success = await assignTrees(donation.id, user.id, parseInt(donation.pledged), plotIds);
+    if (success) {
+      res.status(status.success).send();
+      return;
+    }
+  } catch(error: any) {
+    console.log('[ERROR]', "assignTreesBulk", error);
   }
+
+  res.status(status.error).send({ message: 'Something went wrong. Please contact the IT team!' });
 }
 
 const assignTrees = async (donationId: number, userId: number, totalTrees: number, plotIds: number[]) => {
@@ -202,7 +204,7 @@ const assignTrees = async (donationId: number, userId: number, totalTrees: numbe
 
     return true;
   } catch (error: any) {
-    console.log('[ERROR]', "assignTreesBulk", error.message);
+    console.log('[ERROR]', "assignTreesBulk", error);
     return false;
   }
 

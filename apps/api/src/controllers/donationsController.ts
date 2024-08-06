@@ -5,9 +5,10 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { getWhereOptions } from "./helper/filters";
 import { FilterItem } from "../models/pagination";
-import { DonationCreationAttributes } from "../models/donation";
-
-  
+import { DonationCreationAttributes, Donation } from "../models/donation";
+import { DonationUserCreationAttributes } from "../models/donation_user";
+import { UserRepository } from "../repo/userRepo";
+import { DonationUserRepository } from "../repo/donationUsersRepo";
 
 /*
     Model - Donation
@@ -15,7 +16,7 @@ import { DonationCreationAttributes } from "../models/donation";
 */
 
 export const getDonations = async (req: Request, res: Response) => {
-    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
     let whereClause = {};
 
@@ -25,9 +26,8 @@ export const getDonations = async (req: Request, res: Response) => {
         })
     }
 
-    
     try {
-        let result = await DonationRepository.getDonations(offset, limit , whereClause);
+        let result = await DonationRepository.getDonations(offset, limit, whereClause);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -38,49 +38,65 @@ export const getDonations = async (req: Request, res: Response) => {
 }
 
 
-export const addDonation = async (req: Request , res: Response) =>{
-    
+export const addDonation = async (req: Request, res: Response) => {
+
     const data = req.body;
-    
+    const usersData = data.users || [];
+
     let obj: DonationCreationAttributes = {
         name: data.name,
         pledged: data.no_of_trees ? data.no_of_trees : data.no_of_acres ? data.no_of_acres + ' acres' : null,
-        email_address: data.email_address,
+        email_address: data.email,
+        phone: data.phone,
         grove: data.grove,
-        land_type: data.site_type,
+        land_type: data.land_type,
         pan: data.pan,
+        associated_tag: data.tag,
         date_received: new Date().toISOString(),
         created_at: new Date(),
         updated_at: new Date(),
-    } 
-
-    try {
-        let result = await DonationRepository.addDonation(obj) 
-        res.status(status.success).send(result);
-    } catch (error: any) {
-        res.status(status.error).json({
-            status: status.error,
-            message: error.message,
-        });
     }
 
+    try {
+        const user = await UserRepository.addUser(data);
+        
+        const donation = await DonationRepository.addDonation(obj)
+        let donationUsers: DonationUserCreationAttributes[] = [];
+        for (const userDetails of usersData) {
+            const user = await UserRepository.upsertUser(userDetails);
+            donationUsers.push({
+                donation_id: donation.id,
+                user_id: user.id,
+                gifted_trees: userDetails.gifted_trees,
+                created_at: new Date(),
+            })
+        }
 
-    
+        if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers)
+        res.status(status.success).json(donation);
+
+    } catch (error: any) {
+        console.log("[ERROR]", "addDonation", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong!',
+        });
+        return;
+    }
 }
 
-export const deleteDonation = async(req: Request , res: Response)=>{
-          try {
-            let response = await DonationRepository.deleteDonation(req.params.id);
-            
-            console.log("Delete Donation Response for id: %s", req.params.id, response);
-       
-            res.status(status.success).json({
-            message: "Donation deleted successfully",
-            });
+export const deleteDonation = async (req: Request, res: Response) => {
+    try {
+        let response = await DonationRepository.deleteDonation(req.params.id);
+        console.log("Delete Donation Response for id: %s", req.params.id, response);
 
-          } catch (error: any) {
-            res.status(status.bad).send({ error: error.message });
-          }
+        res.status(status.success).json({
+            message: "Donation deleted successfully",
+        });
+
+    } catch (error: any) {
+        res.status(status.bad).send({ error: error.message });
+    }
 }
 
 

@@ -1,5 +1,6 @@
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../config/postgreDB";
+import { DonationUser, DonationUserCreationAttributes } from "../models/donation_user";
 
 export class DonationUserRepository {
   static async getDonationUsers(donationId: number) {
@@ -15,4 +16,9 @@ export class DonationUserRepository {
       type: QueryTypes.SELECT,
     });
   }
+
+  static async createDonationUsers(data: DonationUserCreationAttributes[]) {
+    await DonationUser.bulkCreate(data, { returning: false });
+  }
+  
 }

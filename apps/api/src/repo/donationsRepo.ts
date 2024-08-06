@@ -1,12 +1,12 @@
-import { Donations , DonationAttributes, DonationCreationAttributes} from '../models/donation'
+import { Donation , DonationAttributes, DonationCreationAttributes} from '../models/donation'
 import { PaginatedResponse } from "../models/pagination";
 import { WhereOptions } from 'sequelize';
 
 export class DonationRepository {
  
-    public static async getDonations(offset: number = 0, limit: number = 20 , whereClause: WhereOptions): Promise<PaginatedResponse<Donations>> {
+    public static async getDonations(offset: number = 0, limit: number = 20 , whereClause: WhereOptions): Promise<PaginatedResponse<Donation>> {
         // Fetching data using Sequelize's findAll method with pagination
-        const response = await Donations.findAll({
+        const response = await Donation.findAll({
             where: whereClause,
             offset: Number(offset),
             limit: Number(limit),
@@ -14,34 +14,34 @@ export class DonationRepository {
 
         return {
             results : response,
-            total: await Donations.count({ where : whereClause}),
+            total: await Donation.count({ where : whereClause}),
             offset: offset
         }
        
     }
 
-    public static async addDonation(donationData: DonationCreationAttributes ): Promise<Donations> {
-        const new_donation = Donations.create(donationData);
+    public static async addDonation(donationData: DonationCreationAttributes ): Promise<Donation> {
+        const new_donation = Donation.create(donationData);
         return new_donation;
     }
 
     public static async deleteDonation(donationId: string): Promise<number>{
-           const result = await Donations.destroy({ where : {id : donationId} });
+           const result = await Donation.destroy({ where : {id : donationId} });
            return result;
     }
 
-    public static async updateDonation(DonationData: DonationAttributes): Promise<Donations>{
+    public static async updateDonation(DonationData: DonationAttributes): Promise<Donation>{
        
         try {
             // Find the donation by its primary key (id)
-            const donation = await Donations.findByPk(DonationData.id);
+            const donation = await Donation.findByPk(DonationData.id);
     
             if (!donation) {
                 throw new Error('Donation not found for given id');
             }
     
             // Update the donation with provided data
-            const [numRowsUpdated, updatedDonations] = await Donations.update(DonationData, {
+            const [numRowsUpdated, updatedDonations] = await Donation.update(DonationData, {
                 where: { id: DonationData.id }, // Specify the condition for which record(s) to update
                 returning: true, // Ensure Sequelize returns the updated record(s)
             });
