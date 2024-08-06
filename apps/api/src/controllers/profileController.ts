@@ -151,7 +151,7 @@ export const assignTreesBulk = async (req: Request, res: Response) => {
   }
 
   try {
-    const donationResp = await DonationRepository.getDonations(0, 1, { id: donationId })
+    const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
     const donation = donationResp.results[0];
   
     const tags: string[] = donation.associated_tag ? [donation.associated_tag] : [];

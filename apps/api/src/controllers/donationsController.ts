@@ -9,6 +9,7 @@ import { DonationCreationAttributes, Donation } from "../models/donation";
 import { DonationUserCreationAttributes } from "../models/donation_user";
 import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
+import { createWorkOrderInCSV } from "./helper/uploadtocsv";
 
 /*
     Model - Donation
@@ -18,16 +19,9 @@ import { DonationUserRepository } from "../repo/donationUsersRepo";
 export const getDonations = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
-    let whereClause = {};
-
-    if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-        })
-    }
 
     try {
-        let result = await DonationRepository.getDonations(offset, limit, whereClause);
+        let result = await DonationRepository.getDonations(offset, limit, filters);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -104,6 +98,35 @@ export const updateDonation = async (req: Request, res: Response) => {
     try {
         let result = await DonationRepository.updateDonation(req.body)
         res.status(status.created).json(result);
+    } catch (error) {
+        console.log(error)
+        res.status(status.error).json({ error: error });
+    }
+}
+
+export const createWorkOrder = async (req: Request, res: Response) => {
+    const donationId = req.params.donation_id
+    if (!donationId || isNaN(parseInt(donationId))) {
+        res.status(status.bad).json({ message: 'Invalid request' });
+        return;
+    }
+
+    try {
+        let result = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
+        if (result.results.length === 0) {
+            res.status(status.notfound).json({ message: 'Donation not found' });
+            return;
+        }
+
+        const donation = JSON.parse(JSON.stringify(result.results[0]));
+        if (parseInt(donation.pledged) <= parseInt(donation.assigned_trees)) {
+            res.status(status.success).json({ message: 'No need to create work order. All trees are assigned' });
+            return;
+        }
+        
+        await createWorkOrderInCSV(donation)
+
+        res.status(status.created).send();
     } catch (error) {
         console.log(error)
         res.status(status.error).json({ error: error });
