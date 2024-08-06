@@ -15,7 +15,8 @@ import { CorpEvent } from "../models/corp_events";
 import { Site } from "../models/sites";
 import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
-import { Donations } from "../models/donation";
+import { Donation } from "../models/donation";
+import { DonationUser } from "../models/donation_user";
 import { Album } from "../models/albums";
 import { Shift } from "../models/shift";
 import { LogsInfo } from "../models/logs_info";
@@ -70,7 +71,8 @@ class Database {
         Group,
         UserGroup,
         PondWaterLevel,
-        Donations,
+        Donation,
+        DonationUser,
         Album,
         Shift,
         LogsInfo,
