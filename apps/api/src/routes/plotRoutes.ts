@@ -8,6 +8,7 @@ routes.post('/', plot.addPlot);
 routes.put('/:id', plot.updatePlot);
 routes.delete('/:id', plot.deletePlot);
 routes.get('/tags', plot.getPlotTags);
+routes.post('/assign-site', plot.assignPlotsToSite);
 // routes.get('/:search', searchPlots);
 
 export default routes;

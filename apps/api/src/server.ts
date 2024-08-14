@@ -133,7 +133,7 @@ const initExpressApp = (app: express.Application) => {
 const app = express();
 
 const initServer = async () => {
-   new Database()
+  //  new Database()
   initExpressApp(app);
 };
 

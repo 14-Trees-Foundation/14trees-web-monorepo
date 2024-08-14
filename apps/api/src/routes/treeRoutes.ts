@@ -23,6 +23,7 @@ routes.post('/', uploadFiles.array('files', 1), trees.addTree);
 // routes.post('/bulk', uploadFiles.fields([{name: 'files', maxCount: 1}, {name: 'csvFile', maxCount: 1}]), trees.addTreesBulk);
 routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
 routes.delete('/:id', uploadFiles.array('files', 1), trees.deleteTree);
+routes.post('/change-plot', trees.changeTreesPlot);
 
 // // the below route should be /get-tree-by-mongo-id or /get-tree-by-id
 routes.get("/getsaplingid", trees.getTreeFromId);
