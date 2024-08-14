@@ -5,7 +5,7 @@ import { Plot } from "../models/plot";
 import { User } from "../models/user";
 import { Center } from "../models/common";
 import { sequelize } from "../config/postgreDB";
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getUserDocumentFromRequestBody } from "./userRepo";
 import { Group } from "../models/group";
@@ -171,6 +171,11 @@ class TreeRepository {
     }
     const updatedTree = await tree.update(data);
     return updatedTree;
+  };
+
+  public static async updateTrees(fields: any, whereClause: WhereOptions): Promise<number> {
+    const resp = await Tree.update(fields, { where: whereClause, returning: false })
+    return resp[0];
   };
 
   public static async deleteTree(treeId: string): Promise<number> {
