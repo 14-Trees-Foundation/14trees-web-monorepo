@@ -24,7 +24,7 @@ import { status } from "../helpers/status";
 import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { isArray } from "lodash";
-import { QueryTypes } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
   
@@ -256,6 +256,22 @@ export const updateTree = async (req: Request, res: Response) => {
         console.error("Tree update error:", error);
         res.status(status.error).send({ error: error.message });
     }
+};
+
+export const changeTreesPlot = async (req: Request, res: Response) => {
+  const { tree_ids, plot_id } = req.body;
+  try {
+    const updateFields = { plot_id: plot_id };
+    const whereClause = {
+      id: { [Op.in]: tree_ids }
+    };
+
+    await TreeRepository.updateTrees(updateFields, whereClause)
+    res.status(status.success).send();
+  } catch (error: any) {
+      console.log("[ERROR]", "TreesController::changeTreesPlot", error);
+      res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
+  }
 };
 
 export const deleteTree = async (req: Request, res: Response) => {

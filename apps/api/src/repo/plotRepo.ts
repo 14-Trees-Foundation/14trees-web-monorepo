@@ -1,4 +1,4 @@
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, WhereOptions } from 'sequelize';
 import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
@@ -16,6 +16,10 @@ export class PlotRepository {
         const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot.id.toString()}];
         const plotsResp = await this.getPlots(0, 1, filters);
         return plotsResp.results[0] || updatedPlot;
+    }
+
+    public static async updatePlots(fields: any, whereClause: WhereOptions): Promise<void> {
+        await Plot.update(fields, { where: whereClause, returning: false });
     }
 
     public static async addPlot(plotData: any): Promise<Plot> {

@@ -3,6 +3,7 @@ import { status } from "../helpers/status";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
+import { Op } from "sequelize";
 
 /*
     Model - Plot
@@ -87,3 +88,19 @@ export const getPlotTags = async (req: Request,res: Response) => {
         res.status(status.error).send({ error: error.message });
     }
 };
+
+export const assignPlotsToSite = async (req: Request, res: Response) => {
+    const { plot_ids, site_id } = req.body;
+    try {
+        const updateFields = { site_id: site_id };
+        const whereClause = {
+            id: { [Op.in]: plot_ids }
+        };
+
+        await PlotRepository.updatePlots(updateFields, whereClause);
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log('[ERROR]', 'PlotsController::assignPlotsToSite', error)
+        res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
+    }
+}

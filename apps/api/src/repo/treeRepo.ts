@@ -48,7 +48,7 @@ class TreeRepository {
     LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-    ORDER BY t.id DESC
+    ORDER BY t.sapling_id
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
