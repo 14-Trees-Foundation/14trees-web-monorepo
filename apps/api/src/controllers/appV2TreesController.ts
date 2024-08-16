@@ -736,3 +736,8 @@ export const treesCount = async (req: Request, res: Response) => {
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }
+
+export const testUpload = async (req: Request, res: Response) => {
+    console.log('[INFO]', 'appV2Controller::testUpload', 'received dummy file.')
+    res.status(status.success).send();
+}

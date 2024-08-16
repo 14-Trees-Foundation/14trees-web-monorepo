@@ -2,6 +2,7 @@ import express from "express";
 import { verifyAdmin, verifyTreeLogger } from "../auth/verifyToken";
 import {
     healthCheck,
+    testUpload,
     login,
     fetchHelperData,
     fetchShifts,
@@ -25,6 +26,7 @@ import {
 const routes = express.Router();
 
 routes.get("/healthCheck", healthCheck);
+routes.post("/test-upload", testUpload);
 routes.post("/login", login);
 routes.post("/fetchHelperData", verifyTreeLogger, fetchHelperData);
 routes.post("/fetchShifts", verifyTreeLogger, fetchShifts);
