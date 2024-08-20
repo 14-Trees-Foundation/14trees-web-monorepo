@@ -341,8 +341,8 @@ export const fetchHelperData = async (req: Request, res: Response) => {
     helperData.plant_types = plantTypeResp.results;
     const plotResp = await PlotRepository.getPlots(0, -1, []);
     helperData.plots = plotResp.results;
-    // const treeResponse = await TreeRepository.getTrees(0, -1, [])
-    // helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
+    const treeResponse = await TreeRepository.getTrees(0, -1, [])
+    helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
 
     const currentHash = CryptoJS.MD5(JSON.stringify(helperData)).toString();
     const response = {
