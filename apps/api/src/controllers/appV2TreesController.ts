@@ -17,12 +17,13 @@ import { ShiftRepository } from "../repo/shiftRepo";
 import { Shift, ShiftCreationAttributes } from "../models/shift";
 import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
 import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
-import { TreeCreationAttributes } from "../models/tree";
+import { Tree, TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
 import { SiteRepository } from "../repo/sitesRepo";
-import { Op } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 import { VisitRepository } from "../repo/visitsRepo";
 import { VisitImagesRepository } from "../repo/visitImagesRepo";
+import { FilterItem, PaginatedResponse } from "../models/pagination";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -341,8 +342,8 @@ export const fetchHelperData = async (req: Request, res: Response) => {
     helperData.plant_types = plantTypeResp.results;
     const plotResp = await PlotRepository.getPlots(0, -1, []);
     helperData.plots = plotResp.results;
-    const treeResponse = await TreeRepository.getTrees(0, -1, [])
-    helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
+    // const treeResponse = await TreeRepository.getTrees(0, -1, [])
+    // helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
 
     const currentHash = CryptoJS.MD5(JSON.stringify(helperData)).toString();
     const response = {
@@ -554,7 +555,7 @@ export const getDeltaUsers = async (req: Request, res: Response) => {
 }
 
 export const getDeltaTrees = async (req: Request, res: Response) => {
-    let { timestamp, tree_ids, offset, limit } = req.body;
+    let { site_id, timestamp, tree_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let treeIds: number[] = [];
 
@@ -563,13 +564,29 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (tree_ids && tree_ids.length > 0) treeIds = tree_ids;
-
-
+    const filters: FilterItem[] = [
+        { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
+    
     try {
+        let plotIds: number[] = []
+        if (site_id && !isNaN(site_id)) {
+            const plots = await PlotRepository.getPlots(0, -1, [{ columnField: 'site_id', operatorValue: 'equals', value: site_id }])
+            plotIds = plots.results.map(plot => plot.id);
+            if (plotIds.length > 0) filters.push({ columnField: 'plot_id', operatorValue: 'isAnyOf', value: plotIds })
+        }
+
         // fetch created and updated trees after given time
-        const result = await TreeRepository.getTrees(offset, limit, [
-            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
-        ])
+        let result: PaginatedResponse<Tree>;
+        if (site_id && !isNaN(site_id) && plotIds.length === 0) {
+            result = {
+                total: 0,
+                offset: offset,
+                results: []
+            }
+        } else {
+            result = await TreeRepository.getTrees(offset, limit, filters)
+        }
     
         // fetch deleted trees
         const deleted = await TreeRepository.getDeletedTreesFromList(treeIds);
@@ -608,7 +625,7 @@ export const getDeltaSites = async (req: Request, res: Response) => {
 }
 
 export const getDeltaPlots = async (req: Request, res: Response) => {
-    let { timestamp, plot_ids, offset, limit } = req.body;
+    let { site_id, timestamp, plot_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let plotIds: number[] = [];
 
@@ -617,13 +634,16 @@ export const getDeltaPlots = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (plot_ids && plot_ids.length > 0) plotIds = plot_ids;
-
+    const filters = [
+        { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
+    if (site_id && !isNaN(site_id)) {
+        filters.push({ columnField: 'site_id', operatorValue: 'equals', value: site_id })
+    }
 
     try {
         // fetch created and updated plots after given time
-        const result = await PlotRepository.getPlots(offset, limit, [
-            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
-        ])
+        const result = await PlotRepository.getPlots(offset, limit, filters)
     
         // fetch deleted plots
         const deleted = await PlotRepository.getDeletedPlotsFromList(plotIds);
@@ -689,7 +709,7 @@ export const getDeltaVisitImages = async (req: Request, res: Response) => {
 }
 
 export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
-    let { timestamp, tree_snapshot_ids, offset, limit } = req.body;
+    let { site_id, timestamp, tree_snapshot_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let treeSnapshotIds: number[] = [];
 
@@ -698,12 +718,11 @@ export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (tree_snapshot_ids && tree_snapshot_ids.length > 0) treeSnapshotIds = tree_snapshot_ids;
+    const whereClause: WhereOptions = { "created_at": { [Op.gt]: lowerBound.toISOString() }};
 
     try {
         // fetch created and updated tree snapshots after given time
-        const result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, [
-            { "created_at": { [Op.gt]: lowerBound.toISOString() } },
-        ])
+        const result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, whereClause)
     
         // fetch deleted tree snapshots
         const deleted = await TreesSnapshotRepository.getDeletedTreesSnapshotsFromList(treeSnapshotIds);
