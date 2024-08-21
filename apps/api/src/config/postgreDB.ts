@@ -24,6 +24,7 @@ import { TreesSnapshot } from "../models/trees_snapshots";
 import { Visit } from "../models/visits";
 import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
+import { SyncHistory } from "../models/sync_history";
 
 
 class Database {
@@ -50,7 +51,7 @@ class Database {
         ssl: {
           require: true, // This will help you. But you will see nwe error
           rejectUnauthorized: false // This line will fix new error
-        }
+        },
       },
       define: {
         timestamps: false,
@@ -80,6 +81,7 @@ class Database {
         Visit,
         VisitImage,
         VisitUsers,
+        SyncHistory,
       ]
     });
 

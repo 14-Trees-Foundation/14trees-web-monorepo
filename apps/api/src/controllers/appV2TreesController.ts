@@ -24,6 +24,7 @@ import { Op, WhereOptions } from "sequelize";
 import { VisitRepository } from "../repo/visitsRepo";
 import { VisitImagesRepository } from "../repo/visitImagesRepo";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
+import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -729,6 +730,28 @@ export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
         res.status(status.success).json({ total: result.total, tree_snapshots: result.results, deleted_tree_snapshot_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaTreeSnapshots: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaSyncHistories = async (req: Request, res: Response) => {
+    let { user_id, timestamp, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    const whereClause: WhereOptions = { 
+        "created_at": { [Op.gt]: lowerBound.toISOString() },
+        "user_id": user_id,
+    };
+
+    try {
+        const result = await SyncHistoriesRepository.getSyncHistories(offset, limit, whereClause)
+        res.status(status.success).json({ total: result.total, sync_histories: result.results });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaSyncHistories: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
 }

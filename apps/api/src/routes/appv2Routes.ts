@@ -20,8 +20,12 @@ import {
     getDeltaVisits,
     getDeltaVisitImages,
     getDeltaTreeSnapshots,
+    getDeltaSyncHistories,
     treesCount,
 } from "../controllers/appV2TreesController";
+import {
+    addSyncHistory
+} from '../controllers/syncHistoryController'
 
 const routes = express.Router();
 
@@ -44,6 +48,8 @@ routes.post("/fetchHelperData/plots", getDeltaPlots);
 routes.post("/fetchHelperData/visits", getDeltaVisits);
 routes.post("/fetchHelperData/visit-images", getDeltaVisitImages);
 routes.post("/fetchHelperData/tree-snapshots", getDeltaTreeSnapshots);
+routes.post("/fetchHelperData/sync-history", getDeltaSyncHistories);
+routes.post("/sync-history", addSyncHistory);
 routes.get("/trees-count", treesCount);
 
 export default routes;
