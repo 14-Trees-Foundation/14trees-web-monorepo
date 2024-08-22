@@ -98,7 +98,7 @@ export const syncDataFromNotionToDb = async () => {
 
     for (let dbId of dataBaseId) {
         const data = await getDatabaseData(dbId.value);
-        const filePath = `./test_data/${dbId.key}.csv`;
+        const filePath = `${process.env.DEST_IMG_FOLDER}${dbId.key}.csv`;
         const hdr: Array<string> = [];
         const header: string[][] = data.map((d: any) => Object.keys(d))
 
