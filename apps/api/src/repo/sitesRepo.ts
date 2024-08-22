@@ -63,4 +63,94 @@ export class SiteRepository {
     
         return result.map((row: any) => row.num);
     }
+
+    public static async updateSitesDataUsingNotionData() {
+        const query = `UPDATE "14trees_2".sites 
+        SET 
+            name_marathi = n."नाव (मराठी)",
+            name_english  = n."Name",
+            "owner" = n."Land Owner",
+            land_type = n."Land Type",
+            district = n."District",
+            taluka = n."Taluka",
+            village = n."Village",
+            area_acres = n."Area Measured (Acres)",
+            length_km = n."Length (Kms)",
+            tree_count = n."Trees",
+            unique_id = n."Unique Site Id",
+            photo_album = n."Link",
+            grove_type = n."Grove type",
+            album = n."Album (1)",
+            album_contains = n."Album contains",
+            status = n."Status",
+            remark = n."Remark",
+            updated_at = now(),
+            google_earth_link = array[n."Google Earth link"],
+            account = n."Account",
+            data_errors = n."Data errors"
+        FROM notion_db n
+        WHERE n.id = notion_id
+          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt') 
+          AND n."Name" IS NOT null;`
+
+        await sequelize.query(query);
+    }
+
+    public static async insertNewSitesDataUsingNotionData() {
+        const query = `INSERT INTO "14trees_2".sites (
+            notion_id,
+            name_marathi,
+            name_english, 
+            "owner", 
+            land_type, 
+            district, 
+            taluka, 
+            village, 
+            area_acres, 
+            length_km, 
+            tree_count, 
+            unique_id, 
+            photo_album,
+            grove_type, 
+            album, 
+            album_contains, 
+            status, 
+            remark, 
+            created_at,
+            updated_at,
+            google_earth_link, 
+            account, 
+            data_errors
+        )
+        SELECT 
+            n.id, 
+            n."नाव (मराठी)", 
+            n."Name", 
+            n."Land Owner", 
+            n."Land Type", 
+            n."District", 
+            n."Taluka", 
+            n."Village", 
+            n."Area Measured (Acres)", 
+            n."Length (Kms)", 
+            n."Trees", 
+            n."Unique Site Id", 
+            n."Link",
+            n."Grove type", 
+            n."Album (1)", 
+            n."Album contains", 
+            n."Status", 
+            n."Remark", 
+            now() as created_at, 
+            now() as updated_at, 
+            array["Google Earth link"], 
+            n."Account", 
+            n."Data errors"
+        FROM notion_db n
+        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt') 
+          AND n."Name" IS NOT NULL
+          AND n.id NOT IN (SELECT notion_id FROM "14trees_2".sites where notion_id is not null);`
+
+        await sequelize.query(query);
+    }
 }

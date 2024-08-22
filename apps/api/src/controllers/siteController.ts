@@ -2,6 +2,7 @@ import { status } from "../helpers/status";
 import { FilterItem } from "../models/pagination";
 import { Site } from "../models/sites";
 import { SiteRepository } from "../repo/sitesRepo";
+import { syncDataFromNotionToDb } from "../services/notion";
 import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
@@ -81,5 +82,18 @@ export const deleteSite = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
+    }
+}
+
+export const syncSitesDatFromNotion = async (req: Request, res: Response) => {
+    try {
+        await syncDataFromNotionToDb();
+        await SiteRepository.updateSitesDataUsingNotionData();
+        await SiteRepository.insertNewSitesDataUsingNotionData();
+
+        res.status(status.success).json();
+    } catch (error: any) {
+        console.log('[ERROR]', 'SitesController::syncSitesDatFromNotion', error);
+        res.status(status.bad).send({ error: 'Something went wrong!' });
     }
 }

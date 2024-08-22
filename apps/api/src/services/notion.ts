@@ -1,12 +1,17 @@
 import { exec } from 'child_process';
 import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
-import * as fs from 'fs';
 import { createObjectCsvWriter } from 'csv-writer';
-import { dataBaseId } from './Notion_DB_credentials';
+interface dbIdModel {
+    key: string,
+    value: string
+}
+
+export const dataBaseId: dbIdModel[] = [
+    { key: "notion_db", value: 'b95af058814241c3bd4cb060a93185d4' },
+];
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
-
 
 const getDatabaseData = async (databaseId: string) => {
 
@@ -26,8 +31,6 @@ const getDatabaseData = async (databaseId: string) => {
             for (let i = 0; i < response.results.length; i++) {
                 let data = {} as any
                 let result = response.results[i] as PageObjectResponse;
-                // console.log(JSON.stringify(result));
-                // break;
                 data['id'] = result.id;
                 if (result.properties) {
                     for (const key in result.properties) {
@@ -60,7 +63,6 @@ const getDatabaseData = async (databaseId: string) => {
                             }
                         }
                     }
-                    // console.log(JSON.stringify(data, null, 2));
                     dbData.push(data);
                 }
             }
@@ -92,37 +94,28 @@ const runCsvSqlCommand = async (filePath: string): Promise<string> => {
     });
 }
 
-const syncDataFromNotionToDb = async () => {
+export const syncDataFromNotionToDb = async () => {
 
     for (let dbId of dataBaseId) {
-        try {
-            const data = await getDatabaseData(dbId.value);
-            const filePath = `./notion_data/${dbId.key}.csv`;
-            const hdr: Array<string> = [];
-            const header: string[][] = data.map((d: any) => Object.keys(d))
+        const data = await getDatabaseData(dbId.value);
+        const filePath = `./test_data/${dbId.key}.csv`;
+        const hdr: Array<string> = [];
+        const header: string[][] = data.map((d: any) => Object.keys(d))
 
-            for (var i = 0; i < header.length; i = i + 1) {
-                for (var j = 0; j < header[i].length; j++) {
-                    const element = header[i][j]
-                    if (!hdr.includes(element)) hdr.push(element);
-                }
+        for (var i = 0; i < header.length; i = i + 1) {
+            for (var j = 0; j < header[i].length; j++) {
+                const element = header[i][j]
+                if (!hdr.includes(element)) hdr.push(element);
             }
-
-            const csvWriter = createObjectCsvWriter({
-                path: filePath,
-                header: hdr.map(key => ({ id: key, title: key }))
-            });
-            await csvWriter.writeRecords(data);
-
-            const output = await runCsvSqlCommand(filePath);
-            console.log('Success:', output);
-        } catch (error: any) {
-            console.log('[ERROR]', dbId, error);
         }
+
+        const csvWriter = createObjectCsvWriter({
+            path: filePath,
+            header: hdr.map(key => ({ id: key, title: key }))
+        });
+        await csvWriter.writeRecords(data);
+
+        const output = await runCsvSqlCommand(filePath);
+        console.log('Success:', dbId, output);
     }
 }
-
-syncDataFromNotionToDb()
-.then(() => {
-    console.log('-----------------FINISHED-----------------')
-})
