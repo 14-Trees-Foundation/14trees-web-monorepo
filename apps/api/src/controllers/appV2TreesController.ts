@@ -86,10 +86,22 @@ export const uploadTrees = async (req: Request, res: Response) => {
             coordinates: tree.coordinates
         }
 
+        let plotId: number | undefined = undefined;
+        if (tree.plot_id && typeof tree.plot_id === 'string') {
+            const plotResp = await PlotRepository.getPlots(0, 1, [{ columnField: 'plot_id', value: `${tree.plot_id}`, operatorValue: 'equals' }])
+            if (plotResp.results.length === 1) {
+                plotId = plotResp.results[0].id
+            }
+        }
+        
+        if (!plotId) {
+            plotId = Number(tree.plot_id);
+        }
+
         const treeObj: TreeCreationAttributes = {
             sapling_id: saplingID,
             plant_type_id: tree.plant_type_id,
-            plot_id: tree.plot_id,
+            plot_id: plotId,
             image: imageUrl,
             location: location,
             planted_by: tree.planted_by,
