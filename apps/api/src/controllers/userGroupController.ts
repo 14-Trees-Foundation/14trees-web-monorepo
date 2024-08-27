@@ -5,7 +5,7 @@ import { validateCSV } from "./helper/parsecsv";
 import { UserRepository } from "../repo/userRepo";
 import { User, UserCreationAttributes } from "../models/user";
 import { GroupRepository } from "../repo/groupRepo";
-  
+
 
 /*
     Model - UserGroup
@@ -36,7 +36,7 @@ export const addUserGroup = async (req: Request, res: Response) => {
         res.status(status.bad).send({ error: "user_id pr new user details are required" });
         return;
     }
-    
+
     try {
         let userId = req.body.user_id;
         let groupId = req.body.group_id;
@@ -70,7 +70,7 @@ export const deleteGroupUsers = async (req: Request, res: Response) => {
         let resp = await UserGroupRepository.deleteGroupUsers(user_ids, group_id);
         console.log("Delete user group response for user_ids: %s and group_id: %s", user_ids, group_id, resp);
         res.status(status.success).json({
-          message: "Group users deleted successfully",
+            message: "Group users deleted successfully",
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
@@ -80,46 +80,46 @@ export const deleteGroupUsers = async (req: Request, res: Response) => {
 export const addUserGroupsBulk = async (req: Request, res: Response) => {
 
     try {
-      if (!req.file) {
-        throw new Error('No file uploaded. Bulk operation requires data as csv file.');
-      }
-      if (!req.body.group_id || isNaN(parseInt(req.body.group_id))) {
-        throw new Error('Group id is required');
-      }
-
-      const groupId = parseInt(req.body.group_id);
-      const { path } = req.file
-      const data = await validateCSV<UserCreationAttributes>(path);
-
-      const group = await GroupRepository.getGroup(groupId);
-      if (!group) {
-        res.status(404).json({ error: 'Group not found' });
-        return;
-      }
-
-      let users: User[] = [];
-      for (const row of data.valid_records) {
-        try {
-            const resp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: row.email, operatorValue: 'equals' }]);
-            if (resp.results.length > 0) {
-                users.push(resp.results[0]);
-            } else {
-                const user = await UserRepository.addUser(row);
-                users.push(user);
-            }
-        } catch (error: any) {
-          console.error('Error creating user for user group', error);
-          let error_record = { ...row, error: "Failed to create user", status: "error" };
-          data.invalid_records.push(error_record);
+        if (!req.file) {
+            throw new Error('No file uploaded. Bulk operation requires data as csv file.');
         }
-      }
-      const userIds = users.map(user => user.id);
+        if (!req.body.group_id || isNaN(parseInt(req.body.group_id))) {
+            throw new Error('Group id is required');
+        }
 
-      const userGroups = await UserGroupRepository.bulkAddUserGroups(userIds, group.id);
-      res.status(201).json({ success: userGroups.length, failed: data.invalid_records.length, failed_records: data.invalid_records });
+        const groupId = parseInt(req.body.group_id);
+        const { path } = req.file
+        const data = await validateCSV<UserCreationAttributes>(path);
 
-    } catch (error:any) {
-      console.error('Error processing CSV:', error);
-      res.status(500).json({ error: error.message });
+        const group = await GroupRepository.getGroup(groupId);
+        if (!group) {
+            res.status(404).json({ error: 'Group not found' });
+            return;
+        }
+
+        let users: User[] = [];
+        for (const row of data.valid_records) {
+            try {
+                const resp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: row.email, operatorValue: 'equals' }]);
+                if (resp.results.length > 0) {
+                    users.push(resp.results[0]);
+                } else {
+                    const user = await UserRepository.addUser(row);
+                    users.push(user);
+                }
+            } catch (error: any) {
+                console.error('Error creating user for user group', error);
+                let error_record = { ...row, error: "Failed to create user", status: "error" };
+                data.invalid_records.push(error_record);
+            }
+        }
+        const userIds = users.map(user => user.id);
+
+        const userGroups = await UserGroupRepository.bulkAddUserGroups(userIds, group.id);
+        res.status(201).json({ success: userGroups.length, failed: data.invalid_records.length, failed_records: data.invalid_records });
+
+    } catch (error: any) {
+        console.error('Error processing CSV:', error);
+        res.status(500).json({ error: error.message });
     }
-  };
+};

@@ -27,6 +27,8 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
         bucket = process.env.ACTIVITY_MEMORIES
     } else if (type === 'trees') {
         bucket = process.env.BUCKET_TREES
+    } else if (type === 'sites') {
+        bucket = process.env.BUCKET_TREES + "/" + folder_name
     } else if (type === 'ponds') {
         bucket = process.env.BUCKET_PONDS + "/" + folder_name
     } else if (type === 'albums') {
@@ -108,6 +110,8 @@ function getBucketFromTypeAndFolderName(type: string, folder_name: string) {
     } else if (type === 'ponds') {
         bucket = process.env.BUCKET_PONDS + "/" + folder_name;
     } else if (type === 'albums') {
+        bucket = process.env.BUCKET_MEMORIES + "/" + folder_name;
+    } else if (type === 'visits') {
         bucket = process.env.BUCKET_MEMORIES + "/" + folder_name;
     } else if (type === 'logos') {
         bucket = process.env.BUCKET_LOGOS;

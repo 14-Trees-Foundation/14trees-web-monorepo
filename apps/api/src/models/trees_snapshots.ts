@@ -1,21 +1,23 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-interface TreesSnapshotsAttributes {
-	id: number;
-	sapling_id: string;
-	image: string;
-	is_active: boolean;
-	user_id: number;
-    created_at: Date;
+interface TreesSnapshotAttributes {
+  id: number;
+  sapling_id: string;
+  image: string;
+  image_date: Date;
+  tree_status: string;
+  is_active: boolean;
+  user_id: number;
+  created_at: Date;
 }
 
-interface TreesSnapshotsCreationAttributes
-	extends Optional<TreesSnapshotsAttributes, 'id'> {}
+interface TreesSnapshotCreationAttributes
+  extends Optional<TreesSnapshotAttributes, 'id'> { }
 
 @Table({ tableName: 'trees_snapshots' })
-class TreesSnapshots extends Model<TreesSnapshotsAttributes, TreesSnapshotsCreationAttributes>
-implements TreesSnapshotsAttributes {
+class TreesSnapshot extends Model<TreesSnapshotAttributes, TreesSnapshotCreationAttributes>
+  implements TreesSnapshotAttributes {
 
   @Column({
     type: DataType.INTEGER,
@@ -31,6 +33,12 @@ implements TreesSnapshotsAttributes {
   @Column({ type: DataType.STRING })
   image!: string;
 
+  @Column({ type: DataType.DATE })
+  image_date!: Date;
+
+  @Column({ type: DataType.STRING })
+  tree_status!: string;
+
   @Column({ type: DataType.BOOLEAN })
   is_active!: boolean;
 
@@ -42,5 +50,5 @@ implements TreesSnapshotsAttributes {
 
 }
 
-export { TreesSnapshots }
-export type { TreesSnapshotsAttributes, TreesSnapshotsCreationAttributes }
+export { TreesSnapshot }
+export type { TreesSnapshotAttributes, TreesSnapshotCreationAttributes }

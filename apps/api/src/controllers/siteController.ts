@@ -2,9 +2,12 @@ import { status } from "../helpers/status";
 import { FilterItem } from "../models/pagination";
 import { Site } from "../models/sites";
 import { SiteRepository } from "../repo/sitesRepo";
+import { syncDataFromNotionToDb } from "../services/notion";
 import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
+import { isArray } from "lodash";
+
   
 
 /*
@@ -40,7 +43,7 @@ export const addSite = async (req: Request, res: Response) => {
     if(reqData.maintenance_type){
         reqData.maintenance_type = reqData.maintenance_type.toUpperCase();
     }
-   
+
     try {
         let result = await SiteRepository.addSite(reqData);
         res.status(status.success).send(result);
@@ -58,8 +61,10 @@ export const updateSite = async (req: Request, res: Response) => {
         req.body.maintenance_type =  req.body.maintenance_type.toUpperCase();
     }
 
+    req.body.tags = req.body.tags?JSON.parse(req.body.tags):[];
+
     try {
-        let result = await SiteRepository.updateSite(req.body)
+        let result = await SiteRepository.updateSite(req.body ,isArray(req.files) ? req.files : []);
         res.status(status.created).json(result);
     } catch (error) {
         console.log(error)
@@ -77,5 +82,18 @@ export const deleteSite = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
+    }
+}
+
+export const syncSitesDatFromNotion = async (req: Request, res: Response) => {
+    try {
+        await syncDataFromNotionToDb();
+        await SiteRepository.updateSitesDataUsingNotionData();
+        await SiteRepository.insertNewSitesDataUsingNotionData();
+
+        res.status(status.success).json();
+    } catch (error: any) {
+        console.log('[ERROR]', 'SitesController::syncSitesDatFromNotion', error);
+        res.status(status.bad).send({ error: 'Something went wrong!' });
     }
 }

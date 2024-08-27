@@ -174,17 +174,17 @@ class TreeRepository {
   };
 
   public static async updateTrees(fields: any, whereClause: WhereOptions): Promise<number> {
-    const resp = await Tree.update(fields, { where: whereClause, returning: false })
+    const resp = await Tree.update(fields, { where: whereClause });
     return resp[0];
-  };
+  }
 
   public static async deleteTree(treeId: string): Promise<number> {
     const resp = await Tree.destroy({ where: { id: treeId } });
     return resp;
   };
 
-  public static async treesCount(): Promise<number> {
-    return await Tree.count()
+  public static async treesCount(whereClause?: WhereOptions): Promise<number> {
+    return await Tree.count({ where: whereClause });
   }
 
   public static async assignedTreesCount(): Promise<number> {
@@ -252,6 +252,7 @@ class TreeRepository {
 
     const updateConfig: any = {
       mapped_at: new Date(),
+      updated_at: new Date(),
     }
 
     if (mapped_to === "user") {
@@ -267,6 +268,7 @@ class TreeRepository {
   public static async mapTreesInPlot(mapped_to: 'user' | 'group', id: string, plotId: string, count: number) {
     const updateConfig: any = {
       mapped_at: new Date(),
+      updated_at: new Date(),
     }
 
     if (mapped_to === "user") {
@@ -300,7 +302,7 @@ class TreeRepository {
   }
 
   public static async unMapTrees(saplingIds: string[]) {
-    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null, updated_at: new Date(), }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("un mapped trees response: %s", resp);
   }
 
@@ -354,7 +356,8 @@ class TreeRepository {
       description: reqBody.description || null,
       event_id: eventId || null,
       event_type: reqBody.type || null,
-    }
+      updated_at: new Date(),
+    } 
 
     const result = await tree.update(updateFields);
 
@@ -367,6 +370,7 @@ class TreeRepository {
       assigned_at: null,
       user_tree_image: null,
       memory_images: null,
+      updated_at: new Date(),
     }, { where: { sapling_id: { [Op.in]: saplingIds } } });
   }
 
@@ -394,7 +398,7 @@ class TreeRepository {
       LEFT JOIN "14trees".users du ON du.id = t.sponsored_by_user
       LEFT JOIN "14trees".users au ON au.id = t.assigned_to
       LEFT JOIN "14trees".users gu ON gu.id = t.gifted_by
-      WHERE t.assigned_to = ${userId};
+      WHERE t.assigned_to = '${userId}';
     `;
 
     const data: any[] = await sequelize.query(query, {

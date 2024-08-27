@@ -149,4 +149,19 @@ export class PlotRepository {
         const total = parseInt(countResp[0].count);
         return { offset: offset, total: total, results: tags };
     }
+
+    public static async getDeletedPlotsFromList(plotIds: number[]): Promise<number[]> {
+        const query = `SELECT num
+        FROM unnest(array[:plot_ids]::int[]) AS num
+        LEFT JOIN "14trees".plots AS p
+        ON num = p.id
+        WHERE p.id IS NULL;`
+    
+        const result = await sequelize.query(query, {
+            replacements: { plot_ids: plotIds },
+            type: QueryTypes.SELECT
+        })
+    
+        return result.map((row: any) => row.num);
+    }
 }

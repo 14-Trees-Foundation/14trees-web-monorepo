@@ -15,12 +15,16 @@ import { CorpEvent } from "../models/corp_events";
 import { Site } from "../models/sites";
 import { Group } from "../models/group";
 import { UserGroup } from "../models/user_group";
-import { Donations } from "../models/donation";
+import { Donation } from "../models/donation";
+import { DonationUser } from "../models/donation_user";
 import { Album } from "../models/albums";
 import { Shift } from "../models/shift";
 import { LogsInfo } from "../models/logs_info";
-import { TreesSnapshots } from "../models/trees_snapshots";
-import { Visit } from "../models/visits"
+import { TreesSnapshot } from "../models/trees_snapshots";
+import { Visit } from "../models/visits";
+import { VisitUsers } from "../models/visit_users"
+import { VisitImage } from "../models/visit_images"
+import { SyncHistory } from "../models/sync_history";
 
 
 class Database {
@@ -47,7 +51,7 @@ class Database {
         ssl: {
           require: true, // This will help you. But you will see nwe error
           rejectUnauthorized: false // This line will fix new error
-        }
+        },
       },
       define: {
         timestamps: false,
@@ -68,12 +72,16 @@ class Database {
         Group,
         UserGroup,
         PondWaterLevel,
-        Donations,
+        Donation,
+        DonationUser,
         Album,
         Shift,
         LogsInfo,
-        TreesSnapshots,
-        Visit
+        TreesSnapshot,
+        Visit,
+        VisitImage,
+        VisitUsers,
+        SyncHistory,
       ]
     });
 

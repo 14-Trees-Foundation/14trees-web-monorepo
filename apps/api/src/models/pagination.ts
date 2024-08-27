@@ -7,7 +7,7 @@ export interface PaginatedResponse<T> {
 
 export interface FilterItem {
     columnField: string,
-    value: string | string[],
+    value: string | string[] | number | number[],
     operatorValue: string,
 }
 

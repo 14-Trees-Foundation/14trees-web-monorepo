@@ -15,10 +15,16 @@ import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
 import { ShiftRepository } from "../repo/shiftRepo";
 import { Shift, ShiftCreationAttributes } from "../models/shift";
-import { TreesSnapshotsCreationAttributes } from "../models/trees_snapshots";
-import { TreesSnapshotsRepository } from "../repo/treesSnapshotsRepo";
-import { TreeCreationAttributes } from "../models/tree";
+import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
+import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
+import { Tree, TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
+import { SiteRepository } from "../repo/sitesRepo";
+import { Op, WhereOptions } from "sequelize";
+import { VisitRepository } from "../repo/visitsRepo";
+import { VisitImagesRepository } from "../repo/visitImagesRepo";
+import { FilterItem, PaginatedResponse } from "../models/pagination";
+import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -73,6 +79,8 @@ export const uploadTrees = async (req: Request, res: Response) => {
         }
 
         let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
+        let userTreeImageUrl = await uploadImage([tree.user_tree_image], treeUploadStatuses, saplingID);
+        let userTreeCardUrl = await uploadImage([tree.user_card_image], treeUploadStatuses, saplingID);
         const location = {
             type: "Point",
             coordinates: tree.coordinates
@@ -100,6 +108,9 @@ export const uploadTrees = async (req: Request, res: Response) => {
             tree_status: tree.tree_status,
             assigned_at: tree.assigned_at,
             assigned_to: tree.assigned_to,
+            user_tree_image: userTreeImageUrl,
+            user_card_image: userTreeCardUrl,
+            visit_id: tree.visit_id,
             created_at: new Date(),
             updated_at: new Date(),
         }
@@ -120,7 +131,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
 }
 
 async function uploadImage(images: any, status: any, saplingID: string) {
-    if (!images || images.length === 0) {
+    if (!images || images.length === 0 || !images[0]) {
         return null;
     }
     const image = images[0];
@@ -245,60 +256,12 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
             ...json,
         }
 
-        const metadata = await attachMetaData(savedData.image, 'trees');
-        if (metadata.length > 0) response.image = metadata[0];
         res.status(status.success).json(response);
     } catch (err) {
-        console.log("[ERROR] appV2::updateSaplingByAdmin:", err);
+        console.log("[ERROR] appV2::updateSaplingByAdmin:", err, sapling);
         res.status(status.error).send({ success: false, message: 'Error updating sapling' });
     }
 }
-
-
-// Not using this controller in app
-// TODO: Get confirmation on this are they going to use this controller or not
-// export const fetchPlotSaplings = async (req: Request, res: Response) => {
-
-//     const { lastHash } = req.body;
-    
-//     const plots = await PlotRepository.find();
-//     console.log('Fetching plot saplings');
-//     let plotSaplings = await Promise.all((plots).map(async (plot) => {
-//         const plotData = {
-//             plot_id: plot.plot_id,
-//             saplings: []
-//         }
-//         plotData.saplings = (await TreeModel.find({ plot_id: plot })).filter((sapling) => {
-//             return sapling.location && (sapling.location.coordinates[0] + sapling.location.coordinates[1] > 0)
-//         }).map((sapling) => {
-//             return [
-//                 sapling.sapling_id,
-//                 sapling.location.coordinates[0],
-//                 sapling.location.coordinates[1],
-//             ]
-//         })
-//         if (plotData.saplings.length > 0) {
-//             plotData.saplings.sort((a, b) => (a[0] < b[0]));
-//             return plotData;
-//         }
-//         return null
-//     }));
-
-//     plotSaplings = plotSaplings.filter((data) => (data !== null));
-//     plotSaplings.sort((plot1, plot2) => (plot1.plot_id < plot2.plot_id))
-//     const currentHash = CryptoJS.MD5(JSON.stringify(plotSaplings)).toString();
-
-//     const response = {
-//         data: plotSaplings,
-//         hash: currentHash,
-//     }
-//     if (lastHash === currentHash) {
-//         //empty data from response payload:
-//         response.data = null;
-//     }
-//     console.log('sending response, ', response.data ? response.data.length : null);
-//     return res.send(response);
-// }
 
 export const login = async (req: Request, res: Response) => {
     
@@ -392,8 +355,8 @@ export const fetchHelperData = async (req: Request, res: Response) => {
     helperData.plant_types = plantTypeResp.results;
     const plotResp = await PlotRepository.getPlots(0, -1, []);
     helperData.plots = plotResp.results;
-    const treeResponse = await TreeRepository.getTrees(0, -1, [])
-    helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
+    // const treeResponse = await TreeRepository.getTrees(0, -1, [])
+    // helperData.sapling_ids = treeResponse.results.map(doc => ({ sapling_id: doc.sapling_id }))
 
     const currentHash = CryptoJS.MD5(JSON.stringify(helperData)).toString();
     const response = {
@@ -510,20 +473,18 @@ export const uploadNewImages = async (req: Request, res: Response) => {
         if (existingMatch) {    
             let imageUrl = await uploadImage([tree.image], treeUploadStatuses, saplingId);
             if (imageUrl) {
-                // const location = {
-                //     type: "Point",
-                //     coordinates: { lat: tree.lat, lng: tree.lng }
-                // }
-                const treeSnapshotObj: TreesSnapshotsCreationAttributes = {
+                const treeSnapshotObj: TreesSnapshotCreationAttributes = {
                     sapling_id: saplingId,
                     image: imageUrl,
+                    image_date: new Date(),
+                    tree_status: tree.tree_status,
                     user_id: tree.user_id,
                     created_at: new Date(),
                     is_active: true,
                 }
         
                 try {
-                    await TreesSnapshotsRepository.addTreesSnapshots(treeSnapshotObj);
+                    await TreesSnapshotRepository.addTreesSnapshot(treeSnapshotObj);
                     treeUploadStatuses[saplingId].dataUploaded = true;
                 }
                 catch (err) {
@@ -581,24 +542,25 @@ export const treesUpdatePlot = async (req: Request, res: Response) => {
 */
 
 export const getDeltaUsers = async (req: Request, res: Response) => {
-    const { timestamp, user_ids } = req.body;
+    let  { timestamp, user_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let userIds: number[] = [];
 
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (user_ids && user_ids.length > 0) userIds = user_ids;
 
-
     try {
         // fetch created and updated users after given time
-        const result = await UserRepository.getUsers(0, -1, [
+        const result = await UserRepository.getUsers(offset, limit, [
             { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
         ])
     
         // fetch deleted users
         const deleted = await UserRepository.getDeletedUsersFromList(userIds);
-        res.status(status.success).json({ users: result.results, deleted_user_ids: deleted });
+        res.status(status.success).json({ total: result.total, users: result.results, deleted_user_ids: deleted });
     } catch(err: any) {
         console.log("[ERROR] appV2::getDeltaUsers: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
@@ -606,7 +568,7 @@ export const getDeltaUsers = async (req: Request, res: Response) => {
 }
 
 export const getDeltaTrees = async (req: Request, res: Response) => {
-    let { timestamp, tree_ids, offset, limit } = req.body;
+    let { site_id, timestamp, tree_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let treeIds: number[] = [];
 
@@ -615,13 +577,29 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (tree_ids && tree_ids.length > 0) treeIds = tree_ids;
-
-
+    const filters: FilterItem[] = [
+        { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
+    
     try {
+        let plotIds: number[] = []
+        if (site_id && !isNaN(site_id)) {
+            const plots = await PlotRepository.getPlots(0, -1, [{ columnField: 'site_id', operatorValue: 'equals', value: site_id }])
+            plotIds = plots.results.map(plot => plot.id);
+            if (plotIds.length > 0) filters.push({ columnField: 'plot_id', operatorValue: 'isAnyOf', value: plotIds })
+        }
+
         // fetch created and updated trees after given time
-        const result = await TreeRepository.getTrees(offset, limit, [
-            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
-        ])
+        let result: PaginatedResponse<Tree>;
+        if (site_id && !isNaN(site_id) && plotIds.length === 0) {
+            result = {
+                total: 0,
+                offset: offset,
+                results: []
+            }
+        } else {
+            result = await TreeRepository.getTrees(offset, limit, filters)
+        }
     
         // fetch deleted trees
         const deleted = await TreeRepository.getDeletedTreesFromList(treeIds);
@@ -630,4 +608,190 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
         console.log("[ERROR] appV2::getDeltaTree: ", err);
         res.status(status.error).json({ error: "Something went wrong!" });
     }
+}
+
+export const getDeltaSites = async (req: Request, res: Response) => {
+    let { timestamp, site_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let siteIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (site_ids && site_ids.length > 0) siteIds = site_ids;
+
+
+    try {
+        // fetch created and updated sites after given time
+        const result = await SiteRepository.getSites(offset, limit, [
+            { "updated_at": { [Op.gt]: lowerBound.toISOString() }},
+        ])
+    
+        // fetch deleted sites
+        const deleted = await SiteRepository.getDeletedSitesFromList(siteIds);
+        res.status(status.success).json({ total: result.total, sites: result.results, deleted_site_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaSites: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaPlots = async (req: Request, res: Response) => {
+    let { site_id, timestamp, plot_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let plotIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (plot_ids && plot_ids.length > 0) plotIds = plot_ids;
+    const filters = [
+        { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
+    if (site_id && !isNaN(site_id)) {
+        filters.push({ columnField: 'site_id', operatorValue: 'equals', value: site_id })
+    }
+
+    try {
+        // fetch created and updated plots after given time
+        const result = await PlotRepository.getPlots(offset, limit, filters)
+    
+        // fetch deleted plots
+        const deleted = await PlotRepository.getDeletedPlotsFromList(plotIds);
+        res.status(status.success).json({ total: result.total, plots: result.results, deleted_plot_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaPlots: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaVisits = async (req: Request, res: Response) => {
+    let { timestamp, visit_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let visitIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (visit_ids && visit_ids.length > 0) visitIds = visit_ids;
+
+
+    try {
+        // fetch created and updated visits after given time
+        const result = await VisitRepository.getVisits(offset, limit, [
+            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+        ])
+    
+        // fetch deleted visits
+        const deleted = await VisitRepository.getDeletedVisitsFromList(visitIds);
+        res.status(status.success).json({ total: result.total, visits: result.results, deleted_visit_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaVisits: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaVisitImages = async (req: Request, res: Response) => {
+    let { timestamp, visit_image_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let visitImageIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (visit_image_ids && visit_image_ids.length > 0) visitImageIds = visit_image_ids;
+
+
+    try {
+        // fetch created and updated visit images after given time
+        const result = await VisitImagesRepository.getVisitImages(offset, limit, [
+            { "created_at": { [Op.gt]: lowerBound.toISOString() } },
+        ])
+    
+        // fetch deleted visit images
+        const deleted = await VisitImagesRepository.getDeletedVisitImagesFromList(visitImageIds);
+        res.status(status.success).json({ total: result.total, visit_images: result.results, deleted_visit_image_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaVisitImages: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
+    let { site_id, timestamp, tree_snapshot_ids, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let treeSnapshotIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (tree_snapshot_ids && tree_snapshot_ids.length > 0) treeSnapshotIds = tree_snapshot_ids;
+    const whereClause: WhereOptions = { "created_at": { [Op.gt]: lowerBound.toISOString() }};
+
+    try {
+        // fetch created and updated tree snapshots after given time
+        const result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, whereClause)
+    
+        // fetch deleted tree snapshots
+        const deleted = await TreesSnapshotRepository.getDeletedTreesSnapshotsFromList(treeSnapshotIds);
+        res.status(status.success).json({ total: result.total, tree_snapshots: result.results, deleted_tree_snapshot_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaTreeSnapshots: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const getDeltaSyncHistories = async (req: Request, res: Response) => {
+    let { user_id, timestamp, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    const whereClause: WhereOptions = { 
+        "created_at": { [Op.gt]: lowerBound.toISOString() },
+        "user_id": user_id,
+    };
+
+    try {
+        const result = await SyncHistoriesRepository.getSyncHistories(offset, limit, whereClause)
+        res.status(status.success).json({ total: result.total, sync_histories: result.results });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaSyncHistories: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+/*
+    Analytics
+*/
+
+export const treesCount = async (req: Request, res: Response) => {
+    const { name } = req.query
+    const year = new Date(new Date().getFullYear(), 0, 1);
+    const month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    try {
+        const result = {
+            total_trees_planted: await TreeRepository.treesCount(),
+            trees_planted_this_year: await TreeRepository.treesCount({ created_at: { [Op.gte]:  year} }),
+            trees_planted_this_month: await TreeRepository.treesCount({ created_at: { [Op.gte]:  month} }),
+            trees_planted_by_you: name ? await TreeRepository.treesCount({ planted_by: name }) : 0,
+        };
+        res.status(status.success).json(result);
+    } catch(err: any) {
+        console.log("[ERROR] appV2::treesCount: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
+export const testUpload = async (req: Request, res: Response) => {
+    console.log('[INFO]', 'appV2Controller::testUpload', 'received dummy file.')
+    res.status(status.success).send();
 }

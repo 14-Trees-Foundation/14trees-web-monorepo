@@ -8,6 +8,7 @@ import { Center } from './common';
 import { Optional } from 'sequelize';
 import { Group } from './group';
 import { Event } from './events';
+import { Visit } from './visits';
 
 
 interface TreeAttributes {
@@ -29,9 +30,13 @@ interface TreeAttributes {
     assigned_at: Date | null,
     assigned_to: number | null,
     user_tree_image?: string | null,
+    user_card_image?: string | null,
     memory_images?: string[] | null,
     event_id?: number,
+    donation_id: number | null,
+    visit_id: number | null,
     description?: string,
+    event_type: string | null,
     tree_status?: string;
     status?: string;
     status_message?: string[];
@@ -41,7 +46,7 @@ interface TreeAttributes {
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>
@@ -126,8 +131,18 @@ implements TreeAttributes {
   @Column(DataType.STRING)
   event_type!: string;
 
+  @Column(DataType.NUMBER)
+  donation_id!: number;
+
+  @ForeignKey(() => Visit)
+  @Column(DataType.NUMBER)
+  visit_id!: number;
+
   @Column(DataType.STRING)
   user_tree_image!: string;
+
+  @Column(DataType.STRING)
+  user_card_image!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
   memory_images!: string[];
