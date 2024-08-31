@@ -4,7 +4,7 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 interface TreesSnapshotAttributes {
   id: number;
   sapling_id: string;
-  image: string;
+  image: string | null;
   image_date: Date;
   tree_status: string;
   is_active: boolean;

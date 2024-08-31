@@ -118,7 +118,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
         try {
             const tree = await TreeRepository.addTreeObject(treeObj);
             treeUploadStatuses[saplingID].dataUploaded = true;
-            treeUploadStatuses[saplingID].treeId = tree.id;
+            treeUploadStatuses[saplingID].tree = tree;
         }
         catch (err) {
             console.log(err)

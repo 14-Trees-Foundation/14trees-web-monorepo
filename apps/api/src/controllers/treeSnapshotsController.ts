@@ -48,24 +48,29 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
     try {
         const requests: TreesSnapshotCreationAttributes[] = []
         for (let image of images) {
-            const resp = await uploadBase64DataToS3(image.name, 'trees', image.data, null)
-            if (resp.success) {
-                let imageDate = new Date();
-                if (!isValidDateString(image.image_date)) {
-                    imageDate = new Date();
+            let imageUrl: string | null = null;
+            if (image.data)  {
+                const resp = await uploadBase64DataToS3(image.name, 'trees', image.data, null)
+                if (resp.success) {
+                    imageUrl = resp.location;
+                } else {
+                    console.log('[ERROR]', 'TreeSnapshots::addTreeSnapshots:', resp.error);
                 }
-                requests.push({
-                    sapling_id: sapling_id,
-                    user_id: userId,
-                    image: resp.location,
-                    image_date: imageDate,
-                    tree_status: image.tree_status,
-                    is_active: true,
-                    created_at: new Date()
-                })
-            } else {
-                console.log('[ERROR]', 'TreeSnapshots::addTreeSnapshots:', resp.error);
             }
+
+            let imageDate = new Date();
+            if (!isValidDateString(image.image_date)) {
+                imageDate = new Date();
+            }
+            requests.push({
+                sapling_id: sapling_id,
+                user_id: userId,
+                image: imageUrl,
+                image_date: imageDate,
+                tree_status: image.tree_status,
+                is_active: true,
+                created_at: new Date()
+            })
         }
         let result = await TreesSnapshotRepository.bulkAddTreesSnapshots(requests);
         res.status(status.success).send(result);
