@@ -66,8 +66,8 @@ export class PondRepository {
     const query = `
         SELECT p.*,
             s.name_english as site_name
-        FROM '14trees_2'.ponds p
-        LEFT JOIN '14trees_2'.sites s ON p.site_id = s.id
+        FROM "14trees_2".ponds p
+        LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         ORDER BY p.id DESC
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
@@ -75,8 +75,8 @@ export class PondRepository {
 
     const countPondsQuery =
       `SELECT count(p.id)
-        FROM '14trees_2'.ponds AS p
-        LEFT JOIN '14trees_2'.sites s ON p.site_id = s.id
+        FROM "14trees_2".ponds AS p
+        LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
 
     const ponds: any = await sequelize.query(query, {

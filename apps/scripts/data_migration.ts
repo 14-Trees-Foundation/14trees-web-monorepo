@@ -36,7 +36,7 @@ const migrateUsersData = async (): Promise<boolean> => {
 
     try {
       const query = `
-        INSERT INTO '14trees_2'.users (mongo_id, name, email, user_id, phone, birth_date, created_at, updated_at)
+        INSERT INTO "14trees_2".users (mongo_id, name, email, user_id, phone, birth_date, created_at, updated_at)
         SELECT u."_id", u."name", u.email, u.userid, u.phone, u.dob, u.date_added, u.date_added  \
         FROM public.users AS u WHERE email IS NOT NULL;
       `
@@ -72,19 +72,19 @@ const migratePondWaterLevelData = async () => {
                 });
   
               const dataArray: any[] = JSON.parse(cleanedString);
-              const selectPond = `SELECT id FROM '14trees_2'.ponds WHERE mongo_id = '${pondId}'`;
+              const selectPond = `SELECT id FROM "14trees_2".ponds WHERE mongo_id = '${pondId}'`;
               const pond: any[] = await sequelize.query(selectPond, {type: QueryTypes.SELECT});
               
               for (let i = 0; i < dataArray.length; i++) {
                 const userId = dataArray[i]["user"];
                 let user: any = null;
                 if (userId !== null) {
-                  const selectUser = `SELECT id FROM '14trees_2'.users WHERE mongo_id = '${dataArray[i]["user"]}'`;
+                  const selectUser = `SELECT id FROM "14trees_2".users WHERE mongo_id = '${dataArray[i]["user"]}'`;
                   const users: any[] = await sequelize.query(selectUser, {type: QueryTypes.SELECT});
                   if (users.length > 0) user = users[0];
                 } 
 
-                const insertWaterLevel = `INSERT INTO '14trees_2'.pond_water_level (id, level_ft, user_id, pond_id, image, mongo_id, mongo_user_id, updated_at)
+                const insertWaterLevel = `INSERT INTO "14trees_2".pond_water_level (id, level_ft, user_id, pond_id, image, mongo_id, mongo_user_id, updated_at)
                 VALUES (DEFAULT, ${dataArray[i]['levelFt']}, ${user ? user.id : null}, ${pond[0]['id']}, ${dataArray[i]['images']?.length > 0 ? "'" + dataArray[i]['images'][0] + "'" : null}, '${pondId}', ${dataArray[i]["user"] ? "'" + dataArray[i]["user"] + "'" : null}, '${dataArray[i]["date"]}')`
 
                 await sequelize.query(insertWaterLevel, {type: QueryTypes.INSERT});
