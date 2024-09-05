@@ -4,6 +4,8 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
 import { Op } from "sequelize";
+import { constants } from "../constants";
+import { getPlotNameAndCoordinatesFromKml } from "./helper/parsekml";
 
 /*
     Model - Plot
@@ -98,6 +100,36 @@ export const assignPlotsToSite = async (req: Request, res: Response) => {
         res.status(status.success).send();
     } catch (error: any) {
         console.log('[ERROR]', 'PlotsController::assignPlotsToSite', error)
+        res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
+    }
+}
+
+export const updateCoordinatesUsingKml = async (req: Request, res: Response) => {
+    try {
+
+        if (!req.file) {
+            throw new Error('No file uploaded. this operation requires kml file');
+          }
+      
+        const filePath = constants.DEST_FOLDER + req.file.filename
+        const coordinatesMap = await getPlotNameAndCoordinatesFromKml(filePath);
+
+        for (const [plotName, coordinates] of coordinatesMap) {
+            const whereClause = { name: plotName };
+            const location = {
+                type: 'Polygon',
+                coordinates: [coordinates.map(coord => [coord.latitude, coord.longitude ])]
+            }
+            const updateFields = { 
+                boundaries: location,
+                updated_at: new Date(),
+            }
+            await PlotRepository.updatePlots(updateFields, whereClause);
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log('[ERROR]', 'PlotsController::updateCoordinatesUsingKml', error)
         res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
     }
 }
