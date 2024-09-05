@@ -1,7 +1,8 @@
 import { PlantType, PlantTypeAttributes, PlantTypeCreationAttributes } from "../models/plant_type";
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { PaginatedResponse } from "../models/pagination";
-import { WhereOptions } from 'sequelize';
+import { QueryTypes, WhereOptions } from 'sequelize';
+import { sequelize } from "../config/postgreDB";
 
 class PlantTypeRepository {
     public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<PlantType>> {
@@ -85,6 +86,23 @@ class PlantTypeRepository {
 
     public static async plantTypesCount(): Promise<number> {
         return await PlantType.count();
+    }
+
+    public static async plantTypesPresentInPlot(plotId: number) {
+        const query = `
+            SELECT pt.id, pt."name", count(pt.id) as pt_cnt FROM "14trees_2".trees t 
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            WHERE t.plot_id = :plot_id
+            GROUP BY pt.id
+        `
+
+        const results = await sequelize.query(query, {
+            replacements: { plot_id: plotId },
+            type: QueryTypes.SELECT
+        })
+
+        return results;
     }
 }
 
