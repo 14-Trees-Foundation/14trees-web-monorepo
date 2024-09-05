@@ -23,7 +23,7 @@ export class TreesSnapshotRepository {
     public static async getDeletedTreesSnapshotsFromList(treeSnapshotIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:tree_snapshot_ids]::int[]) AS num
-            LEFT JOIN "14trees".trees_snapshots AS v
+            LEFT JOIN '14trees_2'.trees_snapshots AS v
             ON num = v.id
             WHERE v.id IS NULL;`
 

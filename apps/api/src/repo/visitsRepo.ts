@@ -40,9 +40,9 @@ export class VisitRepository {
 
         const getQuery = `
             SELECT v.*, array_agg(vi.image_url) AS visit_images, count(DISTINCT vu.user_id) as user_count
-            FROM "14trees".visits v
-            LEFT JOIN "14trees".visit_images vi ON v.id = vi.visit_id
-            LEFT JOIN "14trees".visit_users vu ON v.id = vu.visit_id
+            FROM '14trees_2'.visits v
+            LEFT JOIN '14trees_2'.visit_images vi ON v.id = vi.visit_id
+            LEFT JOIN '14trees_2'.visit_users vu ON v.id = vu.visit_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY v.id
             ORDER BY v.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -50,7 +50,7 @@ export class VisitRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees".visits v
+            FROM '14trees_2'.visits v
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -91,7 +91,7 @@ export class VisitRepository {
     public static async getDeletedVisitsFromList(visitIds: number[]): Promise<number[]> {
         const query = `SELECT num
     FROM unnest(array[:visit_ids]::int[]) AS num
-    LEFT JOIN "14trees".visits AS v
+    LEFT JOIN '14trees_2'.visits AS v
     ON num = v.id
     WHERE v.id IS NULL;`
 

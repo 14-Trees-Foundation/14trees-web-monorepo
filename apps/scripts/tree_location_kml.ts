@@ -48,7 +48,7 @@ const generateKMLFragment = async () => {
     try {
        
         const selectPlotQuery = `
-        SELECT * FROM "14trees".plots
+        SELECT * FROM '14trees_2'.plots
         WHERE id = ${plotId};
         `
         const plots: any[] = await sequelize.query(selectPlotQuery, {type: QueryTypes.SELECT});
@@ -58,7 +58,7 @@ const generateKMLFragment = async () => {
 
             const selectTreesQuery = `
                 SELECT sapling_id, location
-                FROM "14trees".trees
+                FROM '14trees_2'.trees
                 WHERE plot_id = ${plot.id};
             `
 

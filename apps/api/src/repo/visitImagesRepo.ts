@@ -20,7 +20,7 @@ export class VisitImagesRepository {
     public static async getDeletedVisitImagesFromList(visitImageIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:visit_image_ids]::int[]) AS num
-            LEFT JOIN "14trees".visit_images AS v
+            LEFT JOIN '14trees_2'.visit_images AS v
             ON num = v.id
             WHERE v.id IS NULL;`
 

@@ -6,8 +6,8 @@ export class DonationUserRepository {
   static async getDonationUsers(donationId: number) {
     const getQuery = `
             SELECT u.user_id, u.gifted_trees, count(t.id) as assigned_trees
-            FROM "14trees".donation_users u 
-            LEFT JOIN "14trees".trees t ON t.assigned_to = u.user_id AND t.donation_id = u.donation_id
+            FROM '14trees_2'.donation_users u 
+            LEFT JOIN '14trees_2'.trees t ON t.assigned_to = u.user_id AND t.donation_id = u.donation_id
             WHERE u.donation_id = ${donationId}
             GROUP BY u.user_id, u.gifted_trees
         `;

@@ -22,8 +22,8 @@ export class DonationRepository {
 
         const query = `
             SELECT d.*, count(t.id) as assigned_trees
-            FROM "14trees".donations as d
-            LEFT JOIN "14trees".trees as t on t.donation_id = d.id
+            FROM '14trees_2'.donations as d
+            LEFT JOIN '14trees_2'.trees as t on t.donation_id = d.id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY d.id
             ORDER BY d.id DESC
@@ -32,7 +32,7 @@ export class DonationRepository {
 
         const countQuery = `
             SELECT count(*)
-            FROM "14trees".donations as d
+            FROM '14trees_2'.donations as d
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
