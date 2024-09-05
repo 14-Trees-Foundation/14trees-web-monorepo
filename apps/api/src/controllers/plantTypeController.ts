@@ -94,3 +94,20 @@ export const searchPlantTypes = async (req: Request, res: Response) => {
     return;
   }
 };
+
+export const getPlantTypesForPlot = async (req: Request, res: Response) => {
+  try {
+    const plotId = parseInt(req.params.plot_id)
+    if (isNaN(plotId)) {
+      res.status(status.bad).send({ error: "Please provide valid plot id!" });
+      return;
+    }
+
+    const plantTypes = await PlantTypeRepository.plantTypesPresentInPlot(plotId);
+    res.status(status.success).send(plantTypes);
+    return;
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+    return;
+  }
+};
