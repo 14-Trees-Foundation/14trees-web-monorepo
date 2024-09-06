@@ -104,6 +104,21 @@ class PlantTypeRepository {
 
         return results;
     }
+
+    public static async getDeletedPlantTypesFromList(plantTypeIds: number[]): Promise<number[]> {
+        const query = `SELECT num
+            FROM unnest(array[:plant_type_ids]::int[]) AS num
+            LEFT JOIN "14trees_2".plant_types AS pt
+            ON num = pt.id
+            WHERE pt.id IS NULL;`
+
+        const result = await sequelize.query(query, {
+            replacements: { plant_type_ids: plantTypeIds },
+            type: QueryTypes.SELECT
+        })
+
+        return result.map((row: any) => row.num);
+    }
 }
 
 export default PlantTypeRepository;

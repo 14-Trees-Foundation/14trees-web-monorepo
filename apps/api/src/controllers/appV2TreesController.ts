@@ -768,6 +768,31 @@ export const getDeltaSyncHistories = async (req: Request, res: Response) => {
     }
 }
 
+export const getDeltaPlantTypes = async (req: Request, res: Response) => {
+    let { plant_type_ids, timestamp, offset, limit } = req.body;
+    let lowerBound = new Date("1970-01-01T00:00:00.000Z");
+    let plantTypeIds: number[] = [];
+
+    if (!limit) limit = 1000;
+    if (!offset) offset = 0;
+
+    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    if (plant_type_ids && plant_type_ids.length > 0) plantTypeIds = plant_type_ids;
+    const whereClause: WhereOptions = { "updated_at": { [Op.gt]: lowerBound.toISOString() }};
+
+    try {
+        // fetch created and updated plant types after given time
+        const result = await PlantTypeRepository.getPlantTypes(offset, limit, whereClause)
+    
+        // fetch deleted plant types
+        const deleted = await PlantTypeRepository.getDeletedPlantTypesFromList(plantTypeIds);
+        res.status(status.success).json({ total: result.total, plant_types: result.results.map(pt => ({ id: pt.id, name: pt.name })), deleted_plant_type_ids: deleted });
+    } catch(err: any) {
+        console.log("[ERROR] appV2::getDeltaPlantTypes: ", err);
+        res.status(status.error).json({ error: "Something went wrong!" });
+    }
+}
+
 /*
     Analytics
 */

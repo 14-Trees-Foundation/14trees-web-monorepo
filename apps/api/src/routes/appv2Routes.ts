@@ -21,6 +21,7 @@ import {
     getDeltaVisitImages,
     getDeltaTreeSnapshots,
     getDeltaSyncHistories,
+    getDeltaPlantTypes,
     treesCount,
 } from "../controllers/appV2TreesController";
 import {
@@ -49,6 +50,7 @@ routes.post("/fetchHelperData/visits", getDeltaVisits);
 routes.post("/fetchHelperData/visit-images", getDeltaVisitImages);
 routes.post("/fetchHelperData/tree-snapshots", getDeltaTreeSnapshots);
 routes.post("/fetchHelperData/sync-history", getDeltaSyncHistories);
+routes.post("/fetchHelperData/plant-types", getDeltaPlantTypes);
 routes.post("/sync-history", addSyncHistory);
 routes.get("/trees-count", treesCount);
 
