@@ -19,10 +19,11 @@ interface PlotAttributes {
   created_at: Date;
   updated_at: Date;
   site_id: number | null;
+  label: string | null;
 }
 
 interface PlotCreationAttributes
-	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status'> {}
+	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status' | 'label'> {}
 
 @Table({ tableName: 'plots' })
 class Plot
@@ -59,6 +60,9 @@ implements PlotAttributes {
 
     @Column({ type: DataType.STRING })
     gat!: string;
+
+    @Column({ type: DataType.STRING })
+    label!: string;
 
     @Column({ type: DataType.STRING })
     status!: string;

@@ -41,10 +41,9 @@ export class PlotRepository {
             // boundaries: plotData.boundaries,
             // center: plotData.center,
             gat: plotData.gat,
-            // status: plotData.status,
-            // land_type: plotData.land_type,
             category: plotData.category,
             site_id: siteId,
+            label: plotData.label,
             created_at: new Date(),
             updated_at: new Date()
         };
