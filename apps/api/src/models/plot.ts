@@ -20,10 +20,11 @@ interface PlotAttributes {
   updated_at: Date;
   site_id: number | null;
   label: string | null;
+  acres_area: number | null;
 }
 
 interface PlotCreationAttributes
-	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status' | 'label'> {}
+	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status' | 'label' | 'acres_area'> {}
 
 @Table({ tableName: 'plots' })
 class Plot
@@ -82,7 +83,8 @@ implements PlotAttributes {
     @HasMany(() => Tree, 'plot_id') // Move HasMany decorator here
     trees!: Tree[];
 
-
+    @Column({ type: DataType.REAL })
+    acres_area!: number | null;
 }
 
 export { Plot }

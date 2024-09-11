@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { promisify } from 'util';
 import xml2js from 'xml2js';
+import { getAreaOfPolygon } from 'geolib';
 
 // Convert fs.readFile to return a promise
 const readFile = promisify(fs.readFile);
@@ -8,6 +9,11 @@ const readFile = promisify(fs.readFile);
 interface Coordinate {
     latitude: number;
     longitude: number;
+}
+
+interface PlotDetails {
+    acresArea: number,
+    coordinates: Coordinate[]
 }
 
 interface AnyObject {
@@ -56,7 +62,13 @@ function processPolygonMarker(marker: any) {
     return { name, coordinates };
 }
 
-export async function getPlotNameAndCoordinatesFromKml(filePath: string): Promise<Map<string, Coordinate[]>> {
+const calculateAreaInAcres = (coordinates: Coordinate[]): number => {
+    const areaInSquareMeters = getAreaOfPolygon(coordinates);
+    const areaInAcres = areaInSquareMeters / 4046.86; // Convert square meters to acres
+    return areaInAcres;
+};
+
+export async function getPlotNameAndCoordinatesFromKml(filePath: string): Promise<Map<string, PlotDetails>> {
     // Read the KML file
     const kmlData = await readFile(filePath, 'utf-8');
 
@@ -65,7 +77,7 @@ export async function getPlotNameAndCoordinatesFromKml(filePath: string): Promis
     const result = await parser.parseStringPromise(kmlData);
 
     // Map to store names and their coordinates
-    const nameToCoordinatesMap = new Map<string, Coordinate[]>();
+    const nameToCoordinatesMap = new Map<string, PlotDetails>();
 
     // Start processing from the root of the KML document
 
@@ -73,9 +85,8 @@ export async function getPlotNameAndCoordinatesFromKml(filePath: string): Promis
     for (const polygon of polygons) {
         const { name, coordinates } = processPolygonMarker(polygon);
         if (!nameToCoordinatesMap.has(name)) {
-            nameToCoordinatesMap.set(name, []);
-          }
-          nameToCoordinatesMap.get(name)!.push(...coordinates);
+            nameToCoordinatesMap.set(name, { coordinates: coordinates, acresArea: calculateAreaInAcres(coordinates) });
+        }
     }
 
     return nameToCoordinatesMap;

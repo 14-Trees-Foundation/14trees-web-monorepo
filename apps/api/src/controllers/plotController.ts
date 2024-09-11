@@ -117,7 +117,7 @@ export const updateCoordinatesUsingKml = async (req: Request, res: Response) => 
         const filePath = constants.DEST_FOLDER + req.file.filename
         const coordinatesMap = await getPlotNameAndCoordinatesFromKml(filePath);
 
-        for (const [plotLabel, coordinates] of coordinatesMap) {
+        for (const [plotLabel, {coordinates, acresArea}] of coordinatesMap) {
             const whereClause = { label: plotLabel, site_id: site_id};
             const location = {
                 type: 'Polygon',
@@ -125,6 +125,7 @@ export const updateCoordinatesUsingKml = async (req: Request, res: Response) => 
             }
             const updateFields = {
                 boundaries: location,
+                acres_area: acresArea,
                 updated_at: new Date(),
             }
             await PlotRepository.updatePlots(updateFields, whereClause);
