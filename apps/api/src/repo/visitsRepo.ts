@@ -39,7 +39,7 @@ export class VisitRepository {
         }
 
         const getQuery = `
-            SELECT v.*, array_agg(vi.image_url) AS visit_images, count(DISTINCT vu.user_id) as user_count
+            SELECT v.*, array_agg(distinct(vi.image_url)) AS visit_images, count(DISTINCT vu.user_id) as user_count
             FROM "14trees_2".visits v
             LEFT JOIN "14trees_2".visit_images vi ON v.id = vi.visit_id
             LEFT JOIN "14trees_2".visit_users vu ON v.id = vu.visit_id
