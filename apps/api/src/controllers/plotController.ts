@@ -32,13 +32,6 @@ export const addPlot = async (req: Request, res: Response) => {
                 req.body["plot_name"] = req.body.name;
             }
         }
-        if (!req.body.plot_id) {
-            if (!req.body.plot_code) {
-                throw new Error("Short plot code is required");
-            } else {
-                req.body["plot_id"] = req.body.plot_code;
-            }
-        }
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
         return;
