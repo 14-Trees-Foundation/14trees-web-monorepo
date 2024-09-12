@@ -20,11 +20,12 @@ interface PlotAttributes {
   updated_at: Date;
   site_id: number | null;
   label: string | null;
+  accessibility_status: string | null;
   acres_area: number | null;
 }
 
 interface PlotCreationAttributes
-	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status' | 'label' | 'acres_area'> {}
+	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status' | 'label' | 'acres_area' | 'accessibility_status'> {}
 
 @Table({ tableName: 'plots' })
 class Plot
@@ -64,6 +65,9 @@ implements PlotAttributes {
 
     @Column({ type: DataType.STRING })
     label!: string;
+
+    @Column({ type: DataType.STRING })
+    accessibility_status!: string;
 
     @Column({ type: DataType.STRING })
     status!: string;

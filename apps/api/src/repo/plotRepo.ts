@@ -44,6 +44,7 @@ export class PlotRepository {
             category: plotData.category,
             site_id: siteId,
             label: plotData.label,
+            accessibility_status: plotData.accessibility_status,
             created_at: new Date(),
             updated_at: new Date()
         };
