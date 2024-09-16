@@ -16,7 +16,7 @@ export const getTreeSnapshots = async (req: Request, res: Response) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
 
     try {
-        let result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, { sapling_id: sapling_id });
+        let result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, [ { columnField: "sapling_id", operatorValue: "equals", value: sapling_id } ]);
         res.status(status.success).json(result);
     } catch (error: any) {
         res.status(status.error).json({

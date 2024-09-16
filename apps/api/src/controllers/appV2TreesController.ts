@@ -668,7 +668,7 @@ export const getDeltaPlots = async (req: Request, res: Response) => {
 }
 
 export const getDeltaVisits = async (req: Request, res: Response) => {
-    let { timestamp, visit_ids, offset, limit } = req.body;
+    let { site_id, timestamp, visit_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let visitIds: number[] = [];
 
@@ -677,13 +677,17 @@ export const getDeltaVisits = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (visit_ids && visit_ids.length > 0) visitIds = visit_ids;
+    const filters = [
+        { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
 
+    if (!isNaN(Number(site_id))) {
+        filters.push({ columnField: 'site_id', operatorValue: 'equals', value: site_id })
+    }
 
     try {
         // fetch created and updated visits after given time
-        const result = await VisitRepository.getVisits(offset, limit, [
-            { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
-        ])
+        const result = await VisitRepository.getVisits(offset, limit, filters)
     
         // fetch deleted visits
         const deleted = await VisitRepository.getDeletedVisitsFromList(visitIds);
@@ -695,7 +699,7 @@ export const getDeltaVisits = async (req: Request, res: Response) => {
 }
 
 export const getDeltaVisitImages = async (req: Request, res: Response) => {
-    let { timestamp, visit_image_ids, offset, limit } = req.body;
+    let { site_id, timestamp, visit_image_ids, offset, limit } = req.body;
     let lowerBound = new Date("1970-01-01T00:00:00.000Z");
     let visitImageIds: number[] = [];
 
@@ -704,13 +708,17 @@ export const getDeltaVisitImages = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (visit_image_ids && visit_image_ids.length > 0) visitImageIds = visit_image_ids;
+    const filters = [
+        { columnField: "created_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
 
+    if (!isNaN(Number(site_id))) {
+        filters.push({ columnField: 'site_id', operatorValue: 'equals', value: site_id })
+    }
 
     try {
         // fetch created and updated visit images after given time
-        const result = await VisitImagesRepository.getVisitImages(offset, limit, [
-            { "created_at": { [Op.gt]: lowerBound.toISOString() } },
-        ])
+        const result = await VisitImagesRepository.getVisitImages(offset, limit, filters)
     
         // fetch deleted visit images
         const deleted = await VisitImagesRepository.getDeletedVisitImagesFromList(visitImageIds);
@@ -731,11 +739,17 @@ export const getDeltaTreeSnapshots = async (req: Request, res: Response) => {
 
     if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (tree_snapshot_ids && tree_snapshot_ids.length > 0) treeSnapshotIds = tree_snapshot_ids;
-    const whereClause: WhereOptions = { "created_at": { [Op.gt]: lowerBound.toISOString() }};
+    const filters = [
+        { columnField: "created_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+    ]
 
     try {
+        if (!isNaN(Number(site_id))) {
+            filters.push({ columnField: 'site_id', operatorValue: 'equals', value: site_id })
+        }
+
         // fetch created and updated tree snapshots after given time
-        const result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, whereClause)
+        const result = await TreesSnapshotRepository.getTreesSnapshots(offset, limit, filters)
     
         // fetch deleted tree snapshots
         const deleted = await TreesSnapshotRepository.getDeletedTreesSnapshotsFromList(treeSnapshotIds);

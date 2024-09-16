@@ -1,5 +1,6 @@
 import { sequelize } from '../config/postgreDB';
-import { PaginatedResponse } from '../models/pagination';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
+import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { TreesSnapshot, TreesSnapshotCreationAttributes } from '../models/trees_snapshots';
 import { Op, QueryTypes, WhereOptions } from 'sequelize'
 export class TreesSnapshotRepository {
@@ -12,12 +13,50 @@ export class TreesSnapshotRepository {
         return await TreesSnapshot.bulkCreate(data);
     }
 
-    static async getTreesSnapshots(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<TreesSnapshot>> {
-        return {
-            offset: offset,
-            results: await TreesSnapshot.findAll({ where: whereClause, offset: offset, limit: limit }),
-            total: await TreesSnapshot.count({ where: whereClause }),
+    static async getTreesSnapshots(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<TreesSnapshot>> {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "ts." + filter.columnField
+                let valuePlaceHolder = filter.columnField
+                if (filter.columnField === "site_id") {
+                    columnField = 'p.site_id'
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
         }
+
+        let query = `
+            SELECT ts.*
+            FROM "14trees_2".trees_snapshots ts
+            JOIN "14trees_2".trees t ON t.sapling_id = ts.sapling_id
+            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+            ORDER BY ts.id DESC
+        `
+
+        if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
+
+        const images: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countQuery = `
+            SELECT count(*) as count
+            FROM "14trees_2".trees_snapshots ts
+            JOIN "14trees_2".trees t ON t.sapling_id = ts.sapling_id
+            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        `
+        const resp = await sequelize.query(countQuery, {
+            replacements: replacements,
+        });
+        return { offset: offset, total: (resp[0][0] as any)?.count, results: images as TreesSnapshot[] };
     }
 
     public static async getDeletedTreesSnapshotsFromList(treeSnapshotIds: number[]): Promise<number[]> {
