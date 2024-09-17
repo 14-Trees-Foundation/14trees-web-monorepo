@@ -36,6 +36,7 @@ interface SiteAttributes {
     created_at?: Date;
     updated_at?: Date;
     maintenance_type: Enumerator  | null;
+    kml_file_link: string | null;
 }
 
 interface SiteCreationAttributes extends Optional<SiteAttributes, 'id' | 'created_at' | 'updated_at'> {}
@@ -148,6 +149,8 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 	'DISTRIBUTION_ONLY']})
     maintenance_type!: Enumerator | null;
 
+    @Column(DataType.STRING)
+    kml_file_link!: string | null;
 }
 
 export { Site };

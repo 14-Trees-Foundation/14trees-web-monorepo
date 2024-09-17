@@ -6,6 +6,8 @@ import { FilterItem } from "../models/pagination";
 import { Op } from "sequelize";
 import { constants } from "../constants";
 import { getPlotNameAndCoordinatesFromKml } from "./helper/parsekml";
+import { UploadFileToS3 } from "./helper/uploadtos3";
+import { SiteRepository } from "../repo/sitesRepo";
 
 /*
     Model - Plot
@@ -105,6 +107,15 @@ export const updateCoordinatesUsingKml = async (req: Request, res: Response) => 
         }
         if (!req.file) {
             throw new Error('No file uploaded. this operation requires kml file');
+        }
+
+        // upload kml file
+        const file = req.file
+        if(file){
+            const url = await UploadFileToS3(file.filename, "sites");
+            if (url) {
+                await SiteRepository.updateSites({ kml_file_link: url, updated_at: new Date() }, { id: site_id });
+            }
         }
 
         const filePath = constants.DEST_FOLDER + req.file.filename

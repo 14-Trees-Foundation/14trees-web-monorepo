@@ -1,7 +1,6 @@
 import { QueryTypes, WhereOptions } from 'sequelize';
 import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
 import { PaginatedResponse } from '../models/pagination';
-import { UploadFileToS3 } from '../controllers/helper/uploadtos3';
 import { sequelize } from '../config/postgreDB';
 
 export class SiteRepository {
@@ -22,19 +21,7 @@ export class SiteRepository {
         return site;
     }
 
-    static async updateSite(siteData: SiteAttributes ,  files?: Express.Multer.File[]): Promise<Site> {
-
-         //upload google earth file
-         let googleEarthAwsUrl: string[] = [];
-         if(files && files.length>0){
-             files.forEach(async(file)=>{
-                const url = await UploadFileToS3(files[0].filename, "sites");
-                console.log("Uploaded URL ..." , url);
-                googleEarthAwsUrl.push(url);
-             })
-             siteData.google_earth_link = googleEarthAwsUrl;
-             console.log("Google Earth Link Data: ", siteData.google_earth_link );
-        }
+    static async updateSite(siteData: SiteAttributes): Promise<Site> {
         const site = await Site.findByPk(siteData.id);
         if (!site) {
             throw new Error('Site not found for given id');
@@ -42,6 +29,10 @@ export class SiteRepository {
 
         const updatedSite = site.update(siteData);
         return updatedSite;
+    }
+
+    static async updateSites(fields: any, whereClause: WhereOptions): Promise<void> {
+        await Site.update(fields, { where: whereClause, returning: false });
     }
 
     static async deleteSite(siteId: string): Promise<number> {
