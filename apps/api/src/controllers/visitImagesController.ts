@@ -22,7 +22,7 @@ export const getVisitImages = async (req: Request, res: Response) => {
     }
 
     try {
-        let result = await VisitImagesRepository.getVisitImages(0, 100, { visit_id: visitId });
+        let result = await VisitImagesRepository.getVisitImages(0, 100, [ { columnField: "visit_id", operatorValue: "equals", value: visitId.toString() } ]);
         res.status(status.success).json(result);
     } catch (error: any) {
         res.status(status.error).json({

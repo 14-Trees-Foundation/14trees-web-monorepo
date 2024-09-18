@@ -19,10 +19,13 @@ interface PlotAttributes {
   created_at: Date;
   updated_at: Date;
   site_id: number | null;
+  label: string | null;
+  accessibility_status: string | null;
+  acres_area: number | null;
 }
 
 interface PlotCreationAttributes
-	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status'> {}
+	extends Optional<PlotAttributes, 'id' | 'tags' | 'boundaries' | 'center' | 'gat' | 'status' | 'label' | 'acres_area' | 'accessibility_status'> {}
 
 @Table({ tableName: 'plots' })
 class Plot
@@ -61,6 +64,12 @@ implements PlotAttributes {
     gat!: string;
 
     @Column({ type: DataType.STRING })
+    label!: string;
+
+    @Column({ type: DataType.STRING })
+    accessibility_status!: string;
+
+    @Column({ type: DataType.STRING })
     status!: string;
 
     @Column({ type: DataType.NUMBER })
@@ -78,7 +87,8 @@ implements PlotAttributes {
     @HasMany(() => Tree, 'plot_id') // Move HasMany decorator here
     trees!: Tree[];
 
-
+    @Column({ type: DataType.REAL })
+    acres_area!: number | null;
 }
 
 export { Plot }

@@ -43,7 +43,7 @@ class Database {
       username: this.POSTGRES_USER,
       password: this.POSTGRES_PD,
       host: this.POSTGRES_HOST,
-      schema: '14trees',
+      schema: "14trees",
       port: this.POSTGRES_PORT,
       attributeBehavior: 'escape',
       dialect: "postgres",

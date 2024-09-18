@@ -1,12 +1,11 @@
 import { status } from "../helpers/status";
 import { FilterItem } from "../models/pagination";
-import { Site } from "../models/sites";
 import { SiteRepository } from "../repo/sitesRepo";
 import { syncDataFromNotionToDb } from "../services/notion";
 import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
-import { isArray } from "lodash";
+import { UploadFileToS3 } from "./helper/uploadtos3";
 
   
 
@@ -44,6 +43,14 @@ export const addSite = async (req: Request, res: Response) => {
         reqData.maintenance_type = reqData.maintenance_type.toUpperCase();
     }
 
+    // upload kml file
+    const file = req.file
+    if(file){
+        const url = await UploadFileToS3(file.filename, "sites");
+        console.log("Uploaded URL ..." , url);
+        req.body["kml_file_link"] = url;
+    }
+
     try {
         let result = await SiteRepository.addSite(reqData);
         res.status(status.success).send(result);
@@ -63,8 +70,16 @@ export const updateSite = async (req: Request, res: Response) => {
 
     req.body.tags = req.body.tags?JSON.parse(req.body.tags):[];
 
+    // upload kml file
+    const file = req.file
+    if(file){
+        const url = await UploadFileToS3(file.filename, "sites");
+        console.log("Uploaded URL ..." , url);
+        req.body["kml_file_link"] = url;
+    }
+
     try {
-        let result = await SiteRepository.updateSite(req.body ,isArray(req.files) ? req.files : []);
+        let result = await SiteRepository.updateSite(req.body);
         res.status(status.created).json(result);
     } catch (error) {
         console.log(error)
