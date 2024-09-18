@@ -41,7 +41,7 @@ routes.post("/uploadTrees", uploadTrees);
 routes.post("/uploadNewImages", uploadNewImages);
 routes.post("/treesUpdatePlot", treesUpdatePlot);
 routes.post("/getSapling", verifyAdmin, getTreeBySaplingId);
-routes.post("/updateSapling", verifyAdmin, updateSaplingByAdmin);
+routes.post("/updateSapling", updateSaplingByAdmin);
 routes.post("/fetchHelperData/users", getDeltaUsers);
 routes.post("/fetchHelperData/trees", getDeltaTrees);
 routes.post("/fetchHelperData/sites", getDeltaSites);
