@@ -90,9 +90,9 @@ class PlantTypeRepository {
 
     public static async plantTypesPresentInPlot(plotId: number) {
         const query = `
-            SELECT pt.id, pt."name", count(pt.id) as pt_cnt FROM "14trees_2".trees t 
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            SELECT pt.id, pt."name", count(pt.id) as pt_cnt FROM "14trees".trees t 
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
             WHERE t.plot_id = :plot_id
             GROUP BY pt.id
         `
@@ -108,7 +108,7 @@ class PlantTypeRepository {
     public static async getDeletedPlantTypesFromList(plantTypeIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:plant_type_ids]::int[]) AS num
-            LEFT JOIN "14trees_2".plant_types AS pt
+            LEFT JOIN "14trees".plant_types AS pt
             ON num = pt.id
             WHERE pt.id IS NULL;`
 

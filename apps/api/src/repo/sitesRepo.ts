@@ -43,7 +43,7 @@ export class SiteRepository {
     public static async getDeletedSitesFromList(siteIds: number[]): Promise<number[]> {
         const query = `SELECT num
         FROM unnest(array[:site_ids]::int[]) AS num
-        LEFT JOIN "14trees_2".sites AS s
+        LEFT JOIN "14trees".sites AS s
         ON num = s.id
         WHERE s.id IS NULL;`
     
@@ -56,7 +56,7 @@ export class SiteRepository {
     }
 
     public static async updateSitesDataUsingNotionData() {
-        const query = `UPDATE "14trees_2".sites 
+        const query = `UPDATE "14trees".sites 
         SET 
             name_marathi = n."नाव (मराठी)",
             name_english  = n."Name",
@@ -88,7 +88,7 @@ export class SiteRepository {
     }
 
     public static async insertNewSitesDataUsingNotionData() {
-        const query = `INSERT INTO "14trees_2".sites (
+        const query = `INSERT INTO "14trees".sites (
             notion_id,
             name_marathi,
             name_english, 
@@ -140,7 +140,7 @@ export class SiteRepository {
         FROM notion_db n
         WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt') 
           AND n."Name" IS NOT NULL
-          AND n.id NOT IN (SELECT notion_id FROM "14trees_2".sites where notion_id is not null);`
+          AND n.id NOT IN (SELECT notion_id FROM "14trees".sites where notion_id is not null);`
 
         await sequelize.query(query);
     }

@@ -32,9 +32,9 @@ export class TreesSnapshotRepository {
 
         let query = `
             SELECT ts.*
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON t.sapling_id = ts.sapling_id
-            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            FROM "14trees".trees_snapshots ts
+            JOIN "14trees".trees t ON t.sapling_id = ts.sapling_id
+            JOIN "14trees".plots p ON p.id = t.plot_id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             ORDER BY ts.id DESC
         `
@@ -48,9 +48,9 @@ export class TreesSnapshotRepository {
 
         const countQuery = `
             SELECT count(*) as count
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON t.sapling_id = ts.sapling_id
-            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            FROM "14trees".trees_snapshots ts
+            JOIN "14trees".trees t ON t.sapling_id = ts.sapling_id
+            JOIN "14trees".plots p ON p.id = t.plot_id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         `
         const resp = await sequelize.query(countQuery, {
@@ -62,7 +62,7 @@ export class TreesSnapshotRepository {
     public static async getDeletedTreesSnapshotsFromList(treeSnapshotIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:tree_snapshot_ids]::int[]) AS num
-            LEFT JOIN "14trees_2".trees_snapshots AS v
+            LEFT JOIN "14trees".trees_snapshots AS v
             ON num = v.id
             WHERE v.id IS NULL;`
 
