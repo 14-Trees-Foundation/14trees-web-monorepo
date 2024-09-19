@@ -104,7 +104,7 @@ export const getTreeFromId = async (req: Request, res: Response) => {
     if (!req.query.id) {
       throw new Error("tree id is required")
     }
-    let result = await TreeRepository.getTreeByTreeId(req.query.id.toString())
+    let result = await TreeRepository.getTreeByTreeId(Number(req.query.id));
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({
