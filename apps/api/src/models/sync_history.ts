@@ -7,6 +7,7 @@ interface SyncHistoryAttributes {
     trees: string;
     tree_images: string;
     visit_images: string;
+    users: string | null;
     synced_at: Date;
     upload_time: number | null;
     upload_error: string | null;
@@ -38,6 +39,9 @@ class SyncHistory extends Model<SyncHistoryAttributes, SyncHistoryCreationAttrib
 
     @Column({ type: DataType.STRING })
     visit_images!: string;
+
+    @Column({ type: DataType.STRING })
+    users!: string;
 
     @Column(DataType.DATE)
     synced_at!: Date;
