@@ -28,8 +28,8 @@ export class VisitUsersRepository {
 
         const getQuery = `
             SELECT u.*, vg.created_at as visit_user_created_at 
-            FROM "14trees".users u 
-            JOIN "14trees".visit_users vg ON u.id = vg.user_id
+            FROM "14trees_2".users u 
+            JOIN "14trees_2".visit_users vg ON u.id = vg.user_id
             WHERE vg.visit_id = ${visitId} ${whereConditions !== "" ? "AND " + whereConditions : ""}
             ORDER BY u.id DESC
             OFFSET ${offset} LIMIT ${limit};
@@ -37,8 +37,8 @@ export class VisitUsersRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees".users u 
-            JOIN "14trees".visit_users vg ON u.id = vg.user_id
+            FROM "14trees_2".users u 
+            JOIN "14trees_2".visit_users vg ON u.id = vg.user_id
             WHERE vg.visit_id = ${visitId} ${whereConditions !== "" ? "AND " + whereConditions : ""};
         `
 
