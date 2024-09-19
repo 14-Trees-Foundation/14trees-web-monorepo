@@ -24,6 +24,7 @@ export const addSyncHistory = async (req: Request, res: Response) => {
         const now = new Date();
         const request: SyncHistoryCreationAttributes = {
             trees: sync_info.trees,
+            users: sync_info.users ? sync_info.users : null,
             tree_images: sync_info.tree_images,
             visit_images: sync_info.visit_images,
             upload_error: sync_info.upload_error,

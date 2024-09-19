@@ -8,6 +8,12 @@ export class SyncHistoriesRepository {
         return await SyncHistory.create(data);
     }
 
+    static async upsertSyncHistory(data: SyncHistoryCreationAttributes): Promise<SyncHistory> {
+        const history = await SyncHistory.findOne({ where: { synced_at: data.synced_at } });
+        if (history) return await history.update(data);
+        else return await SyncHistory.create(data);
+    }
+
     static async getSyncHistories(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<SyncHistory>> {
         return {
             offset: offset,
