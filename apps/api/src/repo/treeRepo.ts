@@ -77,7 +77,7 @@ class TreeRepository {
     return await Tree.findOne({ where: { sapling_id: saplingId } });
   };
 
-  public static async getTreeByTreeId(treeId: string): Promise<Tree | null> {
+  public static async getTreeByTreeId(treeId: number): Promise<Tree | null> {
     return await Tree.findByPk(treeId);
   };
 

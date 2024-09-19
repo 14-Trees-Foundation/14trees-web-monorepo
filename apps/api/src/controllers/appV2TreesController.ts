@@ -219,11 +219,8 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         const saplingId = sapling.tree.sapling_id;
         let existingTree = await TreeRepository.getTreeBySaplingId(saplingId);
         if (!existingTree) {
-            const message = `Tree with sapling id ${saplingId} not found`;
-            console.log('[INFO] appV2::updateSaplingByAdmin:', message);
-            return res.status(status.notfound).send(message);
+            existingTree = await TreeRepository.getTreeByTreeId(sapling.tree.id);
         }
-
 
         // DO NOT copy over old list of image urls
         // sapling.data.image = existingSapling.image;
@@ -247,13 +244,17 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         }
         
         // TODO: delete old image from S3?
-        
-        sapling.tree.updated_at = new Date();
-        const savedData = await existingTree.update(sapling.tree);
-        const str = JSON.stringify(savedData);
-        const json = JSON.parse(str);
-        let response: any = {
-            ...json,
+        let response: any = null; 
+        if (existingTree) {
+            sapling.tree.updated_at = new Date();
+            const savedData = await existingTree.update(sapling.tree);
+            const str = JSON.stringify(savedData);
+            const json = JSON.parse(str);
+            response = {
+                ...json,
+            }
+        } else {
+            response = await TreeRepository.addTreeObject(sapling.tree);
         }
 
         res.status(status.success).json(response);
