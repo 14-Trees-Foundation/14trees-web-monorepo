@@ -23,13 +23,6 @@ export class PlotRepository {
     }
 
     public static async addPlot(plotData: any): Promise<Plot> {
-        // Check if plot type exists
-        let plotExists = await Plot.findOne({ where: { plot_id: plotData.plot_id } });
-
-        // If plot exists, return error
-        if (plotExists) {
-            throw new Error("plot already exists");
-        }
         let siteId: number | null = null;
         if (!isNaN(parseInt(plotData.site_id))) {
             siteId = parseInt(plotData.site_id);
