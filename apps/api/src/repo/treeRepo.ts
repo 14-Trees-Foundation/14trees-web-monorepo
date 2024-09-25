@@ -135,13 +135,13 @@ class TreeRepository {
       created_at: new Date(),
       updated_at: new Date(),
     };
-    const treeResp = Tree.create(treeObj);
+    const treeResp = await Tree.create(treeObj);
     return treeResp;
   };
 
   public static async addTreeObject(data: TreeCreationAttributes): Promise<Tree> {
 
-    const treeResp = Tree.create(data);
+    const treeResp = await Tree.create(data);
     return treeResp;
   };
 
