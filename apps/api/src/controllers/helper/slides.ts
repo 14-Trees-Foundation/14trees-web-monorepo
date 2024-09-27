@@ -30,7 +30,7 @@ async function getJwtToken(
     scopes: string[] = ['https://www.googleapis.com/auth/presentations']
 ): Promise<string> {
     try {
-        const serviceAccountPath: string = path.resolve(process.env.GOOGLE_APPLICATION_CREDENTIALS || '');
+        const serviceAccountPath: string = path.resolve(process.env.GOOGLE_APP_CREDENTIALS || '');
         if (token && token.access_token && token.expiry_date && token.expiry_date > Date.now()) return token.access_token;
 
         // Read and parse the service account file
