@@ -9,6 +9,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "@types/node-cron": "^3.0.11",
     "dotenv-cli": "latest",
     "eslint-config-custom": "*",
     "prettier": "^2.7.1",
@@ -30,6 +31,7 @@
     "csv-writer": "^1.6.0",
     "geolib": "^3.3.4",
     "moment": "^2.30.1",
+    "node-cron": "^3.0.3",
     "pg": "^8.11.5",
     "sequelize": "^6.37.3",
     "sequelize-typescript": "^2.1.6"

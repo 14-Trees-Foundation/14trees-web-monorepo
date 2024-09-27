@@ -2,20 +2,20 @@ import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface LogsInfoAttributes {
-	id: number;
-	phone_info: string | null;
-	device_info: string | null;
-	user_id: number;
-    logs: string;
-    timestamp: Date;
+  id: number;
+  phone_info: string | null;
+  device_info: string | null;
+  user_id: number;
+  logs: string;
+  timestamp: Date;
 }
 
 interface LogsInfoCreationAttributes
-	extends Optional<LogsInfoAttributes, 'id'> {}
+  extends Optional<LogsInfoAttributes, 'id'> { }
 
 @Table({ tableName: 'logs_info' })
 class LogsInfo extends Model<LogsInfoAttributes, LogsInfoCreationAttributes>
-implements LogsInfoAttributes {
+  implements LogsInfoAttributes {
 
   @Column({
     type: DataType.INTEGER,
