@@ -17,6 +17,7 @@ import profileRoute from "./routes/profileRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import plotRoutes from "./routes/plotRoutes";
 import siteRoutes from "./routes/siteRoutes";
+import giftCardRoutes from "./routes/giftCardRoutes";
 // import activityRoutes from "./routes/activityRoutes";
 import searchRoutes from "./routes/searchRoutes";
 import eventRoutes from "./routes/eventRoutes";
@@ -83,6 +84,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/mapping", treesMappingRoutes);
   app.use("/api/plots", plotRoutes);
   app.use("/api/sites", siteRoutes);
+  app.use("/api/gift-cards", giftCardRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/organizations", orgRoutes);
   app.use("/api/analytics", analyticsRoutes);

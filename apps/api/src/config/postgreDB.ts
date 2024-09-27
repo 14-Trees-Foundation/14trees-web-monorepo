@@ -26,6 +26,11 @@ import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
 import { SyncHistory } from "../models/sync_history";
 import { TreeCountAggregation } from "../models/tree_count_aggregation";
+import { GiftCard } from "../models/gift_card";
+import { GiftCardUser } from "../models/gift_card_user";
+import { GiftCardPlot } from "../models/gift_card_plot";
+import { GiftCardUserTemplate } from "../models/gift_card_user_template";
+import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 
 
 class Database {
@@ -84,6 +89,11 @@ class Database {
         VisitUsers,
         SyncHistory,
         TreeCountAggregation,
+        GiftCard,
+        GiftCardUser,
+        GiftCardPlot,
+        GiftCardUserTemplate,
+        PlantTypeCardTemplate,
       ]
     });
 
