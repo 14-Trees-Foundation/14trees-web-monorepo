@@ -5,7 +5,6 @@ const morgan = require("morgan");
 import cors from "cors";
 import swaggerUi from "swagger-ui-express"
 import { readFileSync } from "fs"
-import Database from "./config/postgreDB";
 
 // Routes
 import appV2Routes from "./routes/appv2Routes";
@@ -38,6 +37,7 @@ import visitRoutes from "./routes/visitRoutes";
 import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
+import { startAppV2ErrorLogsCronJob } from "./services/cron";
 
 let swaggerFile: any;
 try {
@@ -135,6 +135,7 @@ const initExpressApp = (app: express.Application) => {
 const app = express();
 
 const initServer = async () => {
+  // startAppV2ErrorLogsCronJob();
   initExpressApp(app);
 };
 
