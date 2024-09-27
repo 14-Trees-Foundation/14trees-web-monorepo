@@ -98,7 +98,37 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
         throw new Error("Group with given id not found");
       }
     }
-    await TreeRepository.mapTreesInPlot(mapped_to, id, plotId, count);
+    await TreeRepository.mapTreesInPlot(mapped_to, id, [Number(plotId)], count);
+    res.status(status.success).send();
+  } catch (error) {
+    res.status(status.error).send({
+      error: error,
+    });
+  }
+};
+
+export const mapTreesInPlots = async (req: Request, res: Response) => {
+  const fields = req.body;
+  let id = fields.id;
+  const plotIds = fields.plot_ids;
+  const count = fields.count;
+  const mappingType: string = fields.mapped_to
+
+  if (mappingType !== 'user' && mappingType !== 'group') {
+    res.status(status.bad).send({
+      error: "Mapped to is required(user/group)",
+    })
+    return;
+  } else if (!id) {
+    res.status(status.bad).send({
+      error: "user/group Id is required",
+    })
+    return;
+  }
+
+  const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
+  try {
+    await TreeRepository.mapTreesInPlot(mapped_to, id, plotIds, count);
     res.status(status.success).send();
   } catch (error) {
     res.status(status.error).send({

@@ -265,7 +265,7 @@ class TreeRepository {
     console.log("mapped trees %d for %s: %d", resp, mapped_to, id);
   }
 
-  public static async mapTreesInPlot(mapped_to: 'user' | 'group', id: string, plotId: string, count: number) {
+  public static async mapTreesInPlot(mapped_to: 'user' | 'group', id: string, plotIds: number[], count: number) {
     const updateConfig: any = {
       mapped_at: new Date(),
       updated_at: new Date(),
@@ -277,17 +277,12 @@ class TreeRepository {
       updateConfig["mapped_to_group"] = id;
     }
 
-    const plot = await Plot.findOne({ where: { id: plotId } });
-    if (!plot) {
-      throw new Error("plot with given plot_id doesn't exists");
-    }
-
     let trees: Tree[] = await Tree.findAll({
       where: {
         mapped_to_user: { [Op.is]: undefined },
         mapped_to_group: { [Op.is]: undefined },
         assigned_at: { [Op.is]: undefined },
-        plot_id: { [Op.eq]: plot.id },
+        plot_id: { [Op.in]: plotIds },
       },
       limit: count
     });
@@ -299,6 +294,8 @@ class TreeRepository {
     for (let i = 0; i < count; i++) {
       await trees[i].update(updateConfig);
     }
+
+    return trees.map(tree => tree.id);
   }
 
   public static async unMapTrees(saplingIds: string[]) {

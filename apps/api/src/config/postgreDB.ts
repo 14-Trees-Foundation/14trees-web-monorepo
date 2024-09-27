@@ -25,6 +25,11 @@ import { Visit } from "../models/visits";
 import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
 import { SyncHistory } from "../models/sync_history";
+import { GiftCard } from "../models/gift_card";
+import { GiftCardUser } from "../models/gift_card_user";
+import { GiftCardPlot } from "../models/gift_card_plot";
+import { GiftCardUserTemplate } from "../models/gift_card_user_template";
+import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 
 
 class Database {
@@ -82,6 +87,11 @@ class Database {
         VisitImage,
         VisitUsers,
         SyncHistory,
+        GiftCard,
+        GiftCardUser,
+        GiftCardPlot,
+        GiftCardUserTemplate,
+        PlantTypeCardTemplate,
       ]
     });
 
