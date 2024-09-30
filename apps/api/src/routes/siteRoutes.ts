@@ -9,6 +9,7 @@ routes.post('/', uploadFiles.single("file"), sites.addSite);
 routes.put('/:id',uploadFiles.single("file"), sites.updateSite);
 routes.delete('/:id', sites.deleteSite);
 routes.post('/sync-sites', sites.syncSitesDatFromNotion);
+routes.post('/stats', sites.getTreeCountsForSites);
 
 
 export default routes;
