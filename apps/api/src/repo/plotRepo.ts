@@ -103,6 +103,7 @@ export class PlotRepository {
             `SELECT count(p.id)
                 FROM "14trees_2".plots AS p
                 LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
+                LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
                 LEFT JOIN (SELECT *
                     FROM (
                         SELECT *,
