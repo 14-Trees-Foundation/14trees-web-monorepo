@@ -55,8 +55,29 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
             return { condition: `${fieldName} IS NULL`, replacement: {} };
         case 'isNotEmpty':
             return { condition: `${fieldName} IS NOT NULL`, replacement: {} }
-        case 'isAnyOf':
-            return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
+            case 'isAnyOf':
+                if (Array.isArray(value)) {
+                    const hasNull = value.includes(null);
+                    const nonNullValues = value.filter(v => v !== null);
+                    
+                    let conditionParts = [];
+                    let replacement: any = {};
+            
+                    if (hasNull) {
+                        conditionParts.push(`${fieldName} IS NULL`);
+                    }
+            
+                    if (nonNullValues.length > 0) {
+                        conditionParts.push(`${fieldName} IN (:${valuePlaceHolder})`);
+                        replacement[valuePlaceHolder] = nonNullValues;
+                    }
+            
+                    return {
+                        condition: '(' + conditionParts.join(' OR ') + ')',
+                        replacement: replacement
+                    };
+                }
+                return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
         case 'greaterThan':
             return { condition: `${fieldName} > :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };;
         case 'lessThan':

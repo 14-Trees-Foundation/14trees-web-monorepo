@@ -101,17 +101,18 @@ export class PlotRepository {
 
         const countPlotsQuery = 
             `SELECT count(p.id)
-                FROM "14trees_2".plots AS p
-                LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
-                LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
-                LEFT JOIN (SELECT *
-                    FROM (
-                        SELECT *,
-                               ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                        FROM "14trees_2".trees_snapshots
-                    ) AS snapshots
-                    WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
-                WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
+            FROM "14trees_2".plots p
+            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+            LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
+            LEFT JOIN (SELECT *
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                    FROM "14trees_2".trees_snapshots
+                ) AS snapshots
+                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+            GROUP BY p.id, s.name_english;`
         
         const plots: any = await sequelize.query(query, {
             replacements: replacements,
