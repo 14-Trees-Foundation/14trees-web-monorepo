@@ -56,6 +56,7 @@ export class PlotRepository {
             filters.forEach(filter => {
                 let columnField = "p." + filter.columnField
                 if (filter.columnField === 'site_name') columnField = 's.name_english';
+                else if (filter.columnField === 'tree_health') columnField = 'ts.tree_status';
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
@@ -85,6 +86,13 @@ export class PlotRepository {
         FROM "14trees".plots p
         LEFT JOIN "14trees".trees t ON p.id = t.plot_id
         LEFT JOIN "14trees".sites s ON p.site_id = s.id
+        LEFT JOIN (SELECT *
+            FROM (
+                SELECT *,
+                       ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                FROM "14trees".trees_snapshots
+            ) AS snapshots
+            WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.name_english
         ORDER BY p.id DESC
@@ -95,6 +103,13 @@ export class PlotRepository {
             `SELECT count(p.id)
                 FROM "14trees".plots AS p
                 LEFT JOIN "14trees".sites s ON p.site_id = s.id
+                LEFT JOIN (SELECT *
+                    FROM (
+                        SELECT *,
+                               ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                        FROM "14trees".trees_snapshots
+                    ) AS snapshots
+                    WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
                 WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
         
         const plots: any = await sequelize.query(query, {
