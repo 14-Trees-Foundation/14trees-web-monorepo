@@ -140,10 +140,10 @@ export const treeCountByPlot = async (req: Request, res: Response) => {
 export const treeLoggedByDate = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
-    const query = `SELECT DATE(t.date_added) AS "_id", COUNT(t._id)
-                        FROM trees AS t
-                        GROUP BY DATE(t.date_added)
-                        ORDER BY DATE(t.date_added) DESC;
+    const query = `SELECT DATE(t.created_at) AS "_id", COUNT(t._id)
+                        FROM "14trees_2".trees AS t
+                        GROUP BY DATE(t.created_at)
+                        ORDER BY DATE(t.created_at) DESC;
                         -- OFFSET ${offset} LIMIT ${limit};
         `
     let result: any[] = await sequelize.query(query, {
