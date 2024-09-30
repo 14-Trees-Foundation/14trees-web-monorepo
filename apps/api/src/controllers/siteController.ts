@@ -112,3 +112,18 @@ export const syncSitesDatFromNotion = async (req: Request, res: Response) => {
         res.status(status.bad).send({ error: 'Something went wrong!' });
     }
 }
+
+export const getTreeCountsForSites = async (req: Request, res: Response) => {
+    const {offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+
+    try {
+        let result = await SiteRepository.treeCountForSites(offset, limit, filters);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}

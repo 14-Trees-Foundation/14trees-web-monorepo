@@ -1,7 +1,8 @@
 import { QueryTypes, WhereOptions } from 'sequelize';
 import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
-import { PaginatedResponse } from '../models/pagination';
+import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
 
 export class SiteRepository {
     static async getSites(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Site>> {
@@ -143,5 +144,85 @@ export class SiteRepository {
           AND n.id NOT IN (SELECT notion_id FROM "14trees_2".sites where notion_id is not null);`
 
         await sequelize.query(query);
+    }
+
+    public static async treeCountForSites(offset: number, limit: number, filters?: FilterItem[]) {
+
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "p." + filter.columnField
+                if (filter.columnField === 'site_name') columnField = 's.name_english';
+                else if (filter.columnField === 'tree_health') columnField = 'ts.tree_status';
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+            SELECT s.id, s.name_english as site_name, s.area_acres,
+                p.category,
+                COUNT(t.id) as trees_count, 
+                COUNT(t.assigned_to) as assigned_trees_count,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NOT NULL 
+                        OR t.mapped_to_group IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS mapped_trees_count,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NULL 
+                        AND t.mapped_to_group IS NULL 
+                        AND t.assigned_to IS NULL 
+                        AND t.id IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS available_trees_count
+            FROM "14trees_2".sites s
+            JOIN "14trees_2".plots p ON s.id = p.site_id
+            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+            LEFT JOIN (SELECT *
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                    FROM "14trees_2".trees_snapshots
+                ) AS snapshots
+                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+            GROUP BY s.id, p.category
+            ORDER BY s.id DESC
+            OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+            `
+
+        const countSitesQuery = 
+            `SELECT count(s.id)
+            FROM "14trees_2".sites s
+            JOIN "14trees_2".plots p ON s.id = p.site_id
+            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+            LEFT JOIN (SELECT *
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                    FROM "14trees_2".trees_snapshots
+                ) AS snapshots
+                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+            GROUP BY s.id, p.category;`
+        
+        const sites: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countSites: any = await sequelize.query(countSitesQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countSites[0].count)
+
+        return { offset: offset, total: totalResults, results: sites as any[]};
     }
 }
