@@ -445,9 +445,9 @@ class TreeRepository {
 
     const query = `
       SELECT u.name as user_name, p."name" as plot_name, count(t.id) as trees_planted
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".users u ON u.name = t.planted_by
+      FROM "14trees".trees t
+      JOIN "14trees".plots p ON p.id = t.plot_id
+      JOIN "14trees".users u ON u.name = t.planted_by
       WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
       GROUP BY u.name, p."name"
       OFFSET ${offset} LIMIT ${limit};
@@ -462,9 +462,9 @@ class TreeRepository {
       SELECT count(*)
       FROM (
         SELECT u.name as user_name, p."name" as plot_name, count(t.id) as trees_planted
-        FROM "14trees_2".trees t
-        JOIN "14trees_2".plots p ON p.id = t.plot_id
-        JOIN "14trees_2".users u ON u.name = t.planted_by
+        FROM "14trees".trees t
+        JOIN "14trees".plots p ON p.id = t.plot_id
+        JOIN "14trees".users u ON u.name = t.planted_by
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY u.name, p."name"
       ) as count_table;
