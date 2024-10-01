@@ -42,4 +42,6 @@ routes.get("/assigned/:user_id", trees.getAssignedTrees);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
 
+routes.post("/get-trees-plantation-info", trees.getTreePlantationsInfo);
+
 export default routes;
