@@ -146,24 +146,15 @@ export class SiteRepository {
         await sequelize.query(query);
     }
 
-    public static async treeCountForSites(offset: number, limit: number, filters?: FilterItem[]) {
-
-        let whereCondition = "";
-        let replacements: any = {}
-        if (filters && filters.length > 0) {
-            filters.forEach(filter => {
-                let columnField = "p." + filter.columnField
-                if (filter.columnField === 'site_name') columnField = 's.name_english';
-                else if (filter.columnField === 'tree_health') columnField = 'ts.tree_status';
-                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
-                whereCondition = whereCondition + " " + condition + " AND";
-                replacements = { ...replacements, ...replacement }
-            })
-            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
-        }
+    public static async treeCountForSites() {
 
         const query = `
-            SELECT s.id, s.name_english as site_name, s.area_acres,
+            WITH plot_areas AS (
+                SELECT p.site_id, p.category, SUM(p.acres_area) AS total_acres_area
+                FROM "14trees_2".plots p
+                GROUP BY p.site_id, p.category
+            )
+            SELECT s.id, s.name_english as site_name, s.district, s.taluka, s.village,
                 p.category,
                 COUNT(t.id) as trees_count, 
                 COUNT(t.assigned_to) as assigned_trees_count,
@@ -180,7 +171,8 @@ export class SiteRepository {
                         AND t.id IS NOT NULL
                     THEN 1 
                     ELSE 0 
-                END) AS available_trees_count
+                END) AS available_trees_count,
+            COALESCE(pa.total_acres_area, 0) AS acres_area
             FROM "14trees_2".sites s
             JOIN "14trees_2".plots p ON s.id = p.site_id
             LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
@@ -191,38 +183,15 @@ export class SiteRepository {
                     FROM "14trees_2".trees_snapshots
                 ) AS snapshots
                 WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
-            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-            GROUP BY s.id, p.category
-            ORDER BY s.id DESC
-            OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+            LEFT JOIN plot_areas pa ON pa.site_id = s.id AND pa.category = p.category
+            GROUP BY s.id, p.category, pa.total_acres_area
+            ORDER BY s.id DESC;
             `
-
-        const countSitesQuery = 
-            `SELECT count(s.id)
-            FROM "14trees_2".sites s
-            JOIN "14trees_2".plots p ON s.id = p.site_id
-            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
-            LEFT JOIN (SELECT *
-                FROM (
-                    SELECT *,
-                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                    FROM "14trees_2".trees_snapshots
-                ) AS snapshots
-                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
-            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-            GROUP BY s.id, p.category;`
         
-        const sites: any = await sequelize.query(query, {
-            replacements: replacements,
+        const sites: any[] = await sequelize.query(query, {
             type: QueryTypes.SELECT
         })
 
-        const countSites: any = await sequelize.query(countSitesQuery, {
-            replacements: replacements,
-            type: QueryTypes.SELECT
-        })
-        const totalResults = parseInt(countSites[0].count)
-
-        return { offset: offset, total: totalResults, results: sites as any[]};
+        return { offset: 0, total: sites.length, results: sites };
     }
 }
