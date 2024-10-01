@@ -434,6 +434,67 @@ class TreeRepository {
 
     return result.map((row: any) => row.num);
   }
+
+  public static async getTreePlantationsInfo(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<any>> {
+
+    let whereCondition = "";
+    let replacements: any = {}
+    if (filters && filters.length > 0) {
+        filters.forEach(filter => {
+            let columnField = "t." + filter.columnField
+            let valuePlaceHolder = filter.columnField
+            if (filter.columnField === "user_name") {
+              columnField = 'u."name"'
+            } else if (filter.columnField === "plot_name") {
+              columnField = 'p."name"'
+            }
+
+            const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+            whereCondition = whereCondition + " " + condition + " AND";
+            replacements = { ...replacements, ...replacement }
+        })
+        whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+    }
+
+    const query = `
+      SELECT u.name as user_name, p."name" as plot_name, count(t.id) as trees_planted
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".plots p ON p.id = t.plot_id
+      JOIN "14trees_2".users u ON u.name = t.planted_by
+      WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+      GROUP BY u.name, p."name"
+      OFFSET ${offset} LIMIT ${limit};
+    `;
+
+    const result = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements
+    })
+
+    const countQuery = `
+      SELECT count(*)
+      FROM (
+        SELECT u.name as user_name, p."name" as plot_name, count(t.id) as trees_planted
+        FROM "14trees_2".trees t
+        JOIN "14trees_2".plots p ON p.id = t.plot_id
+        JOIN "14trees_2".users u ON u.name = t.planted_by
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        GROUP BY u.name, p."name"
+      ) as count_table;
+    `;
+
+    const countResult: any[] = await sequelize.query(countQuery, {
+      type: QueryTypes.SELECT,
+      replacements
+    })
+
+    console.log(countResult)
+    return {
+      offset: offset,
+      total: countResult[0]?.count ? parseInt(countResult[0]?.count) : 0,
+      results: result
+    };
+  }
 }
 
 export default TreeRepository;
