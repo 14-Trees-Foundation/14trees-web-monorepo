@@ -125,3 +125,20 @@ export const getTreeCountsForSites = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const getTreesCountForField = async (req: Request, res: Response) => {
+    const { field } = req.params;
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const order_by: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+    try {
+        let result = await SiteRepository.treeCountForFields(field, offset, limit, filters, order_by);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "SitesController::getTreesCountForField", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
