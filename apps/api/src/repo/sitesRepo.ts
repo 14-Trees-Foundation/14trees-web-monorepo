@@ -151,7 +151,7 @@ export class SiteRepository {
         const query = `
             WITH plot_areas AS (
                 SELECT p.site_id, p.category, SUM(p.acres_area) AS total_acres_area
-                FROM "14trees_2".plots p
+                FROM "14trees".plots p
                 GROUP BY p.site_id, p.category
             )
             SELECT s.id, s.name_english as site_name, s.district, s.taluka, s.village,
@@ -173,14 +173,14 @@ export class SiteRepository {
                     ELSE 0 
                 END) AS available_trees_count,
             COALESCE(pa.total_acres_area, 0) AS acres_area
-            FROM "14trees_2".sites s
-            JOIN "14trees_2".plots p ON s.id = p.site_id
-            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+            FROM "14trees".sites s
+            JOIN "14trees".plots p ON s.id = p.site_id
+            LEFT JOIN "14trees".trees t ON p.id = t.plot_id
             LEFT JOIN (SELECT *
                 FROM (
                     SELECT *,
                         ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                    FROM "14trees_2".trees_snapshots
+                    FROM "14trees".trees_snapshots
                 ) AS snapshots
                 WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
             LEFT JOIN plot_areas pa ON pa.site_id = s.id AND pa.category = p.category
@@ -232,14 +232,14 @@ export class SiteRepository {
                     THEN 1 
                     ELSE 0 
                 END) AS available
-            FROM "14trees_2".trees t
-            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            FROM "14trees".trees t
+            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             LEFT JOIN (SELECT *
                 FROM (
                     SELECT *,
                         ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                    FROM "14trees_2".trees_snapshots
+                    FROM "14trees".trees_snapshots
                 ) AS snapshots
                 WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
             WHERE (ts.tree_status is null or ts.tree_status in ('healthy', 'diseased')) AND ${whereCondition ? whereCondition : '1=1'}
@@ -256,9 +256,9 @@ export class SiteRepository {
         const countQuery = `
             WITH data AS (SELECT s.${field},
                 p.category
-            FROM "14trees_2".trees t
-            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            FROM "14trees".trees t
+            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.${field}, p.category)
             
