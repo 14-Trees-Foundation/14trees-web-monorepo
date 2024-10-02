@@ -141,3 +141,17 @@ export const updateCoordinatesUsingKml = async (req: Request, res: Response) => 
         res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
     }
 }
+
+export const treesCountForCategory = async (req: Request, res: Response) => {
+
+    try {
+        let result = await PlotRepository.treesCountForCategory();
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::treesCountForCategory", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
