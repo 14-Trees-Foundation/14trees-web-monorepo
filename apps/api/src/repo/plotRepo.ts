@@ -174,4 +174,44 @@ export class PlotRepository {
     
         return result.map((row: any) => row.num);
     }
+
+    public static async treesCountForCategory() {
+
+        const query = `
+            SELECT p.category,
+                COUNT(t.id) as total, 
+                COUNT(t.assigned_to) as assigned,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NOT NULL 
+                        OR t.mapped_to_group IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS booked,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NULL 
+                        AND t.mapped_to_group IS NULL 
+                        AND t.assigned_to IS NULL 
+                        AND t.id IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS available
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            LEFT JOIN (SELECT *
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                    FROM "14trees_2".trees_snapshots
+                ) AS snapshots
+                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+            WHERE (ts.tree_status is null or ts.tree_status in ('healthy', 'diseased'))
+            GROUP BY p.category;
+            `
+
+        const counts: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+        })
+
+        return { offset: 0, total: counts.length, results: counts };
+    }
 }
