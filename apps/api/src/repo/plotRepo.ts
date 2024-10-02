@@ -48,7 +48,7 @@ export class PlotRepository {
         return plotsResp.results[0] || plot;
     }
 
-    public static async getPlots(offset: number = 0, limit: number = 10, filters: FilterItem[]): Promise<PaginatedResponse<Plot>> {
+    public static async getPlots(offset: number = 0, limit: number = 10, filters: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<Plot>> {
 
         let whereCondition = "";
         let replacements: any = {}
@@ -95,24 +95,28 @@ export class PlotRepository {
             WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.name_english
-        ORDER BY p.id DESC
+        ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
         const countPlotsQuery = 
-            `SELECT count(p.id)
-            FROM "14trees_2".plots p
-            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
-            LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
-            LEFT JOIN (SELECT *
-                FROM (
-                    SELECT *,
-                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                    FROM "14trees_2".trees_snapshots
-                ) AS snapshots
-                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
-            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-            GROUP BY p.id, s.name_english;`
+            `WITH data AS (SELECT p.id, s.name_english as site_name
+                FROM "14trees_2".plots p
+                LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+                LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
+                LEFT JOIN (SELECT *
+                    FROM (
+                        SELECT *,
+                            ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                        FROM "14trees_2".trees_snapshots
+                    ) AS snapshots
+                    WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+                WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+                GROUP BY p.id, s.name_english)
+                
+            SELECT COUNT(*) as count
+            FROM data;
+            `
         
         const plots: any = await sequelize.query(query, {
             replacements: replacements,
