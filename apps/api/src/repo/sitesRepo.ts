@@ -1,4 +1,4 @@
-import { QueryTypes, WhereOptions } from 'sequelize';
+import { QueryTypes, WhereOptions, or } from 'sequelize';
 import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
@@ -47,12 +47,12 @@ export class SiteRepository {
         LEFT JOIN "14trees".sites AS s
         ON num = s.id
         WHERE s.id IS NULL;`
-    
+
         const result = await sequelize.query(query, {
             replacements: { site_ids: siteIds },
             type: QueryTypes.SELECT
         })
-    
+
         return result.map((row: any) => row.num);
     }
 
@@ -187,11 +187,89 @@ export class SiteRepository {
             GROUP BY s.id, p.category, pa.total_acres_area
             ORDER BY s.id DESC;
             `
-        
+
         const sites: any[] = await sequelize.query(query, {
             type: QueryTypes.SELECT
         })
 
         return { offset: 0, total: sites.length, results: sites };
+    }
+
+    public static async treeCountForFields(field: string, offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC" }[]) {
+
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "s." + filter.columnField
+                let valuePlaceHolder = filter.columnField
+                if (filter.columnField === "category") {
+                    columnField = 'p."category"'
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+            SELECT s.${field},
+                p.category,
+                COUNT(t.id) as total, 
+                COUNT(t.assigned_to) as assigned,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NOT NULL 
+                        OR t.mapped_to_group IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS booked,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NULL 
+                        AND t.mapped_to_group IS NULL 
+                        AND t.assigned_to IS NULL 
+                        AND t.id IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS available
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            LEFT JOIN (SELECT *
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+                    FROM "14trees_2".trees_snapshots
+                ) AS snapshots
+                WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+            WHERE (ts.tree_status is null or ts.tree_status in ('healthy', 'diseased')) AND ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY s.${field}, p.category
+            ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
+            LIMIT ${limit} OFFSET ${offset};
+            `
+
+        const sites: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        const countQuery = `
+            WITH data AS (SELECT s.${field},
+                p.category
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            WHERE ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY s.${field}, p.category)
+            
+            SELECT count(*) FROM data;
+        `
+
+        const resp: any[] = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        return { offset: 0, total: resp[0]?.count ?? 0, results: sites };
     }
 }
