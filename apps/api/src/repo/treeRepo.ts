@@ -8,8 +8,7 @@ import { sequelize } from "../config/postgreDB";
 import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getUserDocumentFromRequestBody } from "./userRepo";
-import { Group } from "../models/group";
-import { getWhereOptions, getSqlQueryExpression } from "../controllers/helper/filters";
+import { getSqlQueryExpression } from "../controllers/helper/filters";
 
 class TreeRepository {
   public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[]): Promise<PaginatedResponse<Tree>> {
@@ -28,6 +27,8 @@ class TreeRepository {
               columnField = 'p."name"'
             } else if (filter.columnField === "plant_type") {
               columnField = 'pt."name"'
+            } else if (filter.columnField === "tree_health") {
+              columnField = 'ts.tree_status'
             }
             const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
             whereCondition = whereCondition + " " + condition + " AND";
@@ -41,12 +42,20 @@ class TreeRepository {
       pt."name" as plant_type, 
       p."name" as plot, 
       mu."name" as mapped_user_name, 
-      au."name" as assigned_to_name
+      au."name" as assigned_to_name,
+      ts.tree_status as tree_health
     FROM "14trees".trees t 
     LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "14trees".plots p ON p.id = t.plot_id
     LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
+    LEFT JOIN (SELECT *
+      FROM (
+          SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+          FROM "14trees".trees_snapshots
+      ) AS snapshots
+      WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
     ORDER BY t.sapling_id
     `
@@ -65,6 +74,13 @@ class TreeRepository {
     LEFT JOIN "14trees".plots p ON p.id = t.plot_id
     LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
+    LEFT JOIN (SELECT *
+      FROM (
+          SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
+          FROM "14trees".trees_snapshots
+      ) AS snapshots
+      WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
     `
     const resp = await sequelize.query(countQuery, {

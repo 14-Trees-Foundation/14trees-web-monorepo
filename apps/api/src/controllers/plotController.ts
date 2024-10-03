@@ -50,8 +50,19 @@ export const addPlot = async (req: Request, res: Response) => {
 export const getPlots = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
+    const orderBy: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
     try {
-        let result = await PlotRepository.getPlots(offset, limit, filters);
+        let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
+        result.results = result.results.map((plot: any) => {
+            return {
+                ...plot,
+                trees_count: plot.trees_count ? parseInt(plot.trees_count) : 0,
+                mapped_trees_count: plot.mapped_trees_count ? parseInt(plot.mapped_trees_count) : 0,
+                assigned_trees_count: plot.assigned_trees_count ? parseInt(plot.assigned_trees_count) : 0,
+                available_trees_count: plot.available_trees_count ? parseInt(plot.available_trees_count) : 0,
+            };
+        })
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -139,5 +150,19 @@ export const updateCoordinatesUsingKml = async (req: Request, res: Response) => 
     } catch (error: any) {
         console.log('[ERROR]', 'PlotsController::updateCoordinatesUsingKml', error)
         res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
+    }
+}
+
+export const treesCountForCategory = async (req: Request, res: Response) => {
+
+    try {
+        let result = await PlotRepository.treesCountForCategory();
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::treesCountForCategory", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
     }
 }

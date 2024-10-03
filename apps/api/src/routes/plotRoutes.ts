@@ -13,4 +13,6 @@ routes.post('/assign-site', plot.assignPlotsToSite);
 routes.post('/kml', uploadFiles.single('file'), plot.updateCoordinatesUsingKml);
 // routes.get('/:search', searchPlots);
 
+routes.get('/stats/category', plot.treesCountForCategory);
+
 export default routes;
