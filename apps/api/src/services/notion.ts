@@ -264,6 +264,10 @@ async function insertCsvIntoPostgres(filePath: string, sequelize: Sequelize) {
         'Issue Resolution': {
           type: DataTypes.TEXT,
           allowNull: true,
+        },
+        'Site Type': {
+          type: DataTypes.STRING,
+          allowNull: true,
         }
       }
   
