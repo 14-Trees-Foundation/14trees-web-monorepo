@@ -79,11 +79,12 @@ export class SiteRepository {
             updated_at = now(),
             google_earth_link = array[n."Google Earth link"],
             account = n."Account",
-            data_errors = n."Data errors"
+            data_errors = n."Data errors",
+            category = n."Site Type"
         FROM notion_db n
         WHERE n.id = notion_id
           AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T') 
-          AND n."Name" IS NOT null;`
+          AND (n."Name" IS NOT NULL OR n."नाव (मराठी)" IS NOT NULL);`
 
         await sequelize.query(query);
     }
@@ -112,7 +113,8 @@ export class SiteRepository {
             updated_at,
             google_earth_link, 
             account, 
-            data_errors
+            data_errors,
+            category
         )
         SELECT 
             n.id, 
@@ -137,7 +139,8 @@ export class SiteRepository {
             now() as updated_at, 
             array["Google Earth link"], 
             n."Account", 
-            n."Data errors"
+            n."Data errors",
+            n."Site Type"
         FROM notion_db n
         WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T') 
           AND n."Name" IS NOT NULL

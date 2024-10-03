@@ -37,9 +37,10 @@ interface SiteAttributes {
     updated_at?: Date;
     maintenance_type: Enumerator  | null;
     kml_file_link: string | null;
+    category: string | null;
 }
 
-interface SiteCreationAttributes extends Optional<SiteAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface SiteCreationAttributes extends Optional<SiteAttributes, 'id' | 'category' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'sites' })
 class Site extends Model<SiteAttributes, SiteCreationAttributes> implements SiteAttributes {
@@ -107,7 +108,6 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column(DataType.STRING)
     account!: string | null;
-
     
     @Column(DataType.STRING)
     data_errors!: string | null;
@@ -117,8 +117,6 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column({type:DataType.ENUM , values:["Yes" , "No"]})
     site_data_check!: Enumerator | null;
-
-   
 
     @Column(DataType.STRING)
     album!: string | null;
@@ -151,6 +149,9 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column(DataType.STRING)
     kml_file_link!: string | null;
+
+    @Column(DataType.STRING)
+    category!: string | null;
 }
 
 export { Site };
