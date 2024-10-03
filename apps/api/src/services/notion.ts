@@ -54,7 +54,7 @@ const getDatabaseData = async (databaseId: string) => {
                                 data[key] = []
                                 if (value[type].length != 0) {
                                     value[type].forEach((item: any) => {
-                                        data[key].push(item.file.url);
+                                        if (item?.file?.url) data[key].push(item.file.url);
                                     });
                                 }
                             } else if (type == "multi_select") {
@@ -157,20 +157,8 @@ async function insertCsvIntoPostgres(filePath: string, sequelize: Sequelize) {
           type: DataTypes.DECIMAL,
           allowNull: true,
         },
-        'dashboard done, email sent?': {
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
-        },
         Link: {
           type: DataTypes.TEXT,
-          allowNull: true,
-        },
-        'Sub-item': {
-          type: DataTypes.BOOLEAN,
-          allowNull: true,
-        },
-        'Parent item': {
-          type: DataTypes.BOOLEAN,
           allowNull: true,
         },
         'Album (1)': {
@@ -184,10 +172,6 @@ async function insertCsvIntoPostgres(filePath: string, sequelize: Sequelize) {
         'Grove type': {
           type: DataTypes.STRING,
           allowNull: true,
-        },
-        'Site data check': {
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
         },
         Date: {
           type: DataTypes.DATEONLY,
