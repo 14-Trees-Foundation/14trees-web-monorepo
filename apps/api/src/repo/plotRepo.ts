@@ -55,8 +55,16 @@ export class PlotRepository {
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "p." + filter.columnField
-                if (filter.columnField === 'site_name') columnField = 's.name_english';
-                else if (filter.columnField === 'tree_health') columnField = 'ts.tree_status';
+                if (filter.columnField === 'site_name' && filter.operatorValue === 'isEmpty' ) columnField = 'p.site_id';
+                else if (filter.columnField === 'site_name') {
+                    const condition1 = getSqlQueryExpression("s.name_english", filter.operatorValue, filter.columnField + "_1", filter.value);
+                    const condition2 = getSqlQueryExpression("s.name_marathi", filter.operatorValue, filter.columnField + "_2", filter.value);
+
+                    whereCondition = whereCondition + " (" + condition1.condition + " OR " + condition2.condition + ") AND";
+                    replacements = { ...replacements, ...condition1.replacement, ...condition2.replacement }
+
+                    return;
+                }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
@@ -66,56 +74,32 @@ export class PlotRepository {
 
         const query = `
         SELECT p.*,
-            s.name_english as site_name,
-            COUNT(t.id) as trees_count, 
-            COUNT(t.assigned_to) as assigned_trees_count,
-            SUM(CASE 
-                WHEN t.mapped_to_user IS NOT NULL 
-                    OR t.mapped_to_group IS NOT NULL
-                THEN 1 
-                ELSE 0 
-               END) AS mapped_trees_count,
-            SUM(CASE 
-                WHEN t.mapped_to_user IS NULL 
-                    AND t.mapped_to_group IS NULL 
-                    AND t.assigned_to IS NULL 
-                    AND t.id IS NOT NULL
-                THEN 1 
-                ELSE 0 
-               END) AS available_trees_count
+            case 
+                when s.name_english is null 
+                    then s.name_marathi
+                    else s.name_english 
+                end site_name,
+            tcg.booked,
+            tcg.available,
+            tcg.assigned,
+            tcg.total,
+            tcg.void_total,
+            tcg.void_booked,
+            tcg.void_available,
+            tcg.void_assigned
         FROM "14trees_2".plots p
-        LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
         LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
-        LEFT JOIN (SELECT *
-            FROM (
-                SELECT *,
-                       ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                FROM "14trees_2".trees_snapshots
-            ) AS snapshots
-            WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
+        left join "14trees_2".tree_count_aggregations tcg on tcg.plot_id = p.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-        GROUP BY p.id, s.name_english
         ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
         const countPlotsQuery = 
-            `WITH data AS (SELECT p.id, s.name_english as site_name
-                FROM "14trees_2".plots p
-                LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
-                LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
-                LEFT JOIN (SELECT *
-                    FROM (
-                        SELECT *,
-                            ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                        FROM "14trees_2".trees_snapshots
-                    ) AS snapshots
-                    WHERE snapshots.rn = 1) as ts on ts.sapling_id = t.sapling_id
-                WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-                GROUP BY p.id, s.name_english)
-                
-            SELECT COUNT(*) as count
-            FROM data;
+            `SELECT count(*)
+            FROM "14trees_2".plots p
+            LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
             `
         
         const plots: any = await sequelize.query(query, {
