@@ -8,6 +8,7 @@ import { constants } from "../constants";
 import { getPlotNameAndCoordinatesFromKml } from "./helper/parsekml";
 import { UploadFileToS3 } from "./helper/uploadtos3";
 import { SiteRepository } from "../repo/sitesRepo";
+import { TreeCountAggregationsRepo } from "../repo/treeCountAggregationsRepo";
 
 /*
     Model - Plot
@@ -53,16 +54,8 @@ export const getPlots = async (req: Request, res: Response) => {
     const orderBy: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
 
     try {
+        await TreeCountAggregationsRepo.checkAndRecalculateData();
         let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
-        result.results = result.results.map((plot: any) => {
-            return {
-                ...plot,
-                trees_count: plot.trees_count ? parseInt(plot.trees_count) : 0,
-                mapped_trees_count: plot.mapped_trees_count ? parseInt(plot.mapped_trees_count) : 0,
-                assigned_trees_count: plot.assigned_trees_count ? parseInt(plot.assigned_trees_count) : 0,
-                available_trees_count: plot.available_trees_count ? parseInt(plot.available_trees_count) : 0,
-            };
-        })
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

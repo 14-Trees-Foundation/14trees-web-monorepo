@@ -25,6 +25,7 @@ import { Visit } from "../models/visits";
 import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
 import { SyncHistory } from "../models/sync_history";
+import { TreeCountAggregation } from "../models/tree_count_aggregation";
 
 
 class Database {
@@ -82,6 +83,7 @@ class Database {
         VisitImage,
         VisitUsers,
         SyncHistory,
+        TreeCountAggregation,
       ]
     });
 
