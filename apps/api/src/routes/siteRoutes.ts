@@ -11,6 +11,7 @@ routes.delete('/:id', sites.deleteSite);
 routes.post('/sync-sites', sites.syncSitesDatFromNotion);
 routes.post('/stats', sites.getTreeCountsForSites);
 routes.post('/stats/:field', sites.getTreesCountForField);
+routes.get('/districts', sites.getDistrictsData);
 
 
 export default routes;
