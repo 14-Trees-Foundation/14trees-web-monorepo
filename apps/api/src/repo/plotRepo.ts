@@ -236,8 +236,8 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS available
-        FROM "14trees_2".plots p
-        LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+        FROM "14trees".plots p
+        LEFT JOIN "14trees".trees t ON p.id = t.plot_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id
         ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
@@ -246,7 +246,7 @@ export class PlotRepository {
 
         const countPlotsQuery = 
             `SELECT count(*)
-            FROM "14trees_2".plots p;
+            FROM "14trees".plots p;
             `
         
         const plots: any = await sequelize.query(query, {

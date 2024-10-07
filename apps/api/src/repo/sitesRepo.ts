@@ -309,10 +309,10 @@ export class SiteRepository {
             SUM(tcg.void_booked) AS void_booked,
             SUM(tcg.void_available) AS void_available,
             SUM(tcg.void_assigned) AS void_assigned
-        FROM "14trees_2".tree_count_aggregations tcg
+        FROM "14trees".tree_count_aggregations tcg
         LEFT JOIN (
             SELECT id, unnest(tags) AS tag
-            FROM "14trees_2".plots
+            FROM "14trees".plots
         ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
         WHERE ${tags && tags.length > 0 ? `tag_grouped.tag IN ('${tags.join("','")}')` : '1=1'}
             GROUP BY tag_grouped.tag
@@ -326,10 +326,10 @@ export class SiteRepository {
 
         const countQuery = `
             SELECT count(DISTINCT(tag_grouped.tag)) as count
-            FROM "14trees_2".tree_count_aggregations tcg
+            FROM "14trees".tree_count_aggregations tcg
             LEFT JOIN (
                 SELECT id, unnest(tags) AS tag
-                FROM "14trees_2".plots
+                FROM "14trees".plots
             ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
             WHERE ${tags && tags.length > 0 ? `tag_grouped.tag IN ('${tags.join("','")}')` : '1=1'}
         `
