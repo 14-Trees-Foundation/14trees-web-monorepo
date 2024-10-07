@@ -12,6 +12,7 @@ routes.post('/sync-sites', sites.syncSitesDatFromNotion);
 routes.post('/stats', sites.getTreeCountsForSites);
 routes.post('/stats/:field', sites.getTreesCountForField);
 routes.get('/districts', sites.getDistrictsData);
+routes.post('/tags', sites.getTreeCountsForTags);
 
 
 export default routes;
