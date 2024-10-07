@@ -159,3 +159,20 @@ export const getDistrictsData = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const getTreeCountsForTags = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const tags: string[] = req.body?.tags;
+    const order_by: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
+    try {
+        let result = await SiteRepository.getTreeCountsForTags(offset, limit, tags, order_by);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "SitesController::getTreesCountForTags", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
