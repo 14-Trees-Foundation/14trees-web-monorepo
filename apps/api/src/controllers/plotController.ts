@@ -159,3 +159,20 @@ export const treesCountForCategory = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const getPlotAggregations = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
+    try {
+        let result = await PlotRepository.getPlotAggregations(offset, limit, filters, orderBy);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::getPlotAggregations", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
