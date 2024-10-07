@@ -155,6 +155,14 @@ export class SiteRepository {
         let replacements: any = {}
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
+                if (filter.columnField === 'site_name') {
+                    const condition1 = getSqlQueryExpression("s.name_english", filter.operatorValue, filter.columnField + "_1", filter.value);
+                    const condition2 = getSqlQueryExpression("s.name_marathi", filter.operatorValue, filter.columnField + "_2", filter.value);
+
+                    whereCondition = whereCondition + " (" + condition1.condition + " OR " + condition2.condition + ") AND";
+                    replacements = { ...replacements, ...condition1.replacement, ...condition2.replacement }
+                    return;
+                }
                 let columnField = "s." + filter.columnField
                 let valuePlaceHolder = filter.columnField
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
@@ -212,7 +220,7 @@ export class SiteRepository {
             replacements
         })
 
-        return { offset: 0, total: resp[0]?.count ?? 0, results: sites };
+        return { offset: offset, total: resp[0]?.count ?? 0, results: sites };
     }
 
     public static async treeCountForFields(field: string, offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC" }[]) {
@@ -274,7 +282,7 @@ export class SiteRepository {
             replacements
         })
 
-        return { offset: 0, total: resp[0]?.count ?? 0, results: sites };
+        return { offset: offset, total: resp[0]?.count ?? 0, results: sites };
     }
 
     public static async getDistrictsData() {
@@ -297,8 +305,20 @@ export class SiteRepository {
         });
     }
 
-    public static async getTreeCountsForTags(offset: number, limit: number, tags?: string[], orderBy?: { column: string, order: "ASC" | "DESC" }[]) {
-        
+    public static async getTreeCountsForTags(offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]) {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "s." + filter.columnField
+                let valuePlaceHolder = filter.columnField + Math.random().toString(36).slice(2);
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
         const query = `
         SELECT tag_grouped.tag,
             SUM(tcg.booked) AS booked,
@@ -311,33 +331,37 @@ export class SiteRepository {
             SUM(tcg.void_assigned) AS void_assigned
         FROM "14trees".tree_count_aggregations tcg
         LEFT JOIN (
-            SELECT id, unnest(tags) AS tag
+            SELECT id, site_id, unnest(tags) AS tag
             FROM "14trees".plots
         ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
-        WHERE ${tags && tags.length > 0 ? `tag_grouped.tag IN ('${tags.join("','")}')` : '1=1'}
+        LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
+        WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY tag_grouped.tag
             ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
         OFFSET ${offset} LIMIT ${limit};
         `
 
         const resp: any[] = await sequelize.query(query, {
-            type: QueryTypes.SELECT
+            type: QueryTypes.SELECT,
+            replacements
         });
 
         const countQuery = `
             SELECT count(DISTINCT(tag_grouped.tag)) as count
             FROM "14trees".tree_count_aggregations tcg
             LEFT JOIN (
-                SELECT id, unnest(tags) AS tag
+                SELECT id, site_id, unnest(tags) AS tag
                 FROM "14trees".plots
             ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
-            WHERE ${tags && tags.length > 0 ? `tag_grouped.tag IN ('${tags.join("','")}')` : '1=1'}
+            LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
+            WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
         const countResp: any[] = await sequelize.query(countQuery, {
-            type: QueryTypes.SELECT
+            type: QueryTypes.SELECT,
+            replacements
         });
 
-        return { offset: 0, total: countResp[0]?.count ?? 0, results: resp };
+        return { offset: offset, total: countResp[0]?.count ?? 0, results: resp };
     }
 }
