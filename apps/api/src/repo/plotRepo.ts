@@ -202,4 +202,64 @@ export class PlotRepository {
 
         return { offset: 0, total: counts.length, results: counts };
     }
+
+    public static async getPlotAggregations(offset: number = 0, limit: number = 10, filters: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<Plot>> {
+
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "p." + filter.columnField
+                if (filter.columnField === 'created_at') columnField = 't.created_at';
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+        SELECT p.id, p.name,
+            COUNT(t.id) as total, 
+            COUNT(t.assigned_to) as assigned,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NOT NULL 
+                    OR t.mapped_to_group IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS booked,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS available
+        FROM "14trees".plots p
+        LEFT JOIN "14trees".trees t ON p.id = t.plot_id
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        GROUP BY p.id
+        ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
+        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+        `
+
+        const countPlotsQuery = 
+            `SELECT count(*)
+            FROM "14trees".plots p;
+            `
+        
+        const plots: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countPlots: any = await sequelize.query(countPlotsQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countPlots[0].count)
+
+        return { offset: offset, total: totalResults, results: plots as Plot[]};
+    }
 }

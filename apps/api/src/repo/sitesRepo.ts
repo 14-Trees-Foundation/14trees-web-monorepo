@@ -296,4 +296,48 @@ export class SiteRepository {
             }
         });
     }
+
+    public static async getTreeCountsForTags(offset: number, limit: number, tags?: string[], orderBy?: { column: string, order: "ASC" | "DESC" }[]) {
+        
+        const query = `
+        SELECT tag_grouped.tag,
+            SUM(tcg.booked) AS booked,
+            SUM(tcg.available) AS available,
+            SUM(tcg.assigned) AS assigned,
+            SUM(tcg.total) AS total,
+            SUM(tcg.void_total) AS void_total,
+            SUM(tcg.void_booked) AS void_booked,
+            SUM(tcg.void_available) AS void_available,
+            SUM(tcg.void_assigned) AS void_assigned
+        FROM "14trees".tree_count_aggregations tcg
+        LEFT JOIN (
+            SELECT id, unnest(tags) AS tag
+            FROM "14trees".plots
+        ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
+        WHERE ${tags && tags.length > 0 ? `tag_grouped.tag IN ('${tags.join("','")}')` : '1=1'}
+            GROUP BY tag_grouped.tag
+            ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
+        OFFSET ${offset} LIMIT ${limit};
+        `
+
+        const resp: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        });
+
+        const countQuery = `
+            SELECT count(DISTINCT(tag_grouped.tag)) as count
+            FROM "14trees".tree_count_aggregations tcg
+            LEFT JOIN (
+                SELECT id, unnest(tags) AS tag
+                FROM "14trees".plots
+            ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
+            WHERE ${tags && tags.length > 0 ? `tag_grouped.tag IN ('${tags.join("','")}')` : '1=1'}
+        `
+
+        const countResp: any[] = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT
+        });
+
+        return { offset: 0, total: countResp[0]?.count ?? 0, results: resp };
+    }
 }
