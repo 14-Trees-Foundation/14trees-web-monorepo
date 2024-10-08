@@ -13,6 +13,7 @@ routes.post('/stats', sites.getTreeCountsForSites);
 routes.post('/stats/:field', sites.getTreesCountForField);
 routes.get('/districts', sites.getDistrictsData);
 routes.post('/tags', sites.getTreeCountsForTags);
+routes.get('/corporate/:groupId', sites.getCorporateTreeDistribution);
 
 
 export default routes;

@@ -330,7 +330,7 @@ export class SiteRepository {
             SUM(tcg.void_available) AS void_available,
             SUM(tcg.void_assigned) AS void_assigned
         FROM "14trees_2".tree_count_aggregations tcg
-        LEFT JOIN (
+        JOIN (
             SELECT id, site_id, unnest(tags) AS tag
             FROM "14trees_2".plots
         ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
@@ -363,5 +363,35 @@ export class SiteRepository {
         });
 
         return { offset: offset, total: countResp[0]?.count ?? 0, results: resp };
+    }
+
+    public static async getTreeCountForCorporate(groupId: number, orderBy?: { column: string, order: "ASC" | "DESC" }[]) {
+        const query = `
+            SELECT p.id as plot_id, p.name as plot_name, s.id as site_id, s.name_english as site_name,
+                SUM(CASE 
+                    WHEN t.mapped_to_group IS NOT NULL OR t.mapped_to_user IS NOT NULL
+                        THEN 1 
+                        ELSE 0 
+                    END) AS booked,
+                SUM(CASE 
+                    WHEN t.mapped_to_group IS NULL AND t.mapped_to_user IS NULL AND t.assigned_to IS NULL
+                        THEN 1 
+                        ELSE 0 
+                    END) AS available,
+                COUNT(t.assigned_to) AS assigned,
+                count(t.id) AS total
+            FROM "14trees_2".trees t
+            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            LEFT JOIN "14trees_2".sites s on s.id = p.site_id
+            WHERE t.mapped_to_group = :groupId
+            GROUP BY p.id, s.id
+        `
+
+        const resp: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements: { groupId }
+        });
+
+        return resp;
     }
 }
