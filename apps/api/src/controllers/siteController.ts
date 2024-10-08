@@ -176,3 +176,27 @@ export const getTreeCountsForTags = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const getCorporateTreeDistribution = async (req: Request, res: Response) => {
+    const { groupId } = req.params;
+
+    try {
+        let result = await SiteRepository.getTreeCountForCorporate(parseInt(groupId));
+        result = result.map((item: any) => {
+            return {
+                ...item,
+                booked: parseInt(item.booked),
+                available: parseInt(item.available),
+                total: parseInt(item.total),
+                assigned: parseInt(item.assigned)
+            }
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "SitesController::getCorporateTreeDistribution", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
