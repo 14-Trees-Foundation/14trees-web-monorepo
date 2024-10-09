@@ -83,7 +83,7 @@ export class SiteRepository {
             category = n."Site Type"
         FROM notion_db n
         WHERE n.id = notion_id
-          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T') 
+          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer') 
           AND (n."Name" IS NOT NULL OR n."नाव (मराठी)" IS NOT NULL);`
 
         await sequelize.query(query);
@@ -142,7 +142,7 @@ export class SiteRepository {
             n."Data errors",
             n."Site Type"
         FROM notion_db n
-        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T') 
+        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer') 
           AND n."Name" IS NOT NULL
           AND n.id NOT IN (SELECT notion_id FROM "14trees".sites where notion_id is not null);`
 
