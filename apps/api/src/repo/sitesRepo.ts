@@ -81,7 +81,7 @@ export class SiteRepository {
             account = n."Account",
             data_errors = n."Data errors",
             category = n."Site Type",
-            maintenance_type = n."Service offered"::"14trees_2".maintenence_type_enum
+            maintenance_type = n."Service offered"::"14trees".maintenence_type_enum
         FROM notion_db n
         WHERE n.id = notion_id
           AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
@@ -143,7 +143,7 @@ export class SiteRepository {
             n."Account", 
             n."Data errors",
             n."Site Type",
-            n."Service offered"::"14trees_2".maintenence_type_enum
+            n."Service offered"::"14trees".maintenence_type_enum
         FROM notion_db n
         WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
           AND n."Name" IS NOT NULL
