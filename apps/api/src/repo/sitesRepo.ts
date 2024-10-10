@@ -80,10 +80,11 @@ export class SiteRepository {
             google_earth_link = array[n."Google Earth link"],
             account = n."Account",
             data_errors = n."Data errors",
-            category = n."Site Type"
+            category = n."Site Type",
+            maintenance_type = n."Service offered"::"14trees_2".maintenence_type_enum
         FROM notion_db n
         WHERE n.id = notion_id
-          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer') 
+          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
           AND (n."Name" IS NOT NULL OR n."नाव (मराठी)" IS NOT NULL);`
 
         await sequelize.query(query);
@@ -114,7 +115,8 @@ export class SiteRepository {
             google_earth_link, 
             account, 
             data_errors,
-            category
+            category,
+            maintenance_type
         )
         SELECT 
             n.id, 
@@ -140,9 +142,10 @@ export class SiteRepository {
             array["Google Earth link"], 
             n."Account", 
             n."Data errors",
-            n."Site Type"
+            n."Site Type",
+            n."Service offered"::"14trees_2".maintenence_type_enum
         FROM notion_db n
-        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer') 
+        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
           AND n."Name" IS NOT NULL
           AND n.id NOT IN (SELECT notion_id FROM "14trees".sites where notion_id is not null);`
 

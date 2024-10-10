@@ -94,7 +94,20 @@ async function insertCsvIntoPostgres(filePath: string, sequelize: Sequelize) {
         .on('data', (row: any) => {
             const processedRow: any = {};
             headers.forEach((header) => {
-              processedRow[header] = row[header] === '' ? null : row[header];
+              if (row[header] === '') processedRow[header] = null;
+              else if (header === 'Service offered') {
+                if (row[header].toLowerCase().includes('planting')) {
+                  processedRow[header] = 'PLANTATION_ONLY';
+                } else if (row[header].toLowerCase().includes('distribution')) {
+                  processedRow[header] = 'DISTRIBUTION_ONLY';
+                } else if (row[header].toLowerCase().includes('full service')) {
+                  processedRow[header] = 'FULL_MAINTENANCE';
+                } else {
+                  processedRow[header] = null;
+                }
+              } else {
+                processedRow[header] = row[header];
+              }
             });
             records.push(processedRow);
         })
