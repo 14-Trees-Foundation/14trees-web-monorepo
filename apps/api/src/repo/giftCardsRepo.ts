@@ -1,16 +1,16 @@
 import { Op, QueryTypes } from "sequelize";
-import { GiftCard, GiftCardAttributes, GiftCardCreationAttributes } from "../models/gift_card";
+import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttributes } from "../models/gift_card_request";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 import { sequelize } from "../config/postgreDB";
-import { GiftCardUser, GiftCardUserCreationAttributes } from "../models/gift_card_user";
+import { GiftCard, GiftCardCreationAttributes } from "../models/gift_card";
 import { GiftCardPlot, GiftCardPlotCreationAttributes } from "../models/gift_card_plot";
 import { GiftCardUserTemplate, GiftCardUserTemplateCreationAttributes } from "../models/gift_card_user_template";
 import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 
 export class GiftCardsRepository {
 
-    static async getGiftCards(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<GiftCard>> {
+    static async getGiftCardRequests(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<GiftCardRequest>> {
         let whereConditions: string = "";
         let replacements: any = {}
 
@@ -31,7 +31,7 @@ export class GiftCardsRepository {
 
         const getQuery = `
             SELECT gc.*, u.name as user_name, g.name as group_name, array_agg(DISTINCT gcp.plot_id) as plot_ids
-            FROM "14trees_2".gift_cards gc
+            FROM "14trees_2".gift_card_requests gc
             LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
             LEFT JOIN "14trees_2".groups g ON g.id = gc.group_id
             LEFT JOIN "14trees_2".gift_card_plots gcp ON gcp.card_id = gc.id
@@ -42,7 +42,7 @@ export class GiftCardsRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees_2".gift_cards gc
+            FROM "14trees_2".gift_card_requests gc
             LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
             LEFT JOIN "14trees_2".groups g ON g.id = gc.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
@@ -66,14 +66,14 @@ export class GiftCardsRepository {
         };
     }
 
-    static async addGiftCard(data: GiftCardCreationAttributes): Promise<GiftCard> {
-        return await GiftCard.create(data);
+    static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
+        return await GiftCardRequest.create(data);
     }
 
-    static async updateGiftCard(data: GiftCardAttributes): Promise<GiftCard> {
-        const giftCard = await GiftCard.findByPk(data.id);
+    static async updateGiftCardRequest(data: GiftCardRequestAttributes): Promise<GiftCardRequest> {
+        const giftCard = await GiftCardRequest.findByPk(data.id);
         if (!giftCard) {
-            throw new Error("Gift Card entry not found")
+            throw new Error("Gift Card Request not found")
         }
 
         giftCard.updated_at = new Date();
@@ -81,39 +81,39 @@ export class GiftCardsRepository {
         return updatedGiftCard;
     }
 
-    static async deleteGiftCard(id: number): Promise<void> {
-        const giftCard = await GiftCard.findByPk(id);
+    static async deleteGiftCardRequest(id: number): Promise<void> {
+        const giftCard = await GiftCardRequest.findByPk(id);
         if (!giftCard) {
-            throw new Error("Gift Card entry not found")
+            throw new Error("Gift Card request not found")
         }
         await giftCard.destroy();
     }
 
-    static async addGiftCardUsers(cardId: number, userIds: number[]): Promise<void> {
-        const giftCardUsers = userIds.map(userId => {
+    static async createGiftCards(giftCardsRequestId: number, userIds: number[]): Promise<void> {
+        const giftCards = userIds.map(userId => {
             return {
-                card_id: cardId,
+                gift_card_request_id: giftCardsRequestId,
                 user_id: userId,
                 created_at: new Date()
                 
-            } as GiftCardUserCreationAttributes
+            } as GiftCardCreationAttributes
         })
 
-        await GiftCardUser.bulkCreate(giftCardUsers);
+        await GiftCard.bulkCreate(giftCards);
     }
 
-    static async getGiftCardUser(id: number): Promise<GiftCardUser | null> {
-        return await GiftCardUser.findByPk(id);
+    static async getGiftCard(id: number): Promise<GiftCard | null> {
+        return await GiftCard.findByPk(id);
     }
 
-    static async getDetailedGiftCardUser(id: number): Promise<GiftCardUser | null> {
+    static async getDetailedGiftCard(id: number): Promise<GiftCard | null> {
         const getQuery = `
-            SELECT gcu.*, u.name as user_name, t.sapling_id, pt.name as plant_type
-            FROM "14trees_2".gift_card_users gcu
-            LEFT JOIN "14trees_2".users u ON u.id = gcu.user_id
-            LEFT JOIN "14trees_2".trees t ON t.id = gcu.tree_id
+            SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
+            FROM "14trees_2".gift_cards gc
+            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            WHERE gcu.id = ${id};
+            WHERE gc.id = ${id};
         `
 
         const data: any[] = await sequelize.query(getQuery, {
@@ -129,37 +129,37 @@ export class GiftCardsRepository {
 
     static async bookGiftCards(cardId: number, treeIds: number[]): Promise<void> {
 
-        const cardUsers = await GiftCardUser.findAll({
+        const cards = await GiftCard.findAll({
             where: {
-                card_id: cardId,
+                gift_card_request_id: cardId,
                 tree_id: { [Op.is]: null }
             }
         });
 
         let idx = 0;
-        for (let cardUser of cardUsers) {
+        for (let card of cards) {
             if (idx === treeIds.length) {
                 break;
             }
 
-            cardUser.tree_id = treeIds[idx];
-            cardUser.updated_at = new Date();
-            await cardUser.save();
+            card.tree_id = treeIds[idx];
+            card.updated_at = new Date();
+            await card.save();
             idx++;
         }
 
         if (idx < treeIds.length) {
             const remainingTreeIds = treeIds.slice(idx);
-            const giftCardUsers = remainingTreeIds.map(treeId => {
+            const giftCards = remainingTreeIds.map(treeId => {
                 return {
-                    card_id: cardId,
+                    gift_card_request_id: cardId,
                     tree_id: treeId,
                     created_at: new Date()
                     
-                } as GiftCardUserCreationAttributes
+                } as GiftCardCreationAttributes
             })
 
-            await GiftCardUser.bulkCreate(giftCardUsers);
+            await GiftCard.bulkCreate(giftCards);
         }
     }
 
@@ -186,16 +186,16 @@ export class GiftCardsRepository {
         return giftCardPlots;
     }
 
-    static async getBookedCards(giftCardId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCardUser>> {
+    static async getBookedCards(giftCardRequestId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCard>> {
 
         const getQuery = `
-            SELECT gcu.*, u.name as user_name, t.sapling_id, pt.name as plant_type
-            FROM "14trees_2".gift_card_users gcu
-            LEFT JOIN "14trees_2".users u ON u.id = gcu.user_id
-            LEFT JOIN "14trees_2".trees t ON t.id = gcu.tree_id
+            SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
+            FROM "14trees_2".gift_cards gc
+            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            WHERE gcu.card_id = ${giftCardId}
-            ORDER BY gcu.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            WHERE gc.gift_card_request_id = ${giftCardRequestId}
+            ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const data: any[] = await sequelize.query(getQuery, {
@@ -203,9 +203,9 @@ export class GiftCardsRepository {
         })
 
         const countQuery = `
-            SELECT count(gcu.id)
-            FROM "14trees_2".gift_card_users gcu
-            WHERE gcu.card_id = ${giftCardId};
+            SELECT count(gc.id)
+            FROM "14trees_2".gift_cards gc
+            WHERE gc.gift_card_request_id = ${giftCardRequestId};
         `
 
         const countData: any[] = await sequelize.query(countQuery, {

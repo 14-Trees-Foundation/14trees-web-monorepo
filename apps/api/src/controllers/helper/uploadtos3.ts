@@ -34,8 +34,8 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
         bucket = process.env.BUCKET_PONDS + "/" + folder_name
     } else if (type === 'albums') {
         bucket = process.env.BUCKET_MEMORIES + "/" + folder_name
-    } else if (type === 'logos') {
-        bucket = process.env.BUCKET_LOGOS
+    } else if (type === 'gift_cards') {
+        bucket = process.env.BUCKET_GIFT_CARDS + "/" + folder_name
     } else if (type === 'tree_update') {
         bucket = process.env.BUCKET_TREE_UPDATE
     }

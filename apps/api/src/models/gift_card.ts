@@ -3,17 +3,17 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface GiftCardAttributes {
     id: number;
-    user_id: number;
-    group_id: number;
-    no_of_cards: number;
-    is_active: boolean;
-    logo_url: string | null;
+    user_id: number | null;
+    gift_card_request_id: number;
+    tree_id: number | null;
+    card_image_url: string | null;
+    profile_image_url: string | null;
     created_at: Date;
     updated_at: Date;
 }
 
 interface GiftCardCreationAttributes
-    extends Optional<GiftCardAttributes, 'id' | 'logo_url'> { }
+    extends Optional<GiftCardAttributes, 'id' | 'tree_id' | 'card_image_url' | 'profile_image_url'> { }
 
 @Table({ tableName: 'gift_cards' })
 class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
@@ -36,25 +36,24 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
 
     @Column({
         type: DataType.NUMBER,
-    })
-    group_id!: number;
-
-    @Column({
-        type: DataType.BOOLEAN,
         allowNull: false,
     })
-    is_active!: boolean;
+    gift_card_request_id!: number;
+
+    @Column({
+        type: DataType.NUMBER,
+    })
+    tree_id!: number;
 
     @Column({
         type: DataType.STRING,
     })
-    logo_url!: string;
+    card_image_url!: string;
 
     @Column({
-        type: DataType.NUMBER,
-        allowNull: false,
+        type: DataType.STRING,
     })
-    no_of_cards!: number;
+    profile_image_url!: string;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;
