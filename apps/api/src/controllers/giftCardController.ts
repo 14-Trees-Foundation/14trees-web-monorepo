@@ -126,7 +126,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
             const userResp = await UserRepository.upsertUser(user);
             usersData.push({
                 userId: userResp.id,
-                imageName: user.imageName ? user.imageName : undefined
+                imageName: user.image_name ? user.image_name : undefined
             });
         }
 
