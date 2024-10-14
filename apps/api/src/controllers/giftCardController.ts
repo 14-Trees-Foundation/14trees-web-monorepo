@@ -30,7 +30,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         secondary_message: secondaryMessage,
         event_name: eventName,
         planted_by: plantedBy,
-        logo_message: logoMessage
+        logo_message: logoMessage,
+        request_id: requestId,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -40,6 +41,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
     }
 
     const request: GiftCardRequestCreationAttributes = {
+        request_id: requestId,
         user_id: userId,
         group_id: groupId || null,
         no_of_cards: noOfCards,
@@ -60,13 +62,13 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         let imageChange = false;
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
         if (files.logo && files.logo.length > 0) {
-            const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", giftCard.id.toString());
+            const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
             imageChange = true;
         }
 
         if (files.csv_file && files.csv_file.length > 0) {
-            const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", giftCard.id.toString());
+            const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", requestId);
             giftCard.users_csv_file_url = location;
             imageChange = true;
         }
