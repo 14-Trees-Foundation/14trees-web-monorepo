@@ -89,13 +89,14 @@ export class GiftCardsRepository {
         await giftCard.destroy();
     }
 
-    static async createGiftCards(giftCardsRequestId: number, userIds: number[]): Promise<void> {
-        const giftCards = userIds.map(userId => {
+    static async createGiftCards(giftCardsRequestId: number, users: { userId: number, imageName?: string }[]): Promise<void> {
+        const giftCards = users.map(user => {
             return {
                 gift_card_request_id: giftCardsRequestId,
-                user_id: userId,
-                created_at: new Date()
-                
+                user_id: user.userId,
+                profile_image_url: user.imageName ? 'https://14treesplants.s3.amazonaws.com/users/' + user.imageName : null,
+                created_at: new Date(),
+                updated_at: new Date()
             } as GiftCardCreationAttributes
         })
 
