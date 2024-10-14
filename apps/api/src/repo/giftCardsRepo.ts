@@ -31,10 +31,10 @@ export class GiftCardsRepository {
 
         const getQuery = `
             SELECT gc.*, u.name as user_name, g.name as group_name, array_agg(DISTINCT gcp.plot_id) as plot_ids
-            FROM "14trees_2".gift_card_requests gc
-            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees_2".groups g ON g.id = gc.group_id
-            LEFT JOIN "14trees_2".gift_card_plots gcp ON gcp.card_id = gc.id
+            FROM "14trees".gift_card_requests gc
+            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".groups g ON g.id = gc.group_id
+            LEFT JOIN "14trees".gift_card_plots gcp ON gcp.card_id = gc.id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY gc.id, u.name, g.name
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -42,9 +42,9 @@ export class GiftCardsRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees_2".gift_card_requests gc
-            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees_2".groups g ON g.id = gc.group_id
+            FROM "14trees".gift_card_requests gc
+            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".groups g ON g.id = gc.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -116,10 +116,10 @@ export class GiftCardsRepository {
     static async getDetailedGiftCard(id: number): Promise<GiftCard | null> {
         const getQuery = `
             SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
-            FROM "14trees_2".gift_cards gc
-            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "14trees".gift_cards gc
+            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.id = ${id};
         `
 
@@ -197,10 +197,10 @@ export class GiftCardsRepository {
 
         const getQuery = `
             SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
-            FROM "14trees_2".gift_cards gc
-            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "14trees".gift_cards gc
+            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
@@ -211,7 +211,7 @@ export class GiftCardsRepository {
 
         const countQuery = `
             SELECT count(gc.id)
-            FROM "14trees_2".gift_cards gc
+            FROM "14trees".gift_cards gc
             WHERE gc.gift_card_request_id = ${giftCardRequestId};
         `
 
