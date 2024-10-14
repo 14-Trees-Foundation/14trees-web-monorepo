@@ -3,6 +3,7 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface GiftCardRequestAttributes {
     id: number;
+    request_id: string;
     user_id: number;
     group_id: number;
     no_of_cards: number;
@@ -33,6 +34,13 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         unique: true
     })
     id!: number;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+        unique: true
+    })
+    request_id!: string;
 
     @Column({
         type: DataType.NUMBER,

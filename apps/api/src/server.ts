@@ -38,6 +38,7 @@ import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import { startAppV2ErrorLogsCronJob } from "./services/cron";
+import utilsRoutes from "./routes/utilsRoutes";
 
 let swaggerFile: any;
 try {
@@ -102,6 +103,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/visit-users/" , visitUserRoutes);
   app.use("/api/visit-images", visitImageRoutes );
   app.use("/api/tree-snapshots", treeSnapshotRoutes );
+  app.use("/api/utils", utilsRoutes );
 
   // swagger doc
   if (swaggerFile) {
