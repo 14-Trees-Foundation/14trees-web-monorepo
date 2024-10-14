@@ -119,13 +119,16 @@ export const createGiftCards = async (req: Request, res: Response) => {
     }
 
     try {
-        const userIds: number[] = []
+        const usersData: { userId: number, imageName?: string }[] = []
         for (const user of users) {
             const userResp = await UserRepository.upsertUser(user);
-            userIds.push(userResp.id);
+            usersData.push({
+                userId: userResp.id,
+                imageName: user.imageName ? user.imageName : undefined
+            });
         }
 
-        await GiftCardsRepository.createGiftCards(giftCardRequestId, userIds);
+        await GiftCardsRepository.createGiftCards(giftCardRequestId, usersData);
         res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCards", error);
