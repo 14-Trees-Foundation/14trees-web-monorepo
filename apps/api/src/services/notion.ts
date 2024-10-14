@@ -45,7 +45,7 @@ const getDatabaseData = async (databaseId: string) => {
                             const type = result.properties[key].type
 
                             if (type == "rich_text" || type == "title") {
-                                if (value[type].length != 0) data[key] = value[type][0].plain_text;
+                                if (value[type].length != 0) data[key] = value[type].map((item: any) => item.plain_text).join("");
                             } else if (type == "select" || type == "status") {
                                 if (value[type]) data[key] = value[type].name;
                             } else if (type == "date") {
