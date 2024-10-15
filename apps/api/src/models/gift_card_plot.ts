@@ -4,7 +4,7 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 interface GiftCardPlotAttributes {
     id: number;
     plot_id: number;
-    card_id: number;
+    gift_card_request_id: number;
     created_at: Date;
 }
 
@@ -34,7 +34,7 @@ class GiftCardPlot extends Model<GiftCardPlotAttributes, GiftCardPlotCreationAtt
         type: DataType.NUMBER,
         allowNull: false,
     })
-    card_id!: number;
+    gift_card_request_id!: number;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

@@ -16,25 +16,25 @@ class TreeRepository {
     let whereCondition = "";
     let replacements: any = {}
     if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            let columnField = "t." + filter.columnField
-            let valuePlaceHolder = filter.columnField
-            if (filter.columnField === "assigned_to_name") {
-              columnField = 'au."name"'
-            } else if (filter.columnField === "mapped_user_name") {
-              columnField = 'mu."name"'
-            } else if (filter.columnField === "plot") {
-              columnField = 'p."name"'
-            } else if (filter.columnField === "plant_type") {
-              columnField = 'pt."name"'
-            } else if (filter.columnField === "tree_health") {
-              columnField = 'ts.tree_status'
-            }
-            const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
-            whereCondition = whereCondition + " " + condition + " AND";
-            replacements = { ...replacements, ...replacement }
-        })
-        whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+      filters.forEach(filter => {
+        let columnField = "t." + filter.columnField
+        let valuePlaceHolder = filter.columnField
+        if (filter.columnField === "assigned_to_name") {
+          columnField = 'au."name"'
+        } else if (filter.columnField === "mapped_user_name") {
+          columnField = 'mu."name"'
+        } else if (filter.columnField === "plot") {
+          columnField = 'p."name"'
+        } else if (filter.columnField === "plant_type") {
+          columnField = 'pt."name"'
+        } else if (filter.columnField === "tree_health") {
+          columnField = 'ts.tree_status'
+        }
+        const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+        whereCondition = whereCondition + " " + condition + " AND";
+        replacements = { ...replacements, ...replacement }
+      })
+      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
     }
 
     let query = `
@@ -61,10 +61,10 @@ class TreeRepository {
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
-    
+
     const trees: any = await sequelize.query(query, {
-        replacements: replacements,
-        type: QueryTypes.SELECT
+      replacements: replacements,
+      type: QueryTypes.SELECT
     })
 
     const countQuery = `
@@ -84,9 +84,9 @@ class TreeRepository {
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
     `
     const resp = await sequelize.query(countQuery, {
-        replacements: replacements,
+      replacements: replacements,
     });
-    return { offset: offset, total: (resp[0][0] as any)?.count, results: trees as Tree[]};
+    return { offset: offset, total: (resp[0][0] as any)?.count, results: trees as Tree[] };
   };
 
   public static async getTreeBySaplingId(saplingId: string): Promise<Tree | null> {
@@ -165,10 +165,10 @@ class TreeRepository {
 
     // Upload images to S3
     if (files && files.length !== 0) {
-        const location = await UploadFileToS3(files[0].filename, "trees");
-        if (location !== "") {
-          data.image = location;
-        }
+      const location = await UploadFileToS3(files[0].filename, "trees");
+      if (location !== "") {
+        data.image = location;
+      }
     }
 
     // user validation/invalidation update logic
@@ -277,7 +277,7 @@ class TreeRepository {
       updateConfig["mapped_to_group"] = id;
     }
 
-    const resp = await Tree.update( updateConfig, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update(updateConfig, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("mapped trees %d for %s: %d", resp, mapped_to, id);
   }
 
@@ -312,6 +312,39 @@ class TreeRepository {
     }
 
     return trees.map(tree => tree.id);
+  }
+
+  public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number, plotIds: number[], count: number) {
+    const updateConfig: any = {
+      mapped_to_user: userId,
+      mapped_to_group: groupId,
+      mapped_at: new Date(),
+      updated_at: new Date(),
+    }
+
+    let remaining = count;
+    const treeIds: number[] = [];
+    for (const plotId of plotIds) {
+      if (remaining === 0) break;
+
+      let trees: Tree[] = await Tree.findAll({
+        where: {
+          mapped_to_user: { [Op.is]: undefined },
+          mapped_to_group: { [Op.is]: undefined },
+          assigned_at: { [Op.is]: undefined },
+          plot_id: plotId,
+        },
+        limit: remaining
+      });
+
+      for (let i = 0; i < trees.length; i++) {
+        await trees[i].update(updateConfig);
+        treeIds.push(trees[i].id);
+        remaining--;
+      }
+    }
+
+    return treeIds;
   }
 
   public static async unMapTrees(saplingIds: string[]) {
@@ -350,12 +383,12 @@ class TreeRepository {
 
     // Memories for the visit
     if (reqBody.album_images !== undefined) {
-        if (reqBody.album_images.length > 0) {
-            let memoryImages = reqBody.album_images.split(",");
-            if (memoryImages.length > 0) {
-                memoryImageUrls = memoryImages;
-            }
+      if (reqBody.album_images.length > 0) {
+        let memoryImages = reqBody.album_images.split(",");
+        if (memoryImages.length > 0) {
+          memoryImageUrls = memoryImages;
         }
+      }
     }
 
     const updateFields: any = {
@@ -370,7 +403,7 @@ class TreeRepository {
       event_id: eventId || null,
       event_type: reqBody.type || null,
       updated_at: new Date(),
-    } 
+    }
 
     const result = await tree.update(updateFields);
 
@@ -396,7 +429,7 @@ class TreeRepository {
   }
 
   public static async getUserProfilesForUserId(userId: number): Promise<any[]> {
-    const query =  `
+    const query = `
       SELECT 
         t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
         t.user_tree_image, t.sponsored_by_user, du."name" AS sponsored_by_user_name, 
@@ -428,8 +461,8 @@ class TreeRepository {
     WHERE t.id IS NULL;`
 
     const result = await sequelize.query(query, {
-        replacements: { tree_ids: treeIds },
-        type: QueryTypes.SELECT
+      replacements: { tree_ids: treeIds },
+      type: QueryTypes.SELECT
     })
 
     return result.map((row: any) => row.num);
@@ -440,20 +473,20 @@ class TreeRepository {
     let whereCondition = "";
     let replacements: any = {}
     if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            let columnField = "t." + filter.columnField
-            let valuePlaceHolder = filter.columnField
-            if (filter.columnField === "user_name") {
-              columnField = 'u."name"'
-            } else if (filter.columnField === "plot_name") {
-              columnField = 'p."name"'
-            }
+      filters.forEach(filter => {
+        let columnField = "t." + filter.columnField
+        let valuePlaceHolder = filter.columnField
+        if (filter.columnField === "user_name") {
+          columnField = 'u."name"'
+        } else if (filter.columnField === "plot_name") {
+          columnField = 'p."name"'
+        }
 
-            const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
-            whereCondition = whereCondition + " " + condition + " AND";
-            replacements = { ...replacements, ...replacement }
-        })
-        whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+        whereCondition = whereCondition + " " + condition + " AND";
+        replacements = { ...replacements, ...replacement }
+      })
+      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
     }
 
     const query = `

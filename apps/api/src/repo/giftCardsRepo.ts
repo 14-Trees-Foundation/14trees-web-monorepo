@@ -3,7 +3,7 @@ import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttr
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 import { sequelize } from "../config/postgreDB";
-import { GiftCard, GiftCardCreationAttributes } from "../models/gift_card";
+import { GiftCard, GiftCardAttributes, GiftCardCreationAttributes } from "../models/gift_card";
 import { GiftCardPlot, GiftCardPlotCreationAttributes } from "../models/gift_card_plot";
 import { GiftCardUserTemplate, GiftCardUserTemplateCreationAttributes } from "../models/gift_card_user_template";
 import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
@@ -34,7 +34,7 @@ export class GiftCardsRepository {
             FROM "14trees_2".gift_card_requests gc
             LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
             LEFT JOIN "14trees_2".groups g ON g.id = gc.group_id
-            LEFT JOIN "14trees_2".gift_card_plots gcp ON gcp.card_id = gc.id
+            LEFT JOIN "14trees_2".gift_card_plots gcp ON gcp.gift_card_request_id = gc.id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY gc.id, u.name, g.name
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -141,6 +141,13 @@ export class GiftCardsRepository {
         return data[0];
     }
 
+    static async updateGiftCard(giftCard: GiftCardAttributes): Promise<void> {
+        const card = await GiftCard.findByPk(giftCard.id);
+        if (card) {
+            card.update(giftCard);
+        }
+    }
+
     static async bookGiftCards(cardId: number, treeIds: number[]): Promise<void> {
 
         const cards = await GiftCard.findAll({
@@ -180,7 +187,7 @@ export class GiftCardsRepository {
     static async addGiftCardPlots(cardId: number, plotIds: number[]): Promise<void> {
         const giftCardPlots = plotIds.map(plotId => {
             return {
-                card_id: cardId,
+                gift_card_request_id: cardId,
                 plot_id: plotId,
                 created_at: new Date()
                 
@@ -193,8 +200,9 @@ export class GiftCardsRepository {
     static async getGiftCardPlots(cardId: number): Promise<GiftCardPlot[]> {
         const giftCardPlots = await GiftCardPlot.findAll({
             where: {
-                card_id: cardId
-            }
+                gift_card_request_id: cardId
+            },
+            order: [['id', 'ASC']]
         });
 
         return giftCardPlots;
