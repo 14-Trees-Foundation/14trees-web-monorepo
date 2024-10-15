@@ -8,6 +8,8 @@ import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes } from "..
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, deleteSlide, getSlideThumbnail, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadCardTemplateToS3 } from "./helper/uploadtos3";
+import archiver from 'archiver';
+import axios from 'axios'
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -22,9 +24,9 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
 }
 
 export const createGiftCardRequest = async (req: Request, res: Response) => {
-    const { 
-        user_id: userId, 
-        group_id: groupId, 
+    const {
+        user_id: userId,
+        group_id: groupId,
         no_of_cards: noOfCards,
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
@@ -158,16 +160,16 @@ export const createGiftCards = async (req: Request, res: Response) => {
 }
 
 export const createGiftCardPlots = async (req: Request, res: Response) => {
-    const { plot_ids: plotIds, gift_card_id: giftCardId } = req.body;
+    const { plot_ids: plotIds, gift_card_request_id: giftCardRequestId } = req.body;
 
-    if (!giftCardId || !plotIds || plotIds.length === 0) {
+    if (!giftCardRequestId || !plotIds || plotIds.length === 0) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
         })
     }
 
     try {
-        await GiftCardsRepository.addGiftCardPlots(giftCardId, plotIds);
+        await GiftCardsRepository.addGiftCardPlots(giftCardRequestId, plotIds);
         res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardPlots", error);
@@ -178,7 +180,7 @@ export const createGiftCardPlots = async (req: Request, res: Response) => {
 }
 
 export const bookGiftCardTrees = async (req: Request, res: Response) => {
-    const {  gift_card_request_id: giftCardRequestId } = req.body;
+    const { gift_card_request_id: giftCardRequestId } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -198,7 +200,7 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
             return;
         }
 
-        const treeIds = await TreeRepository.mapTreesInPlot('user', giftCardRequest.user_id as any, plotIds, giftCardRequest.no_of_cards);
+        const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, giftCardRequest.no_of_cards);
         await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
 
         giftCardRequest.is_active = true;
@@ -216,7 +218,7 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 
 export const getBookedTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const {  gift_card_request_id: giftCardRequestId } = req.params;
+    const { gift_card_request_id: giftCardRequestId } = req.params;
     if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -234,8 +236,138 @@ export const getBookedTrees = async (req: Request, res: Response) => {
     }
 }
 
+export const autoAssignTrees = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.body;
+
+    try {
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
+        const giftCardRequest = resp.results[0];
+
+        const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
+        for (const giftCard of giftCards.results) {
+            if (!giftCard.tree_id || !giftCard.user_id) continue;
+
+            const updateRequest = {
+                assigned_at: new Date(),
+                assigned_to: giftCard.user_id,
+                update_at: new Date(),
+                description: giftCardRequest.event_name,
+                planted_by: giftCardRequest.planted_by,
+                user_tree_image: giftCard.profile_image_url
+            }
+
+            await TreeRepository.updateTrees(updateRequest, { id: giftCard.tree_id });
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::autoAssignTrees", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+}
+
+const generateGiftCardTemplate = async (plantType: string, record: any) => {
+    const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
+    if (!presentationId) {
+        throw new Error("Missing gift card template presentation id from env file");
+    }
+
+    const plantTypeCardTemplate = await GiftCardsRepository.getPlantTypeTemplateId(plantType);
+    if (!plantTypeCardTemplate) {
+        throw new Error("Plant type card template not found");
+    }
+    const templateId = plantTypeCardTemplate.template_id;
+
+    const slideId = await createSlide(presentationId, templateId, record);
+
+    return slideId;
+}
+
+const getGiftCardTemplateImage = async (templateId: string, saplingId: string) => {
+    const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
+    if (!presentationId) {
+        throw new Error("Missing gift card template presentation id from env file");
+    }
+
+    const url = await getSlideThumbnail(presentationId, templateId)
+    const s3Url = await uploadCardTemplateToS3(url, saplingId);
+
+    deleteSlide(presentationId, templateId);
+
+    return s3Url;
+}
+
+export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.params;
+
+    
+    try {
+        
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: parseInt(giftCardRequestId) }]);
+        if (resp.results.length === 0) {
+            res.status(status.bad).json({
+                message: 'Please provide valid input details!'
+            })
+            return;
+        }
+
+        const giftCardRequest = resp.results[0];
+
+        res.setHeader('Content-Disposition', `attachment; filename=${(giftCardRequest as any).user_name + '_' + giftCardRequest.no_of_cards}.zip`);
+        res.setHeader('Content-Type', 'application/zip');
+        const archive = archiver('zip', {
+            zlib: { level: 9 },
+        });
+
+        archive.pipe(res);
+
+        const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
+        for (const giftCard of giftCards.results) {
+            if (!giftCard.tree_id || !giftCard.user_id) continue;
+
+            let templateImage = giftCard.card_image_url;
+            if (!templateImage) {
+                const record = {
+                    name: (giftCard as any).user_name,
+                    sapling: (giftCard as any).sapling_id,
+                    content1: giftCardRequest.primary_message,
+                    content2: giftCardRequest.secondary_message,
+                    logo: giftCardRequest.logo_url,
+                    logo_message: giftCardRequest.logo_message
+                }
+                const templateId = await generateGiftCardTemplate((giftCard as any).plant_type, record);
+                const templateImage = await getGiftCardTemplateImage(templateId, (giftCard as any).sapling_id);
+
+                giftCard.card_image_url = templateImage;
+                await GiftCardsRepository.updateGiftCard(giftCard);
+            }
+
+            try {
+                const response = await axios({
+                    url: templateImage,
+                    method: 'GET',
+                    responseType: 'stream',
+                });
+    
+                archive.append(response.data, { name: `${(giftCard as any).user_name}_${(giftCard as any).sapling_id}.jpg` });
+            } catch (error: any) {
+                console.error(`Failed to download image from templateImage:`, error.message);
+            }
+        }
+
+        archive.finalize();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::getGiftCardTemplatesForGiftCardRequest", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+}
+
 export const generateGiftCardTemplateForSapling = async (req: Request, res: Response) => {
-    const {  gift_card_id: giftCardId, sapling_id: saplingId, user, content1, content2 } = req.body;
+    const { gift_card_id: giftCardId, sapling_id: saplingId, user, content1, content2 } = req.body;
     if (!giftCardId || isNaN(parseInt(giftCardId))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -261,7 +393,7 @@ export const generateGiftCardTemplateForSapling = async (req: Request, res: Resp
             })
             return;
         }
-        
+
         const giftCardUser = await GiftCardsRepository.getDetailedGiftCard(parseInt(giftCardId));
         if (!giftCardUser) {
             res.status(status.bad).json({
@@ -312,7 +444,7 @@ export const generateGiftCardTemplateForSapling = async (req: Request, res: Resp
 }
 
 export const updateGiftCardTemplate = async (req: Request, res: Response) => {
-    const {  gift_card_id: giftCardId, user, content1, content2 } = req.body;
+    const { gift_card_id: giftCardId, user, content1, content2 } = req.body;
     if (!giftCardId || isNaN(parseInt(giftCardId))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -344,7 +476,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
             })
             return;
         }
-        
+
         await updateSlide(presentationId, giftCardUserTemplate.template_id, record)
         res.status(status.success).send();
     } catch (error: any) {
@@ -354,7 +486,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 };
 
 export const redeemGiftCard = async (req: Request, res: Response) => {
-    const {  gift_card_id: giftCardId, user, sapling_id: saplingId, tree_id: treeId } = req.body;
+    const { gift_card_id: giftCardId, user, sapling_id: saplingId, tree_id: treeId } = req.body;
     if (!giftCardId || isNaN(parseInt(giftCardId))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -379,7 +511,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             })
             return;
         }
-        
+
         const url = await getSlideThumbnail(presentationId, giftCardUserTemplate.template_id)
         const s3Url = await uploadCardTemplateToS3(url, saplingId);
 

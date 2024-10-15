@@ -15,5 +15,7 @@ routes.get('/:gift_card_id', giftCards.getBookedTrees);
 routes.post('/card/', giftCards.generateGiftCardTemplateForSapling);
 routes.post('/card/update', giftCards.updateGiftCardTemplate);
 routes.post('/card/redeem', giftCards.redeemGiftCard);
+routes.post('/auto-assign', giftCards.autoAssignTrees);
+routes.get('/download/:gift_card_request_id', giftCards.getGiftCardTemplatesForGiftCardRequest);
 
 export default routes;
