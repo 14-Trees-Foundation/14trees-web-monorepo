@@ -73,8 +73,10 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             imageChange = true;
         }
 
-        if (imageChange) giftCard = await giftCard.save();
-        res.status(status.success).json(giftCard);
+        if (imageChange) await giftCard.save();
+
+        const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
+        res.status(status.success).json(giftCards.results[0]);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
         res.status(status.error).json({
