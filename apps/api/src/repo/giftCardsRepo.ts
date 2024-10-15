@@ -48,7 +48,7 @@ export class GiftCardsRepository {
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
-        const giftCards: any = await sequelize.query(getQuery, {
+        const giftCards: any[] = await sequelize.query(getQuery, {
             replacements: replacements,
             type: QueryTypes.SELECT
         })
@@ -62,12 +62,20 @@ export class GiftCardsRepository {
         return {
             offset: offset,
             total: totalResults,
-            results: giftCards
+            results: giftCards.map(giftCard => {
+                return {
+                    ...giftCard,
+                    plot_ids: giftCard.plot_ids ? giftCard.plot_ids.filter((plot_id: any) => plot_id !== null) : []
+                }
+            })
         };
     }
 
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
-        return await GiftCardRequest.create(data);
+        const giftCardRequest = await GiftCardRequest.create(data);
+
+        const giftCards = await this.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCardRequest.id }])
+        return giftCards.results[0];
     }
 
     static async updateGiftCardRequest(data: GiftCardRequestAttributes): Promise<GiftCardRequest> {
@@ -78,7 +86,9 @@ export class GiftCardsRepository {
 
         giftCard.updated_at = new Date();
         const updatedGiftCard = await giftCard.update(data);
-        return updatedGiftCard;
+
+        const giftCards = await this.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: updatedGiftCard.id }])
+        return giftCards.results[0];
     }
 
     static async deleteGiftCardRequest(id: number): Promise<void> {
