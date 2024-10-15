@@ -72,10 +72,7 @@ export class GiftCardsRepository {
     }
 
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
-        const giftCardRequest = await GiftCardRequest.create(data);
-
-        const giftCards = await this.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCardRequest.id }])
-        return giftCards.results[0];
+        return await GiftCardRequest.create(data);
     }
 
     static async updateGiftCardRequest(data: GiftCardRequestAttributes): Promise<GiftCardRequest> {
