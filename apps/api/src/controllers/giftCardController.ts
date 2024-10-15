@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestCreationAttributes } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, deleteSlide, getSlideThumbnail, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadCardTemplateToS3 } from "./helper/uploadtos3";
@@ -84,9 +84,24 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 }
 
 export const updateGiftCardRequest = async (req: Request, res: Response) => {
+
+    const giftCardRequest: GiftCardRequestAttributes = req.body;
+
     try {
-        const updatedGiftCard = await GiftCardsRepository.updateGiftCardRequest(req.body)
-        res.status(status.success).json(updatedGiftCard);
+
+        const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
+        if (files.logo && files.logo.length > 0) {
+            const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", giftCardRequest.request_id);
+            giftCardRequest.logo_url = location;
+        }
+
+        if (files.csv_file && files.csv_file.length > 0) {
+            const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", giftCardRequest.request_id);
+            giftCardRequest.users_csv_file_url = location;
+        }
+
+        const updatedGiftCardRequest = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        res.status(status.success).json(updatedGiftCardRequest);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::updateGiftCardRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
