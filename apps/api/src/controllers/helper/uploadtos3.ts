@@ -183,30 +183,25 @@ export const attachMetaData = async (imageURL: string, type: string, folder_name
     return ans;
 }
 
-export async function uploadCardTemplateToS3(
-    cardUrl: string,
-    saplingId: string,
+export async function uploadImageUrlToS3(
+    image: string,
+    key: string,
 ): Promise<string> {
     try {
         const bucketName = getBucketFromTypeAndFolderName('trees', '');
-        const imageResponse = await axios.get(cardUrl, {
+        const imageResponse = await axios.get(image, {
             responseType: 'arraybuffer', // Download as binary data
         });
 
-        // Generate a unique file name for the thumbnail
-        const fileName = `thumbnails/${saplingId}.jpg`;
-
-        // Step 3: Upload the image to S3
         const uploadParams = {
             Bucket: bucketName,
-            Key: fileName,
+            Key: key,
             Body: imageResponse.data,
             ContentType: 'image/jpeg',
             ACL: 'public-read',
         };
 
         const uploadResult = await s3.upload(uploadParams).promise();
-        console.log('File uploaded successfully:', uploadResult.Location);
 
         return uploadResult.Location;
     } catch (error) {
