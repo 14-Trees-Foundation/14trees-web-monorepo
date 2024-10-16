@@ -7,7 +7,7 @@ import { UserRepository } from "../repo/userRepo";
 import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, deleteSlide, getSlideThumbnail, updateSlide } from "./helper/slides";
-import { UploadFileToS3, uploadCardTemplateToS3 } from "./helper/uploadtos3";
+import { UploadFileToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import archiver from 'archiver';
 import axios from 'axios'
 
@@ -297,14 +297,14 @@ const generateGiftCardTemplate = async (plantType: string, record: any) => {
     return slideId;
 }
 
-const getGiftCardTemplateImage = async (templateId: string, saplingId: string) => {
+const getGiftCardTemplateImage = async (templateId: string, requestId: string, saplingId: string) => {
     const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
     if (!presentationId) {
         throw new Error("Missing gift card template presentation id from env file");
     }
 
     const url = await getSlideThumbnail(presentationId, templateId)
-    const s3Url = await uploadCardTemplateToS3(url, saplingId);
+    const s3Url = await uploadImageUrlToS3(url, `gift-card-requests/${requestId}/thumbnails/${saplingId}.jpg`);
 
     deleteSlide(presentationId, templateId);
 
@@ -354,7 +354,7 @@ export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: 
                     logo_message: giftCardRequest.logo_message
                 }
                 const templateId = await generateGiftCardTemplate((giftCard as any).plant_type, record);
-                const templateImage = await getGiftCardTemplateImage(templateId, (giftCard as any).sapling_id);
+                const templateImage = await getGiftCardTemplateImage(templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
 
                 giftCard.card_image_url = templateImage;
                 await GiftCardsRepository.updateGiftCard(giftCard);
@@ -525,6 +525,15 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
     }
 
     try {
+        
+        const giftCardUser = await GiftCardsRepository.getGiftCard(parseInt(giftCardId));
+        if (!giftCardUser) {
+            res.status(status.bad).json({
+                message: 'Gift card not found!'
+            })
+            return;
+        }
+
         const giftCardUserTemplate = await GiftCardsRepository.getGiftCardTemplate(parseInt(giftCardId));
         if (!giftCardUserTemplate) {
             res.status(status.bad).json({
@@ -533,16 +542,11 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             return;
         }
 
-        const url = await getSlideThumbnail(presentationId, giftCardUserTemplate.template_id)
-        const s3Url = await uploadCardTemplateToS3(url, saplingId);
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardUser.gift_card_request_id }])
+        const giftCardRequest = resp.results[0];
 
-        const giftCardUser = await GiftCardsRepository.getGiftCard(parseInt(giftCardId));
-        if (!giftCardUser) {
-            res.status(status.bad).json({
-                message: 'Gift card not found!'
-            })
-            return;
-        }
+        const url = await getSlideThumbnail(presentationId, giftCardUserTemplate.template_id)
+        const s3Url = await uploadImageUrlToS3(url, `gift-card-requests/${giftCardRequest.request_id}/thumbnails/${saplingId}.jpg`);
 
         const treeUpdateRequest = {
             assigned_at: new Date(),
