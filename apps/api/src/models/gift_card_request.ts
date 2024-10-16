@@ -1,6 +1,13 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
+export const GiftCardRequestStatus = {
+    pendingPlotSelection: 'pending_plot_selection',
+    pendingAssignment: 'pending_assignment',
+    pendingGiftCards: 'pending_gift_cards',
+    completed: 'completed',
+}
+
 interface GiftCardRequestAttributes {
     id: number;
     request_id: string;
@@ -17,6 +24,7 @@ interface GiftCardRequestAttributes {
     logo_message: string | null;
     created_at: Date;
     updated_at: Date;
+    status: string;
 }
 
 interface GiftCardRequestCreationAttributes
@@ -99,6 +107,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         allowNull: false,
     })
     no_of_cards!: number;
+
+    @Column({
+        type: DataType.STRING,
+    })
+    status!: string;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

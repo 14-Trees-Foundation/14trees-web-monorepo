@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, deleteSlide, getSlideThumbnail, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadCardTemplateToS3 } from "./helper/uploadtos3";
@@ -55,7 +55,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         secondary_message: secondaryMessage || null,
         event_name: eventName || null,
         planted_by: plantedBy || null,
-        logo_message: logoMessage || null
+        logo_message: logoMessage || null,
+        status: GiftCardRequestStatus.pendingPlotSelection,
     }
 
     try {
@@ -204,6 +205,7 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
         await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
 
         giftCardRequest.is_active = true;
+        giftCardRequest.status = GiftCardRequestStatus.pendingAssignment;
         giftCardRequest.updated_at = new Date();
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
@@ -244,8 +246,12 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
         const giftCardRequest = resp.results[0];
 
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
+        let allAssigned = true;
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) continue;
+            if (!giftCard.tree_id || !giftCard.user_id) {
+                allAssigned = false;
+                continue;
+            }
 
             const updateRequest = {
                 assigned_at: new Date(),
@@ -257,6 +263,12 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
             }
 
             await TreeRepository.updateTrees(updateRequest, { id: giftCard.tree_id });
+        }
+
+        if (allAssigned) {
+            giftCardRequest.status = GiftCardRequestStatus.pendingGiftCards;
+            giftCardRequest.updated_at = new Date();
+            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
         }
 
         res.status(status.success).send();
@@ -323,9 +335,13 @@ export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: 
 
         archive.pipe(res);
 
+        let allCardsGenerated = true;
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) continue;
+            if (!giftCard.tree_id || !giftCard.user_id) {
+                allCardsGenerated = false;
+                continue;
+            }
 
             let templateImage = giftCard.card_image_url;
             if (!templateImage) {
@@ -357,6 +373,11 @@ export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: 
             }
         }
 
+        if (allCardsGenerated) {
+            giftCardRequest.status = GiftCardRequestStatus.completed;
+            giftCardRequest.updated_at = new Date();
+            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        }
         archive.finalize();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::getGiftCardTemplatesForGiftCardRequest", error);
