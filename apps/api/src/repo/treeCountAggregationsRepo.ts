@@ -43,7 +43,7 @@ export class TreeCountAggregationsRepo {
     public static async calculateTreeCountAggregations(): Promise<void> {
 
         const query = `
-            SELECT p.id as plot_id, 
+            SELECT p.id as plot_id,
             COUNT(t.id) as total, 
             COUNT(t.assigned_to) as assigned,
             SUM(CASE 
@@ -89,9 +89,21 @@ export class TreeCountAggregationsRepo {
                     or ts.tree_status = 'lost')
                 THEN 1 
                 ELSE 0 
-            END) AS void_available
+            END) AS void_available,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (ts.tree_status IS NULL OR (ts.tree_status != 'dead' AND ts.tree_status != 'lost'))
+                    AND ptct.plant_type IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS card_available
             FROM "14trees".plots p
             LEFT JOIN "14trees".trees t ON t.plot_id = p.id
+            LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
+            LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
             LEFT JOIN (SELECT *
                 FROM (
                     SELECT *,
@@ -119,6 +131,7 @@ export class TreeCountAggregationsRepo {
                 void_assigned: d.void_assigned,
                 void_booked: d.void_booked,
                 void_available: d.void_available,
+                card_available: d.card_available,
                 updated_at: new Date(),
             })
         })
@@ -134,6 +147,7 @@ export class TreeCountAggregationsRepo {
                 'void_booked', 
                 'void_assigned', 
                 'void_available',
+                'card_available',
                 'updated_at'
             ]})
     }
