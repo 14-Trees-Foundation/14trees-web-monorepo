@@ -12,6 +12,7 @@ interface TreeCountAggregationAttributes {
     void_booked: number;
     void_assigned: number;
     void_available: number;
+    card_available: number;
     updated_at: Date;
 }
 
@@ -59,6 +60,9 @@ class TreeCountAggregation extends Model<TreeCountAggregationAttributes, TreeCou
 
     @Column({ type: DataType.NUMBER, allowNull: false })
     void_available!: number;
+
+    @Column({ type: DataType.NUMBER, allowNull: false })
+    card_available!: number;
 
     @Column({ type: DataType.DATE, allowNull: false })
     updated_at!: Date;
