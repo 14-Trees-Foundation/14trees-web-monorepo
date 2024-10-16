@@ -86,7 +86,8 @@ export class PlotRepository {
             tcg.void_total,
             tcg.void_booked,
             tcg.void_available,
-            tcg.void_assigned
+            tcg.void_assigned,
+            tcg.card_available
         FROM "14trees_2".plots p
         LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         left join "14trees_2".tree_count_aggregations tcg on tcg.plot_id = p.id

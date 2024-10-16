@@ -322,6 +322,17 @@ class TreeRepository {
       updated_at: new Date(),
     }
 
+    const query = `
+      SELECT pt.id FROM "14trees_2".plant_types pt
+      JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+    `
+
+    const resp: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT
+    })
+
+    const plantTypeIds: number[] = resp.map(row => row.id);
+
     let remaining = count;
     const treeIds: number[] = [];
     for (const plotId of plotIds) {
@@ -333,6 +344,7 @@ class TreeRepository {
           mapped_to_group: { [Op.is]: undefined },
           assigned_at: { [Op.is]: undefined },
           plot_id: plotId,
+          plant_type_id: { [Op.in]: plantTypeIds }
         },
         limit: remaining
       });
