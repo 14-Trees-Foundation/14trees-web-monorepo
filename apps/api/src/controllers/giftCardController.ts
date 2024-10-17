@@ -10,6 +10,7 @@ import { createSlide, deleteSlide, getSlideThumbnail, updateSlide } from "./help
 import { UploadFileToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import archiver from 'archiver';
 import axios from 'axios'
+import { Op } from "sequelize";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -57,6 +58,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         planted_by: plantedBy || null,
         logo_message: logoMessage || null,
         status: GiftCardRequestStatus.pendingPlotSelection,
+        validation_error: 'MISSING_LOGO',
     }
 
     try {
@@ -67,6 +69,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         if (files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
+            giftCard.validation_error = 'MISSING_USER_DETAILS'
             imageChange = true;
         }
 
@@ -98,6 +101,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         if (files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", giftCardRequest.request_id);
             giftCardRequest.logo_url = location;
+            giftCardRequest.validation_error = giftCardRequest.validation_error === 'MISSING_LOGO' ? 'MISSING_USER_DETAILS' : null;
         }
 
         if (files.csv_file && files.csv_file.length > 0) {
@@ -114,13 +118,31 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 };
 
 export const deleteGiftCardRequest = async (req: Request, res: Response) => {
-    const cardId = parseInt(req.params.id)
-    if (isNaN(cardId)) {
+    const giftCardRequestId = parseInt(req.params.id)
+    if (isNaN(giftCardRequestId)) {
         res.status(status.bad).send({ message: "Gift card id is required" });
         return;
     }
     try {
-        let resp = await GiftCardsRepository.deleteGiftCardRequest(parseInt(req.params.id));
+        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
+        const cardsResp = await GiftCardsRepository.getBookedCards(giftCardRequestId, 0 ,-1);
+
+        const treeIds: number[] = [];
+        cardsResp.results.forEach(card => {
+            if (card.tree_id) treeIds.push(card.tree_id);
+        })
+
+        const unMapTreeRequest = {
+            mapped_to_user: null,
+            mapped_to_group: null,
+            mapped_at: null,
+            updated_at: new Date(),
+        }
+        if (treeIds.length > 0) await TreeRepository.updateTrees(unMapTreeRequest, { id: { [Op.in]: treeIds } })
+
+        await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId })
+
+        let resp = await GiftCardsRepository.deleteGiftCardRequest(giftCardRequestId);
         console.log(`Deleted Gift card with id: ${req.params.id}`, resp);
         res.status(status.success).json("Gift card deleted successfully");
     } catch (error: any) {
@@ -151,6 +173,20 @@ export const createGiftCards = async (req: Request, res: Response) => {
         }
 
         await GiftCardsRepository.createGiftCards(giftCardRequestId, usersData);
+
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
+
+        // validation on user details
+        const giftCardRequest: GiftCardRequestAttributes  = resp.results[0];
+        if (giftCardRequest.no_of_cards !== usersData.length) {
+            giftCardRequest.validation_error = 'MISSING_USER_DETAILS'
+        } else if (giftCardRequest.validation_error === 'MISSING_USER_DETAILS') {
+            giftCardRequest.validation_error = null;
+        }
+
+        giftCardRequest.updated_at = new Date();
+        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
         res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCards", error);
