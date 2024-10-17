@@ -188,7 +188,7 @@ export async function uploadImageUrlToS3(
     key: string,
 ): Promise<string> {
     try {
-        const bucketName = getBucketFromTypeAndFolderName('trees', '');
+        const bucketName = getBucketFromTypeAndFolderName('trees', '').split('/')[0];
         const imageResponse = await axios.get(image, {
             responseType: 'arraybuffer', // Download as binary data
         });
