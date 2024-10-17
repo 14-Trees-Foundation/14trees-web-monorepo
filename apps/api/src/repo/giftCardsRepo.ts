@@ -1,4 +1,4 @@
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttributes } from "../models/gift_card_request";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
@@ -272,6 +272,26 @@ export class GiftCardsRepository {
             where: {
                 plant_type: plantType,
             }
+        })
+    }
+
+
+    // DELETE functions
+    static async deleteGiftCardRequests(whereClause: WhereOptions): Promise<void> {
+        await GiftCardRequest.destroy({
+            where: whereClause
+        })
+    }
+
+    static async deleteGiftCards(whereClause: WhereOptions): Promise<void> {
+        await GiftCard.destroy({
+            where: whereClause
+        })
+    }
+
+    static async deleteGiftCardRequestPlots(whereClause: WhereOptions): Promise<void> {
+        await GiftCardPlot.destroy({
+            where: whereClause
         })
     }
 }
