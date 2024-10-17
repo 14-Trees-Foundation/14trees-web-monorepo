@@ -3,6 +3,7 @@ import axios from 'axios';
 import AWS from 'aws-sdk';
 import { Readable } from 'stream';
 import { removeSpecialCharacters } from "../../helpers/utils";
+import { ListObjectsV2Request } from "aws-sdk/clients/s3";
 const s3 = new AWS.S3({
     accessKeyId: process.env.ACCESS_KEY_ID_S3,
     secretAccessKey: process.env.SECRET_ACCESS_KEY_S3
@@ -208,4 +209,20 @@ export async function uploadImageUrlToS3(
         console.error('Error uploading slide thumbnail to S3:', error);
         throw error;
     }
+}
+
+export async function getObjectKeysForPrefix(prefix: string) {
+    const bucketName = getBucketFromTypeAndFolderName('trees', '').split('/')[0];
+    const request: ListObjectsV2Request = {
+        Bucket: bucketName,
+        Prefix: prefix,
+    }
+    const response = await s3.listObjectsV2(request).promise()
+    
+    const objectKeys: string[] = []
+    response.Contents?.forEach(item => {
+        if (item.Key) objectKeys.push(item.Key);
+    })
+
+    return {keys: objectKeys, bucket: bucketName};
 }

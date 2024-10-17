@@ -3,7 +3,7 @@ import AWS from 'aws-sdk';
 import axios from 'axios'
 import { load } from "cheerio";
 import { status } from "../helpers/status";
-import { uploadImageUrlToS3 } from "./helper/uploadtos3";
+import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
 
 
 export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
@@ -52,4 +52,14 @@ export const scrapImages = async (req: Request, res: Response) => {
     res.status(status.success).send({
         urls: s3Urls
     })
+}
+
+export const getImageUrlsForKeyPrefix = async (req: Request, res: Response) => {
+    const { request_id: requestId } = req.params;
+    const prefix = `gift-card-requests/${requestId}/`
+
+
+    const {keys, bucket} = await getObjectKeysForPrefix(prefix)
+
+    res.status(status.success).send({ urls: keys.filter(key => !key.endsWith('.csv')).map(key => `https://${bucket}.s3.amazonaws.com/` + key) })
 }
