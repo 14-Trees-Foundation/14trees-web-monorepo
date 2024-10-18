@@ -8,6 +8,8 @@ export const GiftCardRequestStatus = {
     completed: 'completed',
 }
 
+export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETAILS'
+
 interface GiftCardRequestAttributes {
     id: number;
     request_id: string;
@@ -22,6 +24,7 @@ interface GiftCardRequestAttributes {
     planted_by: string | null;
     users_csv_file_url: string | null;
     logo_message: string | null;
+    validation_error: GiftCardRequestValidationError | null;
     created_at: Date;
     updated_at: Date;
     status: string;
@@ -112,6 +115,13 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.STRING,
     })
     status!: string;
+
+    @Column({
+        type: DataType.ENUM,
+        allowNull: true,
+        values: ['MISSING_LOGO', 'MISSING_USER_DETAILS']
+    })
+    validation_error!: GiftCardRequestValidationError;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;
