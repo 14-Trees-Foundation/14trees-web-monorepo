@@ -24,7 +24,17 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
         throw new Error('Failed to create a file copy!')
     }
 
-    return response.data.id;
+    const newFileId = response.data.id;
+
+    await drive.permissions.create({
+        fileId: newFileId,
+        requestBody: {
+            role: 'reader',
+            type: 'anyone',
+        },
+    });
+
+    return newFileId;
 }
 
 export async function downloadSlide(fileId: string, mimeType: string): Promise<Buffer> {
