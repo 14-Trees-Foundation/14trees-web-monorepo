@@ -80,16 +80,17 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             changed = true;
         }
 
-        const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
-        if (presentationId) {
-            const newPresentationId = await copyFile(presentationId, requestId);
-            giftCard.presentation_id = newPresentationId;
-        }
-
         if (changed) await giftCard.save();
 
         const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
         res.status(status.success).json(giftCards.results[0]);
+
+        const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
+        if (presentationId) {
+            const newPresentationId = await copyFile(presentationId, requestId);
+            giftCard.presentation_id = newPresentationId;
+            await giftCard.save();
+        }
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
         res.status(status.error).json({
@@ -192,9 +193,9 @@ export const createGiftCards = async (req: Request, res: Response) => {
         }
 
         giftCardRequest.updated_at = new Date();
-        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
-        res.status(status.success).send();
+        res.status(status.success).send(updated);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCards", error);
         res.status(status.error).json({
