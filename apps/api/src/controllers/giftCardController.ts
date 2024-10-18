@@ -11,6 +11,7 @@ import { UploadFileToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import archiver from 'archiver';
 import axios from 'axios'
 import { Op } from "sequelize";
+import { copyFile, downloadSlide } from "../services/google";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -64,25 +65,32 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
     try {
         let giftCard = await GiftCardsRepository.createGiftCardRequest(request);
 
-        let imageChange = false;
+        let changed = false;
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
         if (files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
             giftCard.validation_error = 'MISSING_USER_DETAILS'
-            imageChange = true;
+            changed = true;
         }
 
         if (files.csv_file && files.csv_file.length > 0) {
             const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", requestId);
             giftCard.users_csv_file_url = location;
-            imageChange = true;
+            changed = true;
         }
 
-        if (imageChange) await giftCard.save();
+        if (changed) await giftCard.save();
 
         const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
         res.status(status.success).json(giftCards.results[0]);
+
+        const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
+        if (presentationId) {
+            const newPresentationId = await copyFile(presentationId, requestId);
+            giftCard.presentation_id = newPresentationId;
+            await giftCard.save();
+        }
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
         res.status(status.error).json({
@@ -125,7 +133,7 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
     }
     try {
         await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
-        const cardsResp = await GiftCardsRepository.getBookedCards(giftCardRequestId, 0 ,-1);
+        const cardsResp = await GiftCardsRepository.getBookedCards(giftCardRequestId, 0, -1);
 
         const treeIds: number[] = [];
         cardsResp.results.forEach(card => {
@@ -177,7 +185,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
 
         // validation on user details
-        const giftCardRequest: GiftCardRequestAttributes  = resp.results[0];
+        const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
         if (giftCardRequest.no_of_cards !== usersData.length) {
             giftCardRequest.validation_error = 'MISSING_USER_DETAILS'
         } else if (giftCardRequest.validation_error === 'MISSING_USER_DETAILS') {
@@ -185,9 +193,9 @@ export const createGiftCards = async (req: Request, res: Response) => {
         }
 
         giftCardRequest.updated_at = new Date();
-        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
-        res.status(status.success).send();
+        res.status(status.success).send(updated);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCards", error);
         res.status(status.error).json({
@@ -316,11 +324,7 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
     }
 }
 
-const generateGiftCardTemplate = async (plantType: string, record: any) => {
-    const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
-    if (!presentationId) {
-        throw new Error("Missing gift card template presentation id from env file");
-    }
+const generateGiftCardTemplate = async (presentationId: string, plantType: string, record: any) => {
 
     const plantTypeCardTemplate = await GiftCardsRepository.getPlantTypeTemplateId(plantType);
     if (!plantTypeCardTemplate) {
@@ -333,26 +337,19 @@ const generateGiftCardTemplate = async (plantType: string, record: any) => {
     return slideId;
 }
 
-const getGiftCardTemplateImage = async (templateId: string, requestId: string, saplingId: string) => {
-    const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
-    if (!presentationId) {
-        throw new Error("Missing gift card template presentation id from env file");
-    }
+const getGiftCardTemplateImage = async (presentationId: string, templateId: string, requestId: string, saplingId: string) => {
 
     const url = await getSlideThumbnail(presentationId, templateId)
     const s3Url = await uploadImageUrlToS3(url, `gift-card-requests/${requestId}/thumbnails/${saplingId}.jpg`);
 
-    deleteSlide(presentationId, templateId);
-
     return s3Url;
 }
 
-export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
+export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
 
-    
     try {
-        
+
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: parseInt(giftCardRequestId) }]);
         if (resp.results.length === 0) {
             res.status(status.bad).json({
@@ -363,13 +360,20 @@ export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: 
 
         const giftCardRequest = resp.results[0];
 
-        res.setHeader('Content-Disposition', `attachment; filename=${(giftCardRequest as any).user_name + '_' + giftCardRequest.no_of_cards}.zip`);
-        res.setHeader('Content-Type', 'application/zip');
-        const archive = archiver('zip', {
-            zlib: { level: 9 },
-        });
+        if (!giftCardRequest.presentation_id) {
+            if (!process.env.GIFT_CARD_PRESENTATION_ID) {
+                console.log('[ERROR]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', 'Missing gift card template presentation id in ENV variables.')
+                res.status(status.error).json({
+                    message: 'Something went wrong. Please try again later!'
+                })
+                return;
+            }
 
-        archive.pipe(res);
+            const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, giftCardRequest.request_id);
+            giftCardRequest.presentation_id = presentationId;
+            giftCardRequest.updated_at = new Date();
+            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        }
 
         let allCardsGenerated = true;
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
@@ -389,23 +393,12 @@ export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: 
                     logo: giftCardRequest.logo_url,
                     logo_message: giftCardRequest.logo_message
                 }
-                const templateId = await generateGiftCardTemplate((giftCard as any).plant_type, record);
-                const templateImage = await getGiftCardTemplateImage(templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
+                const templateId = await generateGiftCardTemplate(giftCardRequest.presentation_id, (giftCard as any).plant_type, record);
+                const templateImage = await getGiftCardTemplateImage(giftCardRequest.presentation_id, templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
 
                 giftCard.card_image_url = templateImage;
                 await GiftCardsRepository.updateGiftCard(giftCard);
-            }
-
-            try {
-                const response = await axios({
-                    url: templateImage,
-                    method: 'GET',
-                    responseType: 'stream',
-                });
-    
-                archive.append(response.data, { name: `${(giftCard as any).user_name}_${(giftCard as any).sapling_id}.jpg` });
-            } catch (error: any) {
-                console.error(`Failed to download image from templateImage:`, error.message);
+                await GiftCardsRepository.addGiftCardTemplate(giftCard.id, templateId);
             }
         }
 
@@ -414,7 +407,86 @@ export const getGiftCardTemplatesForGiftCardRequest = async (req: Request, res: 
             giftCardRequest.updated_at = new Date();
             await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
         }
-        archive.finalize();
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::getGiftCardTemplatesForGiftCardRequest", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+}
+
+export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.params;
+    const { downloadType } = req.query;
+
+    let mimeType: string;
+    switch (downloadType) {
+        case 'pdf':
+            mimeType = 'application/pdf';
+            break;
+        case 'ppt':
+            mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            break;
+        case 'zip': 
+            mimeType = 'application/zip'
+            break;
+        default:
+            return res.status(status.bad).json({ message: 'Unsupported format. Use "zip", "pdf" or "ppt".' });
+    }
+
+    try {
+
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: parseInt(giftCardRequestId) }]);
+        if (resp.results.length === 0) {
+            res.status(status.bad).json({
+                message: 'Please provide valid input details!'
+            })
+            return;
+        }
+
+        const giftCardRequest = resp.results[0];
+        if (giftCardRequest.status !== GiftCardRequestStatus.completed) {
+            res.status(status.error).json({
+                message: 'Gift request is not complete yet!'
+            })
+            return;
+        }
+
+        if (downloadType !== 'zip') {
+            const fileData = await downloadSlide(giftCardRequest.presentation_id, mimeType);
+            res.setHeader('Content-Type', mimeType);
+            res.setHeader('Content-Disposition', `attachment; filename="slide.${downloadType}"`);
+            res.send(fileData);
+        } else {
+            res.setHeader('Content-Disposition', `attachment; filename=${(giftCardRequest as any).user_name + '_' + giftCardRequest.no_of_cards}.zip`);
+            res.setHeader('Content-Type', 'application/zip');
+            const archive = archiver('zip', {
+                zlib: { level: 9 },
+            });
+    
+            archive.pipe(res);
+
+            const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
+            for (const giftCard of giftCards.results) {
+                if (!giftCard.card_image_url) continue;
+    
+                try {
+                    const response = await axios({
+                        url: giftCard.card_image_url,
+                        method: 'GET',
+                        responseType: 'stream',
+                    });
+    
+                    archive.append(response.data, { name: `${(giftCard as any).user_name}_${(giftCard as any).sapling_id}.jpg` });
+                } catch (error: any) {
+                    console.error(`Failed to download image from templateImage:`, error.message);
+                }
+            }
+            await archive.finalize();
+            res.status(status.success).send();
+        }
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::getGiftCardTemplatesForGiftCardRequest", error);
         res.status(status.error).json({
@@ -497,7 +569,6 @@ export const generateGiftCardTemplateForSapling = async (req: Request, res: Resp
             message: 'Something went wrong. Please try again later.'
         })
     }
-
 }
 
 export const updateGiftCardTemplate = async (req: Request, res: Response) => {
@@ -561,7 +632,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
     }
 
     try {
-        
+
         const giftCardUser = await GiftCardsRepository.getGiftCard(parseInt(giftCardId));
         if (!giftCardUser) {
             res.status(status.bad).json({
