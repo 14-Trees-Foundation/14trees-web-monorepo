@@ -24,7 +24,7 @@ interface GiftCardRequestAttributes {
     planted_by: string | null;
     users_csv_file_url: string | null;
     logo_message: string | null;
-    validation_error: GiftCardRequestValidationError | null;
+    validation_errors: GiftCardRequestValidationError[] | null;
     created_at: Date;
     updated_at: Date;
     status: string;
@@ -123,11 +123,9 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
     presentation_id!: string;
 
     @Column({
-        type: DataType.ENUM,
-        allowNull: true,
-        values: ['MISSING_LOGO', 'MISSING_USER_DETAILS']
+        type: DataType.ARRAY(DataType.STRING),
     })
-    validation_error!: GiftCardRequestValidationError;
+    validation_errors!: GiftCardRequestValidationError[];
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

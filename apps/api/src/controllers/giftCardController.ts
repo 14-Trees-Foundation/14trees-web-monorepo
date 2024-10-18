@@ -59,7 +59,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         planted_by: plantedBy || null,
         logo_message: logoMessage || null,
         status: GiftCardRequestStatus.pendingPlotSelection,
-        validation_error: 'MISSING_LOGO',
+        validation_errors: ['MISSING_LOGO', 'MISSING_USER_DETAILS'],
     }
 
     try {
@@ -70,7 +70,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         if (files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
-            giftCard.validation_error = 'MISSING_USER_DETAILS'
+            giftCard.validation_errors = ['MISSING_USER_DETAILS']
             changed = true;
         }
 
@@ -109,7 +109,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         if (files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", giftCardRequest.request_id);
             giftCardRequest.logo_url = location;
-            giftCardRequest.validation_error = giftCardRequest.validation_error === 'MISSING_LOGO' ? 'MISSING_USER_DETAILS' : null;
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_LOGO') : null;
         }
 
         if (files.csv_file && files.csv_file.length > 0) {
@@ -186,10 +186,10 @@ export const createGiftCards = async (req: Request, res: Response) => {
 
         // validation on user details
         const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
-        if (giftCardRequest.no_of_cards !== usersData.length) {
-            giftCardRequest.validation_error = 'MISSING_USER_DETAILS'
-        } else if (giftCardRequest.validation_error === 'MISSING_USER_DETAILS') {
-            giftCardRequest.validation_error = null;
+        if (giftCardRequest.no_of_cards !== usersData.length && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? [...giftCardRequest.validation_errors, 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS']
+        } else if (giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : null;
         }
 
         giftCardRequest.updated_at = new Date();
