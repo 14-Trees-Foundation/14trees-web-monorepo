@@ -30,13 +30,13 @@ export class GiftCardsRepository {
         }
 
         const getQuery = `
-            SELECT gc.*, u.name as user_name, g.name as group_name, array_agg(DISTINCT gcp.plot_id) as plot_ids
+            SELECT gc.*, u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name, array_agg(DISTINCT gcp.plot_id) as plot_ids
             FROM "14trees_2".gift_card_requests gc
             LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
             LEFT JOIN "14trees_2".groups g ON g.id = gc.group_id
             LEFT JOIN "14trees_2".gift_card_plots gcp ON gcp.gift_card_request_id = gc.id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            GROUP BY gc.id, u.name, g.name
+            GROUP BY gc.id, u.id, g.name
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
@@ -81,7 +81,8 @@ export class GiftCardsRepository {
             throw new Error("Gift Card Request not found")
         }
 
-        giftCard.updated_at = new Date();
+        data.updated_at = new Date();
+        console.log(data);
         const updatedGiftCard = await giftCard.update(data);
 
         const giftCards = await this.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: updatedGiftCard.id }])
@@ -291,6 +292,12 @@ export class GiftCardsRepository {
 
     static async deleteGiftCardRequestPlots(whereClause: WhereOptions): Promise<void> {
         await GiftCardPlot.destroy({
+            where: whereClause
+        })
+    }
+
+    static async deleteGiftCardTemplates(whereClause: WhereOptions): Promise<void> {
+        await GiftCardUserTemplate.destroy({
             where: whereClause
         })
     }
