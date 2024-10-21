@@ -7,6 +7,7 @@ export function startAppV2ErrorLogsCronJob() {
         const logs = await LogsInfoRepository.getLogsInfo(Date.now() - 60 * 60 * 1000);
 
         for (const log of logs) {
+            if (log.logs.includes('Network Error')) continue;
             await sendDiscordMessage(JSON.stringify(log, null, 2));
         }
     });
