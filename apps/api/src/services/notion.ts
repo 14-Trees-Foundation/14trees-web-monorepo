@@ -102,6 +102,12 @@ async function insertCsvIntoPostgres(filePath: string, sequelize: Sequelize) {
                   processedRow[header] = 'DISTRIBUTION_ONLY';
                 } else if (row[header].toLowerCase().includes('full service')) {
                   processedRow[header] = 'FULL_MAINTENANCE';
+                } else if (row[header].toLowerCase().includes('tbd')) {
+                  processedRow[header] = 'TBD';
+                } else if (row[header].toLowerCase().includes('cancelled')) {
+                  processedRow[header] = 'CANCELLED';
+                } else if (row[header].toLowerCase().includes('waiting')) {
+                  processedRow[header] = 'WAITING';
                 } else {
                   processedRow[header] = null;
                 }

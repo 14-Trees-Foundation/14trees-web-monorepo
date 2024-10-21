@@ -144,7 +144,7 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
 
     @Column({type : DataType.ENUM , values: ['FULL_MAINTENANCE',
 	'PLANTATION_ONLY',
-	'DISTRIBUTION_ONLY']})
+	'DISTRIBUTION_ONLY', 'WAITING', 'CANCELLED', 'TBD']})
     maintenance_type!: Enumerator | null;
 
     @Column(DataType.STRING)
