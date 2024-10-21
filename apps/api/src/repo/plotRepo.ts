@@ -29,15 +29,13 @@ export class PlotRepository {
         }
         let obj: PlotCreationAttributes = {
             name: plotData.plot_name,
-            plot_id: plotData.plot_id,
-            tags: plotData.tags,
-            // boundaries: plotData.boundaries,
-            // center: plotData.center,
-            gat: plotData.gat,
-            category: plotData.category,
-            site_id: siteId,
-            label: plotData.label,
-            accessibility_status: plotData.accessibility_status,
+            plot_id: plotData.plot_id || null,
+            tags: plotData.tags || null,
+            gat: plotData.gat || null,
+            category: plotData.category || null,
+            site_id: siteId || null,
+            label: plotData.label || null,
+            accessibility_status: plotData.accessibility_status || null,
             created_at: new Date(),
             updated_at: new Date()
         };
