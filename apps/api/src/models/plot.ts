@@ -45,7 +45,7 @@ implements PlotAttributes {
 
     @Unique
     @Index
-    @Column({ type: DataType.STRING, allowNull: false })
+    @Column({ type: DataType.STRING })
     plot_id!: string;
 
     @Column({ type: DataType.INTEGER })
