@@ -8,20 +8,17 @@ async function sendDiscordMessage(message: string, username: string = 'Error Ser
 
     // Split the message content if it's too long
     const messages = splitMessage(message, maxLength);
-    for (const msg of messages) {
-        try {
-            // Create a message object for each chunk
-            const messageChunk = { username, content: '```' + msg + '```' };
-            const response = await axios.post(webhookUrl, messageChunk, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            console.log('Message sent successfully:', response.data);
-        } catch (error) {
-            console.error('Error sending message to Discord:', error);
-            break;
-        }
+    try {
+        // Create a message object for each chunk
+        const messageChunk = { username, content: '```' + messages[0] + '```' };
+        const response = await axios.post(webhookUrl, messageChunk, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        console.log('Message sent successfully:', response.data);
+    } catch (error) {
+        console.log('[ERROR]', 'Error sending message to Discord:', error);
     }
     await sleep(1000);
 }
