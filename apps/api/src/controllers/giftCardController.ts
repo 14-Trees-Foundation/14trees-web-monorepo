@@ -102,6 +102,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
     const giftCardRequest: GiftCardRequestAttributes = req.body;
+    giftCardRequest.validation_errors = req.body.validation_errors?.split(',') ?? null
 
     try {
 
@@ -161,6 +162,40 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
     }
 };
 
+const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
+    // delete plot selection
+    await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
+
+    const cardsResp = await GiftCardsRepository.getBookedCards(giftCardRequestId, 0, -1);
+
+    const treeIds: number[] = [];
+    const cardIds: number[] = [];
+    cardsResp.results.forEach(card => {
+        if (card.tree_id) treeIds.push(card.tree_id);
+        cardIds.push(card.id);
+    })
+
+    const unMapTreeRequest = {
+        mapped_to_user: null,
+        mapped_to_group: null,
+        mapped_at: null,
+        assigned_to: null,
+        assigned_at: null,
+        description: null,
+        planted_by: null,
+        updated_at: new Date(),
+    }
+
+    // reset the assignment
+    if (treeIds.length > 0) await TreeRepository.updateTrees(unMapTreeRequest, { id: { [Op.in]: treeIds } })
+
+    // reset gift card templates
+    if (cardIds.length > 0) await GiftCardsRepository.deleteGiftCardTemplates({ gift_card_id: { [Op.in]: cardIds } })
+
+    // delete gift card users
+    await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId })
+}
+
 export const createGiftCards = async (req: Request, res: Response) => {
     const { users, gift_card_request_id: giftCardRequestId } = req.body;
 
@@ -171,6 +206,9 @@ export const createGiftCards = async (req: Request, res: Response) => {
     }
 
     try {
+
+        await resetGiftCardUsersForRequest(giftCardRequestId);
+
         const usersData: { userId: number, imageName?: string }[] = []
         for (const user of users) {
             const userResp = await UserRepository.upsertUser(user);
@@ -429,7 +467,7 @@ export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         case 'ppt':
             mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
             break;
-        case 'zip': 
+        case 'zip':
             mimeType = 'application/zip'
             break;
         default:
@@ -465,20 +503,20 @@ export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             const archive = archiver('zip', {
                 zlib: { level: 9 },
             });
-    
+
             archive.pipe(res);
 
             const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
             for (const giftCard of giftCards.results) {
                 if (!giftCard.card_image_url) continue;
-    
+
                 try {
                     const response = await axios({
                         url: giftCard.card_image_url,
                         method: 'GET',
                         responseType: 'stream',
                     });
-    
+
                     archive.append(response.data, { name: `${(giftCard as any).user_name}_${(giftCard as any).sapling_id}.jpg` });
                 } catch (error: any) {
                     console.error(`Failed to download image from templateImage:`, error.message);
