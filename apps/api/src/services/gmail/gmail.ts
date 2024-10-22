@@ -80,7 +80,7 @@ const sendDashboardMail = async (toEmail: string, emailData: any) => {
     textEncoding: 'base64',
   }
 
-  const source = fs.readFileSync( __dirname + '/templates/dashboard.html' as string, 'utf-8').toString();
+  const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/dashboard.html' as string, 'utf-8').toString();
   const template = handlebars.compile(source);
   options.html = template(emailData);
 
