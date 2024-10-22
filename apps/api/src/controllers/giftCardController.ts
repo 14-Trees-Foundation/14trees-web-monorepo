@@ -12,6 +12,7 @@ import archiver from 'archiver';
 import axios from 'axios'
 import { Op } from "sequelize";
 import { copyFile, downloadSlide } from "../services/google";
+import { sendDashboardMail } from "../services/gmail/gmail";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -723,3 +724,43 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
     }
 };
 
+
+export const sendEmailForGiftCardRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.params;
+    if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
+        res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        })
+        return;
+    }
+
+    try {
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }])
+        if (resp.results.length !== 1) {
+            res.status(status.bad).json({
+                message: 'Please provide valid input details!'
+            })
+            return;
+        }
+
+        const giftCardRequest: any = resp.results[0];
+
+        const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
+        for (const giftCard of giftCards) {
+            if (!giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
+
+            const emailData = {
+                ...giftCard,
+                dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
+                group_name: giftCardRequest.group_name
+            }
+
+            await sendDashboardMail(giftCard.user_email, emailData);
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::sendEmailForGiftCardRequest", error);
+        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+}

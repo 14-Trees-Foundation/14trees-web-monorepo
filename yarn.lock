@@ -4274,6 +4274,13 @@
   resolved "https://registry.npmjs.org/@types/node/-/node-20.4.8.tgz"
   integrity sha512-0mHckf6D2DiIAzh8fM8f3HQCvMKDpK94YQ0DSVkfWTG9BZleYIWudw9cJxX8oCk9bM+vAkDyujDV6dmKHbvQpg==
 
+"@types/nodemailer@^6.4.16":
+  version "6.4.16"
+  resolved "https://registry.npmjs.org/@types/nodemailer/-/nodemailer-6.4.16.tgz"
+  integrity sha512-uz6hN6Pp0upXMcilM61CoKyjT7sskBoOWpptkjjJp8jIMlTdc3xG01U7proKkXzruMS4hS0zqtHNkNPFB20rKQ==
+  dependencies:
+    "@types/node" "*"
+
 "@types/normalize-package-data@^2.4.0":
   version "2.4.4"
   resolved "https://registry.npmjs.org/@types/normalize-package-data/-/normalize-package-data-2.4.4.tgz"
@@ -5201,6 +5208,7 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     morgan "^1.10.0"
     multer "^1.4.3"
     newrelic "^11.16.0"
+    nodemailer "^6.9.15"
     pg "^8.9.0"
     razorpay "^2.8.6"
     reflect-metadata "^0.1.13"
@@ -10284,6 +10292,18 @@ handle-thing@^2.0.0:
   resolved "https://registry.npmjs.org/handle-thing/-/handle-thing-2.0.1.tgz"
   integrity sha512-9Qn4yBxelxoh2Ow62nP+Ka/kMnOXRi8BXnRaUwezLNhqelnN49xKz4F/dPP8OYLxLxq6JDtZb2i9XznUQbNPTg==
 
+handlebars@^4.7.8:
+  version "4.7.8"
+  resolved "https://registry.npmjs.org/handlebars/-/handlebars-4.7.8.tgz"
+  integrity sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==
+  dependencies:
+    minimist "^1.2.5"
+    neo-async "^2.6.2"
+    source-map "^0.6.1"
+    wordwrap "^1.0.0"
+  optionalDependencies:
+    uglify-js "^3.1.4"
+
 harmony-reflect@^1.4.6:
   version "1.6.2"
   resolved "https://registry.npmjs.org/harmony-reflect/-/harmony-reflect-1.6.2.tgz"
@@ -13647,6 +13667,11 @@ node-releases@^2.0.14:
   version "2.0.14"
   resolved "https://registry.npmjs.org/node-releases/-/node-releases-2.0.14.tgz"
   integrity sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==
+
+nodemailer@^6.9.15:
+  version "6.9.15"
+  resolved "https://registry.npmjs.org/nodemailer/-/nodemailer-6.9.15.tgz"
+  integrity sha512-AHf04ySLC6CIfuRtRiEYtGEXgRfa6INgWGluDhnxTZhHSKvrBu7lc1VVchQ0d8nPc4cFaZoPq8vkyNoZr0TpGQ==
 
 nodemon@^2.0.22:
   version "2.0.22"
@@ -18710,6 +18735,11 @@ uglify-es@^3.3.4:
   dependencies:
     commander "~2.13.0"
     source-map "~0.6.1"
+
+uglify-js@^3.1.4:
+  version "3.19.3"
+  resolved "https://registry.npmjs.org/uglify-js/-/uglify-js-3.19.3.tgz"
+  integrity sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==
 
 uglifyjs-webpack-plugin@^1.2.4:
   version "1.3.0"

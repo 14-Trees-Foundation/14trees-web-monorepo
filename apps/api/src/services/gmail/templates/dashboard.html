@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Planting Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+    .header {
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 0;
+      border-radius: 8px 8px 0 0;
+    }
+    .content {
+      padding: 20px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .info-table th, .info-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .info-table th {
+      background-color: #f2f2f2;
+    }
+    .footer {
+      text-align: left;
+      margin-top: 30px;
+      padding: 10px;
+      background-color: #f2f2f2;
+      border-radius: 0 0 8px 8px;
+      line-height: 0.5;
+    }
+    .dashboard-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 10px;
+      color: white;
+      background-color: #4CAF50;
+      text-decoration: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Greetings from {{group_name}} and 14 Trees Foundation</h2>
+    </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        Hope this mail finds you in good health. It gives us great pleasure to inform you that a tree has been planted in your name.
+      </p>
+      <h3>Tagging Information about the Tree:</h3>
+      <table class="info-table">
+        <tr>
+          <th>Name</th>
+          <td>{{user_name}}</td>
+        </tr>
+        <tr>
+          <th>Planted Via</th>
+          <td>{{planted_via}}</td>
+        </tr>
+        <tr>
+          <th>Tree Name</th>
+          <td>{{plant_type}}</td>
+        </tr>
+        <tr>
+          <th>Scientific Name</th>
+          <td>{{scientific_name}}</td>
+        </tr>
+        <tr>
+          <th>Tree ID</th>
+          <td>{{sapling_id}}</td>
+        </tr>
+        <tr>
+          <th>Location</th>
+          <td>{{plot}}</td>
+        </tr>
+        <tr>
+          <th>Event</th>
+          <td>{{event_name}}</td>
+        </tr>
+      </table>
+      <p>
+        Here's a link to your <a href="{{dashboard_link}}" class="dashboard-link">Dashboard</a>.
+      </p>
+      <p>
+        The trees that you bring into this world will, for its many living years, support local biodiversity, rejuvenate the local ecosystem, and also offset the devastating effects of carbon consumption and climate change.
+      </p>
+      <p>
+        You can follow our shared journey and find more ways of continuing to be involved at <a href="https://14trees.org">14 Trees</a>.
+      </p>
+      <p>
+        We are looking forward to your visit to 14 Trees Foundation in the near future.
+      </p>
+      <p>
+        For any feedback or changes related to your dashboard, please reply to this mail.
+      </p>
+    </div>
+    <div class="footer">
+      <p>Warm Regards,</p>
+      <p>{{group_name}}</p>
+      <p>In Association with 14 Trees Foundation</p>
+      <a href="https://14trees.org">https://14trees.org</a>
+    </div>
+  </div>
+</body>
+</html>
