@@ -337,8 +337,9 @@ export class SiteRepository {
             SELECT id, site_id, unnest(tags) AS tag
             FROM "14trees".plots
         ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
+        JOIN "14trees".tags as t on tag_grouped.tag = t.tag
         LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
-        WHERE ${whereCondition ? whereCondition : '1=1'}
+        WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY tag_grouped.tag
             ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
         OFFSET ${offset} LIMIT ${limit};
@@ -356,8 +357,9 @@ export class SiteRepository {
                 SELECT id, site_id, unnest(tags) AS tag
                 FROM "14trees".plots
             ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
+            JOIN "14trees".tags as t on tag_grouped.tag = t.tag
             LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
-            WHERE ${whereCondition ? whereCondition : '1=1'}
+            WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
         `
 
         const countResp: any[] = await sequelize.query(countQuery, {

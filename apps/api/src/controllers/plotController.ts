@@ -9,6 +9,7 @@ import { getPlotNameAndCoordinatesFromKml } from "./helper/parsekml";
 import { UploadFileToS3 } from "./helper/uploadtos3";
 import { SiteRepository } from "../repo/sitesRepo";
 import { TreeCountAggregationsRepo } from "../repo/treeCountAggregationsRepo";
+import { TagRepository } from "../repo/tagRepo";
 
 /*
     Model - Plot
@@ -18,6 +19,12 @@ import { TreeCountAggregationsRepo } from "../repo/treeCountAggregationsRepo";
 export const updatePlot = async (req: Request, res: Response) => {
     try {
         let result = await PlotRepository.updatePlot(req.body)
+
+        const tags = req.body.tags;
+        if (tags && tags.length > 0) {
+            await TagRepository.createTags(tags.map((tag: string) => ({ tag, type: 'USER_DEFINED' })))
+        }
+        
         res.status(status.created).json(result);
     } catch (error) {
         console.log(error)
@@ -42,6 +49,11 @@ export const addPlot = async (req: Request, res: Response) => {
 
     try {
         const plot = await PlotRepository.addPlot(req.body);
+
+        const tags = req.body.tags;
+        if (tags && tags.length > 0) {
+            await TagRepository.createTags(tags.map((tag: string) => ({ tag, type: 'USER_DEFINED' })))
+        }
         res.status(status.created).json(plot);
     } catch (error: any) {
         res.status(status.error).json({ error: error.message });
@@ -74,16 +86,6 @@ export const deletePlot = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
-    }
-};
-
-export const getPlotTags = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    try {
-        let data = await PlotRepository.getPlotTags(offset, limit);
-        res.status(status.success).json(data);
-    } catch (error: any) {
-        res.status(status.error).send({ error: error.message });
     }
 };
 
