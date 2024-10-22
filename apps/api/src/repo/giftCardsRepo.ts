@@ -306,11 +306,11 @@ export class GiftCardsRepository {
 
         const getQuery = `
             SELECT u.name as user_name, u.email as user_email, t.sapling_id, t.description as event_name, t.planted_by as planted_via, pt.name as plant_type, pt.scientific_name, p.name as plot
-            FROM "14trees_2".gift_cards gc
-            LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            FROM "14trees".gift_cards gc
+            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}
             ORDER BY gc.id
         `
