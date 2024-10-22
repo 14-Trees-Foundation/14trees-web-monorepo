@@ -1,0 +1,94 @@
+import { google, gmail_v1 } from 'googleapis';
+import MailComposer from 'nodemailer/lib/mail-composer';
+import fs from 'fs';
+import path from 'path';
+import handlebars from 'handlebars';
+
+// Load JSON files using fs
+const credentialsPath = path.join(process.env.GMAIL_CREDENTIALS || '', '/credentials.json');
+const tokensPath = path.join(process.env.GMAIL_CREDENTIALS || '', '/token.json');
+
+const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+
+// Define types for credentials and tokens
+interface Credentials {
+  installed: {
+    client_id: string;
+    client_secret: string;
+    redirect_uris: string[];
+  };
+}
+
+interface Tokens {
+  access_token: string;
+  refresh_token: string;
+  scope: string;
+  token_type: string;
+  expiry_date: number;
+}
+
+// Load the credentials and tokens with types
+const creds: Credentials = credentials;
+const token: Tokens = tokens;
+
+const getGmailService = (): gmail_v1.Gmail => {
+  const { client_secret, client_id, redirect_uris } = creds.installed;
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+  oAuth2Client.setCredentials(token);
+  const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
+  return gmail;
+};
+
+const encodeMessage = (message: string): string => {
+  return Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+interface MailOptions {
+  from?: string;
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  attachments?: { filename: string; path: string }[];
+}
+
+const createMail = async (options: MailOptions): Promise<string> => {
+  const mailComposer = new MailComposer(options);
+  const message = await mailComposer.compile().build();
+  return encodeMessage(message.toString());
+};
+
+const sendMail = async (options: MailOptions): Promise<string | null | undefined> => {
+  const gmail = getGmailService();
+  const rawMessage = await createMail(options);
+  const response = await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: rawMessage,
+    },
+  });
+  return response.data.id;
+};
+
+const sendDashboardMail = async (toEmail: string, emailData: any) => {
+
+  const options = {
+    to: toEmail,
+    subject: 'A Tree has been planted',
+    html: "",
+    textEncoding: 'base64',
+  }
+
+  const source = fs.readFileSync( __dirname + '/templates/dashboard.html' as string, 'utf-8').toString();
+  const template = handlebars.compile(source);
+  options.html = template(emailData);
+
+  const id = await sendMail(options)
+  if (id) {
+    console.log("Email send Successfully to " + toEmail);
+  }
+}
+
+export { sendDashboardMail };
+export default sendMail;
