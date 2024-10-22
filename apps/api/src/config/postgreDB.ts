@@ -31,6 +31,7 @@ import { GiftCardPlot } from "../models/gift_card_plot";
 import { GiftCardUserTemplate } from "../models/gift_card_user_template";
 import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 import { TreeCountAggregation } from "../models/tree_count_aggregation";
+import { Tag } from "../models/tag";
 
 
 class Database {
@@ -94,6 +95,7 @@ class Database {
         GiftCardUserTemplate,
         PlantTypeCardTemplate,
         TreeCountAggregation,
+        Tag,
       ]
     });
 
