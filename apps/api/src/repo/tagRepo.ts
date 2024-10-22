@@ -15,7 +15,21 @@ export class TagRepository {
             } as TagCreationAttributes
         })
 
-        return await Tag.bulkCreate(data);
+        const existingTags = await Tag.findAll({
+            where: {
+                tag: data.map(item => item.tag),
+            },
+            attributes: ['tag'],
+        });
+
+        const existingTagNames = existingTags.map(tag => tag.tag);
+
+        const newTags = data.filter(item => !existingTagNames.includes(item.tag));
+        if (newTags.length > 0) {
+            return await Tag.bulkCreate(newTags);
+        }
+
+        return [];
     }
 
     static async getTags(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Tag>> {
