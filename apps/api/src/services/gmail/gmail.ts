@@ -76,6 +76,7 @@ const sendDashboardMail = async (toEmail: string, emailData: any) => {
   const options = {
     to: toEmail,
     replyTo: 'admin@14trees.org',
+    cc: 'vivayush@gmail.com',
     subject: 'A Tree has been planted',
     html: "",
     textEncoding: 'base64',
