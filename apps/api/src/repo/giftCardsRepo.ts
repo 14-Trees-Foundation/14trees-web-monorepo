@@ -311,7 +311,7 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             LEFT JOIN "14trees".plots p ON p.id = t.plot_id
-            LEFT JOIN "14trees".sites p ON s.id = p.site_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}
             ORDER BY gc.id
         `
