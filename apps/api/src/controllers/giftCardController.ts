@@ -747,7 +747,7 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
 
         const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
         for (const giftCard of giftCards) {
-            if (!giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
+            if (giftCard.mail_sent || !giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
 
             const emailData = {
                 ...giftCard,
@@ -755,7 +755,13 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
                 group_name: giftCardRequest.group_name
             }
 
-            await sendDashboardMail(giftCard.user_email, emailData);
+            const statusMessage = await sendDashboardMail(giftCard.user_email, emailData);
+            const updateRequest = {
+                mail_sent: statusMessage === '' ? true : false,
+                mail_error: statusMessage ? statusMessage : null,
+                updated_at: new Date()
+            }
+            await GiftCardsRepository.updateGiftCards(updateRequest, { id: giftCard.id });
         }
 
         res.status(status.success).send();

@@ -149,6 +149,10 @@ export class GiftCardsRepository {
         }
     }
 
+    static async updateGiftCards(fields: any, whereClause: WhereOptions): Promise<void> {
+        await GiftCard.update(fields, { where: whereClause });
+    }
+
     static async bookGiftCards(cardId: number, treeIds: number[]): Promise<void> {
 
         const cards = await GiftCard.findAll({
@@ -305,7 +309,7 @@ export class GiftCardsRepository {
     static async getGiftCardUserAndTreeDetails(giftCardRequestId: number): Promise<GiftCard[]> {
 
         const getQuery = `
-            SELECT u.name as user_name, u.email as user_email, t.sapling_id, t.description as event_name, t.planted_by as planted_via, pt.name as plant_type, pt.scientific_name, s.name_english as site_name
+            SELECT gc.id, gc.mail_sent, u.name as user_name, u.email as user_email, t.sapling_id, t.description as event_name, t.planted_by as planted_via, pt.name as plant_type, pt.scientific_name, s.name_english as site_name
             FROM "14trees_2".gift_cards gc
             LEFT JOIN "14trees_2".users u ON u.id = gc.user_id
             LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
