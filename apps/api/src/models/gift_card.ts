@@ -10,12 +10,13 @@ interface GiftCardAttributes {
     profile_image_url: string | null;
     mail_sent: boolean | null;
     mail_error: string | null;
+    slide_id: string | null;
     created_at: Date;
     updated_at: Date;
 }
 
 interface GiftCardCreationAttributes
-    extends Optional<GiftCardAttributes, 'id' | 'tree_id' | 'card_image_url' | 'profile_image_url' | 'mail_error' | 'mail_sent'> { }
+    extends Optional<GiftCardAttributes, 'id' | 'tree_id' | 'card_image_url' | 'profile_image_url' | 'mail_error' | 'mail_sent' | 'slide_id'> { }
 
 @Table({ tableName: 'gift_cards' })
 class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
@@ -66,6 +67,11 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
         type: DataType.STRING,
     })
     mail_error!: string;
+
+    @Column({
+        type: DataType.STRING,
+    })
+    slide_id!: string;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;
