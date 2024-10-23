@@ -214,12 +214,14 @@ export const createGiftCards = async (req: Request, res: Response) => {
 
         await resetGiftCardUsersForRequest(giftCardRequestId);
 
-        const usersData: { userId: number, imageName?: string }[] = []
+        const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[] = []
         for (const user of users) {
             const userResp = await UserRepository.upsertUser(user);
             usersData.push({
                 userId: userResp.id,
-                imageName: user.image_name ? user.image_name : undefined
+                imageName: user.image_name ? user.image_name : undefined,
+                inNameOf: user.in_name_of ? user.in_name_of : undefined,
+                relation: user.relation ? user.relation : undefined,
             });
         }
 
@@ -388,6 +390,16 @@ const getGiftCardTemplateImage = async (presentationId: string, templateId: stri
     return s3Url;
 }
 
+const getPersonalizedMessage = (primaryMessage: string, userName: string, relation?: string) => {
+    const index = primaryMessage.indexOf('your');
+    if (index < 0) return primaryMessage;
+    if (relation) {
+        return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+    }
+
+    return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+}
+
 export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
 
@@ -428,11 +440,13 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             }
 
             let templateImage = giftCard.card_image_url;
+            let primaryMessage = giftCardRequest.primary_message;
+            if (giftCard.in_name_of) primaryMessage = getPersonalizedMessage(primaryMessage, giftCard.in_name_of, giftCard.relation);
             if (!templateImage) {
                 const record = {
                     name: (giftCard as any).user_name,
                     sapling: (giftCard as any).sapling_id,
-                    content1: giftCardRequest.primary_message,
+                    content1: primaryMessage,
                     content2: giftCardRequest.secondary_message,
                     logo: giftCardRequest.logo_url,
                     logo_message: giftCardRequest.logo_message
