@@ -59,7 +59,7 @@ const createMail = async (options: MailOptions): Promise<string> => {
   return encodeMessage(message.toString());
 };
 
-const sendMail = async (options: MailOptions): Promise<string | null | undefined> => {
+const sendMail = async (options: MailOptions): Promise<{ status: number, statusText: string }> => {
   const gmail = getGmailService();
   const rawMessage = await createMail(options);
   const response = await gmail.users.messages.send({
@@ -68,7 +68,8 @@ const sendMail = async (options: MailOptions): Promise<string | null | undefined
       raw: rawMessage,
     },
   });
-  return response.data.id;
+
+  return { status: response.status, statusText: response.statusText };
 };
 
 const sendDashboardMail = async (toEmail: string, emailData: any) => {
@@ -86,10 +87,13 @@ const sendDashboardMail = async (toEmail: string, emailData: any) => {
   const template = handlebars.compile(source);
   options.html = template(emailData);
 
-  const id = await sendMail(options)
-  if (id) {
+  const { status, statusText } = await sendMail(options)
+  if (status === 200) {
     console.log("Email send Successfully to " + toEmail);
+    return '';
   }
+
+  return statusText;
 }
 
 export { sendDashboardMail };
