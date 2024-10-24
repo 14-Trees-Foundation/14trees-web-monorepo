@@ -196,7 +196,8 @@ export class SiteRepository {
                 SUM(COALESCE(tcg.void_total, 0)) as void_total,
                 SUM(COALESCE(tcg.void_booked, 0)) as void_booked,
                 SUM(COALESCE(tcg.void_available, 0)) as void_available,
-                SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned
+                SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
             FROM "14trees".sites s
             LEFT JOIN "14trees".plots p ON s.id = p.site_id
             LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
@@ -250,7 +251,8 @@ export class SiteRepository {
                 SUM(COALESCE(tcg.void_total, 0)) as void_total,
                 SUM(COALESCE(tcg.void_booked, 0)) as void_booked,
                 SUM(COALESCE(tcg.void_available, 0)) as void_available,
-                SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned
+                SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
             FROM "14trees".tree_count_aggregations tcg
             LEFT JOIN "14trees".plots p ON tcg.plot_id = p.id
             LEFT JOIN "14trees".sites s ON p.site_id = s.id
@@ -331,7 +333,8 @@ export class SiteRepository {
             SUM(tcg.void_total) AS void_total,
             SUM(tcg.void_booked) AS void_booked,
             SUM(tcg.void_available) AS void_available,
-            SUM(tcg.void_assigned) AS void_assigned
+            SUM(tcg.void_assigned) AS void_assigned,
+            SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
         FROM "14trees".tree_count_aggregations tcg
         JOIN (
             SELECT id, site_id, unnest(tags) AS tag
