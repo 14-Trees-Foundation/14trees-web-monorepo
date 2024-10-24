@@ -88,6 +88,7 @@ export class PlotRepository {
             tcg.void_available,
             tcg.void_assigned,
             tcg.card_available,
+            tcg.unbooked_assigned,
             tcg.unbooked_assigned
         FROM "14trees".plots p
         LEFT JOIN "14trees".sites s ON p.site_id = s.id
