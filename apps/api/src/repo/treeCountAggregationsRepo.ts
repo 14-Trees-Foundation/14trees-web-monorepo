@@ -40,10 +40,9 @@ export class TreeCountAggregationsRepo {
         if (recalculate) await this.calculateTreeCountAggregations();
     }
 
-    public static async calculateTreeCountAggregations(): Promise<void> {
-
+    static async getAggregatedData(offset: number, limit: number) {
         const query = `
-            SELECT p.id as plot_id,
+            SELECT p.id as plot_id, pt.id as plant_type_id,
             COUNT(t.id) as total, 
             COUNT(t.assigned_to) as assigned,
             SUM(CASE 
@@ -118,46 +117,51 @@ export class TreeCountAggregationsRepo {
                     FROM "14trees_2".trees_snapshots
                 ) AS snapshots
             WHERE snapshots.rn = 1) as ts ON ts.sapling_id = t.sapling_id
-            GROUP by p.id
+            GROUP by p.id, pt.id
+            ORDER BY p.id
+            OFFSET ${offset} LIMIT ${limit};
         `
 
-        const data = await sequelize.query(query, {
+        return await sequelize.query(query, {
             type: QueryTypes.SELECT
         })
+    }
 
-        const requests: TreeCountAggregationCreationAttributes[] = [];
+    public static async calculateTreeCountAggregations(): Promise<void> {
 
-        data.forEach((d: any) => {
-            requests.push({
-                plot_id: d.plot_id,
-                total: d.total,
-                assigned: d.assigned,
-                booked: d.booked,
-                available: d.available,
-                void_total: d.void_total,
-                void_assigned: d.void_assigned,
-                void_booked: d.void_booked,
-                void_available: d.void_available,
-                card_available: d.card_available,
-                unbooked_assigned: d.unbooked_assigned,
-                updated_at: new Date(),
+        // delete old aggregated data
+        await TreeCountAggregation.destroy({ where: {}, truncate: true });
+
+        let offset = 0, limit = 100;
+        while (true) {
+            const data = await this.getAggregatedData(offset, limit);
+
+            const requests: TreeCountAggregationCreationAttributes[] = [];
+
+            data.forEach((d: any) => {
+                requests.push({
+                    plot_id: d.plot_id,
+                    plant_type_id: d.plant_type_id,
+                    total: d.total,
+                    assigned: d.assigned,
+                    booked: d.booked,
+                    available: d.available,
+                    void_total: d.void_total,
+                    void_assigned: d.void_assigned,
+                    void_booked: d.void_booked,
+                    void_available: d.void_available,
+                    card_available: d.card_available,
+                    unbooked_assigned: d.unbooked_assigned,
+                    updated_at: new Date(),
+                })
             })
-        })
+    
+            // create new aggregated data
+            if (requests.length > 0) await TreeCountAggregation.bulkCreate(requests);
 
-        // upsert all the requests. plot id is unique
-        await TreeCountAggregation.bulkCreate(requests, 
-            { updateOnDuplicate: [
-                'total', 
-                'booked', 
-                'assigned', 
-                'available', 
-                'void_total', 
-                'void_booked', 
-                'void_assigned', 
-                'void_available',
-                'card_available',
-                'unbooked_assigned',
-                'updated_at'
-            ]})
+            if (data.length < limit) break;
+            offset += limit;
+        }
+
     }
 }
