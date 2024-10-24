@@ -97,7 +97,7 @@ export class GiftCardsRepository {
         await giftCard.destroy();
     }
 
-    static async createGiftCards(giftCardsRequestId: number, users: { userId: number, imageName?: string }[]): Promise<void> {
+    static async createGiftCards(giftCardsRequestId: number, users: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
         if (!giftRequest) {
             throw new Error("Gift Card request not found")
@@ -109,6 +109,8 @@ export class GiftCardsRepository {
                 gift_card_request_id: giftCardsRequestId,
                 user_id: user.userId,
                 profile_image_url: user.imageName ? 'https://14treesplants.s3.amazonaws.com/gift-card-requests/'+ giftRequest.request_id + '/' + user.imageName : null,
+                in_name_of: user.inNameOf ?? null,
+                relation: user.relation ?? null,
                 created_at: new Date(),
                 updated_at: new Date()
             } as GiftCardCreationAttributes

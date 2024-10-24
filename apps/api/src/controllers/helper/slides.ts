@@ -22,6 +22,7 @@ interface Record {
     content1: string;
     content2: string;
     logo?: string;
+    logo_message: string;
 }
 
 let token: Credentials | null = null
@@ -129,6 +130,9 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
 
         const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
         if (content2UpdateRequest) requests.push(...content2UpdateRequest);
+
+        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message);
+        if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
 
         // Send the request to replace the text
         await axios.post(
@@ -283,40 +287,43 @@ export const getSlideThumbnail = async (
     }
 }
 
-export async function deleteSlide(
-    presentationId: string,
-    slidePageId: string,
-): Promise<void> {
-    try {
-        const token = await getJwtToken()
-        const requestBody = {
-            requests: [
-                {
-                    deleteObject: {
-                        objectId: slidePageId,
-                    },
-                },
-            ],
-        };
+export async function deleteUnwantedSlides(presentationId: string, allowedIds: string[]): Promise<void> {
+    const token = await getJwtToken();
+    
+    const response = await axios.get(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
 
-        const response = await axios.post(
-            `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`,
-            requestBody,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
+    const currentSlides = response.data.slides;
+    const currentIds: string[] = currentSlides.map((slide: any) => slide.objectId);
 
-        if (response.status === 200) {
-            console.log(`Slide with page ID ${slidePageId} deleted successfully.`);
-        } else {
-            throw new Error('Failed to delete slide.');
-        }
-    } catch (error) {
-        console.error('Error deleting slide:', error);
-        throw error;
+    const idsToDelete = currentIds.filter(id => !allowedIds.includes(id));
+
+    if (idsToDelete.length === 0) {
+        console.log('[INFO]' ,'No slides to delete.');
+        return;
     }
+
+    const deleteRequests = idsToDelete.map(id => ({
+        deleteObject: {
+            objectId: id,
+        },
+    }));
+
+    await axios.post(
+        `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`,
+        {
+            requests: deleteRequests,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        }
+    );
+
+    console.log('[INFO]', `Deleted slides with IDs: ${idsToDelete.join(', ')}`);
 }
