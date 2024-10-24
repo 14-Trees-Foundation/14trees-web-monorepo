@@ -4,6 +4,7 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 interface TreeCountAggregationAttributes {
     id: number;
     plot_id: number;
+    plant_type_id: number;
     total: number;
     booked: number;
     assigned: number;
@@ -33,10 +34,15 @@ class TreeCountAggregation extends Model<TreeCountAggregationAttributes, TreeCou
 
     @Column({ 
         type: DataType.NUMBER,
-        allowNull: false,
-        unique: true
+        allowNull: false
     })
     plot_id!: number;
+
+    @Column({ 
+        type: DataType.NUMBER,
+        allowNull: false
+    })
+    plant_type_id!: number;
 
     @Column({ type: DataType.NUMBER, allowNull: false })
     total!: number;

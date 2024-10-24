@@ -79,17 +79,16 @@ export class PlotRepository {
                     then s.name_marathi
                     else s.name_english 
                 end site_name,
-            tcg.booked,
-            tcg.available,
-            tcg.assigned,
-            tcg.total,
-            tcg.void_total,
-            tcg.void_booked,
-            tcg.void_available,
-            tcg.void_assigned,
-            tcg.card_available,
-            tcg.unbooked_assigned,
-            tcg.unbooked_assigned
+            SUM(tcg.booked),
+            SUM(tcg.available),
+            SUM(tcg.assigned),
+            SUM(tcg.total),
+            SUM(tcg.void_total),
+            SUM(tcg.void_booked),
+            SUM(tcg.void_available),
+            SUM(tcg.void_assigned),
+            SUM(tcg.card_available),
+            SUM(tcg.unbooked_assigned)
         FROM "14trees".plots p
         LEFT JOIN "14trees".sites s ON p.site_id = s.id
         left join "14trees".tree_count_aggregations tcg on tcg.plot_id = p.id
