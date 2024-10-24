@@ -99,7 +99,14 @@ export class TreeCountAggregationsRepo {
                     AND ptct.plant_type IS NOT NULL
                 THEN 1 
                 ELSE 0 
-            END) AS card_available
+            END) AS card_available,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL
+                    AND t.assigned_to IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS unbooked_assigned
             FROM "14trees_2".plots p
             LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
             LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
@@ -132,6 +139,7 @@ export class TreeCountAggregationsRepo {
                 void_booked: d.void_booked,
                 void_available: d.void_available,
                 card_available: d.card_available,
+                unbooked_assigned: d.unbooked_assigned,
                 updated_at: new Date(),
             })
         })
@@ -148,6 +156,7 @@ export class TreeCountAggregationsRepo {
                 'void_assigned', 
                 'void_available',
                 'card_available',
+                'unbooked_assigned',
                 'updated_at'
             ]})
     }

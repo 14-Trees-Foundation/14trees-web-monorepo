@@ -85,7 +85,8 @@ export class PlotRepository {
             tcg.void_booked,
             tcg.void_available,
             tcg.void_assigned,
-            tcg.card_available
+            tcg.card_available,
+            tcg.unbooked_assigned
         FROM "14trees_2".plots p
         LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         left join "14trees_2".tree_count_aggregations tcg on tcg.plot_id = p.id
@@ -206,46 +207,62 @@ export class PlotRepository {
 
         let whereCondition = "";
         let replacements: any = {}
+
+        let treeCondition = "";
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "p." + filter.columnField
                 if (filter.columnField === 'created_at') columnField = 't.created_at';
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
-                whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
+
+                if (filter.columnField === 'created_at') {
+                    treeCondition = condition;
+                } else {
+                    whereCondition = whereCondition + " " + condition + " AND";
+                }
             })
             whereCondition = whereCondition.substring(0, whereCondition.length - 3);
         }
 
         const query = `
-        SELECT p.id, p.name,
-            COUNT(t.id) as total, 
-            COUNT(t.assigned_to) as assigned,
-            SUM(CASE 
-                WHEN t.mapped_to_user IS NOT NULL 
-                    OR t.mapped_to_group IS NOT NULL
-                THEN 1 
-                ELSE 0 
-            END) AS booked,
-            SUM(CASE 
-                WHEN t.mapped_to_user IS NULL 
-                    AND t.mapped_to_group IS NULL 
-                    AND t.assigned_to IS NULL 
-                    AND t.id IS NOT NULL
-                THEN 1 
-                ELSE 0 
-            END) AS available
-        FROM "14trees_2".plots p
-        LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
-        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-        GROUP BY p.id
-        ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
-        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+            SELECT p.id, p.name,
+                COUNT(t.id) as total, 
+                COUNT(t.assigned_to) as assigned,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NOT NULL 
+                        OR t.mapped_to_group IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS booked,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NULL 
+                        AND t.mapped_to_group IS NULL 
+                        AND t.assigned_to IS NULL 
+                        AND t.id IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS available,
+                SUM(CASE 
+                    WHEN t.mapped_to_user IS NULL 
+                        AND t.mapped_to_group IS NULL 
+                        AND t.assigned_to IS NOT NULL 
+                        AND t.id IS NOT NULL
+                    THEN 1 
+                    ELSE 0 
+                END) AS unbooked_assigned
+            FROM "14trees_2".plots p
+            LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id ${treeCondition !== "" ? "AND " + treeCondition : ""}
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+            GROUP BY p.id
+            ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
+            OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
         const countPlotsQuery = 
             `SELECT count(*)
-            FROM "14trees_2".plots p;
+            FROM "14trees_2".plots p
+            WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
             `
         
         const plots: any = await sequelize.query(query, {
