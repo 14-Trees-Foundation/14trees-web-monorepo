@@ -4,6 +4,7 @@ import { GroupRepository } from "../repo/groupRepo";
 import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
+import { UploadFileToS3 } from "./helper/uploadtos3";
   
 
 /*
@@ -44,7 +45,14 @@ export const addGroup = async (req: Request, res: Response) => {
     }
 
     try {
-        const group = await GroupRepository.addGroup(req.body);
+        const data = req.body;
+        const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
+        if (files && files.logo && files.logo.length > 0) {
+            const location = await UploadFileToS3(files.logo[0].filename, "logos");
+            if (location) data['logo_url'] = location;
+        }
+
+        const group = await GroupRepository.addGroup(data);
         res.status(status.created).send(group);
     } catch (error) {
         res.status(status.bad).json({
@@ -56,7 +64,15 @@ export const addGroup = async (req: Request, res: Response) => {
 
 export const updateGroup = async (req: Request, res: Response) => {
     try {
-        let result = await GroupRepository.updateGroup(req.body)
+
+        const data = req.body;
+        const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
+        if (files && files.logo && files.logo.length > 0) {
+            const location = await UploadFileToS3(files.logo[0].filename, "logos");
+            if (location) data['logo_url'] = location;
+        }
+
+        let result = await GroupRepository.updateGroup(data)
         res.status(status.created).json(result);
     } catch (error) {
         console.log(error)

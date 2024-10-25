@@ -8,12 +8,13 @@ interface GroupAttributes {
 	name: string;
 	type: GroupType;
   description?: string;
+  logo_url: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
 interface GroupCreationAttributes
-	extends Optional<GroupAttributes, 'id'> {}
+	extends Optional<GroupAttributes, 'id' | 'logo_url'> {}
 
 @Table({ tableName: 'groups' })
 class Group extends Model<GroupAttributes, GroupCreationAttributes>
@@ -39,6 +40,9 @@ implements GroupAttributes {
 
   @Column(DataType.TEXT)
   description?: string;
+
+  @Column(DataType.TEXT)
+  logo_url!: string;
 
   @Column(DataType.DATE)
   created_at!: Date;
