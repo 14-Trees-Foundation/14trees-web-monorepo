@@ -445,7 +445,7 @@ class TreeRepository {
       SELECT 
         t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
         t.user_tree_image, t.sponsored_by_user, du."name" AS sponsored_by_user_name, 
-        t.gifted_by, t.planted_by, t.memory_images, t.created_at, t.event_type,
+        t.gifted_by, t.planted_by, t.memory_images, t.created_at, t.assigned_at, t.event_type,
         pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_images, 
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
