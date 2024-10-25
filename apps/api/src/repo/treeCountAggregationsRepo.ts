@@ -132,7 +132,7 @@ export class TreeCountAggregationsRepo {
         // delete old aggregated data
         await TreeCountAggregation.destroy({ where: {}, truncate: true });
 
-        let offset = 0, limit = 100;
+        let offset = 0, limit = 500;
         while (true) {
             const data = await this.getAggregatedData(offset, limit);
 
