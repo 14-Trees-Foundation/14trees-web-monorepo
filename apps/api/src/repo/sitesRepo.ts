@@ -155,6 +155,7 @@ export class SiteRepository {
     public static async treeCountForSites(offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC"}[]): Promise<PaginatedResponse<Site>> {
 
         let whereCondition = "";
+        let plantTypeCondition = "";
         let replacements: any = {}
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
@@ -168,9 +169,13 @@ export class SiteRepository {
                 }
                 let columnField = "s." + filter.columnField
                 let valuePlaceHolder = filter.columnField
+
+                if (filter.columnField === 'habit') columnField = 'pt.habit'
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
-                whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
+
+                if (filter.columnField === 'habit') plantTypeCondition = condition;
+                else whereCondition = whereCondition + " " + condition + " AND";
             })
             whereCondition = whereCondition.substring(0, whereCondition.length - 3);
         }
@@ -197,12 +202,14 @@ export class SiteRepository {
                 SUM(COALESCE(tcg.void_booked, 0)) as void_booked,
                 SUM(COALESCE(tcg.void_available, 0)) as void_available,
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
+                SUM(COALESCE(tcg.card_available, 0)) as card_available,
                 SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
             FROM "14trees".sites s
             LEFT JOIN "14trees".plots p ON s.id = p.site_id
             LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
+            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
             LEFT JOIN plot_areas pa ON pa.site_id = s.id
-            WHERE ${whereCondition ? whereCondition : '1=1'}
+            WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.id
             ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             ${ limit >0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
@@ -216,7 +223,10 @@ export class SiteRepository {
         const countQuery = `
             SELECT count(*) as count
             FROM "14trees".sites s
-            WHERE ${whereCondition ? whereCondition : '1=1'}
+            LEFT JOIN "14trees".plots p ON s.id = p.site_id
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
+            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
+            WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
         `
 
         const resp: any[] = await sequelize.query(countQuery, {
@@ -230,13 +240,17 @@ export class SiteRepository {
     public static async treeCountForFields(field: string, offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC" }[]) {
 
         let whereCondition = "";
+        let plantTypeCondition = "";
         let replacements: any = {}
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "s." + filter.columnField
                 let valuePlaceHolder = filter.columnField + Math.random().toString(36).slice(2);
+
+                if (filter.columnField === 'habit') columnField = 'pt.habit';
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
-                whereCondition = whereCondition + " " + condition + " AND";
+                if (filter.columnField === 'habit') plantTypeCondition = condition;
+                else whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
             })
             whereCondition = whereCondition.substring(0, whereCondition.length - 3);
@@ -252,11 +266,13 @@ export class SiteRepository {
                 SUM(COALESCE(tcg.void_booked, 0)) as void_booked,
                 SUM(COALESCE(tcg.void_available, 0)) as void_available,
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
+                SUM(COALESCE(tcg.card_available, 0)) as card_available,
                 SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
             FROM "14trees".tree_count_aggregations tcg
             LEFT JOIN "14trees".plots p ON tcg.plot_id = p.id
             LEFT JOIN "14trees".sites s ON p.site_id = s.id
-            WHERE ${whereCondition ? whereCondition : '1=1'}
+            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+            WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.${field} ${ field === 'category' ? '' : ', s.category'}
             ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             LIMIT ${limit} OFFSET ${offset};
@@ -274,7 +290,8 @@ export class SiteRepository {
                 FROM "14trees".tree_count_aggregations tcg
                 LEFT JOIN "14trees".plots p ON tcg.plot_id = p.id
                 LEFT JOIN "14trees".sites s ON p.site_id = s.id
-                WHERE ${whereCondition ? whereCondition : '1=1'}
+                LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+                WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
                 GROUP BY s.${field} ${ field === 'category' ? '' : ', s.category'}
             )
 
@@ -312,40 +329,46 @@ export class SiteRepository {
 
     public static async getTreeCountsForTags(offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]) {
         let whereCondition = "";
+        let plantTypeCondition = "";
         let replacements: any = {}
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "s." + filter.columnField
                 let valuePlaceHolder = filter.columnField + Math.random().toString(36).slice(2);
+
+                if (filter.columnField === 'habit') columnField = 'pt.habit';
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
-                whereCondition = whereCondition + " " + condition + " AND";
+                if (filter.columnField === 'habit') plantTypeCondition = condition;
+                else whereCondition = whereCondition + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
             })
             whereCondition = whereCondition.substring(0, whereCondition.length - 3);
         }
 
         const query = `
-        SELECT tag_grouped.tag,
-            SUM(tcg.booked) AS booked,
-            SUM(tcg.available) AS available,
-            SUM(tcg.assigned) AS assigned,
-            SUM(tcg.total) AS total,
-            SUM(tcg.void_total) AS void_total,
-            SUM(tcg.void_booked) AS void_booked,
-            SUM(tcg.void_available) AS void_available,
-            SUM(tcg.void_assigned) AS void_assigned,
-            SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
-        FROM "14trees".tree_count_aggregations tcg
-        JOIN (
-            SELECT id, site_id, unnest(tags) AS tag
-            FROM "14trees".plots
-        ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
-        JOIN "14trees".tags as t on tag_grouped.tag = t.tag
-        LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
-        WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
+            SELECT tag_grouped.tag,
+                SUM(tcg.booked) AS booked,
+                SUM(tcg.available) AS available,
+                SUM(tcg.assigned) AS assigned,
+                SUM(tcg.total) AS total,
+                SUM(tcg.void_total) AS void_total,
+                SUM(tcg.void_booked) AS void_booked,
+                SUM(tcg.void_available) AS void_available,
+                SUM(tcg.void_assigned) AS void_assigned,
+                SUM(tcg.card_available) AS card_available,
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
+            FROM "14trees".tree_count_aggregations tcg
+            JOIN (
+                SELECT id, site_id, unnest(tags) AS tag
+                FROM "14trees".plots
+            ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
+            JOIN "14trees".tags as t on tag_grouped.tag = t.tag
+            LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
+            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+            WHERE pt.id IS NOT NULL AND t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY tag_grouped.tag
             ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
-        OFFSET ${offset} LIMIT ${limit};
+            OFFSET ${offset} LIMIT ${limit};
         `
 
         const resp: any[] = await sequelize.query(query, {
@@ -362,7 +385,8 @@ export class SiteRepository {
             ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
             JOIN "14trees".tags as t on tag_grouped.tag = t.tag
             LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
-            WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
+            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+            WHERE pt.id IS NOT NULL AND t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
         `
 
         const countResp: any[] = await sequelize.query(countQuery, {

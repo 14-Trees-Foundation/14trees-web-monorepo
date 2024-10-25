@@ -39,6 +39,8 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
         bucket = process.env.BUCKET_GIFT_CARDS + "/" + folder_name
     } else if (type === 'tree_update') {
         bucket = process.env.BUCKET_TREE_UPDATE
+    } else if (type === 'logos') {
+        bucket = process.env.S3_BUCKET + "/logos"
     }
 
     if (!bucket) {
@@ -121,6 +123,8 @@ function getBucketFromTypeAndFolderName(type: string, folder_name: string) {
         bucket = process.env.BUCKET_TREE_UPDATE;
     } else if (type === 'cards') {
         bucket = process.env.BUCKET_CARDS;
+    } else if (type === 'logos') {
+        bucket = process.env.S3_BUCKET + "/logos";
     }
     return bucket as string;
 }
