@@ -91,6 +91,7 @@ export class PlotRepository {
         LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         left join "14trees_2".tree_count_aggregations tcg on tcg.plot_id = p.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        GROUP BY p.id, s.id
         ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
