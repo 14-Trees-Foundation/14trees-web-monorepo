@@ -77,16 +77,16 @@ export class PlotRepository {
                     then s.name_marathi
                     else s.name_english 
                 end site_name,
-            SUM(tcg.booked) as booked,
-            SUM(tcg.available) as available,
-            SUM(tcg.assigned) as assigned,
-            SUM(tcg.total) as total,
-            SUM(tcg.void_total) as void_total,
-            SUM(tcg.void_booked) as void_booked,
-            SUM(tcg.void_available) as void_available,
-            SUM(tcg.void_assigned) as void_assigned,
-            SUM(tcg.card_available) as card_available,
-            SUM(tcg.unbooked_assigned) as unbooked_assigned
+                SUM(coalesce(tcg.booked, 0)) as booked,
+                SUM(coalesce(tcg.available, 0)) as available,
+                SUM(coalesce(tcg.assigned, 0)) as assigned,
+                SUM(coalesce(tcg.total, 0)) as total,
+                SUM(coalesce(tcg.void_total, 0)) as void_total,
+                SUM(coalesce(tcg.void_booked, 0)) as void_booked,
+                SUM(coalesce(tcg.void_available, 0)) as void_available,
+                SUM(coalesce(tcg.void_assigned, 0)) as void_assigned,
+                SUM(coalesce(tcg.card_available, 0)) as card_available,
+                SUM(coalesce(tcg.unbooked_assigned, 0)) as unbooked_assigned
         FROM "14trees_2".plots p
         LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
         left join "14trees_2".tree_count_aggregations tcg on tcg.plot_id = p.id
