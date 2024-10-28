@@ -68,6 +68,22 @@ export const getPlots = async (req: Request, res: Response) => {
     try {
         TreeCountAggregationsRepo.checkAndRecalculateData();
         let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
+
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
+                available: parseInt(item.available),
+                card_available: parseInt(item.card_available),
+                unbooked_assigned: parseInt(item.unbooked_assigned),
+                void_available: parseInt(item.void_available),
+                void_assigned: parseInt(item.void_assigned),
+                void_booked: parseInt(item.void_booked),
+                void_total: parseInt(item.void_total),
+            }
+        })
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
