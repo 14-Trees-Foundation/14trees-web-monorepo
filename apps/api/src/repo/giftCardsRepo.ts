@@ -82,7 +82,6 @@ export class GiftCardsRepository {
         }
 
         data.updated_at = new Date();
-        console.log(data);
         const updatedGiftCard = await giftCard.update(data);
 
         const giftCards = await this.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: updatedGiftCard.id }])

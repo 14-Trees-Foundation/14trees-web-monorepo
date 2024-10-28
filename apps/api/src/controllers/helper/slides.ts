@@ -2,6 +2,7 @@ import axios from 'axios';
 import { JWT, Credentials } from 'google-auth-library';
 import * as fs from 'fs';
 import * as path from 'path';
+import { boolean } from 'zod';
 
 interface ServiceAccountCredentials {
     type: string;
@@ -131,7 +132,7 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
         if (content2UpdateRequest) requests.push(...content2UpdateRequest);
 
-        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message);
+        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message, record.logo ? false : true);
         if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
 
         // Send the request to replace the text
@@ -151,7 +152,7 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
     }
 };
 
-const getUpdateTextRequest = (slide: any, description: string, newText: string) => {
+const getUpdateTextRequest = (slide: any, description: string, newText: string, remove: boolean = false) => {
     // Find the text element with the specified description
     const textElement = slide.pageElements.find((element: any) => element.description === description);
 
@@ -163,6 +164,12 @@ const getUpdateTextRequest = (slide: any, description: string, newText: string) 
     const textElementId = textElement.objectId;
 
     const requests: any[] = [];
+
+    if (remove) {
+        return [{
+            deleteObject: { objectId: textElement.objectId }, // Remove existing image
+        }];
+    }
 
     // Remove the existing text if exists
     if (textElement.shape.text) {
@@ -200,10 +207,8 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
         const slide = response.data;
 
         const requests: any[] = [];
-        if (record.logo) {
-            const logoUpdateRequest = getUpdateImageRequest(slide, 'LOGO', record.logo);
-            if (logoUpdateRequest) requests.push(...logoUpdateRequest);
-        }
+        const logoUpdateRequest = getUpdateImageRequest(slide, 'LOGO', record.logo);
+        if (logoUpdateRequest) requests.push(...logoUpdateRequest);
 
         const saplingUrl = 'https://dashboard.14trees.org/profile/' + record.sapling;
         const qrCodeUrl = `https://quickchart.io/qr?text=${saplingUrl}`;
@@ -229,7 +234,7 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
     }
 };
 
-const getUpdateImageRequest = (slide: any, description: string, imageUrl: string) => {
+const getUpdateImageRequest = (slide: any, description: string, imageUrl?: string) => {
     // Find the image element with the specified description
     const imageElement = slide.pageElements.find(
         (element: any) => element.description === description
@@ -241,8 +246,9 @@ const getUpdateImageRequest = (slide: any, description: string, imageUrl: string
     }
 
     // Prepare batch update request to insert the image at the same position
-    const requests = [
-        {
+    const requests = [];
+    if (imageUrl) {
+        requests.push({
             createImage: {
                 url: imageUrl,
                 elementProperties: {
@@ -251,11 +257,12 @@ const getUpdateImageRequest = (slide: any, description: string, imageUrl: string
                     transform: imageElement.transform,
                 },
             },
-        },
-        {
-            deleteObject: { objectId: imageElement.objectId }, // Remove existing image
-        },
-    ];
+        })
+    }
+
+    requests.push({
+        deleteObject: { objectId: imageElement.objectId }, // Remove existing image
+    })
 
     return requests;
 }
