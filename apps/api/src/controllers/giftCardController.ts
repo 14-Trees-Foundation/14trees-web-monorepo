@@ -61,7 +61,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         planted_by: plantedBy || null,
         logo_message: logoMessage || null,
         status: GiftCardRequestStatus.pendingPlotSelection,
-        validation_errors: ['MISSING_LOGO', 'MISSING_USER_DETAILS'],
+        validation_errors: groupId ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
         presentation_id: presentationId || null,
     }
 
