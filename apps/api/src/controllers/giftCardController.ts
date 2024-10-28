@@ -373,7 +373,7 @@ const generateGiftCardTemplate = async (presentationId: string, plantType: strin
 
     const plantTypeCardTemplate = await GiftCardsRepository.getPlantTypeTemplateId(plantType);
     if (!plantTypeCardTemplate) {
-        throw new Error("Plant type card template not found");
+        return null;
     }
     const templateId = plantTypeCardTemplate.template_id;
 
@@ -452,8 +452,12 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
                     logo_message: giftCardRequest.logo_message
                 }
                 const templateId = await generateGiftCardTemplate(giftCardRequest.presentation_id, (giftCard as any).plant_type, record);
-                const templateImage = await getGiftCardTemplateImage(giftCardRequest.presentation_id, templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
+                if (!templateId) {
+                    allCardsGenerated = false;
+                    continue;
+                }
 
+                const templateImage = await getGiftCardTemplateImage(giftCardRequest.presentation_id, templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
                 giftCard.card_image_url = templateImage;
                 giftCard.slide_id = templateId;
                 await GiftCardsRepository.updateGiftCard(giftCard);
