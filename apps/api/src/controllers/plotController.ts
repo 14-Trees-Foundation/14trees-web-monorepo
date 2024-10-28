@@ -66,7 +66,7 @@ export const getPlots = async (req: Request, res: Response) => {
     const orderBy: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
 
     try {
-        await TreeCountAggregationsRepo.checkAndRecalculateData();
+        TreeCountAggregationsRepo.checkAndRecalculateData();
         let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
         res.status(status.success).send(result);
     } catch (error: any) {

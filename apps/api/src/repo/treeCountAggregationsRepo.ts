@@ -3,6 +3,9 @@ import { PaginatedResponse } from "../models/pagination";
 import { TreeCountAggregation, TreeCountAggregationAttributes, TreeCountAggregationCreationAttributes } from "../models/tree_count_aggregation";
 import { sequelize } from "../config/postgreDB";
 
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export class TreeCountAggregationsRepo {
 
@@ -26,7 +29,7 @@ export class TreeCountAggregationsRepo {
     public static async checkAndRecalculateData() {
         const resp = await TreeCountAggregation.findAll({
             limit: 1,
-            order: [['updated_at', 'ASC']],
+            order: [['updated_at', 'DESC']],
         });
 
         let recalculate = true;
@@ -132,7 +135,7 @@ export class TreeCountAggregationsRepo {
         // delete old aggregated data
         await TreeCountAggregation.destroy({ where: {}, truncate: true });
 
-        let offset = 0, limit = 500;
+        let offset = 0, limit = 1000;
         while (true) {
             const data = await this.getAggregatedData(offset, limit);
 
@@ -161,6 +164,8 @@ export class TreeCountAggregationsRepo {
 
             if (data.length < limit) break;
             offset += limit;
+
+            await sleep(1000);
         }
 
     }
