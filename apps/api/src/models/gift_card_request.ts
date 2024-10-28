@@ -29,10 +29,11 @@ interface GiftCardRequestAttributes {
     updated_at: Date;
     status: string;
     presentation_id: string | null;
+    notes: string | null;
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -121,6 +122,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.STRING,
     })
     presentation_id!: string;
+
+    @Column({
+        type: DataType.TEXT,
+    })
+    notes!: string;
 
     @Column({
         type: DataType.ARRAY(DataType.STRING),
