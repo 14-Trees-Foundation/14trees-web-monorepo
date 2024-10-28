@@ -26,6 +26,7 @@ interface TreeAttributes {
     sponsored_by_user?: number,
     sponsored_by_group?: number,
     gifted_by?: number,
+    gifted_by_name: string | null,
     gifted_to?: number,
     assigned_at: Date | null,
     assigned_to: number | null,
@@ -46,7 +47,7 @@ interface TreeAttributes {
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>
@@ -123,6 +124,9 @@ implements TreeAttributes {
   @ForeignKey(() => User)
   @Column(DataType.NUMBER)
   gifted_to!: number;
+
+  @Column(DataType.STRING)
+  gifted_by_name!: string;
 
   @ForeignKey(() => Event)
   @Column(DataType.NUMBER)
