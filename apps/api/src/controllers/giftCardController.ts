@@ -273,7 +273,7 @@ export const createGiftCardPlots = async (req: Request, res: Response) => {
 }
 
 export const bookGiftCardTrees = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId } = req.body;
+    const { gift_card_request_id: giftCardRequestId, gift_card_trees: giftCardTrees } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -293,8 +293,17 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
             return;
         }
 
-        const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, giftCardRequest.no_of_cards);
-        await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
+        if (giftCardTrees && giftCardTrees.length) {
+            const treeIds: number[] =  giftCardTrees.map((item: any) => item.tree_id);
+            await TreeRepository.mapTreesToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, treeIds)
+
+            for (const item of giftCardTrees) {
+                await GiftCardsRepository.updateGiftCards({ tree_id: item.tree_id, updated_at: new Date() }, { id: item.id });
+            }
+        } else {
+            const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, giftCardRequest.no_of_cards);
+            await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
+        }
 
         giftCardRequest.is_active = true;
         giftCardRequest.status = GiftCardRequestStatus.pendingAssignment;
