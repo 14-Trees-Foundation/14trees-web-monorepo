@@ -101,7 +101,7 @@ export  const getAlbums = async (req: Request, res: Response) => {
     }
     const user = resp.results[0];
 
-    let albums = await AlbumRepository.getAlbums(user.id);
+    let albums = await AlbumRepository.getAlbums({ user_id: user.id });
 
     res.status(status.success).send({
       albums: albums,

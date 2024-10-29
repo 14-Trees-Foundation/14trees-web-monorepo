@@ -13,6 +13,7 @@ import axios from 'axios'
 import { Op } from "sequelize";
 import { copyFile, downloadSlide } from "../services/google";
 import { sendDashboardMail } from "../services/gmail/gmail";
+import { AlbumRepository } from "../repo/albumRepo";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -163,6 +164,52 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
         console.log(`Deleted Gift card with id: ${req.params.id}`, resp);
         res.status(status.success).json("Gift card deleted successfully");
     } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+};
+
+export const updateGiftCardRequestAlbum = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId, album_id: albumId } = req.body;
+    if (!giftCardRequestId || !albumId) {
+        res.status(status.bad).send({ message: "Invalid input!" });
+        return;
+    }
+
+    try {
+        
+        const albums = await AlbumRepository.getAlbums({ id: albumId });
+        if (albums.length === 1) {
+
+            const giftCardRequestResp = await GiftCardsRepository.getGiftCardRequests(0 , 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
+            if (giftCardRequestResp.results.length === 1) {
+                const giftCardRequest = giftCardRequestResp.results[0];
+                giftCardRequest.album_id = albums[0].id;
+                giftCardRequest.updated_at = new Date();
+                await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
+                let offset = 0, limit = 100;
+                while (true) {
+                    const giftCardsResp = await GiftCardsRepository.getBookedCards(giftCardRequest.id, offset, limit);
+                    const treeIds = giftCardsResp.results.map(item => item.tree_id).filter(id => id ? true : false);
+
+                    const updateMemoryImages = {
+                        memory_images: albums[0].images,
+                        updated_at: new Date(),
+                    }
+                    if (treeIds.length > 0) await TreeRepository.updateTrees(updateMemoryImages, { id: { [Op.in]: treeIds} })
+
+                    offset += limit;
+                    if (offset >= Number(giftCardsResp.total)) break;
+                }
+            }
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::updateGiftCardRequestAlbum", error);
         res.status(status.error).json({
             status: status.error,
             message: error.message,
@@ -346,6 +393,12 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
         const giftCardRequest = resp.results[0];
 
+        let memoryImageUrls: string[] | null = null;
+        if (giftCardRequest.album_id) {
+            const albums = await AlbumRepository.getAlbums({ id: giftCardRequest.album_id });
+            if (albums.length === 1) memoryImageUrls = albums[0].images;
+        }
+
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         let allAssigned = true;
         for (const giftCard of giftCards.results) {
@@ -357,10 +410,11 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
             const updateRequest = {
                 assigned_at: new Date(),
                 assigned_to: giftCard.user_id,
-                update_at: new Date(),
+                updated_at: new Date(),
                 description: giftCardRequest.event_name,
                 planted_by: giftCardRequest.planted_by,
-                user_tree_image: giftCard.profile_image_url
+                user_tree_image: giftCard.profile_image_url,
+                memory_images: memoryImageUrls,
             }
 
             await TreeRepository.updateTrees(updateRequest, { id: giftCard.tree_id });
