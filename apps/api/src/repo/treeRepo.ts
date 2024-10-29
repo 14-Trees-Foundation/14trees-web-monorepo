@@ -314,6 +314,22 @@ class TreeRepository {
     return trees.map(tree => tree.id);
   }
 
+  public static async mapTreesToUserAndGroup(userId: number, groupId: number, treeIds: number[]) {
+    const updateConfig: any = {
+      mapped_to_user: userId,
+      mapped_to_group: groupId,
+      mapped_at: new Date(),
+      updated_at: new Date(),
+    }
+
+
+    await Tree.update( updateConfig, {
+      where: {
+        id: { [Op.in]: treeIds },
+      },
+    });
+  }
+
   public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number, plotIds: number[], count: number) {
     const updateConfig: any = {
       mapped_to_user: userId,
@@ -533,7 +549,72 @@ class TreeRepository {
       replacements
     })
 
-    console.log(countResult)
+    return {
+      offset: offset,
+      total: countResult[0]?.count ? parseInt(countResult[0]?.count) : 0,
+      results: result
+    };
+  }
+
+
+  public static async getGiftableTrees(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<any>> {
+
+    let whereCondition = "";
+    let replacements: any = {}
+    if (filters && filters.length > 0) {
+      filters.forEach(filter => {
+        let columnField = "t." + filter.columnField
+        let valuePlaceHolder = filter.columnField
+        if (filter.columnField === "plot_id") {
+          columnField = 'p.id'
+        }
+
+        const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+        whereCondition = whereCondition + " " + condition + " AND";
+        replacements = { ...replacements, ...replacement }
+      })
+      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+    }
+
+    const query = `
+      SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".plots p ON p.id = t.plot_id
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'
+      JOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name
+      WHERE 
+        t.mapped_to_user IS NULL
+        AND t.mapped_to_group IS NULL
+        AND t.assigned_to IS NULL
+        AND ${whereCondition !== "" ? whereCondition : "1=1"}
+      ORDER BY t.id DESC
+      OFFSET ${offset} LIMIT ${limit};
+    `;
+
+    const result = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements
+    })
+
+    const countQuery = `
+      SELECT count(t.id)
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".plots p ON p.id = t.plot_id
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+      JOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name
+      WHERE 
+        pt.habit = 'Tree'
+        AND t.mapped_to_user IS NULL
+        AND t.mapped_to_group IS NULL
+        AND t.assigned_to IS NULL
+        AND ${whereCondition !== "" ? whereCondition : "1=1"}
+    `;
+
+    const countResult: any[] = await sequelize.query(countQuery, {
+      type: QueryTypes.SELECT,
+      replacements
+    })
+
     return {
       offset: offset,
       total: countResult[0]?.count ? parseInt(countResult[0]?.count) : 0,

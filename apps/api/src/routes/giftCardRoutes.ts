@@ -11,7 +11,7 @@ routes.delete('/requests/:id', giftCards.deleteGiftCardRequest);
 routes.post('/', giftCards.createGiftCards);
 routes.post('/plots', giftCards.createGiftCardPlots);
 routes.post('/book', giftCards.bookGiftCardTrees);
-routes.get('/:gift_card_id', giftCards.getBookedTrees);
+routes.get('/:gift_card_request_id', giftCards.getBookedTrees);
 routes.post('/generate-template/', giftCards.generateGiftCardSlide);
 routes.post('/update-template', giftCards.updateGiftCardTemplate);
 routes.post('/card/redeem', giftCards.redeemGiftCard);
