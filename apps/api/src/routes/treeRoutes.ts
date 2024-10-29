@@ -1,7 +1,6 @@
 import { Router } from "express";
 import * as trees from "../controllers/treesController";
 import uploadFiles from "../helpers/multer";
-import * as treeTypes from '../controllers/plantTypeController'
 
 const routes = Router();
 
@@ -24,6 +23,7 @@ routes.post('/', uploadFiles.array('files', 1), trees.addTree);
 routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
 routes.delete('/:id', uploadFiles.array('files', 1), trees.deleteTree);
 routes.post('/change-plot', trees.changeTreesPlot);
+routes.post('/get-giftable', trees.getGiftableTrees);
 
 // // the below route should be /get-tree-by-mongo-id or /get-tree-by-id
 routes.get("/getsaplingid", trees.getTreeFromId);
