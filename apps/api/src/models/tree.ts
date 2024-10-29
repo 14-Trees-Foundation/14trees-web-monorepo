@@ -149,7 +149,7 @@ implements TreeAttributes {
   user_card_image!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
-  memory_images!: string[];
+  memory_images!: string[] | null;
 
   @Column({type: DataType.ENUM('alive', 'dead', 'lost'), defaultValue: 'alive'})
   tree_status!: string;

@@ -1,8 +1,10 @@
+import { WhereOptions } from 'sequelize';
 import { Album, AlbumAttributes, AlbumCreationAttributes } from '../models/albums';
 
 export class AlbumRepository {
-    static async getAlbums(userId: number): Promise<Album[]> {
-        return await Album.findAll( { where: { user_id: userId }});
+
+    static async getAlbums(whereClause: WhereOptions<Album>): Promise<Album[]> {
+        return await Album.findAll( { where: whereClause });
     }
 
     static async addAlbum(data: AlbumCreationAttributes): Promise<Album> {
