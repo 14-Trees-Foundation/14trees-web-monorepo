@@ -89,7 +89,7 @@ const sendDashboardMail = async (type: string, emailData: any, toEmails: string[
     to: toEmails,
     replyTo: 'admin@14trees.org',
     cc: cc,
-    subject: 'A Tree has been planted',
+    subject: 'Diwali Gift - a tree has been planted by Better Capital',
     html: "",
     textEncoding: 'base64',
     attachments: attachments,
