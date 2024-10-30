@@ -217,7 +217,7 @@ export class GiftCardsRepository {
     static async getBookedCards(giftCardRequestId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCard>> {
 
         const getQuery = `
-            SELECT gc.*, u.name as user_name, u.email as user_email, t.sapling_id, pt.name as plant_type
+            SELECT gc.*, u.name as user_name, u.email as user_email, u.phone as user_phone, t.sapling_id, pt.name as plant_type
             FROM "14trees".gift_cards gc
             LEFT JOIN "14trees".users u ON u.id = gc.user_id
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
@@ -310,7 +310,7 @@ export class GiftCardsRepository {
     static async getGiftCardUserAndTreeDetails(giftCardRequestId: number): Promise<GiftCard[]> {
 
         const getQuery = `
-            SELECT gc.id, gc.card_image_url, gc.mail_sent, u.name as user_name, u.email as user_email, t.sapling_id, t.description as event_name, t.planted_by as planted_via, pt.name as plant_type, pt.scientific_name, s.name_english as site_name
+            SELECT gc.id, gc.card_image_url, gc.mail_sent, gc.slide_id, u.name as user_name, u.email as user_email, t.sapling_id, t.description as event_name, t.planted_by as planted_via, pt.name as plant_type, pt.scientific_name, s.name_english as site_name
             FROM "14trees".gift_cards gc
             LEFT JOIN "14trees".users u ON u.id = gc.user_id
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id

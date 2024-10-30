@@ -57,6 +57,7 @@ const getHtmlTemplate = (type: string, emailData: any) => {
 
   let templateName = 'dashboard.html';
   if (type === 'individual') templateName = 'individual_mail.html'
+  if (type === 'better') templateName = 'better.html'
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();
   const template = handlebars.compile(source);
