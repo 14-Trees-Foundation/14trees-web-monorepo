@@ -512,67 +512,54 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
 
         const giftCardRequest = resp.results[0];
 
-        if (!giftCardRequest.presentation_id) {
-            if (!process.env.GIFT_CARD_PRESENTATION_ID) {
-                console.log('[ERROR]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', 'Missing gift card template presentation id in ENV variables.')
-                res.status(status.error).json({
-                    message: 'Something went wrong. Please try again later!'
-                })
-                return;
-            }
-
-            const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, giftCardRequest.request_id);
-            giftCardRequest.presentation_id = presentationId;
-            giftCardRequest.updated_at = new Date();
-            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        if (!process.env.GIFT_CARD_PRESENTATION_ID) {
+            console.log('[ERROR]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', 'Missing gift card template presentation id in ENV variables.')
+            res.status(status.error).json({
+                message: 'Something went wrong. Please try again later!'
+            })
+            return;
         }
 
-        let allCardsGenerated = true;
+        // send the response - because generating cards may take a while. users can download card later
+        res.status(status.success).send();
+
+        const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, giftCardRequest.request_id);
+        giftCardRequest.presentation_id = presentationId;
+        giftCardRequest.updated_at = new Date();
+        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
         const slideIds: string[] = []
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) {
-                allCardsGenerated = false;
-                continue;
-            }
+            if (!giftCard.tree_id || !giftCard.user_id) continue;
 
-            let templateImage = giftCard.card_image_url;
             let primaryMessage = giftCardRequest.primary_message;
             if (giftCard.in_name_of) primaryMessage = getPersonalizedMessage(primaryMessage, giftCard.in_name_of, giftCard.relation);
-            if (!templateImage) {
-                const record = {
-                    name: (giftCard as any).user_name,
-                    sapling: (giftCard as any).sapling_id,
-                    content1: primaryMessage,
-                    content2: giftCardRequest.secondary_message,
-                    logo: giftCardRequest.logo_url,
-                    logo_message: giftCardRequest.logo_message
-                }
-                const templateId = await generateGiftCardTemplate(giftCardRequest.presentation_id, (giftCard as any).plant_type, record);
-                if (!templateId) {
-                    allCardsGenerated = false;
-                    continue;
-                }
 
-                const templateImage = await getGiftCardTemplateImage(giftCardRequest.presentation_id, templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
-                giftCard.card_image_url = templateImage;
-                giftCard.slide_id = templateId;
-                await GiftCardsRepository.updateGiftCard(giftCard);
-
-                slideIds.push(templateId);
-            } else {
-                slideIds.push(giftCard.slide_id);
+            const record = {
+                name: (giftCard as any).user_name,
+                sapling: (giftCard as any).sapling_id,
+                content1: primaryMessage,
+                content2: giftCardRequest.secondary_message,
+                logo: giftCardRequest.logo_url,
+                logo_message: giftCardRequest.logo_message
             }
+            const templateId = await generateGiftCardTemplate(giftCardRequest.presentation_id, (giftCard as any).plant_type, record);
+            if (!templateId) continue;
+
+            const templateImage = await getGiftCardTemplateImage(giftCardRequest.presentation_id, templateId, giftCardRequest.request_id, (giftCard as any).sapling_id);
+            giftCard.card_image_url = templateImage;
+            giftCard.slide_id = templateId;
+            await GiftCardsRepository.updateGiftCard(giftCard);
+
+            slideIds.push(templateId);
         }
 
-        if (allCardsGenerated) {
-            await deleteUnwantedSlides(giftCardRequest.presentation_id, slideIds)
-            giftCardRequest.status = GiftCardRequestStatus.completed;
-            giftCardRequest.updated_at = new Date();
-            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
-        }
+        await deleteUnwantedSlides(giftCardRequest.presentation_id, slideIds)
+        giftCardRequest.status = GiftCardRequestStatus.completed;
+        giftCardRequest.updated_at = new Date();
+        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
-        res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::getGiftCardTemplatesForGiftCardRequest", error);
         res.status(status.error).json({
@@ -863,7 +850,7 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
                 }]
             }
 
-            const statusMessage = await sendDashboardMail(emailData, mailIds, ccMailIds, attachments);
+            const statusMessage = await sendDashboardMail('default' ,emailData, mailIds, ccMailIds, attachments);
             const updateRequest = {
                 mail_sent:( statusMessage === '' && !isTestMail) ? true : false,
                 mail_error: statusMessage ? statusMessage : null,

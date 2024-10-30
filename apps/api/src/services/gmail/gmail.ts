@@ -53,6 +53,16 @@ interface MailOptions {
   attachments?: { filename: string; path: string }[];
 }
 
+const getHtmlTemplate = (type: string, emailData: any) => {
+
+  let templateName = 'dashboard.html';
+  if (type === 'individual') templateName = 'individual_mail.html'
+
+  const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();
+  const template = handlebars.compile(source);
+  return template(emailData);
+}
+
 const createMail = async (options: MailOptions): Promise<string> => {
   const mailComposer = new MailComposer(options);
   const message = await mailComposer.compile().build();
@@ -72,7 +82,7 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
   return { status: response.status, statusText: response.statusText };
 };
 
-const sendDashboardMail = async (emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[]) => {
+const sendDashboardMail = async (type: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[]) => {
 
   const options = {
     to: toEmails,
@@ -84,9 +94,7 @@ const sendDashboardMail = async (emailData: any, toEmails: string[], cc?: string
     attachments: attachments,
   }
 
-  const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/dashboard.html' as string, 'utf-8').toString();
-  const template = handlebars.compile(source);
-  options.html = template(emailData);
+  options.html = getHtmlTemplate(type, emailData)
 
   const { status, statusText } = await sendMail(options)
   if (status === 200) {
