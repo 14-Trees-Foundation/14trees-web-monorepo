@@ -822,8 +822,8 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
 
 
 export const sendEmailForGiftCardRequest = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId } = req.params;
-    if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
+    const { gift_card_request_id: giftCardRequestId, test_mails: testMails, cc_mails: ccMails, attach_card} = req.body;
+    if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
         })
@@ -851,9 +851,21 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
                 group_name: giftCardRequest.group_name
             }
 
-            const statusMessage = await sendDashboardMail(giftCard.user_email, emailData);
+            const isTestMail = (testMails && testMails.length !== 0) ? true : false
+            const mailIds = (testMails && testMails.length !== 0) ? testMails : [giftCard.user_email];
+            const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+
+            let attachments: { filename: string; path: string }[] | undefined = undefined;
+            if (attach_card && giftCard.card_image_url) {
+                attachments = [{
+                    filename: giftCard.user_name + "_" + giftCard.card_image_url.split("/").slice(-1)[0],
+                    path: giftCard.card_image_url
+                }]
+            }
+
+            const statusMessage = await sendDashboardMail(emailData, mailIds, ccMailIds, attachments);
             const updateRequest = {
-                mail_sent: statusMessage === '' ? true : false,
+                mail_sent:( statusMessage === '' && !isTestMail) ? true : false,
                 mail_error: statusMessage ? statusMessage : null,
                 updated_at: new Date()
             }
