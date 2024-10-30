@@ -4,8 +4,6 @@ import axios from 'axios'
 import { load } from "cheerio";
 import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
-import { copyFile } from "../services/google";
-import { sendDashboardMail } from "../services/gmail/gmail";
 
 
 export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {

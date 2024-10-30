@@ -72,15 +72,16 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
   return { status: response.status, statusText: response.statusText };
 };
 
-const sendDashboardMail = async (toEmail: string, emailData: any) => {
+const sendDashboardMail = async (emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[]) => {
 
   const options = {
-    to: toEmail,
+    to: toEmails,
     replyTo: 'admin@14trees.org',
-    cc: 'vivayush@gmail.com',
+    cc: cc,
     subject: 'A Tree has been planted',
     html: "",
     textEncoding: 'base64',
+    attachments: attachments,
   }
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/dashboard.html' as string, 'utf-8').toString();
@@ -89,7 +90,7 @@ const sendDashboardMail = async (toEmail: string, emailData: any) => {
 
   const { status, statusText } = await sendMail(options)
   if (status === 200) {
-    console.log("Email send Successfully to " + toEmail);
+    console.log("Email send Successfully to " + toEmails);
     return '';
   }
 
