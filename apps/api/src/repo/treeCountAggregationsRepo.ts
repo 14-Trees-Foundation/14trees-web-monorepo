@@ -63,22 +63,22 @@ export class TreeCountAggregationsRepo {
                 ELSE 0 
             END) AS available,
             SUM(case
-                WHEN ts.tree_status = 'dead'
-                    or ts.tree_status = 'lost'
+                WHEN t.tree_status = 'dead'
+                    or t.tree_status = 'lost'
                 THEN 1
                 ELSE 0
             END) as void_total,
             SUM(case
-                WHEN (ts.tree_status = 'dead'
-                    or ts.tree_status = 'lost') and t.assigned_to is not null
+                WHEN (t.tree_status = 'dead'
+                    or t.tree_status = 'lost') and t.assigned_to is not null
                 THEN 1
                 ELSE 0
             END) as void_assigned,
             SUM(CASE 
                 WHEN (t.mapped_to_user IS NOT NULL 
                     OR t.mapped_to_group IS NOT NULL)
-                    and (ts.tree_status = 'dead'
-                    or ts.tree_status = 'lost')
+                    and (t.tree_status = 'dead'
+                    or t.tree_status = 'lost')
                 THEN 1 
                 ELSE 0 
             END) AS void_booked,
@@ -87,8 +87,8 @@ export class TreeCountAggregationsRepo {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL)
-                    and (ts.tree_status = 'dead'
-                    or ts.tree_status = 'lost')
+                    and (t.tree_status = 'dead'
+                    or t.tree_status = 'lost')
                 THEN 1 
                 ELSE 0 
             END) AS void_available,
@@ -97,7 +97,7 @@ export class TreeCountAggregationsRepo {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
-                    AND (ts.tree_status IS NULL OR (ts.tree_status != 'dead' AND ts.tree_status != 'lost'))
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND ptct.plant_type IS NOT NULL
                 THEN 1 
                 ELSE 0 
@@ -113,13 +113,6 @@ export class TreeCountAggregationsRepo {
             LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
             LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
             LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
-            LEFT JOIN (SELECT *
-                FROM (
-                    SELECT *,
-                        ROW_NUMBER() OVER (PARTITION BY sapling_id ORDER BY created_at DESC) AS rn
-                    FROM "14trees_2".trees_snapshots
-                ) AS snapshots
-            WHERE snapshots.rn = 1) as ts ON ts.sapling_id = t.sapling_id
             GROUP by p.id, pt.id
             ORDER BY p.id
             OFFSET ${offset} LIMIT ${limit};
