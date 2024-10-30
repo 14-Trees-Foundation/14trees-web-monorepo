@@ -38,7 +38,7 @@ import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import tagRoutes from "./routes/tagRoutes";
-import { startAppV2ErrorLogsCronJob } from "./services/cron";
+import { recalculateAggregatedData, startAppV2ErrorLogsCronJob } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
 
 let swaggerFile: any;
@@ -140,6 +140,7 @@ const app = express();
 
 const initServer = async () => {
   startAppV2ErrorLogsCronJob();
+  recalculateAggregatedData();
   initExpressApp(app);
 };
 
