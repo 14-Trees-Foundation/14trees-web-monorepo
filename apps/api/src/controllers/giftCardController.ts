@@ -145,7 +145,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         const updatedGiftCardRequest = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
-        let treeUpdateRequest: any = null;
+        let treeUpdateRequest: any = {};
         if (updatedGiftCardRequest.planted_by !== originalRequest.planted_by) {
             treeUpdateRequest = { gifted_by_name: updatedGiftCardRequest.planted_by };
         }
@@ -162,8 +162,8 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
             treeUpdateRequest = { ...treeUpdateRequest, mapped_to_user: updatedGiftCardRequest.user_id }
         }
 
-        if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && treeUpdateRequest) {
-            await updateTreesForGiftRequest(giftCardRequest.id, updatedGiftCardRequest);
+        if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && Object.keys(treeUpdateRequest).length !== 0) {
+            await updateTreesForGiftRequest(giftCardRequest.id, treeUpdateRequest);
         }
 
         res.status(status.success).json(updatedGiftCardRequest);
