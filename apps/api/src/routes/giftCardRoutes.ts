@@ -20,5 +20,6 @@ routes.get('/generate/:gift_card_request_id', giftCards.generateGiftCardTemplate
 routes.get('/download/:gift_card_request_id', giftCards.downloadGiftCardTemplatesForGiftCardRequest);
 routes.post('/email', giftCards.sendEmailForGiftCardRequest);
 routes.post('/update-album/', giftCards.updateGiftCardRequestAlbum);
+routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
 
 export default routes;

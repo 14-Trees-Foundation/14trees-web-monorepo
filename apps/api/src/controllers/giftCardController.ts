@@ -330,6 +330,53 @@ export const createGiftCards = async (req: Request, res: Response) => {
     }
 }
 
+export const updateGiftCardUserDetails = async (req: Request, res: Response) => {
+    const { users } = req.body;
+    let failureCount = 0;
+    try {
+
+        for (const user of users) {
+
+            try {
+                const updateRequest: any = {
+                    id: user.user_id,
+                    name: user.user_name,
+                    email: user.user_email,
+                    phone: user.user_phone,
+                }
+                
+                await UserRepository.updateUser(updateRequest);
+                await GiftCardsRepository.updateGiftCard(user);
+
+                const updateTree = {
+                    user_tree_image: user.profile_image_url || null,
+                    updated_at: new Date()
+                }
+                
+                await TreeRepository.updateTrees(updateTree, { id: user.tree_id, assigned_to: user.user_id })
+            } catch (error: any) {
+                console.log("[ERROR]", "GiftCardController::updateGiftCardUserDetails", user, error);
+                failureCount++;
+            }
+        }
+
+        if (failureCount !== 0) {
+            res.status(status.error).send({
+                code: status.error,
+                message: `Failed to update ${failureCount} users!`
+            })
+        } else {
+            res.status(status.success).send();
+        }
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::updateGiftCardUserDetails", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+
+}
+
 export const createGiftCardPlots = async (req: Request, res: Response) => {
     const { plot_ids: plotIds, gift_card_request_id: giftCardRequestId } = req.body;
 
