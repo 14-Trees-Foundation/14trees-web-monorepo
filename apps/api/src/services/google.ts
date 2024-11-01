@@ -42,6 +42,7 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
                 type: 'user',
                 emailAddress: email,
             },
+            sendNotificationEmail: false,
         });
     }
 
