@@ -298,12 +298,13 @@ export const createGiftCards = async (req: Request, res: Response) => {
         const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[] = []
         for (const user of users) {
             const userResp = await UserRepository.upsertUser(user);
-            usersData.push({
+            const usersList = Array.from({ length: user.count || 1 }, () => ({
                 userId: userResp.id,
                 imageName: user.image_name ? user.image_name : undefined,
                 inNameOf: user.in_name_of ? user.in_name_of : undefined,
                 relation: user.relation ? user.relation : undefined,
-            });
+            }));
+            usersData.push(...usersList);
         }
 
         await GiftCardsRepository.createGiftCards(giftCardRequestId, usersData);
