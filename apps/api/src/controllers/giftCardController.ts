@@ -334,7 +334,18 @@ export const createGiftCards = async (req: Request, res: Response) => {
 export const updateGiftCardUserDetails = async (req: Request, res: Response) => {
     const { users } = req.body;
     let failureCount = 0;
+
+    if (!users || users.length === 0) {
+        res.status(status.bad).send({
+            status: status.bad,
+            message: "Invalid request!"
+        })
+        return;
+    }
+
     try {
+        const resp = await GiftCardsRepository.getBookedCards(users[0].gift_card_request_id, 0, -1);
+        const giftCards = resp.results;
 
         for (const user of users) {
 
@@ -345,16 +356,24 @@ export const updateGiftCardUserDetails = async (req: Request, res: Response) => 
                     email: user.user_email,
                     phone: user.user_phone,
                 }
-                
                 await UserRepository.updateUser(updateRequest);
-                await GiftCardsRepository.updateGiftCard(user);
+
+                const updateGiftCard = {
+                    profile_image_url: user.profile_image_url || null,
+                    updated_at: new Date()
+                }
+                await GiftCardsRepository.updateGiftCards(updateGiftCard, { user_id: user.user_id, gift_card_request_id: user.gift_card_request_id });
+
+                const treeIds = giftCards
+                    .filter(card => card.user_id === user.user_id && card.tree_id)
+                    .map(card => card.tree_id);
 
                 const updateTree = {
                     user_tree_image: user.profile_image_url || null,
                     updated_at: new Date()
                 }
-                
-                await TreeRepository.updateTrees(updateTree, { id: user.tree_id, assigned_to: user.user_id })
+                if (treeIds.length > 0) await TreeRepository.updateTrees(updateTree, { id: { [Op.in]: treeIds }, assigned_to: user.user_id })
+
             } catch (error: any) {
                 console.log("[ERROR]", "GiftCardController::updateGiftCardUserDetails", user, error);
                 failureCount++;
