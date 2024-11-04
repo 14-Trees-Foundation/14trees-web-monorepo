@@ -139,7 +139,8 @@ export class PlotRepository {
                     AND t.assigned_to IS NOT NULL
                 THEN 1 
                 ELSE 0 
-            END) AS unbooked_assigned
+            END) AS unbooked_assigned,
+            array_agg(distinct(pt.name)) as distinct_plants
         FROM "14trees".plots p
         LEFT JOIN "14trees".sites s ON p.site_id = s.id
         LEFT JOIN "14trees".trees t ON t.plot_id = p.id
