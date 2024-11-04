@@ -34,6 +34,18 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
         },
     });
 
+    for (const email of ['admin@14trees.org', 'contact@14trees.org', 'vivayush@gmail.com']) {
+        await drive.permissions.create({
+            fileId: newFileId,
+            requestBody: {
+                role: 'writer',
+                type: 'user',
+                emailAddress: email,
+            },
+            sendNotificationEmail: false,
+        });
+    }
+
     return newFileId;
 }
 

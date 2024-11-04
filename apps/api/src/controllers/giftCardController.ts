@@ -145,7 +145,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         const updatedGiftCardRequest = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
-        let treeUpdateRequest: any = null;
+        let treeUpdateRequest: any = {};
         if (updatedGiftCardRequest.planted_by !== originalRequest.planted_by) {
             treeUpdateRequest = { gifted_by_name: updatedGiftCardRequest.planted_by };
         }
@@ -162,8 +162,8 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
             treeUpdateRequest = { ...treeUpdateRequest, mapped_to_user: updatedGiftCardRequest.user_id }
         }
 
-        if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && treeUpdateRequest) {
-            await updateTreesForGiftRequest(giftCardRequest.id, updatedGiftCardRequest);
+        if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && Object.keys(treeUpdateRequest).length !== 0) {
+            await updateTreesForGiftRequest(giftCardRequest.id, treeUpdateRequest);
         }
 
         res.status(status.success).json(updatedGiftCardRequest);
@@ -298,12 +298,13 @@ export const createGiftCards = async (req: Request, res: Response) => {
         const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[] = []
         for (const user of users) {
             const userResp = await UserRepository.upsertUser(user);
-            usersData.push({
+            const usersList = Array.from({ length: user.count || 1 }, () => ({
                 userId: userResp.id,
                 imageName: user.image_name ? user.image_name : undefined,
                 inNameOf: user.in_name_of ? user.in_name_of : undefined,
                 relation: user.relation ? user.relation : undefined,
-            });
+            }));
+            usersData.push(...usersList);
         }
 
         await GiftCardsRepository.createGiftCards(giftCardRequestId, usersData);
@@ -328,6 +329,72 @@ export const createGiftCards = async (req: Request, res: Response) => {
             message: 'Something went wrong. Please try again later.'
         })
     }
+}
+
+export const updateGiftCardUserDetails = async (req: Request, res: Response) => {
+    const { users } = req.body;
+    let failureCount = 0;
+
+    if (!users || users.length === 0) {
+        res.status(status.bad).send({
+            status: status.bad,
+            message: "Invalid request!"
+        })
+        return;
+    }
+
+    try {
+        const resp = await GiftCardsRepository.getBookedCards(users[0].gift_card_request_id, 0, -1);
+        const giftCards = resp.results;
+
+        for (const user of users) {
+
+            try {
+                const updateRequest: any = {
+                    id: user.user_id,
+                    name: user.user_name,
+                    email: user.user_email,
+                    phone: user.user_phone,
+                }
+                await UserRepository.updateUser(updateRequest);
+
+                const updateGiftCard = {
+                    profile_image_url: user.profile_image_url || null,
+                    updated_at: new Date()
+                }
+                await GiftCardsRepository.updateGiftCards(updateGiftCard, { user_id: user.user_id, gift_card_request_id: user.gift_card_request_id });
+
+                const treeIds = giftCards
+                    .filter(card => card.user_id === user.user_id && card.tree_id)
+                    .map(card => card.tree_id);
+
+                const updateTree = {
+                    user_tree_image: user.profile_image_url || null,
+                    updated_at: new Date()
+                }
+                if (treeIds.length > 0) await TreeRepository.updateTrees(updateTree, { id: { [Op.in]: treeIds }, assigned_to: user.user_id })
+
+            } catch (error: any) {
+                console.log("[ERROR]", "GiftCardController::updateGiftCardUserDetails", user, error);
+                failureCount++;
+            }
+        }
+
+        if (failureCount !== 0) {
+            res.status(status.error).send({
+                code: status.error,
+                message: `Failed to update ${failureCount} users!`
+            })
+        } else {
+            res.status(status.success).send();
+        }
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::updateGiftCardUserDetails", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+
 }
 
 export const createGiftCardPlots = async (req: Request, res: Response) => {
