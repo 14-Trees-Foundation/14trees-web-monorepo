@@ -626,6 +626,18 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, relati
     return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
 }
 
+const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: number) => {
+    let message = primaryMessage;
+    const index = primaryMessage.indexOf('a tree');
+    if (index !== -1) {
+        message = primaryMessage.substring(0, index) + count + " trees" + primaryMessage.substring(index + 6);
+    }
+    
+    message = message.replace('This tree', 'These trees');
+    
+    return message
+}
+
 export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
 
@@ -658,12 +670,20 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
         const slideIds: string[] = []
+        const userTreeCount: Record<number, number> = {};
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
+        for (const giftCard of giftCards.results) {
+            if (!giftCard.tree_id || !giftCard.user_id) continue;
+            if (userTreeCount[giftCard.user_id]) userTreeCount[giftCard.user_id]++
+            else userTreeCount[giftCard.user_id] = 1;
+        }
+
         for (const giftCard of giftCards.results) {
             if (!giftCard.tree_id || !giftCard.user_id) continue;
 
             let primaryMessage = giftCardRequest.primary_message;
             if (giftCard.in_name_of) primaryMessage = getPersonalizedMessage(primaryMessage, giftCard.in_name_of, giftCard.relation);
+            if (userTreeCount[giftCard.user_id] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[giftCard.user_id]);
 
             const record = {
                 name: (giftCard as any).user_name,
