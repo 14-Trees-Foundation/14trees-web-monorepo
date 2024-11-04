@@ -267,6 +267,7 @@ const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
         assigned_to: null,
         assigned_at: null,
         description: null,
+        user_tree_image: null,
         planted_by: null,
         gifted_by_name: null,
         updated_at: new Date(),
@@ -319,6 +320,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
             giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : null;
         }
 
+        giftCardRequest.status = GiftCardRequestStatus.pendingPlotSelection;
         giftCardRequest.updated_at = new Date();
         const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
