@@ -634,6 +634,8 @@ const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: numbe
     }
     
     message = message.replace('This tree', 'These trees');
+    message = message.replace(' tree ', ' trees ');
+    message = message.replace(' trees has ', ' trees have ');
     
     return message
 }

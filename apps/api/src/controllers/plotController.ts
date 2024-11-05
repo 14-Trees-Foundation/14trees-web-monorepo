@@ -81,6 +81,7 @@ export const getPlots = async (req: Request, res: Response) => {
                 void_assigned: parseInt(item.void_assigned),
                 void_booked: parseInt(item.void_booked),
                 void_total: parseInt(item.void_total),
+                distinct_plants: item.distinct_plants ? item.distinct_plants.filter((item: any) => item !== null) : [],
             }
         })
         res.status(status.success).send(result);
