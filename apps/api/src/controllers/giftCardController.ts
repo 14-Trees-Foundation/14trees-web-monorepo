@@ -994,27 +994,18 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
             const mailIds = (testMails && testMails.length !== 0) ? testMails : [giftCard.user_email];
             const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
 
-            const templateImage = await getGiftCardTemplateImage(giftCardRequest.presentation_id, giftCard.slide_id, giftCardRequest.request_id, (giftCard as any).sapling_id);
-
             let attachments: { filename: string; path: string }[] | undefined = undefined;
-            if (attach_card && templateImage) {
+            if (attach_card && giftCard.card_image_url) {
                 attachments = [{
-                    filename: giftCard.user_name + "_" + templateImage.split("/").slice(-1)[0],
-                    path: templateImage
+                    filename: giftCard.user_name + "_" + giftCard.card_image_url.split("/").slice(-1)[0],
+                    path: giftCard.card_image_url
                 }]
             }
 
-            let statusMessage: string = '';
-            if (giftCardRequest.id === 21) {
-                statusMessage = await sendDashboardMail('better', emailData, mailIds, ccMailIds, attachments);
-            } else {
-                statusMessage = await sendDashboardMail('default', emailData, mailIds, ccMailIds, attachments);
-            }
-
+            const statusMessage: string = await sendDashboardMail('default', emailData, mailIds, ccMailIds, attachments);
             const updateRequest = {
                 mail_sent:( statusMessage === '' && !isTestMail) ? true : false,
                 mail_error: statusMessage ? statusMessage : null,
-                card_image_url: templateImage,
                 updated_at: new Date()
             }
             await GiftCardsRepository.updateGiftCards(updateRequest, { id: giftCard.id });
