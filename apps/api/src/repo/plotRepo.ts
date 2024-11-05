@@ -139,7 +139,17 @@ export class PlotRepository {
                     AND t.assigned_to IS NOT NULL
                 THEN 1 
                 ELSE 0 
-            END) AS unbooked_assigned
+            END) AS unbooked_assigned,
+            array_agg(distinct CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND ptct.plant_type IS NOT NULL
+                THEN ptct.plant_type 
+                ELSE NULL 
+            END) AS distinct_plants
         FROM "14trees".plots p
         LEFT JOIN "14trees".sites s ON p.site_id = s.id
         LEFT JOIN "14trees".trees t ON t.plot_id = p.id

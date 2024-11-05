@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, deleteUnwantedSlides, getSlideThumbnail, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
@@ -91,6 +91,66 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+}
+
+export const cloneGiftCardRequest = async (req: Request, res: Response) => {
+    const {
+        gift_card_request_id: giftCardRequestId,
+        request_id: requestId,
+    } = req.body;
+
+    if (!giftCardRequestId || !requestId) {
+        res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        })
+    }
+
+    try {
+
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
+        if (resp.results.length === 0) {
+            res.status(status.notfound).json({
+                status: status.notfound,
+                message: "Gif request not found!"
+            });
+            return;
+        }
+
+        let giftCardRequest = resp.results[0];
+        let validationErrors: GiftCardRequestValidationError[] = ['MISSING_USER_DETAILS'];
+        if (giftCardRequest.group_id && !giftCardRequest.logo_url) {
+            validationErrors = ['MISSING_LOGO', 'MISSING_USER_DETAILS'];
+        }
+
+        const request: GiftCardRequestCreationAttributes = {
+            request_id: requestId,
+            user_id: giftCardRequest.user_id,
+            group_id: giftCardRequest.group_id,
+            no_of_cards: giftCardRequest.no_of_cards,
+            is_active: false,
+            created_at: new Date(),
+            updated_at: new Date(),
+            logo_url: giftCardRequest.logo_url,
+            primary_message: giftCardRequest.primary_message,
+            secondary_message: giftCardRequest.secondary_message,
+            event_name: giftCardRequest.event_name,
+            planted_by: giftCardRequest.planted_by,
+            logo_message: giftCardRequest.logo_message,
+            status: GiftCardRequestStatus.pendingPlotSelection,
+            validation_errors: validationErrors,
+            notes: null
+        }
+
+        let createdRequest = await GiftCardsRepository.createGiftCardRequest(request);
+        const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: createdRequest.id }])
+        res.status(status.success).json(giftCards.results[0]);
+
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::cloneGiftCardRequest", error);
         res.status(status.error).json({
             message: 'Something went wrong. Please try again later.'
         })
@@ -267,6 +327,7 @@ const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
         assigned_to: null,
         assigned_at: null,
         description: null,
+        user_tree_image: null,
         planted_by: null,
         gifted_by_name: null,
         updated_at: new Date(),
@@ -319,6 +380,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
             giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : null;
         }
 
+        giftCardRequest.status = GiftCardRequestStatus.pendingPlotSelection;
         giftCardRequest.updated_at = new Date();
         const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
@@ -564,6 +626,20 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, relati
     return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
 }
 
+const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: number) => {
+    let message = primaryMessage;
+    const index = primaryMessage.indexOf('a tree');
+    if (index !== -1) {
+        message = primaryMessage.substring(0, index) + count + " trees" + primaryMessage.substring(index + 6);
+    }
+    
+    message = message.replace('This tree', 'These trees');
+    message = message.replace(' tree ', ' trees ');
+    message = message.replace(' trees has ', ' trees have ');
+    
+    return message
+}
+
 export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
 
@@ -596,12 +672,20 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
         const slideIds: string[] = []
+        const userTreeCount: Record<number, number> = {};
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
+        for (const giftCard of giftCards.results) {
+            if (!giftCard.tree_id || !giftCard.user_id) continue;
+            if (userTreeCount[giftCard.user_id]) userTreeCount[giftCard.user_id]++
+            else userTreeCount[giftCard.user_id] = 1;
+        }
+
         for (const giftCard of giftCards.results) {
             if (!giftCard.tree_id || !giftCard.user_id) continue;
 
             let primaryMessage = giftCardRequest.primary_message;
             if (giftCard.in_name_of) primaryMessage = getPersonalizedMessage(primaryMessage, giftCard.in_name_of, giftCard.relation);
+            if (userTreeCount[giftCard.user_id] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[giftCard.user_id]);
 
             const record = {
                 name: (giftCard as any).user_name,
