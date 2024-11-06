@@ -307,6 +307,7 @@ export const updateGiftCardRequestAlbum = async (req: Request, res: Response) =>
     }
 };
 
+// TODO: Not required. Remove this.
 const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
     // delete plot selection
     await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
@@ -354,33 +355,41 @@ export const createGiftCards = async (req: Request, res: Response) => {
 
     try {
 
-        await resetGiftCardUsersForRequest(giftCardRequestId);
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
+        const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
 
-        const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[] = []
+        const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string, count: number }[] = []
+        let count = 0;
         for (const user of users) {
             const userResp = await UserRepository.upsertUser(user);
-            const usersList = Array.from({ length: user.count || 1 }, () => ({
+            usersData.push({
                 userId: userResp.id,
                 imageName: user.image_name ? user.image_name : undefined,
                 inNameOf: user.in_name_of ? user.in_name_of : undefined,
                 relation: user.relation ? user.relation : undefined,
-            }));
-            usersData.push(...usersList);
+                count: parseInt(user.count) || 1,
+            });
+
+            count += parseInt(user.count) || 1;
         }
 
-        await GiftCardsRepository.createGiftCards(giftCardRequestId, usersData);
+        if (count > giftCardRequest.no_of_cards) {
+            res.status(status.bad).json({
+                status: status.bad,
+                message: "Requested number of gift trees doesn't match in user details!"
+            })
+            return;
+        }
 
-        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
+        await GiftCardsRepository.upsertGiftCards(giftCardRequestId, usersData);
 
         // validation on user details
-        const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
-        if (giftCardRequest.no_of_cards !== usersData.length && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+        if (giftCardRequest.no_of_cards !== count && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
             giftCardRequest.validation_errors = giftCardRequest.validation_errors ? [...giftCardRequest.validation_errors, 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS']
-        } else if (giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+        } else if (giftCardRequest.no_of_cards === count && giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
             giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : null;
         }
 
-        giftCardRequest.status = GiftCardRequestStatus.pendingPlotSelection;
         giftCardRequest.updated_at = new Date();
         const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
@@ -572,6 +581,8 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
                 assigned_to: giftCard.user_id,
                 updated_at: new Date(),
                 description: giftCardRequest.event_name,
+                planted_by: null,
+                gifted_by: giftCardRequest.user_id,
                 gifted_by_name: giftCardRequest.planted_by,
                 user_tree_image: giftCard.profile_image_url,
                 memory_images: memoryImageUrls,
@@ -616,7 +627,7 @@ const getGiftCardTemplateImage = async (presentationId: string, templateId: stri
     return s3Url;
 }
 
-const getPersonalizedMessage = (primaryMessage: string, userName: string, relation?: string) => {
+const getPersonalizedMessage = (primaryMessage: string, userName: string, relation?: string | null) => {
     const index = primaryMessage.indexOf('your');
     if (index < 0) return primaryMessage;
     if (relation) {
@@ -633,9 +644,9 @@ const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: numbe
         message = primaryMessage.substring(0, index) + count + " trees" + primaryMessage.substring(index + 6);
     }
     
-    message = message.replace('This tree', 'These trees');
-    message = message.replace(' tree ', ' trees ');
-    message = message.replace(' trees has ', ' trees have ');
+    message = message.replace(/This tree/g, 'These trees');
+    message = message.replace(/ tree /g, ' trees ');
+    message = message.replace(/ trees has /g, ' trees have ');
     
     return message
 }
@@ -707,7 +718,9 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         }
 
         await deleteUnwantedSlides(giftCardRequest.presentation_id, slideIds)
-        giftCardRequest.status = GiftCardRequestStatus.completed;
+        if (giftCardRequest.status === GiftCardRequestStatus.pendingGiftCards) {
+            giftCardRequest.status = GiftCardRequestStatus.completed;
+        }
         giftCardRequest.updated_at = new Date();
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
