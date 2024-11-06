@@ -58,7 +58,7 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
     @Column({
         type: DataType.STRING,
     })
-    profile_image_url!: string;
+    profile_image_url!: string | null;
 
     @Column({
         type: DataType.BOOLEAN,
@@ -78,12 +78,12 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
     @Column({
         type: DataType.STRING,
     })
-    in_name_of!: string;
+    in_name_of!: string | null;
 
     @Column({
         type: DataType.STRING,
     })
-    relation!: string;
+    relation!: string | null;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

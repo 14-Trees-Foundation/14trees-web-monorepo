@@ -96,24 +96,72 @@ export class GiftCardsRepository {
         await giftCard.destroy();
     }
 
-    static async createGiftCards(giftCardsRequestId: number, users: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[]): Promise<void> {
+    static async upsertGiftCards(giftCardsRequestId: number, users: { userId: number, imageName?: string, inNameOf?: string, relation?: string, count: number }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
         if (!giftRequest) {
             throw new Error("Gift Card request not found")
         }
 
-        // create gift card
-        const giftCards = users.map(user => {
-            return {
-                gift_card_request_id: giftCardsRequestId,
-                user_id: user.userId,
-                profile_image_url: user.imageName ? 'https://14treesplants.s3.amazonaws.com/gift-card-requests/'+ giftRequest.request_id + '/' + user.imageName : null,
-                in_name_of: user.inNameOf ?? null,
-                relation: user.relation ?? null,
-                created_at: new Date(),
-                updated_at: new Date()
-            } as GiftCardCreationAttributes
+        const cards = await GiftCard.findAll({
+            where: {
+                gift_card_request_id: giftRequest.id,
+            }
         })
+
+        const nonUserCards = cards.filter(card => card.user_id === null)
+        let idx = 0;
+
+        const giftCards: GiftCardCreationAttributes[] = [];
+        for (const user of users) {
+            const userCards = cards.filter(card => card.user_id === user.userId);
+
+            const profileImageUrl = user.imageName ? 'https://14treesplants.s3.amazonaws.com/gift-card-requests/'+ giftRequest.request_id + '/' + user.imageName : null
+            if (userCards.length > 0 && userCards[0].profile_image_url !== profileImageUrl) {
+                await GiftCard.update({
+                    profile_image_url: profileImageUrl,
+                    updated_at: new Date(),
+                }, {
+                    where: {
+                        gift_card_request_id: giftRequest.id,
+                        user_id: user.userId,
+                    }
+                })
+            }
+
+            if (user.count > userCards.length) {
+                let count = user.count - userCards.length;
+
+                for ( ; idx < nonUserCards.length; idx++) {
+
+                    if (count === 0) break;
+
+                    const card = nonUserCards[idx];
+                    card.profile_image_url = profileImageUrl;
+                    card.user_id = user.userId;
+                    card.in_name_of = user.inNameOf ?? null,
+                    card.relation = user.relation ?? null,
+                    card.updated_at = new Date();
+
+                    await card.save();
+                    count -= 1;
+                }
+
+                if (count !== 0) {
+                    const requests = Array.from({ length: count }, () => ({
+                        gift_card_request_id: giftCardsRequestId,
+                        user_id: user.userId,
+                        profile_image_url: profileImageUrl,
+                        in_name_of: user.inNameOf ?? null,
+                        relation: user.relation ?? null,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    }))
+
+                    giftCards.push(...requests);
+                }
+                
+            }
+        }
 
         await GiftCard.bulkCreate(giftCards);
     }
