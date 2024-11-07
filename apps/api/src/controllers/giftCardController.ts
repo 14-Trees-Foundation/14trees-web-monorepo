@@ -14,6 +14,7 @@ import { Op } from "sequelize";
 import { copyFile, downloadSlide } from "../services/google";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { AlbumRepository } from "../repo/albumRepo";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -358,15 +359,43 @@ export const createGiftCards = async (req: Request, res: Response) => {
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
         const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
 
-        const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string, count: number }[] = []
+        const usersData: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[] = []
         let count = 0;
         for (const user of users) {
-            const userResp = await UserRepository.upsertUser(user);
+
+            // gifted To
+            const giftedToUser = {
+                name: user.gifted_to_name,
+                email: user.gifted_to_email,
+                phone: user.gifted_to_phone,
+                birth_Date: user.gifted_to_dob,
+            }
+            const giftedTo = await UserRepository.upsertUser(giftedToUser);
+
+            // assigned To
+            const assignedToUser = {
+                name: user.assigned_to_name,
+                email: user.assigned_to_email,
+                phone: user.assigned_to_phone,
+                birth_Date: user.assigned_to_dob,
+            }
+            const assignedTo = await UserRepository.upsertUser(assignedToUser);
+
+            if (giftedTo.id !== assignedTo.id && user.relation?.trim()) {
+                await UserRelationRepository.createUserRelation({
+                    primary_user: giftedTo.id,
+                    secondary_user: assignedTo.id,
+                    relation: user.relation.trim(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
+
             usersData.push({
-                userId: userResp.id,
+                giftedTo: giftedTo.id,
+                assignedTo: assignedTo.id,
                 imageName: user.image_name ? user.image_name : undefined,
-                inNameOf: user.in_name_of ? user.in_name_of : undefined,
-                relation: user.relation ? user.relation : undefined,
                 count: parseInt(user.count) || 1,
             });
 
@@ -436,7 +465,7 @@ export const updateGiftCardUserDetails = async (req: Request, res: Response) => 
                 await GiftCardsRepository.updateGiftCards(updateGiftCard, { user_id: user.user_id, gift_card_request_id: user.gift_card_request_id });
 
                 const treeIds = giftCards
-                    .filter(card => card.user_id === user.user_id && card.tree_id)
+                    .filter(card => card.gifted_to === user.user_id && card.tree_id)
                     .map(card => card.tree_id);
 
                 const updateTree = {
@@ -571,14 +600,15 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         let allAssigned = true;
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) {
+            if (!giftCard.tree_id || !giftCard.gifted_to) {
                 allAssigned = false;
                 continue;
             }
 
             const updateRequest = {
                 assigned_at: new Date(),
-                assigned_to: giftCard.user_id,
+                assigned_to: giftCard.assigned_to,
+                gifted_to: giftCard.gifted_to,
                 updated_at: new Date(),
                 description: giftCardRequest.event_name,
                 planted_by: null,
@@ -683,23 +713,25 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
         const slideIds: string[] = []
-        const userTreeCount: Record<number, number> = {};
+        const userTreeCount: Record<string, number> = {};
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) continue;
-            if (userTreeCount[giftCard.user_id]) userTreeCount[giftCard.user_id]++
-            else userTreeCount[giftCard.user_id] = 1;
+            if (!giftCard.tree_id || !giftCard.gifted_to || !giftCard.assigned_to) continue;
+            const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
+            if (userTreeCount[key]) userTreeCount[key]++
+            else userTreeCount[key] = 1;
         }
 
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) continue;
+            if (!giftCard.tree_id || !giftCard.gifted_to || !giftCard.assigned_to) continue;
+            const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
 
             let primaryMessage = giftCardRequest.primary_message;
-            if (giftCard.in_name_of) primaryMessage = getPersonalizedMessage(primaryMessage, giftCard.in_name_of, giftCard.relation);
-            if (userTreeCount[giftCard.user_id] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[giftCard.user_id]);
+            if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assigned_to_name, (giftCard as any).relation);
+            if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
 
             const record = {
-                name: (giftCard as any).user_name,
+                name: (giftCard as any).gifted_to_name,
                 sapling: (giftCard as any).sapling_id,
                 content1: primaryMessage,
                 content2: giftCardRequest.secondary_message,
@@ -900,6 +932,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
     }
 }
 
+// TODO: Remove this
 export const redeemGiftCard = async (req: Request, res: Response) => {
     const { gift_card_id: giftCardId, user, sapling_id: saplingId, tree_id: treeId } = req.body;
     if (!giftCardId || isNaN(parseInt(giftCardId))) {
@@ -956,7 +989,8 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
         }
 
         giftCardUser.card_image_url = s3Url;
-        giftCardUser.user_id = user?.id;
+        giftCardUser.assigned_to = user?.id;
+        giftCardUser.gifted_to = user?.id;
         giftCardUser.updated_at = new Date();
         await giftCardUser.save();
 
