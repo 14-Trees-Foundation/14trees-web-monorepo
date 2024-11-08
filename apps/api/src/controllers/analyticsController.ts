@@ -6,23 +6,32 @@ import { UserRepository } from '../repo/userRepo';
 import { PlotRepository } from '../repo/plotRepo';
 import { PondRepository } from '../repo/pondsRepo';
 import { OnsiteStaffRepository } from '../repo/onSiteStaffRepo';
+import { SiteRepository } from '../repo/sitesRepo';
 
 export const summary = async (req: Request, res: Response) => {
   try {
     const treeCount = await TreeRepository.treesCount();
     const plantTypeCount = await PlantTypeRepository.plantTypesCount();
     const userCount = await UserRepository.usersCount();
-    const assignedTreeCount = await TreeRepository.assignedTreesCount();
+    const treesCount = await TreeRepository.assignedAndBookedTreesCount();
     const plotCount = await PlotRepository.plotsCount();
     const pondCount = await PondRepository.pondsCount();
+    const sitesResp = await SiteRepository.countAllSites();
+    const sitesLandTypeResp = await SiteRepository.getLandTypeTreesCount();
 
     res.status(status.success).send({
       treeCount,
       plantTypeCount,
       userCount,
-      assignedTreeCount,
+      assignedTreeCount: treesCount.assigned,
+      bookedTreeCount: treesCount.booked,
       plotCount,
       pondCount,
+      sitesCount: parseInt(sitesResp.sites),
+      districtsCount: parseInt(sitesResp.districts),
+      talukasCount: parseInt(sitesResp.talukas),
+      villagesCount: parseInt(sitesResp.villages),
+      landTypeCounts: sitesLandTypeResp,
     });
   } catch (error) {
     res.status(status.error).send({

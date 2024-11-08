@@ -26,6 +26,9 @@
       padding: 10px 0;
       border-radius: 8px 8px 0 0;
     }
+    .header h2 {
+      margin: 10px;
+    }
     .content {
       padding: 20px;
     }
@@ -43,12 +46,24 @@
       background-color: #f2f2f2;
     }
     .footer {
-      text-align: left;
+      display: flex;
+      justify-content: space-between;
       margin-top: 30px;
       padding: 10px;
       background-color: #f2f2f2;
       border-radius: 0 0 8px 8px;
+    }
+    .footer-content {
+      text-align: left;
       line-height: 0.5;
+    }
+    .footer-logo {
+      height: 80px;
+      margin-left: 10px;
+    }
+    .footer-logo-container {
+      display: flex;
+      flex-wrap: wrap;
     }
     .dashboard-link {
       display: inline-block;
@@ -65,50 +80,63 @@
 <body>
   <div class="container">
     <div class="header">
-      <h2>Greetings from {{group_name}} and 14 Trees Foundation</h2>
+      <h2>Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
     </div>
     <div class="content">
       <p>Dear {{user_name}},</p>
       <p>
-        Hope this mail finds you in good health. It gives us great pleasure to inform you that a tree has been planted in your name by {{planted_via}}.
+        Hope this mail finds you in good health. It gives us great pleasure to inform you that a tree has been planted in 
+        {{#if memorial}}
+            memory of {{assigned_to_name}}.
+        {{else}}
+            {{#if relational}}
+                your {{relation}} {{assigned_to_name}}'s name.
+            {{else}}
+                {{#if self}}
+                    your name.
+                {{else}}
+                    {{assigned_to_name}}'s name.
+                {{/if}}
+            {{/if}}
+        {{/if}}
       </p>
       <h3>Tagging Information about the Tree:</h3>
       <table class="info-table">
         <tr>
           <th>Name</th>
-          <td>{{user_name}}</td>
+          <td>{{assigned_to_name}}</td>
         </tr>
+        {{#if trees.[0].planted_via}}
         <tr>
           <th>Planted Via</th>
-          <td>{{planted_via}}</td>
+          <td>{{trees.[0].planted_via}}</td>
         </tr>
+        {{/if}}
         <tr>
           <th>Tree Name</th>
-          <td>{{plant_type}}</td>
+          <td>{{trees.[0].plant_type}}</td>
         </tr>
         <tr>
           <th>Scientific Name</th>
-          <td>{{scientific_name}}</td>
+          <td>{{trees.[0].scientific_name}}</td>
         </tr>
         <tr>
           <th>Tree ID</th>
-          <td>{{sapling_id}}</td>
+          <td>{{trees.[0].sapling_id}}</td>
         </tr>
-        <tr>
-          <th>Location</th>
-          <td>{{site_name}}</td>
-        </tr>
+        {{#if event_name}}
         <tr>
           <th>Event</th>
           <td>{{event_name}}</td>
         </tr>
+        {{/if}}
       </table>
       <p>
         Below's the link to your personalized dashboard.<br/>
-        <a href="{{dashboard_link}}" class="dashboard-link">Dashboard</a>
+        <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
       </p>
       <p>
-        The trees that you bring into this world will, for its many living years, support local biodiversity, rejuvenate the local ecosystem, and also offset the devastating effects of carbon consumption and climate change.
+        For it's many living years, this tree will support local biodiversity, rejuvenate the local ecosystem and also offset the devastating effects of carbon consumption and climate change.
       </p>
       <p>
         You can follow our shared journey and find more ways of continuing to be involved at <a href="https://14trees.org">14 Trees</a>.
@@ -121,10 +149,30 @@
       </p>
     </div>
     <div class="footer">
-      <p>Warm Regards,</p>
-      <p>{{group_name}}</p>
-      <p>In Association with 14 Trees Foundation</p>
-      <a href="https://14trees.org">https://14trees.org</a>
+      <div class="footer-content">
+        <p>Warm Regards,</p>
+        {{#if group_name}}
+        <p>{{group_name}}</p>
+        <p>In Association with 14 Trees Foundation</p>
+        {{else}}
+        <p>14 Trees Foundation</p>
+        {{/if}}
+        <a href="https://14trees.org">https://14trees.org</a>
+      </div>
+      <div class="footer-logo-container">
+        {{#if company_logo_url}}
+        <img 
+          class="footer-logo"
+          src="{{company_logo_url}}"
+          alt="14 Trees"
+        />
+        {{/if}}
+        <img 
+          class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees"
+        />
+      </div>
     </div>
   </div>
 </body>

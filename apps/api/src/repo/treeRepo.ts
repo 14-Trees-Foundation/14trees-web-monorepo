@@ -189,8 +189,11 @@ class TreeRepository {
     return await Tree.count({ where: whereClause });
   }
 
-  public static async assignedTreesCount(): Promise<number> {
-    return await Tree.count({ where: { assigned_to: { [Op.not]: null } } })
+  public static async assignedAndBookedTreesCount() {
+    return {
+      assigned: await Tree.count({ where: { assigned_to: { [Op.not]: null } } }),
+      booked: await Tree.count({ where: { mapped_to_user: { [Op.not]: null } } })
+    };
   }
 
   public static async getMappedTrees(email: string, offset: number, limit: number) {
