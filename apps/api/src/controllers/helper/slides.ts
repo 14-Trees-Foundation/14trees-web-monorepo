@@ -120,6 +120,9 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
             headers: { Authorization: `Bearer ${token}` },
         });
 
+        console.log(token);
+        console.log(getSlideUrl);
+
         const slide = response.data;
 
         const requests: any[] = [];
@@ -255,6 +258,7 @@ const getUpdateImageRequest = (slide: any, description: string, imageUrl?: strin
                     pageObjectId: slide.objectId,
                     size: imageElement.size,
                     transform: imageElement.transform,
+                    description: imageElement.description,
                 },
             },
         })
