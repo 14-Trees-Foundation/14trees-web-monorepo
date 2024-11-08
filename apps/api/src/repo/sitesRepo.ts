@@ -5,6 +5,49 @@ import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 
 export class SiteRepository {
+
+    // Analytics
+
+    static async countAllSites() {
+
+        const query = `
+            SELECT count(s.id) as sites,
+                COUNT(DISTINCT (s.district)) as districts,
+                COUNT(DISTINCT (s.taluka)) as talukas,
+                COUNT(DISTINCT (s.village)) as villages
+            FROM "14trees_2".sites as s;
+        `
+
+        const resp: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+
+        return resp[0];
+    }
+
+    static async getLandTypeTreesCount() {
+        const query = `
+            SELECT s.land_type, SUM(COALESCE(tcg.total, 0)) as count
+            FROM "14trees_2".sites as s
+            JOIN "14trees_2".plots as p ON p.site_id = s.id
+            JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plot_id = p.id
+            WHERE s.land_type IS NOT NULL
+            GROUP BY s.land_type;
+        `
+
+        const resp: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+
+        let result = {};
+        resp.forEach(item => {
+            result = { ...result, [item.land_type]: item.count }
+        });
+
+        return result;
+    }
+
+    // CRUD
     static async getSites(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Site>> {
         const sites = await Site.findAll({
             where: whereClause,
@@ -152,7 +195,7 @@ export class SiteRepository {
         await sequelize.query(query);
     }
 
-    public static async treeCountForSites(offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC"}[]): Promise<PaginatedResponse<Site>> {
+    public static async treeCountForSites(offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<Site>> {
 
         let whereCondition = "";
         let plantTypeCondition = "";
@@ -211,8 +254,8 @@ export class SiteRepository {
             LEFT JOIN plot_areas pa ON pa.site_id = s.id
             WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.id
-            ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
-            ${ limit >0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
+            ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
+            ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
             `
 
         const sites: any[] = await sequelize.query(query, {
@@ -257,7 +300,7 @@ export class SiteRepository {
         }
 
         const query = `
-            SELECT s.${field}, ${ field === 'category' ? '' : 's.category, ' }
+            SELECT s.${field}, ${field === 'category' ? '' : 's.category, '}
                 SUM(COALESCE(tcg.booked, 0)) as booked,
                 SUM(COALESCE(tcg.available, 0)) as available,
                 SUM(COALESCE(tcg.assigned, 0)) as assigned,
@@ -273,8 +316,8 @@ export class SiteRepository {
             LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
             WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
-            GROUP BY s.${field} ${ field === 'category' ? '' : ', s.category'}
-            ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
+            GROUP BY s.${field} ${field === 'category' ? '' : ', s.category'}
+            ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             LIMIT ${limit} OFFSET ${offset};
             `
 
@@ -285,14 +328,14 @@ export class SiteRepository {
 
         const countQuery = `
             WITH data as (
-                SELECT s.${field}, ${ field === 'category' ? '' : 's.category, ' }
+                SELECT s.${field}, ${field === 'category' ? '' : 's.category, '}
                     SUM(COALESCE(tcg.booked, 0)) as booked
                 FROM "14trees_2".tree_count_aggregations tcg
                 LEFT JOIN "14trees_2".plots p ON tcg.plot_id = p.id
                 LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
                 LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
                 WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
-                GROUP BY s.${field} ${ field === 'category' ? '' : ', s.category'}
+                GROUP BY s.${field} ${field === 'category' ? '' : ', s.category'}
             )
 
             SELECT count(*) as count
@@ -312,11 +355,11 @@ export class SiteRepository {
             SELECT DISTINCT(s.district, s.taluka, s.village) as data
             FROM "14trees_2".sites s;
         `
-        
+
         const sites: any[] = await sequelize.query(query, {
             type: QueryTypes.SELECT
         })
-        
+
         return sites.map((s) => {
             const data = s.data.slice(1, -1).split(',');
             return {
@@ -367,7 +410,7 @@ export class SiteRepository {
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
             WHERE pt.id IS NOT NULL AND t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY tag_grouped.tag
-            ${ orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
+            ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             OFFSET ${offset} LIMIT ${limit};
         `
 

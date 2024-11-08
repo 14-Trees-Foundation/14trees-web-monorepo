@@ -55,9 +55,8 @@ interface MailOptions {
 
 const getHtmlTemplate = (type: string, emailData: any) => {
 
-  let templateName = 'dashboard.html';
-  if (type === 'individual') templateName = 'individual_mail.html'
-  if (type === 'better') templateName = 'better.html'
+  let templateName = 'receiver-single-tree.html';
+  if (type === 'receiver-multi-trees') templateName = 'receiver-multi-trees.html'
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();
   const template = handlebars.compile(source);
