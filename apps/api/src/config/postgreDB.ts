@@ -32,6 +32,7 @@ import { GiftCardPlot } from "../models/gift_card_plot";
 import { GiftCardUserTemplate } from "../models/gift_card_user_template";
 import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 import { Tag } from "../models/tag";
+import { UserRelation } from "../models/user_relation";
 
 
 class Database {
@@ -96,6 +97,7 @@ class Database {
         GiftCardUserTemplate,
         PlantTypeCardTemplate,
         Tag,
+        UserRelation,
       ]
     });
 

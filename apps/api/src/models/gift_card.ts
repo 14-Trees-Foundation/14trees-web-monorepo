@@ -3,7 +3,8 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface GiftCardAttributes {
     id: number;
-    user_id: number | null;
+    gifted_to: number | null;
+    assigned_to: number | null;
     gift_card_request_id: number;
     tree_id: number | null;
     card_image_url: string | null;
@@ -11,14 +12,12 @@ interface GiftCardAttributes {
     mail_sent: boolean | null;
     mail_error: string | null;
     slide_id: string | null;
-    in_name_of: string | null;
-    relation: string | null;
     created_at: Date;
     updated_at: Date;
 }
 
 interface GiftCardCreationAttributes
-    extends Optional<GiftCardAttributes, 'id' | 'tree_id' | 'card_image_url' | 'profile_image_url' | 'mail_error' | 'mail_sent' | 'slide_id' | 'in_name_of' | 'relation'> { }
+    extends Optional<GiftCardAttributes, 'id' | 'tree_id' | 'card_image_url' | 'profile_image_url' | 'mail_error' | 'mail_sent' | 'slide_id' > { }
 
 @Table({ tableName: 'gift_cards' })
 class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
@@ -35,9 +34,13 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
 
     @Column({
         type: DataType.NUMBER,
-        allowNull: false,
     })
-    user_id!: number;
+    gifted_to!: number | null;
+
+    @Column({
+        type: DataType.NUMBER,
+    })
+    assigned_to!: number | null;
 
     @Column({
         type: DataType.NUMBER,
@@ -58,7 +61,7 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
     @Column({
         type: DataType.STRING,
     })
-    profile_image_url!: string;
+    profile_image_url!: string | null;
 
     @Column({
         type: DataType.BOOLEAN,
@@ -74,16 +77,6 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
         type: DataType.STRING,
     })
     slide_id!: string;
-
-    @Column({
-        type: DataType.STRING,
-    })
-    in_name_of!: string;
-
-    @Column({
-        type: DataType.STRING,
-    })
-    relation!: string;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

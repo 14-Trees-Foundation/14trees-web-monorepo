@@ -113,6 +113,24 @@ export const syncSitesDatFromNotion = async (req: Request, res: Response) => {
     }
 }
 
+const parseCountToInt = (data: any[]) => {
+    return data.map(item => {
+        return {
+            ...item,
+            total: parseInt(item.total),
+            booked: parseInt(item.booked),
+            assigned: parseInt(item.assigned),
+            available: parseInt(item.available),
+            card_available: parseInt(item.card_available),
+            unbooked_assigned: parseInt(item.unbooked_assigned),
+            void_available: parseInt(item.void_available),
+            void_assigned: parseInt(item.void_assigned),
+            void_booked: parseInt(item.void_booked),
+            void_total: parseInt(item.void_total),
+        }
+    })
+}
+
 export const getTreeCountsForSites = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
@@ -120,6 +138,7 @@ export const getTreeCountsForSites = async (req: Request, res: Response) => {
 
     try {
         let result = await SiteRepository.treeCountForSites(offset, limit, filters, order_by);
+        result.results = parseCountToInt(result.results);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -136,6 +155,7 @@ export const getTreesCountForField = async (req: Request, res: Response) => {
     const order_by: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
     try {
         let result = await SiteRepository.treeCountForFields(field, offset, limit, filters, order_by);
+        result.results = parseCountToInt(result.results);
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "SitesController::getTreesCountForField", error);
@@ -167,6 +187,7 @@ export const getTreeCountsForTags = async (req: Request, res: Response) => {
 
     try {
         let result = await SiteRepository.getTreeCountsForTags(offset, limit, filters, order_by);
+        result.results = parseCountToInt(result.results);
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "SitesController::getTreesCountForTags", error);

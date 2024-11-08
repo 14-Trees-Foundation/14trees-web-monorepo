@@ -96,26 +96,73 @@ export class GiftCardsRepository {
         await giftCard.destroy();
     }
 
-    static async createGiftCards(giftCardsRequestId: number, users: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[]): Promise<void> {
+    static async upsertGiftCards(giftCardsRequestId: number, users: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
         if (!giftRequest) {
             throw new Error("Gift Card request not found")
         }
 
-        // create gift card
-        const giftCards = users.map(user => {
-            return {
-                gift_card_request_id: giftCardsRequestId,
-                user_id: user.userId,
-                profile_image_url: user.imageName ? 'https://14treesplants.s3.amazonaws.com/gift-card-requests/'+ giftRequest.request_id + '/' + user.imageName : null,
-                in_name_of: user.inNameOf ?? null,
-                relation: user.relation ?? null,
-                created_at: new Date(),
-                updated_at: new Date()
-            } as GiftCardCreationAttributes
+        const cards = await GiftCard.findAll({
+            where: {
+                gift_card_request_id: giftRequest.id,
+            }
         })
 
-        await GiftCard.bulkCreate(giftCards);
+        const nonUserCards = cards.filter(card => card.gifted_to === null)
+        let idx = 0;
+
+        const giftCards: GiftCardCreationAttributes[] = [];
+        for (const user of users) {
+            const userCards = cards.filter(card => (card.gifted_to === user.giftedTo && card.assigned_to === user.assignedTo));
+
+            const profileImageUrl = user.imageName ? 'https://14treesplants.s3.amazonaws.com/gift-card-requests/'+ giftRequest.request_id + '/' + user.imageName : null
+            if (userCards.length > 0 && userCards[0].profile_image_url !== profileImageUrl) {
+                await GiftCard.update({
+                    profile_image_url: profileImageUrl,
+                    updated_at: new Date(),
+                }, {
+                    where: {
+                        gift_card_request_id: giftRequest.id,
+                        gifted_to: user.giftedTo,
+                        assigned_to: user.assignedTo,
+                    }
+                })
+            }
+
+            if (user.count > userCards.length) {
+                let count = user.count - userCards.length;
+
+                for ( ; idx < nonUserCards.length; idx++) {
+
+                    if (count === 0) break;
+
+                    const card = nonUserCards[idx];
+                    card.profile_image_url = profileImageUrl;
+                    card.gifted_to = user.giftedTo;
+                    card.assigned_to = user.assignedTo;
+                    card.updated_at = new Date();
+
+                    await card.save();
+                    count -= 1;
+                }
+
+                if (count !== 0) {
+                    const requests = Array.from({ length: count }, () => ({
+                        gift_card_request_id: giftCardsRequestId,
+                        gifted_to: user.giftedTo,
+                        assigned_to: user.assignedTo,
+                        profile_image_url: profileImageUrl,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    }))
+
+                    giftCards.push(...requests);
+                }
+                
+            }
+        }
+
+        if (giftCards.length !== 0) await GiftCard.bulkCreate(giftCards);
     }
 
     static async getGiftCard(id: number): Promise<GiftCard | null> {
@@ -126,7 +173,7 @@ export class GiftCardsRepository {
         const getQuery = `
             SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
             FROM "14trees".gift_cards gc
-            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".users u ON u.id = gc.gifted_to
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.id = ${id};
@@ -217,9 +264,15 @@ export class GiftCardsRepository {
     static async getBookedCards(giftCardRequestId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCard>> {
 
         const getQuery = `
-            SELECT gc.*, u.name as user_name, u.email as user_email, u.phone as user_phone, t.sapling_id, t.assigned_to, pt.name as plant_type, pt.scientific_name
+            SELECT gc.*,
+            gu.name as gifted_to_name, gu.email as gifted_to_email, gu.phone as gifted_to_phone,
+            au.name as assigned_to_name, au.email as assigned_to_email, au.phone as assigned_to_phone,
+            t.sapling_id, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
+            ur.relation
             FROM "14trees".gift_cards gc
-            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".users gu ON gu.id = gc.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = gc.assigned_to
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = gc.gifted_to AND ur.secondary_user = gc.assigned_to
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}
@@ -310,13 +363,16 @@ export class GiftCardsRepository {
     static async getGiftCardUserAndTreeDetails(giftCardRequestId: number): Promise<GiftCard[]> {
 
         const getQuery = `
-            SELECT gc.id, gc.card_image_url, gc.mail_sent, gc.slide_id, u.name as user_name, u.email as user_email, t.sapling_id, t.description as event_name, t.planted_by as planted_via, pt.name as plant_type, pt.scientific_name, s.name_english as site_name
+            SELECT gc.id, gc.card_image_url, gc.mail_sent, gc.slide_id, gc.assigned_to, gc.gifted_to,
+            u.name as user_name, u.email as user_email,
+            au.name as assigned_to_name, u.email as assigned_to_email, ur.relation,
+            t.sapling_id, t.description as event_name, t.event_type, t.gifted_by_name as planted_via, pt.name as plant_type, pt.scientific_name
             FROM "14trees".gift_cards gc
-            LEFT JOIN "14trees".users u ON u.id = gc.user_id
+            LEFT JOIN "14trees".users u ON u.id = gc.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = gc.assigned_to
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = gc.gifted_to AND ur.secondary_user = gc.assigned_to
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
-            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
-            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}
             ORDER BY gc.id
         `

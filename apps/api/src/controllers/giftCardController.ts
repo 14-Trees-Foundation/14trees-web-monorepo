@@ -14,6 +14,7 @@ import { Op } from "sequelize";
 import { copyFile, downloadSlide } from "../services/google";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { AlbumRepository } from "../repo/albumRepo";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -307,6 +308,7 @@ export const updateGiftCardRequestAlbum = async (req: Request, res: Response) =>
     }
 };
 
+// TODO: Not required. Remove this.
 const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
     // delete plot selection
     await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
@@ -354,33 +356,69 @@ export const createGiftCards = async (req: Request, res: Response) => {
 
     try {
 
-        await resetGiftCardUsersForRequest(giftCardRequestId);
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
+        const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
 
-        const usersData: { userId: number, imageName?: string, inNameOf?: string, relation?: string }[] = []
+        const usersData: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[] = []
+        let count = 0;
         for (const user of users) {
-            const userResp = await UserRepository.upsertUser(user);
-            const usersList = Array.from({ length: user.count || 1 }, () => ({
-                userId: userResp.id,
+
+            // gifted To
+            const giftedToUser = {
+                name: user.gifted_to_name,
+                email: user.gifted_to_email,
+                phone: user.gifted_to_phone,
+                birth_Date: user.gifted_to_dob,
+            }
+            const giftedTo = await UserRepository.upsertUser(giftedToUser);
+
+            // assigned To
+            const assignedToUser = {
+                name: user.assigned_to_name,
+                email: user.assigned_to_email,
+                phone: user.assigned_to_phone,
+                birth_Date: user.assigned_to_dob,
+            }
+            const assignedTo = await UserRepository.upsertUser(assignedToUser);
+
+            if (giftedTo.id !== assignedTo.id && user.relation?.trim()) {
+                await UserRelationRepository.createUserRelation({
+                    primary_user: giftedTo.id,
+                    secondary_user: assignedTo.id,
+                    relation: user.relation.trim(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
+
+            usersData.push({
+                giftedTo: giftedTo.id,
+                assignedTo: assignedTo.id,
                 imageName: user.image_name ? user.image_name : undefined,
-                inNameOf: user.in_name_of ? user.in_name_of : undefined,
-                relation: user.relation ? user.relation : undefined,
-            }));
-            usersData.push(...usersList);
+                count: parseInt(user.count) || 1,
+            });
+
+            count += parseInt(user.count) || 1;
         }
 
-        await GiftCardsRepository.createGiftCards(giftCardRequestId, usersData);
+        if (count > giftCardRequest.no_of_cards) {
+            res.status(status.bad).json({
+                status: status.bad,
+                message: "Requested number of gift trees doesn't match in user details!"
+            })
+            return;
+        }
 
-        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
+        await GiftCardsRepository.upsertGiftCards(giftCardRequestId, usersData);
 
         // validation on user details
-        const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
-        if (giftCardRequest.no_of_cards !== usersData.length && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+        if (giftCardRequest.no_of_cards !== count && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
             giftCardRequest.validation_errors = giftCardRequest.validation_errors ? [...giftCardRequest.validation_errors, 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS']
-        } else if (giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+        } else if (giftCardRequest.no_of_cards === count && giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
             giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : null;
         }
 
-        giftCardRequest.status = GiftCardRequestStatus.pendingPlotSelection;
         giftCardRequest.updated_at = new Date();
         const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
@@ -427,7 +465,7 @@ export const updateGiftCardUserDetails = async (req: Request, res: Response) => 
                 await GiftCardsRepository.updateGiftCards(updateGiftCard, { user_id: user.user_id, gift_card_request_id: user.gift_card_request_id });
 
                 const treeIds = giftCards
-                    .filter(card => card.user_id === user.user_id && card.tree_id)
+                    .filter(card => card.gifted_to === user.user_id && card.tree_id)
                     .map(card => card.tree_id);
 
                 const updateTree = {
@@ -562,16 +600,19 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         let allAssigned = true;
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) {
+            if (!giftCard.tree_id || !giftCard.gifted_to) {
                 allAssigned = false;
                 continue;
             }
 
             const updateRequest = {
                 assigned_at: new Date(),
-                assigned_to: giftCard.user_id,
+                assigned_to: giftCard.assigned_to,
+                gifted_to: giftCard.gifted_to,
                 updated_at: new Date(),
                 description: giftCardRequest.event_name,
+                planted_by: null,
+                gifted_by: giftCardRequest.user_id,
                 gifted_by_name: giftCardRequest.planted_by,
                 user_tree_image: giftCard.profile_image_url,
                 memory_images: memoryImageUrls,
@@ -616,7 +657,7 @@ const getGiftCardTemplateImage = async (presentationId: string, templateId: stri
     return s3Url;
 }
 
-const getPersonalizedMessage = (primaryMessage: string, userName: string, relation?: string) => {
+const getPersonalizedMessage = (primaryMessage: string, userName: string, relation?: string | null) => {
     const index = primaryMessage.indexOf('your');
     if (index < 0) return primaryMessage;
     if (relation) {
@@ -633,9 +674,9 @@ const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: numbe
         message = primaryMessage.substring(0, index) + count + " trees" + primaryMessage.substring(index + 6);
     }
     
-    message = message.replace('This tree', 'These trees');
-    message = message.replace(' tree ', ' trees ');
-    message = message.replace(' trees has ', ' trees have ');
+    message = message.replace(/This tree/g, 'These trees');
+    message = message.replace(/ tree /g, ' trees ');
+    message = message.replace(/ trees has /g, ' trees have ');
     
     return message
 }
@@ -672,23 +713,25 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
         const slideIds: string[] = []
-        const userTreeCount: Record<number, number> = {};
+        const userTreeCount: Record<string, number> = {};
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) continue;
-            if (userTreeCount[giftCard.user_id]) userTreeCount[giftCard.user_id]++
-            else userTreeCount[giftCard.user_id] = 1;
+            if (!giftCard.tree_id || !giftCard.gifted_to || !giftCard.assigned_to) continue;
+            const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
+            if (userTreeCount[key]) userTreeCount[key]++
+            else userTreeCount[key] = 1;
         }
 
         for (const giftCard of giftCards.results) {
-            if (!giftCard.tree_id || !giftCard.user_id) continue;
+            if (!giftCard.tree_id || !giftCard.gifted_to || !giftCard.assigned_to) continue;
+            const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
 
             let primaryMessage = giftCardRequest.primary_message;
-            if (giftCard.in_name_of) primaryMessage = getPersonalizedMessage(primaryMessage, giftCard.in_name_of, giftCard.relation);
-            if (userTreeCount[giftCard.user_id] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[giftCard.user_id]);
+            if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assigned_to_name, (giftCard as any).relation);
+            if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
 
             const record = {
-                name: (giftCard as any).user_name,
+                name: (giftCard as any).gifted_to_name,
                 sapling: (giftCard as any).sapling_id,
                 content1: primaryMessage,
                 content2: giftCardRequest.secondary_message,
@@ -707,7 +750,9 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         }
 
         await deleteUnwantedSlides(giftCardRequest.presentation_id, slideIds)
-        giftCardRequest.status = GiftCardRequestStatus.completed;
+        if (giftCardRequest.status === GiftCardRequestStatus.pendingGiftCards) {
+            giftCardRequest.status = GiftCardRequestStatus.completed;
+        }
         giftCardRequest.updated_at = new Date();
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
@@ -887,6 +932,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
     }
 }
 
+// TODO: Remove this
 export const redeemGiftCard = async (req: Request, res: Response) => {
     const { gift_card_id: giftCardId, user, sapling_id: saplingId, tree_id: treeId } = req.body;
     if (!giftCardId || isNaN(parseInt(giftCardId))) {
@@ -943,7 +989,8 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
         }
 
         giftCardUser.card_image_url = s3Url;
-        giftCardUser.user_id = user?.id;
+        giftCardUser.assigned_to = user?.id;
+        giftCardUser.gifted_to = user?.id;
         giftCardUser.updated_at = new Date();
         await giftCardUser.save();
 
@@ -979,36 +1026,80 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
 
         let count = 5;
         const giftCardRequest: any = resp.results[0];
-
+        const userEmailDataMap: Record<string, any> = {};
         const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
         for (const giftCard of giftCards) {
             if (giftCard.mail_sent || !giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
 
-            const emailData = {
-                ...giftCard,
+            const key = giftCard.gifted_to + "_" + giftCard.assigned_to;
+            const treeData = {
+                sapling_id: giftCard.sapling_id,
                 dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
-                group_name: giftCardRequest.group_name
-            }
+                planted_via: giftCard.planted_via,
+                plant_type: giftCard.plant_type,
+                scientific_name:giftCard.scientific_name,
+                card_image_url: giftCard.card_image_url,
+                event_name: giftCard.event_name,
+                assigned_to_name: giftCard.assigned_to_name,
+            };
 
-            const isTestMail = (testMails && testMails.length !== 0) ? true : false
-            const mailIds = (testMails && testMails.length !== 0) ? testMails : [giftCard.user_email];
-            const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+            if (userEmailDataMap[key]) {
+                userEmailDataMap[key].trees.push(treeData);
+                userEmailDataMap[key].count++;
+            } else {
+                userEmailDataMap[key] = {
+                    trees: [treeData],
+                    assigned_to_name: giftCard.assigned_to_name,
+                    user_email: giftCard.user_email,
+                    user_name: giftCard.user_name,
+                    event_name: giftCard.event_name,
+                    group_name: giftCardRequest.group_name,
+                    company_logo_url: giftCardRequest.logo_url,
+                    assigned_to: giftCard.assigned_to,
+                    gifted_to: giftCard.gifted_to,
+                    self: giftCard.assigned_to === giftCard.gifted_to ? true : undefined,
+                    relation: giftCard.relation,
+                    relational: giftCard.relation ? true : undefined,
+                    memorial: giftCard.event_type == "2" ? true : undefined,
+                    count: 1
+                }
+            }
+        }
+        
+        const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+        const isTestMail = (testMails && testMails.length !== 0) ? true : false
+
+        for (const emailData of Object.values(userEmailDataMap)) {
+            const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
 
             let attachments: { filename: string; path: string }[] | undefined = undefined;
-            if (attach_card && giftCard.card_image_url) {
-                attachments = [{
-                    filename: giftCard.user_name + "_" + giftCard.card_image_url.split("/").slice(-1)[0],
-                    path: giftCard.card_image_url
-                }]
+            if (attach_card) {
+                const files: { filename: string; path: string }[] = []
+                for (const tree of emailData.trees) {
+                    if (tree.card_image_url) {
+                        files.push({
+                            filename: tree.user_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                            path: tree.card_image_url
+                        })
+                    }
+                }
+                
+                if (files.length > 0) attachments = files;
             }
 
-            const statusMessage: string = await sendDashboardMail('default', emailData, mailIds, ccMailIds, attachments);
+            const templateType = emailData.trees.length === 1 ? 'receiver-single-tree' : 'receiver-multi-trees'
+            const statusMessage: string = await sendDashboardMail(templateType, emailData, mailIds, ccMailIds, attachments);
+
             const updateRequest = {
                 mail_sent:( statusMessage === '' && !isTestMail) ? true : false,
                 mail_error: statusMessage ? statusMessage : null,
                 updated_at: new Date()
             }
-            await GiftCardsRepository.updateGiftCards(updateRequest, { id: giftCard.id });
+            await GiftCardsRepository.updateGiftCards(updateRequest, { 
+                gift_card_request_id: giftCardRequest.id,
+                assigned_to: emailData.assigned_to,
+                gifted_to: emailData.gifted_to,
+            });
 
             count = count - 1;
             if (isTestMail && count === 0) break;
