@@ -252,7 +252,7 @@ export class SiteRepository {
             LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plot_id = p.id
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
             LEFT JOIN plot_areas pa ON pa.site_id = s.id
-            WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
+            WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
@@ -269,7 +269,7 @@ export class SiteRepository {
             LEFT JOIN "14trees_2".plots p ON s.id = p.site_id
             LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plot_id = p.id
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
-            WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
+            WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
         const resp: any[] = await sequelize.query(countQuery, {
@@ -315,7 +315,7 @@ export class SiteRepository {
             LEFT JOIN "14trees_2".plots p ON tcg.plot_id = p.id
             LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
-            WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
+            WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.${field} ${field === 'category' ? '' : ', s.category'}
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             LIMIT ${limit} OFFSET ${offset};
@@ -334,7 +334,7 @@ export class SiteRepository {
                 LEFT JOIN "14trees_2".plots p ON tcg.plot_id = p.id
                 LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
                 LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
-                WHERE pt.id IS NOT NULL AND ${whereCondition ? whereCondition : '1=1'}
+                WHERE ${whereCondition ? whereCondition : '1=1'}
                 GROUP BY s.${field} ${field === 'category' ? '' : ', s.category'}
             )
 
@@ -408,7 +408,7 @@ export class SiteRepository {
             JOIN "14trees_2".tags as t on tag_grouped.tag = t.tag
             LEFT JOIN "14trees_2".sites s ON s.id = tag_grouped.site_id
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
-            WHERE pt.id IS NOT NULL AND t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
+            WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY tag_grouped.tag
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
             OFFSET ${offset} LIMIT ${limit};
@@ -429,7 +429,7 @@ export class SiteRepository {
             JOIN "14trees_2".tags as t on tag_grouped.tag = t.tag
             LEFT JOIN "14trees_2".sites s ON s.id = tag_grouped.site_id
             LEFT JOIN "14trees_2".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
-            WHERE pt.id IS NOT NULL AND t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
+            WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
         `
 
         const countResp: any[] = await sequelize.query(countQuery, {
