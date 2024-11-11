@@ -36,6 +36,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         event_name: eventName,
+        event_type: eventType,
         planted_by: plantedBy,
         logo_message: logoMessage,
         request_id: requestId,
@@ -60,6 +61,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         primary_message: primaryMessage || null,
         secondary_message: secondaryMessage || null,
         event_name: eventName || null,
+        event_type: eventType || null,
         planted_by: plantedBy || null,
         logo_message: logoMessage || null,
         status: GiftCardRequestStatus.pendingPlotSelection,
@@ -139,10 +141,12 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             primary_message: giftCardRequest.primary_message,
             secondary_message: giftCardRequest.secondary_message,
             event_name: giftCardRequest.event_name,
+            event_type: giftCardRequest.event_type,
             planted_by: giftCardRequest.planted_by,
             logo_message: giftCardRequest.logo_message,
             status: GiftCardRequestStatus.pendingPlotSelection,
             validation_errors: validationErrors,
+            album_id: giftCardRequest.album_id,
             notes: null
         }
 
@@ -221,6 +225,10 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
             treeUpdateRequest = { ...treeUpdateRequest, mapped_to_user: updatedGiftCardRequest.user_id }
+        }
+
+        if (updatedGiftCardRequest.event_type !== originalRequest.event_type) {
+            treeUpdateRequest = { ...treeUpdateRequest, event_type: updatedGiftCardRequest.event_type }
         }
 
         if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && Object.keys(treeUpdateRequest).length !== 0) {
@@ -611,6 +619,7 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
                 gifted_to: giftCard.gifted_to,
                 updated_at: new Date(),
                 description: giftCardRequest.event_name,
+                event_type: giftCardRequest.event_type,
                 planted_by: null,
                 gifted_by: giftCardRequest.user_id,
                 gifted_by_name: giftCardRequest.planted_by,

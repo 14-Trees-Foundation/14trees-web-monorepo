@@ -21,6 +21,7 @@ interface GiftCardRequestAttributes {
     primary_message: string | null;
     secondary_message: string | null;
     event_name: string | null;
+    event_type: string | null;
     planted_by: string | null;
     users_csv_file_url: string | null;
     logo_message: string | null;
@@ -34,7 +35,7 @@ interface GiftCardRequestAttributes {
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -92,6 +93,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.STRING,
     })
     event_name!: string;
+
+    @Column({
+        type: DataType.STRING,
+    })
+    event_type!: string | null;
 
     @Column({
         type: DataType.STRING,
