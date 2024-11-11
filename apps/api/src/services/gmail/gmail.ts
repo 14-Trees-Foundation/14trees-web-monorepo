@@ -59,6 +59,7 @@ const getHtmlTemplate = (type: string, emailData: any) => {
   if (type === 'receiver-multi-trees') templateName = 'receiver-multi-trees.html'
   else if (type === 'receiver-multi-trees-christmas') templateName = 'receiver-multi-trees-christmas.html'
   else if (type === 'receiver-single-tree-christmas') templateName = 'receiver-single-tree-christmas.html'
+  else if (type === 'sponsor-multi-trees') templateName = 'sponsor-multi-trees.html'
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();
   const template = handlebars.compile(source);
