@@ -185,6 +185,16 @@ export const getPlotAggregations = async (req: Request, res: Response) => {
 
     try {
         let result = await PlotRepository.getPlotAggregations(offset, limit, filters, orderBy);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
+                available: parseInt(item.available),
+                unbooked_assigned: parseInt(item.unbooked_assigned),
+            }
+        })
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "PlotsController::getPlotAggregations", error);

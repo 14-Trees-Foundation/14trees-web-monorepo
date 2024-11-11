@@ -264,7 +264,7 @@ export class SiteRepository {
         })
 
         const countQuery = `
-            SELECT count(*) as count
+            SELECT count(distinct s.id) as count
             FROM "14trees_2".sites s
             LEFT JOIN "14trees_2".plots p ON s.id = p.site_id
             LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plot_id = p.id
