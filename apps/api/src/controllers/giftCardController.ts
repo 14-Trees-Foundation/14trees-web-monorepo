@@ -36,6 +36,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         event_name: eventName,
+        event_type: eventType,
         planted_by: plantedBy,
         logo_message: logoMessage,
         request_id: requestId,
@@ -60,6 +61,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         primary_message: primaryMessage || null,
         secondary_message: secondaryMessage || null,
         event_name: eventName || null,
+        event_type: eventType || null,
         planted_by: plantedBy || null,
         logo_message: logoMessage || null,
         status: GiftCardRequestStatus.pendingPlotSelection,
@@ -139,10 +141,12 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             primary_message: giftCardRequest.primary_message,
             secondary_message: giftCardRequest.secondary_message,
             event_name: giftCardRequest.event_name,
+            event_type: giftCardRequest.event_type,
             planted_by: giftCardRequest.planted_by,
             logo_message: giftCardRequest.logo_message,
             status: GiftCardRequestStatus.pendingPlotSelection,
             validation_errors: validationErrors,
+            album_id: giftCardRequest.album_id,
             notes: null
         }
 
@@ -221,6 +225,10 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
             treeUpdateRequest = { ...treeUpdateRequest, mapped_to_user: updatedGiftCardRequest.user_id }
+        }
+
+        if (updatedGiftCardRequest.event_type !== originalRequest.event_type) {
+            treeUpdateRequest = { ...treeUpdateRequest, event_type: updatedGiftCardRequest.event_type }
         }
 
         if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && Object.keys(treeUpdateRequest).length !== 0) {
@@ -451,10 +459,10 @@ export const updateGiftCardUserDetails = async (req: Request, res: Response) => 
 
             try {
                 const updateRequest: any = {
-                    id: user.user_id,
-                    name: user.user_name,
-                    email: user.user_email,
-                    phone: user.user_phone,
+                    id: user.assigned_to,
+                    name: user.assigned_to_name,
+                    email: user.assigned_to_email,
+                    phone: user.assigned_to_phone,
                 }
                 await UserRepository.updateUser(updateRequest);
 
@@ -462,10 +470,10 @@ export const updateGiftCardUserDetails = async (req: Request, res: Response) => 
                     profile_image_url: user.profile_image_url || null,
                     updated_at: new Date()
                 }
-                await GiftCardsRepository.updateGiftCards(updateGiftCard, { user_id: user.user_id, gift_card_request_id: user.gift_card_request_id });
+                await GiftCardsRepository.updateGiftCards(updateGiftCard, { assigned_to: user.assigned_to, gifted_to: user.gifted_to, gift_card_request_id: user.gift_card_request_id });
 
                 const treeIds = giftCards
-                    .filter(card => card.gifted_to === user.user_id && card.tree_id)
+                    .filter(card => card.gifted_to === user.gifted_to && card.assigned_to === user.assigned_to && card.tree_id)
                     .map(card => card.tree_id);
 
                 const updateTree = {
@@ -611,6 +619,7 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
                 gifted_to: giftCard.gifted_to,
                 updated_at: new Date(),
                 description: giftCardRequest.event_name,
+                event_type: giftCardRequest.event_type,
                 planted_by: null,
                 gifted_by: giftCardRequest.user_id,
                 gifted_by_name: giftCardRequest.planted_by,
@@ -673,11 +682,11 @@ const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: numbe
     if (index !== -1) {
         message = primaryMessage.substring(0, index) + count + " trees" + primaryMessage.substring(index + 6);
     }
-    
+
     message = message.replace(/This tree/g, 'These trees');
     message = message.replace(/ tree /g, ' trees ');
     message = message.replace(/ trees has /g, ' trees have ');
-    
+
     return message
 }
 
@@ -1005,9 +1014,152 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
     }
 };
 
+const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], templateType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+    let count = 5;
+    const userEmailDataMap: Record<string, any> = {};
+    for (const giftCard of giftCards) {
+        if (giftCard.mail_sent || !giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
+
+        const key = giftCard.gifted_to + "_" + giftCard.assigned_to;
+        const treeData = {
+            sapling_id: giftCard.sapling_id,
+            dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
+            planted_via: giftCard.planted_via,
+            plant_type: giftCard.plant_type,
+            scientific_name: giftCard.scientific_name,
+            card_image_url: giftCard.card_image_url,
+            event_name: giftCard.event_name,
+            assigned_to_name: giftCard.assigned_to_name,
+        };
+
+        if (userEmailDataMap[key]) {
+            userEmailDataMap[key].trees.push(treeData);
+            userEmailDataMap[key].count++;
+        } else {
+            userEmailDataMap[key] = {
+                trees: [treeData],
+                assigned_to_name: giftCard.assigned_to_name,
+                user_email: giftCard.user_email,
+                user_name: giftCard.user_name,
+                event_name: giftCard.event_name,
+                group_name: giftCardRequest.group_name,
+                company_logo_url: giftCardRequest.logo_url,
+                assigned_to: giftCard.assigned_to,
+                gifted_to: giftCard.gifted_to,
+                self: giftCard.assigned_to === giftCard.gifted_to ? true : undefined,
+                relation: giftCard.relation,
+                relational: giftCard.relation ? true : undefined,
+                memorial: giftCard.event_type == "2" ? true : undefined,
+                count: 1
+            }
+        }
+    }
+
+    const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+    const isTestMail = (testMails && testMails.length !== 0) ? true : false
+
+    for (const emailData of Object.values(userEmailDataMap)) {
+        const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
+
+        let attachments: { filename: string; path: string }[] | undefined = undefined;
+        if (attachCard) {
+            const files: { filename: string; path: string }[] = []
+            for (const tree of emailData.trees) {
+                if (tree.card_image_url) {
+                    files.push({
+                        filename: tree.user_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                        path: tree.card_image_url
+                    })
+                }
+            }
+
+            if (files.length > 0) attachments = files;
+        }
+
+        let emailTemplate = emailData.trees.length === 1 ? 'receiver-single-tree' : 'receiver-multi-trees'
+        if (templateType !== 'default') emailTemplate += '-' + templateType
+        const statusMessage: string = await sendDashboardMail(emailTemplate, emailData, mailIds, ccMailIds, attachments);
+
+        const updateRequest = {
+            mail_sent: (statusMessage === '' && !isTestMail) ? true : false,
+            mail_error: statusMessage ? statusMessage : null,
+            updated_at: new Date()
+        }
+        await GiftCardsRepository.updateGiftCards(updateRequest, {
+            gift_card_request_id: giftCardRequest.id,
+            assigned_to: emailData.assigned_to,
+            gifted_to: emailData.gifted_to,
+        });
+
+        count = count - 1;
+        if (isTestMail && count === 0) break;
+    }
+}
+
+const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], templateType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+    const emailData: any = {
+        trees: [] as any[],
+        user_email: giftCardRequest.user_email,
+        user_name: giftCardRequest.user_name,
+        event_name: giftCardRequest.event_name,
+        group_name: giftCardRequest.group_name,
+        company_logo_url: giftCardRequest.logo_url,
+        count: 0
+    };
+
+    for (const giftCard of giftCards) {
+
+        const treeData = {
+            sapling_id: giftCard.sapling_id,
+            dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
+            planted_via: giftCard.planted_via,
+            plant_type: giftCard.plant_type,
+            scientific_name: giftCard.scientific_name,
+            card_image_url: giftCard.card_image_url,
+            event_name: giftCard.event_name,
+            assigned_to_name: giftCard.assigned_to_name,
+        };
+
+        emailData.trees.push(treeData);
+        emailData.count++;
+    }
+
+    const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+    const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
+
+    let attachments: { filename: string; path: string }[] | undefined = undefined;
+    if (attachCard) {
+        const files: { filename: string; path: string }[] = []
+        for (const tree of emailData.trees) {
+            if (tree.card_image_url) {
+                files.push({
+                    filename: tree.user_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                    path: tree.card_image_url
+                })
+            }
+        }
+
+        if (files.length > 0) attachments = files;
+    }
+
+    let emailTemplate = 'sponsor-multi-trees'
+    if (templateType !== 'default') emailTemplate += '-' + templateType
+
+    const statusMessage: string = await sendDashboardMail(emailTemplate, emailData, mailIds, ccMailIds, attachments);
+
+}
+
 
 export const sendEmailForGiftCardRequest = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId, test_mails: testMails, cc_mails: ccMails, attach_card} = req.body;
+    const {
+        gift_card_request_id: giftCardRequestId,
+        test_mails: testMails,
+        cc_mails: ccMails,
+        attach_card,
+        template_type: templateType,
+        email_sponsor: emailSponsor,
+        email_receiver: emailReceiver,
+    } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -1024,85 +1176,15 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
             return;
         }
 
-        let count = 5;
         const giftCardRequest: any = resp.results[0];
-        const userEmailDataMap: Record<string, any> = {};
         const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
-        for (const giftCard of giftCards) {
-            if (giftCard.mail_sent || !giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
 
-            const key = giftCard.gifted_to + "_" + giftCard.assigned_to;
-            const treeData = {
-                sapling_id: giftCard.sapling_id,
-                dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
-                planted_via: giftCard.planted_via,
-                plant_type: giftCard.plant_type,
-                scientific_name:giftCard.scientific_name,
-                card_image_url: giftCard.card_image_url,
-                event_name: giftCard.event_name,
-                assigned_to_name: giftCard.assigned_to_name,
-            };
-
-            if (userEmailDataMap[key]) {
-                userEmailDataMap[key].trees.push(treeData);
-                userEmailDataMap[key].count++;
-            } else {
-                userEmailDataMap[key] = {
-                    trees: [treeData],
-                    assigned_to_name: giftCard.assigned_to_name,
-                    user_email: giftCard.user_email,
-                    user_name: giftCard.user_name,
-                    event_name: giftCard.event_name,
-                    group_name: giftCardRequest.group_name,
-                    company_logo_url: giftCardRequest.logo_url,
-                    assigned_to: giftCard.assigned_to,
-                    gifted_to: giftCard.gifted_to,
-                    self: giftCard.assigned_to === giftCard.gifted_to ? true : undefined,
-                    relation: giftCard.relation,
-                    relational: giftCard.relation ? true : undefined,
-                    memorial: giftCard.event_type == "2" ? true : undefined,
-                    count: 1
-                }
-            }
+        if (emailReceiver) {
+            sendMailsToReceivers(giftCardRequest, giftCards, templateType, attach_card, ccMails, testMails);
         }
-        
-        const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
-        const isTestMail = (testMails && testMails.length !== 0) ? true : false
 
-        for (const emailData of Object.values(userEmailDataMap)) {
-            const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
-
-            let attachments: { filename: string; path: string }[] | undefined = undefined;
-            if (attach_card) {
-                const files: { filename: string; path: string }[] = []
-                for (const tree of emailData.trees) {
-                    if (tree.card_image_url) {
-                        files.push({
-                            filename: tree.user_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
-                            path: tree.card_image_url
-                        })
-                    }
-                }
-                
-                if (files.length > 0) attachments = files;
-            }
-
-            const templateType = emailData.trees.length === 1 ? 'receiver-single-tree' : 'receiver-multi-trees'
-            const statusMessage: string = await sendDashboardMail(templateType, emailData, mailIds, ccMailIds, attachments);
-
-            const updateRequest = {
-                mail_sent:( statusMessage === '' && !isTestMail) ? true : false,
-                mail_error: statusMessage ? statusMessage : null,
-                updated_at: new Date()
-            }
-            await GiftCardsRepository.updateGiftCards(updateRequest, { 
-                gift_card_request_id: giftCardRequest.id,
-                assigned_to: emailData.assigned_to,
-                gifted_to: emailData.gifted_to,
-            });
-
-            count = count - 1;
-            if (isTestMail && count === 0) break;
+        if (emailSponsor) {
+            sendMailsToSponsors(giftCardRequest, giftCards, templateType, attach_card, ccMails, testMails);
         }
 
         res.status(status.success).send();
