@@ -1007,7 +1007,13 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
 
 
 export const sendEmailForGiftCardRequest = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId, test_mails: testMails, cc_mails: ccMails, attach_card} = req.body;
+    const { 
+        gift_card_request_id: giftCardRequestId, 
+        test_mails: testMails, 
+        cc_mails: ccMails, 
+        attach_card,
+        template_type: templateType
+    } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -1087,8 +1093,9 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
                 if (files.length > 0) attachments = files;
             }
 
-            const templateType = emailData.trees.length === 1 ? 'receiver-single-tree' : 'receiver-multi-trees'
-            const statusMessage: string = await sendDashboardMail(templateType, emailData, mailIds, ccMailIds, attachments);
+            let emailTemplate = emailData.trees.length === 1 ? 'receiver-single-tree' : 'receiver-multi-trees'
+            if (templateType !== 'default') emailTemplate += '-' + templateType
+            const statusMessage: string = await sendDashboardMail(emailTemplate, emailData, mailIds, ccMailIds, attachments);
 
             const updateRequest = {
                 mail_sent:( statusMessage === '' && !isTestMail) ? true : false,
