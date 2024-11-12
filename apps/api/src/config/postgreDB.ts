@@ -33,6 +33,7 @@ import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 import { TreeCountAggregation } from "../models/tree_count_aggregation";
 import { Tag } from "../models/tag";
 import { UserRelation } from "../models/user_relation";
+import { EmailTemplate } from "../models/email_template";
 
 
 class Database {
@@ -98,6 +99,7 @@ class Database {
         TreeCountAggregation,
         Tag,
         UserRelation,
+        EmailTemplate,
       ]
     });
 

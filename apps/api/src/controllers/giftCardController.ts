@@ -15,6 +15,8 @@ import { copyFile, downloadSlide } from "../services/google";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { AlbumRepository } from "../repo/albumRepo";
 import { UserRelationRepository } from "../repo/userRelationsRepo";
+import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
+import { TemplateType } from "../models/email_template";
 
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
@@ -1014,7 +1016,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
     }
 };
 
-const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], templateType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
     let count = 5;
     const userEmailDataMap: Record<string, any> = {};
     for (const giftCard of giftCards) {
@@ -1076,10 +1078,18 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], temp
             if (files.length > 0) attachments = files;
         }
 
-        let emailTemplate = emailData.trees.length === 1 ? 'receiver-single-tree' : 'receiver-multi-trees'
-        if (templateType !== 'default') emailTemplate += '-' + templateType
-        const statusMessage: string = await sendDashboardMail(emailTemplate, emailData, mailIds, ccMailIds, attachments);
+        const templatesMap: Record<string, string> = {}
+        const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+        if (!templatesMap[templateType]) {
+            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+            if (templates.length === 0) {
+                console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+                continue;
+            }
+            templatesMap[templateType] = templates[0].event_name
+        }
 
+        const statusMessage: string = await sendDashboardMail(templatesMap[templateType], emailData, mailIds, ccMailIds, attachments);
         const updateRequest = {
             mail_sent: (statusMessage === '' && !isTestMail) ? true : false,
             mail_error: statusMessage ? statusMessage : null,
@@ -1096,7 +1106,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], temp
     }
 }
 
-const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], templateType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
     const emailData: any = {
         trees: [] as any[],
         user_email: giftCardRequest.user_email,
@@ -1142,10 +1152,14 @@ const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], templ
         if (files.length > 0) attachments = files;
     }
 
-    let emailTemplate = 'sponsor-multi-trees'
-    if (templateType !== 'default') emailTemplate += '-' + templateType
+    const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+    const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+    if (templates.length === 0) {
+        console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+        return;
+    }
 
-    const statusMessage: string = await sendDashboardMail(emailTemplate, emailData, mailIds, ccMailIds, attachments);
+    const statusMessage: string = await sendDashboardMail(templates[0].template_name, emailData, mailIds, ccMailIds, attachments);
 
 }
 
@@ -1156,7 +1170,7 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
         test_mails: testMails,
         cc_mails: ccMails,
         attach_card,
-        template_type: templateType,
+        event_type: eventType,
         email_sponsor: emailSponsor,
         email_receiver: emailReceiver,
     } = req.body;
@@ -1180,11 +1194,11 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
         const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
 
         if (emailReceiver) {
-            sendMailsToReceivers(giftCardRequest, giftCards, templateType, attach_card, ccMails, testMails);
+            sendMailsToReceivers(giftCardRequest, giftCards, eventType, attach_card, ccMails, testMails);
         }
 
         if (emailSponsor) {
-            sendMailsToSponsors(giftCardRequest, giftCards, templateType, attach_card, ccMails, testMails);
+            sendMailsToSponsors(giftCardRequest, giftCards, eventType, attach_card, ccMails, testMails);
         }
 
         res.status(status.success).send();

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Planting Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+
+    .header {
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header h2 {
+      margin: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .info-table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table th,
+    .info-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .info-table th {
+      background-color: #f2f2f2;
+    }
+
+    /* Optional: Enhance table layout for smaller screens */
+    @media screen and (max-width: 600px) {
+
+      .info-table th,
+      .info-table td {
+        padding: 6px;
+        font-size: 14px;
+      }
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding: 10px;
+      background-color: #f2f2f2;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .footer-content {
+      text-align: left;
+      line-height: 0.5;
+    }
+
+    .footer-logo {
+      height: 80px;
+      margin-left: 10px;
+    }
+
+    .footer-logo-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .dashboard-link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 10px;
+      color: white;
+      background-color: #4CAF50;
+      text-decoration: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Greetings from 14 Trees Foundation</h2>
+    </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        With deep gratitude and immense pride, we are delighted to inform you that we have successfully planted
+        a tree, made possible by
+        {{#if group_name}}
+        {{group_name}}'s
+        {{else}}
+        your
+        {{/if}}
+        generous donation.
+      </p>
+      <h3>Tracking information about the tree:</h3>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Name</th>
+            <td>{{assigned_to_name}}</td>
+          </tr>
+          {{#if trees.[0].planted_via}}
+          <tr>
+            <th>Planted Via</th>
+            <td>{{trees.[0].planted_via}}</td>
+          </tr>
+          {{/if}}
+          <tr>
+            <th>Tree Name</th>
+            <td>{{trees.[0].plant_type}}</td>
+          </tr>
+          <tr>
+            <th>Scientific Name</th>
+            <td>{{trees.[0].scientific_name}}</td>
+          </tr>
+          <tr>
+            <th>Tree ID</th>
+            <td>{{trees.[0].sapling_id}}</td>
+          </tr>
+          {{#if trees.[0].event_name}}
+          <tr>
+            <th>Event</th>
+            <td>{{trees.[0].event_name}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </div>
+      <p>
+        Below's the link to tree dashboard.<br/>
+        <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
+      </p>
+      <p>
+        Each tree planted carries with it the hope of a healthier ecosystem, the promise of cleaner air, and the
+        potential for a thriving natural world for generations to come. Thanks to your support, we are one step closer
+        to making this vision a reality.
+      </p>
+      <p>
+        We extend our heartfelt thanks for your trust and partnership in this meaningful endeavor. Your contribution
+        leaves a lasting legacy that will grow and flourish in the years ahead.
+      </p>
+      <p>
+        You can follow our shared journey and find more ways of continuing to be involved at <a
+          href="https://14trees.org">14 Trees</a>.
+      </p>
+      <p>
+        We are looking forward to your visit to 14 Trees Foundation in the near future.
+      </p>
+      <p>
+        For any feedback or changes related to your dashboard, please reply to this mail.
+      </p>
+    </div>
+    <div class="footer">
+      <div class="footer-content">
+        <p>With warmest regards and sincere appreciation,</p>
+        <p>14 Trees Foundation</p>
+        <a href="https://14trees.org">https://14trees.org</a>
+      </div>
+      <div class="footer-logo-container">
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" />
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

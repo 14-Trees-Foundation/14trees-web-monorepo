@@ -53,13 +53,7 @@ interface MailOptions {
   attachments?: { filename: string; path: string }[];
 }
 
-const getHtmlTemplate = (type: string, emailData: any) => {
-
-  let templateName = 'receiver-single-tree.html';
-  if (type === 'receiver-multi-trees') templateName = 'receiver-multi-trees.html'
-  else if (type === 'receiver-multi-trees-christmas') templateName = 'receiver-multi-trees-christmas.html'
-  else if (type === 'receiver-single-tree-christmas') templateName = 'receiver-single-tree-christmas.html'
-  else if (type === 'sponsor-multi-trees') templateName = 'sponsor-multi-trees.html'
+const getHtmlTemplate = (templateName: string, emailData: any) => {
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();
   const template = handlebars.compile(source);
@@ -85,7 +79,7 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
   return { status: response.status, statusText: response.statusText };
 };
 
-const sendDashboardMail = async (type: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[]) => {
+const sendDashboardMail = async (templateName: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[]) => {
 
   const options = {
     to: toEmails,
@@ -97,7 +91,7 @@ const sendDashboardMail = async (type: string, emailData: any, toEmails: string[
     attachments: attachments,
   }
 
-  options.html = getHtmlTemplate(type, emailData)
+  options.html = getHtmlTemplate(templateName, emailData)
 
   const { status, statusText } = await sendMail(options)
   if (status === 200) {
