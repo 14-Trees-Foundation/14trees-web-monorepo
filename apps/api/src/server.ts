@@ -40,6 +40,7 @@ import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import tagRoutes from "./routes/tagRoutes";
 import { recalculateAggregatedData, startAppV2ErrorLogsCronJob } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
+import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 
 let swaggerFile: any;
 try {
@@ -106,6 +107,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/tree-snapshots", treeSnapshotRoutes );
   app.use("/api/tags", tagRoutes );
   app.use("/api/utils", utilsRoutes );
+  app.use("/api/email-templates", emailTemplateRoutes );
 
   // swagger doc
   if (swaggerFile) {
