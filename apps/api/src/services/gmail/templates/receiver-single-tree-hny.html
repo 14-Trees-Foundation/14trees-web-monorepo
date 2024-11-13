@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      color: #333;
+      color: white;
       margin: 0;
       padding: 0;
     }
@@ -17,15 +17,19 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f9f9f9;
+      background-color: #58708a;
       border: 1px solid #e0e0e0;
       border-radius: 8px;
+      background-image: url("https://cdn.designer-images.eu/c195f5a7-e310-1309-524e-40e8cae15fda/d1941b4e628a4a5ba7ca65573748fe27/httpsucarecdn.com4ff5f833-990b-4b27-b46c-0a9f9bace647") !important;
+      background-repeat: repeat !important;
+      background-position: initial !important;
+      background-size: auto !important;
     }
 
     .header {
       text-align: center;
-      background-color: #4CAF50;
-      color: white;
+      background-color: #f3faf6;
+      color: #58708a;
       padding: 10px 0;
       border-radius: 8px 8px 0 0;
     }
@@ -48,6 +52,10 @@
       border-collapse: collapse;
     }
 
+    .info-table th {
+      color: #58708a;
+    }
+
     .info-table th,
     .info-table td {
       border: 1px solid #ddd;
@@ -56,7 +64,7 @@
     }
 
     .info-table th {
-      background-color: #f2f2f2;
+      background-color: #f3faf6;
     }
 
     /* Optional: Enhance table layout for smaller screens */
@@ -74,13 +82,14 @@
       justify-content: space-between;
       margin-top: 30px;
       padding: 10px;
-      background-color: #f2f2f2;
+      background-color: #f3faf6;
       border-radius: 0 0 8px 8px;
     }
 
     .footer-content {
       text-align: left;
       line-height: 0.5;
+      color: #58708a;
     }
 
     .footer-logo {
@@ -91,17 +100,19 @@
     .footer-logo-container {
       display: flex;
       flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
-    .dashboard-link {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 10px 10px;
+    .image-message {
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 52px;
+      font-weight: bolder;
       color: white;
-      background-color: #4CAF50;
-      text-decoration: none;
-      border-radius: 5px;
-      cursor: pointer;
+      z-index: 100;
+      text-align: center;
     }
   </style>
 </head>
@@ -109,7 +120,14 @@
 <body>
   <div class="container">
     <div class="header">
-      <h2>Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
+      <h2>Greetings from 14 Trees Foundation</h2>
+    </div>
+    <div style="position: relative; display: inline-block;">
+      <p class="image-message">Happy New Year</p>
+      <img
+        src="https://images.stockcake.com/public/9/9/7/997faf36-a743-44b1-b5c8-5fb07d18e89b_large/snowy-sunset-lake-stockcake.jpg"
+        alt="Email Image" class="newsletter-image not-resized" height="auto" width="600" data-resize-width="0"
+        data-resize-height="0" align="bottom">
     </div>
     <div class="content">
       <p>Dear {{user_name}},</p>
@@ -184,19 +202,11 @@
     </div>
     <div class="footer">
       <div class="footer-content">
-        <p>Warm Regards,</p>
-        {{#if group_name}}
-        <p>{{group_name}}</p>
-        <p>In Association with 14 Trees Foundation</p>
-        {{else}}
+        <p>With warmest regards,</p>
         <p>14 Trees Foundation</p>
-        {{/if}}
-        <a href="https://14trees.org">https://14trees.org</a>
+        <a href="https://14trees.org" style="color: #58708a;">https://14trees.org</a>
       </div>
       <div class="footer-logo-container">
-        {{#if company_logo_url}}
-        <img class="footer-logo" src="{{company_logo_url}}" alt="14 Trees" />
-        {{/if}}
         <img class="footer-logo"
           src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
           alt="14 Trees" />

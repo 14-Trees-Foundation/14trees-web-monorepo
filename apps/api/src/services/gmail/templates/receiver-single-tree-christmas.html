@@ -134,36 +134,38 @@
         {{/if}}
       </p>
       <h3>Tagging Information about the Tree:</h3>
-      <table class="info-table">
-        <tr>
-          <th>Name</th>
-          <td>{{assigned_to_name}}</td>
-        </tr>
-        {{#if trees.[0].planted_via}}
-        <tr>
-          <th>Planted Via</th>
-          <td>{{trees.[0].planted_via}}</td>
-        </tr>
-        {{/if}}
-        <tr>
-          <th>Tree Name</th>
-          <td>{{trees.[0].plant_type}}</td>
-        </tr>
-        <tr>
-          <th>Scientific Name</th>
-          <td>{{trees.[0].scientific_name}}</td>
-        </tr>
-        <tr>
-          <th>Tree ID</th>
-          <td>{{trees.[0].sapling_id}}</td>
-        </tr>
-        {{#if event_name}}
-        <tr>
-          <th>Event</th>
-          <td>{{event_name}}</td>
-        </tr>
-        {{/if}}
-      </table>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Name</th>
+            <td>{{assigned_to_name}}</td>
+          </tr>
+          {{#if trees.[0].planted_via}}
+          <tr>
+            <th>Planted Via</th>
+            <td>{{trees.[0].planted_via}}</td>
+          </tr>
+          {{/if}}
+          <tr>
+            <th>Tree Name</th>
+            <td>{{trees.[0].plant_type}}</td>
+          </tr>
+          <tr>
+            <th>Scientific Name</th>
+            <td>{{trees.[0].scientific_name}}</td>
+          </tr>
+          <tr>
+            <th>Tree ID</th>
+            <td>{{trees.[0].sapling_id}}</td>
+          </tr>
+          {{#if trees.[0].event_name}}
+          <tr>
+            <th>Event</th>
+            <td>{{trees.[0].event_name}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </div>
       <p>
         Below's the link to your personalized dashboard.<br />
         <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>

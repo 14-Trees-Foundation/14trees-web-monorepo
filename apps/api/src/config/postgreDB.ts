@@ -33,6 +33,7 @@ import { GiftCardUserTemplate } from "../models/gift_card_user_template";
 import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 import { Tag } from "../models/tag";
 import { UserRelation } from "../models/user_relation";
+import { EmailTemplate } from "../models/email_template";
 
 
 class Database {
@@ -98,6 +99,7 @@ class Database {
         PlantTypeCardTemplate,
         Tag,
         UserRelation,
+        EmailTemplate,
       ]
     });
 

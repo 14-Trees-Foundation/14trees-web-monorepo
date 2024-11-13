@@ -91,6 +91,7 @@
     .footer-logo-container {
       display: flex;
       flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .dashboard-link {
@@ -109,28 +110,21 @@
 <body>
   <div class="container">
     <div class="header">
-      <h2>Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
+      <h2>Greetings from 14 Trees Foundation</h2>
     </div>
     <div class="content">
       <p>Dear {{user_name}},</p>
       <p>
-        Hope this mail finds you in good health. It gives us great pleasure to inform you that a tree has been planted
-        in
-        {{#if memorial}}
-        memory of {{assigned_to_name}}.
+        With deep gratitude and immense pride, we are delighted to inform you that we have successfully planted
+        a tree, made possible by
+        {{#if group_name}}
+        {{group_name}}'s
         {{else}}
-        {{#if relational}}
-        your {{relation}} {{assigned_to_name}}'s name.
-        {{else}}
-        {{#if self}}
-        your name.
-        {{else}}
-        {{assigned_to_name}}'s name.
+        your
         {{/if}}
-        {{/if}}
-        {{/if}}
+        generous donation.
       </p>
-      <h3>Tagging Information about the Tree:</h3>
+      <h3>Tracking information about the tree:</h3>
       <div class="info-table-container">
         <table class="info-table">
           <tr>
@@ -164,12 +158,17 @@
         </table>
       </div>
       <p>
-        Below's the link to your personalized dashboard.<br />
+        Below's the link to tree dashboard.<br/>
         <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
       </p>
       <p>
-        For it's many living years, this tree will support local biodiversity, rejuvenate the local ecosystem and also
-        offset the devastating effects of carbon consumption and climate change.
+        Each tree planted carries with it the hope of a healthier ecosystem, the promise of cleaner air, and the
+        potential for a thriving natural world for generations to come. Thanks to your support, we are one step closer
+        to making this vision a reality.
+      </p>
+      <p>
+        We extend our heartfelt thanks for your trust and partnership in this meaningful endeavor. Your contribution
+        leaves a lasting legacy that will grow and flourish in the years ahead.
       </p>
       <p>
         You can follow our shared journey and find more ways of continuing to be involved at <a
@@ -184,19 +183,11 @@
     </div>
     <div class="footer">
       <div class="footer-content">
-        <p>Warm Regards,</p>
-        {{#if group_name}}
-        <p>{{group_name}}</p>
-        <p>In Association with 14 Trees Foundation</p>
-        {{else}}
+        <p>With warmest regards and sincere appreciation,</p>
         <p>14 Trees Foundation</p>
-        {{/if}}
         <a href="https://14trees.org">https://14trees.org</a>
       </div>
       <div class="footer-logo-container">
-        {{#if company_logo_url}}
-        <img class="footer-logo" src="{{company_logo_url}}" alt="14 Trees" />
-        {{/if}}
         <img class="footer-logo"
           src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
           alt="14 Trees" />
