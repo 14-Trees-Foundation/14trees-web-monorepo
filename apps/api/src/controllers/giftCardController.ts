@@ -647,7 +647,7 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
     }
 }
 
-const generateGiftCardTemplate = async (presentationId: string, plantType: string, record: any) => {
+const generateGiftCardTemplate = async (presentationId: string, plantType: string, record: any, keepImages: boolean = false) => {
 
     const plantTypeCardTemplate = await GiftCardsRepository.getPlantTypeTemplateId(plantType);
     if (!plantTypeCardTemplate) {
@@ -655,7 +655,7 @@ const generateGiftCardTemplate = async (presentationId: string, plantType: strin
     }
     const templateId = plantTypeCardTemplate.template_id;
 
-    const slideId = await createSlide(presentationId, templateId, record);
+    const slideId = await createSlide(presentationId, templateId, record, keepImages);
 
     return slideId;
 }
@@ -880,7 +880,7 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
 
     try {
         let pId: string = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
-        const slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record)
+        const slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record, true);
 
         res.status(status.success).send({
             presentation_id: pId,
@@ -927,7 +927,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
         const presentationId = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
 
         if (presentationId && slideId) {
-            await updateSlide(presentationId, slideId, record)
+            await updateSlide(presentationId, slideId, record, true)
             res.status(status.success).send();
         } else {
             res.status(status.bad).json({
