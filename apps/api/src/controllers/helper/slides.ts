@@ -199,6 +199,7 @@ const getUpdateTextRequest = (slide: any, description: string, newText: string, 
 const updateImagesInSlide = async (presentationId: string, slideId: string, record: Record, keepImage: boolean = false) => {
     const getSlideUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}/pages/${slideId}`;
     const slidesUpdateUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`;
+    let qrIdx = -1, logoIdx = -1;
     try {
         const token = await getJwtToken()
         const response = await axios.get(getSlideUrl, {
@@ -209,12 +210,18 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
 
         const requests: any[] = [];
         const logoUpdateRequest = getUpdateImageRequest(slide, 'LOGO', record.logo, keepImage);
-        if (logoUpdateRequest) requests.push(...logoUpdateRequest);
+        if (logoUpdateRequest) {
+            requests.push(...logoUpdateRequest);
+            if (logoUpdateRequest.length === 2) logoIdx = requests.length - 2; // Set the index of the logo image in request
+        }
 
         const saplingUrl = 'https://dashboard.14trees.org/profile/' + record.sapling;
         const qrCodeUrl = `https://quickchart.io/qr?text=${saplingUrl}`;
         const saplingUpdateRequest = getUpdateImageRequest(slide, 'QR', qrCodeUrl, keepImage);
-        if (saplingUpdateRequest) requests.push(...saplingUpdateRequest);
+        if (saplingUpdateRequest) {
+            requests.push(...saplingUpdateRequest);
+            if (saplingUpdateRequest.length === 2) qrIdx = requests.length - 2; // Set the index of the qr image in request
+        }
 
         if (requests.length === 0) return;
 
@@ -230,7 +237,39 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
             }
         );
 
-        console.log(JSON.stringify(resp.data, null, 2));
+        // below code is for setting description back in qr code and logo image
+        // this will help to replace the images again
+        const updateDescriptionRequests: any[] = [];
+        if (logoIdx !== -1 && resp?.data?.replies[logoIdx]?.createImage?.objectId) {
+            updateDescriptionRequests.push({
+                updatePageElementAltText: {
+                    objectId: resp.data.replies[logoIdx].createImage.objectId,
+                    description: "LOGO",
+                }
+            })
+        }
+
+        if (qrIdx !== -1 && resp?.data?.replies[qrIdx]?.createImage?.objectId) {
+            updateDescriptionRequests.push({
+                updatePageElementAltText: {
+                    objectId: resp.data.replies[qrIdx].createImage.objectId,
+                    description: "QR",
+                }
+            })
+        }
+
+        if (updateDescriptionRequests.length === 0) return;
+        // Send the request to update the description of the images
+        axios.post(
+            slidesUpdateUrl,
+            { requests: updateDescriptionRequests },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
 
     } catch (error) {
         console.error('Error updating slide:', error);
@@ -262,6 +301,21 @@ const getUpdateImageRequest = (slide: any, description: string, imageUrl?: strin
             },
         })
     }
+
+    // if (imageUrl) {
+    //     requests.push({
+    //         replaceImage: {
+    //             url: imageUrl,
+    //             imageObjectId: imageElement.objectId,
+    //         },
+    //     })
+    // }
+
+    // if (!imageUrl && !keepImage) {
+    //     requests.push({
+    //         deleteObject: { objectId: imageElement.objectId }, // Remove existing image
+    //     })
+    // }
 
     if (imageUrl || !keepImage) {
         requests.push({
