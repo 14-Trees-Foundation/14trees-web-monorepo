@@ -4,28 +4,24 @@ import { Optional } from 'sequelize';
 
 interface DonationAttributes {
   id: number;
-  date_received: string;
-  name: string;
-  donor_type: string;
-  phone: string;
-  email_address: string;
-  pan: string;
-  pledged: string;
-  land_type: string;
-  zone: string;
-  grove: string;
-  plantation_land_type: string;
-  dashboard_status: string;
-  assigned_plot: string;
-  tree_planted: string;
-  assigner_dashboard: string;
-  remarks_for_inventory: string;
+  user_id: number;
+  category: 'Public' | 'Foundation';
+  grove: string | null;
+  pledged: number;
+  user_visit: boolean,
+  donor_type: "Foreign Donor" | "Indian Citizen";
+  payment_method: string;
+  payment_proof: string | null;
+  payment_received_date: Date | null;
+  pan_number: string | null;
+  feedback: string | null;
+  remarks_for_inventory: string | null;
   associated_tag: string;
   created_at: Date;
   updated_at: Date;  
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'phone' | 'donor_type' | 'plantation_land_type' | 'zone' | 'dashboard_status' | 'assigned_plot' | 'tree_planted' | 'assigner_dashboard' | 'remarks_for_inventory' | 'date_received'  |'associated_tag'> {}
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'donor_type' | 'payment_method' | 'remarks_for_inventory' | 'feedback' | 'associated_tag'> {}
 
 @Table({ tableName: 'donations' })
 class Donation extends Model<DonationAttributes, DonationCreationAttributes>
@@ -39,61 +35,49 @@ implements DonationAttributes {
     })
     id!: number;
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    date_received!: string;
+    @Column({ type: DataType.INTEGER  })
+    user_id!: number;
 
-    @Column({ type: DataType.STRING, allowNull: true  })
-    name!: string;
+    @Column({ type: DataType.STRING })
+    category!: 'Public' | 'Foundation';
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    phone!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    donor_type!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    email_address!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    pan!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    pledged!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    land_type!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    zone!: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
+    @Column({ type: DataType.STRING })
     grove!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    plantation_land_type!: string;
+    @Column({ type: DataType.INTEGER })
+    pledged!: number;
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    dashboard_status!: string;
+    @Column({ type: DataType.BOOLEAN })
+    user_visit!: boolean;
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    assigned_plot!: string;
+    @Column({ type: DataType.STRING })
+    donor_type!: "Foreign Donor" | "Indian Citizen";
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    tree_planted!: string;
+    @Column({ type: DataType.STRING })
+    payment_method!: string;
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    assigner_dashboard!: string;
+    @Column({ type: DataType.STRING })
+    payment_proof!: string | null;
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    remarks_for_inventory!: string;
+    @Column({ type: DataType.DATE })
+    payment_received_date!: Date | null;
 
-    @Column({ type: DataType.STRING, allowNull: true })
+    @Column({ type: DataType.STRING })
+    pan_number!: string | null;
+
+    @Column({ type: DataType.TEXT })
+    feedback!: string | null;
+
+    @Column({ type: DataType.TEXT })
+    remarks_for_inventory!: string | null;
+
+    @Column({ type: DataType.STRING })
     associated_tag!: string;
 
-    @Column({ type: DataType.DATE, allowNull: true })
+    @Column({ type: DataType.DATE })
     created_at!: Date;
 
-    @Column({ type: DataType.DATE, allowNull: true })
+    @Column({ type: DataType.DATE })
     updated_at!: Date;
 }
 

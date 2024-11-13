@@ -159,13 +159,13 @@ export const assignTreesBulk = async (req: Request, res: Response) => {
     const plotResp = await PlotRepository.getPlots(0, -1, plotsFilter)
     const plotIds = plotResp.results.map(plot => plot.id);
   
-    const user = await UserRepository.getUser(donation.name, donation.email_address);
-    if (!user) {
-      res.status(status.error).send({ message: 'Donor user not found. Please create user first.' })
-      return;
-    }
+    // const user = await UserRepository.getUser(donation.name, donation.email_address);
+    // if (!user) {
+    //   res.status(status.error).send({ message: 'Donor user not found. Please create user first.' })
+    //   return;
+    // }
   
-    const success = await assignTrees(donation.id, user.id, parseInt(donation.pledged), plotIds);
+    const success = await assignTrees(donation.id, donation.user_id, donation.pledged, plotIds);
     if (success) {
       res.status(status.success).send();
       return;

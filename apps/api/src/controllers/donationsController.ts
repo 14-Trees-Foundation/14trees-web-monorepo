@@ -37,16 +37,16 @@ export const addDonation = async (req: Request, res: Response) => {
     const data = req.body;
     const usersData = data.users || [];
 
-    let obj: DonationCreationAttributes = {
-        name: data.name,
+    let obj: any = {
+        // name: data.name,
         pledged: data.no_of_trees ? data.no_of_trees : data.no_of_acres ? data.no_of_acres + ' acres' : null,
-        email_address: data.email,
-        phone: data.phone,
+        // email_address: data.email,
+        // phone: data.phone,
         grove: data.grove,
-        land_type: data.land_type,
-        pan: data.pan,
+        // land_type: data.land_type,
+        pan_number: data.pan,
         associated_tag: data.tag,
-        date_received: new Date().toISOString(),
+        // py: new Date().toISOString(),
         created_at: new Date(),
         updated_at: new Date(),
     }
