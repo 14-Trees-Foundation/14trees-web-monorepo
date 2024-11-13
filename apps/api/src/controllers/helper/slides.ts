@@ -99,11 +99,10 @@ async function createCopyOfTheCardTemplate(
     }
 }
 
-export const createSlide = async (presentationId: string, slideId: string, record: Record): Promise<string> => {
+export const createSlide = async (presentationId: string, slideId: string, record: Record, keepImages: boolean = false): Promise<string> => {
     try {
         const slidePageId = await createCopyOfTheCardTemplate(presentationId, slideId);
-        await updateImagesInSlide(presentationId, slidePageId, record);
-        await updateSlide(presentationId, slidePageId, record);
+        await updateSlide(presentationId, slidePageId, record, keepImages);
         return slidePageId;
     } catch {
         throw new Error('Failed to create slide');
@@ -111,7 +110,9 @@ export const createSlide = async (presentationId: string, slideId: string, recor
 }
 
 
-export const updateSlide = async (presentationId: string, slideId: string, record: Record) => {
+export const updateSlide = async (presentationId: string, slideId: string, record: Record, keepImage: boolean = false) => {
+    await updateImagesInSlide(presentationId, slideId, record, keepImage);
+
     const getSlideUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}/pages/${slideId}`;
     const slidesUpdateUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`;
     try {
@@ -119,9 +120,6 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const response = await axios.get(getSlideUrl, {
             headers: { Authorization: `Bearer ${token}` },
         });
-
-        console.log(token);
-        console.log(getSlideUrl);
 
         const slide = response.data;
 
@@ -135,7 +133,7 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
         if (content2UpdateRequest) requests.push(...content2UpdateRequest);
 
-        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message, record.logo ? false : true);
+        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message, record.logo ? false : !keepImage);
         if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
 
         // Send the request to replace the text
@@ -198,7 +196,7 @@ const getUpdateTextRequest = (slide: any, description: string, newText: string, 
     return requests;
 }
 
-const updateImagesInSlide = async (presentationId: string, slideId: string, record: Record) => {
+const updateImagesInSlide = async (presentationId: string, slideId: string, record: Record, keepImage: boolean = false) => {
     const getSlideUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}/pages/${slideId}`;
     const slidesUpdateUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`;
     try {
@@ -210,18 +208,18 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
         const slide = response.data;
 
         const requests: any[] = [];
-        const logoUpdateRequest = getUpdateImageRequest(slide, 'LOGO', record.logo);
+        const logoUpdateRequest = getUpdateImageRequest(slide, 'LOGO', record.logo, keepImage);
         if (logoUpdateRequest) requests.push(...logoUpdateRequest);
 
         const saplingUrl = 'https://dashboard.14trees.org/profile/' + record.sapling;
         const qrCodeUrl = `https://quickchart.io/qr?text=${saplingUrl}`;
-        const saplingUpdateRequest = getUpdateImageRequest(slide, 'QR', qrCodeUrl);
+        const saplingUpdateRequest = getUpdateImageRequest(slide, 'QR', qrCodeUrl, keepImage);
         if (saplingUpdateRequest) requests.push(...saplingUpdateRequest);
 
         if (requests.length === 0) return;
 
         // Send the request to replace the text
-        await axios.post(
+        const resp = await axios.post(
             slidesUpdateUrl,
             { requests },
             {
@@ -232,12 +230,14 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
             }
         );
 
+        console.log(JSON.stringify(resp.data, null, 2));
+
     } catch (error) {
         console.error('Error updating slide:', error);
     }
 };
 
-const getUpdateImageRequest = (slide: any, description: string, imageUrl?: string) => {
+const getUpdateImageRequest = (slide: any, description: string, imageUrl?: string, keepImage: boolean = false) => {
     // Find the image element with the specified description
     const imageElement = slide.pageElements.find(
         (element: any) => element.description === description
@@ -258,15 +258,16 @@ const getUpdateImageRequest = (slide: any, description: string, imageUrl?: strin
                     pageObjectId: slide.objectId,
                     size: imageElement.size,
                     transform: imageElement.transform,
-                    description: imageElement.description,
                 },
             },
         })
     }
 
-    requests.push({
-        deleteObject: { objectId: imageElement.objectId }, // Remove existing image
-    })
+    if (imageUrl || !keepImage) {
+        requests.push({
+            deleteObject: { objectId: imageElement.objectId }, // Remove existing image
+        })
+    }
 
     return requests;
 }
