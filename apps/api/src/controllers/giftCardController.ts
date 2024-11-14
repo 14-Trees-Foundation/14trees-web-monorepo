@@ -43,6 +43,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         logo_message: logoMessage,
         request_id: requestId,
         notes: notes,
+        payment_id: paymentId,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -68,7 +69,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         logo_message: logoMessage || null,
         status: GiftCardRequestStatus.pendingPlotSelection,
         validation_errors: groupId ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
-        notes: notes || null
+        notes: notes || null,
+        payment_id: paymentId || null
     }
 
     try {
@@ -149,7 +151,8 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             status: GiftCardRequestStatus.pendingPlotSelection,
             validation_errors: validationErrors,
             album_id: giftCardRequest.album_id,
-            notes: null
+            notes: null,
+            payment_id: null,
         }
 
         let createdRequest = await GiftCardsRepository.createGiftCardRequest(request);

@@ -5,8 +5,30 @@ import { load } from "cheerio";
 import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
 
+const getObjectKey = (type: string, subKey: string) => {
+    switch (type) {
+        case 'gift-request':
+            return `cards/${subKey}`
+        case 'payment':
+            return `payments/${subKey}`
+        default:
+            return ''
+    }
+}
 
 export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
+    const query = req.query;
+    const key = query.key as string;
+    const objectType = query.type as string;
+    const objectKey = getObjectKey(objectType, key);
+    if (!key || !objectType || !objectKey) {
+        res.status(status.bad).send({
+            status: status.bad,
+            message: 'Invalid key or type!'
+        })
+        return;
+    }
+
     const s3 = new AWS.S3({
         accessKeyId: process.env.ACCESS_KEY_ID_S3,
         secretAccessKey: process.env.SECRET_ACCESS_KEY_S3,
@@ -15,8 +37,8 @@ export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
 
     s3.getSignedUrl('putObject', {
         Bucket: process.env.BUCKET_GIFT_CARDS?.split('/')[0],
-        Key: process.env.BUCKET_GIFT_CARDS?.split('/')[1] + "/" + req.params.requestId + "/" + req.query.filename,
-        Expires: 120
+        Key: objectKey,
+        Expires: 120 // 2 mins
     }, (err, url) => {
         if (err) {
             console.log(err);

@@ -34,6 +34,7 @@ import { TreeCountAggregation } from "../models/tree_count_aggregation";
 import { Tag } from "../models/tag";
 import { UserRelation } from "../models/user_relation";
 import { EmailTemplate } from "../models/email_template";
+import { Payment } from "../models/payment";
 
 
 class Database {
@@ -100,6 +101,7 @@ class Database {
         Tag,
         UserRelation,
         EmailTemplate,
+        Payment,
       ]
     });
 
