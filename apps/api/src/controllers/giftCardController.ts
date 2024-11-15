@@ -378,6 +378,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
 
             // gifted To
             const giftedToUser = {
+                id: user.gifted_to,
                 name: user.gifted_to_name,
                 email: user.gifted_to_email,
                 phone: user.gifted_to_phone,
@@ -387,6 +388,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
 
             // assigned To
             const assignedToUser = {
+                id: user.assigned_to,
                 name: user.assigned_to_name,
                 email: user.assigned_to_email,
                 phone: user.assigned_to_phone,
