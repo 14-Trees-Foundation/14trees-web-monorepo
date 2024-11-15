@@ -179,7 +179,10 @@ export class UserRepository {
             }
         });
         
-        if (users.length > 0) return users[0];
+        if (users.length > 0) {
+            if (data.id) return await users[0].update(obj);
+            return users[0];
+        }
         
         return await User.create(obj);
     }
