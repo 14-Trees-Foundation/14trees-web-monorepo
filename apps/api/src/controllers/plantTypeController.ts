@@ -111,3 +111,13 @@ export const getPlantTypesForPlot = async (req: Request, res: Response) => {
     return;
   }
 };
+
+export const getPlantTypeTags = async (req: Request, res: Response) => {
+  try {
+    const plantTypeTags = await PlantTypeRepository.getPlantTypeTags(0, 100);
+    res.status(status.success).send(plantTypeTags);
+  } catch (error: any) {
+    console.log("[ERROR]", "PlantTypeController::getPlantTypeTags", error);
+    res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+  }
+}
