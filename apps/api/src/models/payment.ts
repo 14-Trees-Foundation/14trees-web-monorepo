@@ -5,15 +5,13 @@ import { Optional } from 'sequelize';
 interface PaymentAttributes {
   id: number;
   amount: number;
-  payment_method: string;
-  payment_proof: string | null;
-  payment_received_date: Date | null;
+  donor_type: string;
   pan_number: string | null;
   created_at: Date;
   updated_at: Date;  
 }
 
-interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'payment_method' | 'payment_proof' | 'payment_received_date'> {}
+interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'donor_type'> {}
 
 @Table({ tableName: 'payments' })
 class Payment extends Model<PaymentAttributes, PaymentCreationAttributes>
@@ -31,13 +29,7 @@ implements PaymentAttributes {
     amount!: number;
 
     @Column({ type: DataType.STRING })
-    payment_method!: string;
-
-    @Column({ type: DataType.STRING })
-    payment_proof!: string | null;
-
-    @Column({ type: DataType.DATE })
-    payment_received_date!: Date | null;
+    donor_type!: string;
 
     @Column({ type: DataType.STRING })
     pan_number!: string | null;

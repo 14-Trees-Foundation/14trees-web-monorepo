@@ -37,9 +37,7 @@ export const createPayment = async (req: Request, res: Response) => {
     try {
         const request: PaymentCreationAttributes = {
             amount: data.amount,
-            payment_method: data.payment_method || null,
-            payment_received_date: data.payment_received_date || null,
-            payment_proof: data.payment_proof || null,
+            donor_type: data.donor_type,
             pan_number: data.pan_number || null,
             created_at: new Date(),
             updated_at: new Date(),
