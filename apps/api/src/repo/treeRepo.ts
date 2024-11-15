@@ -560,7 +560,7 @@ class TreeRepository {
           columnField = 'p."name"'
         } else if (filter.columnField === "plant_type") {
           columnField = 'pt."name"'
-        } else if (filter.columnField === "category" || filter.columnField === "use") {
+        } else if (filter.columnField === "category" || filter.columnField === "use" || filter.columnField === "tags") {
           columnField = 'pt.' + filter.columnField
         }
 
