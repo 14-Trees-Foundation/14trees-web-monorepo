@@ -125,14 +125,14 @@ class PlantTypeRepository {
 
         const getUniqueTagsQuery = 
             `SELECT DISTINCT tag
-                FROM "14trees_2".plant_types pt,
+                FROM "14trees".plant_types pt,
                 unnest(pt.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
         const countUniqueTagsQuery = 
             `SELECT count(DISTINCT tag)
-                FROM "14trees_2".plant_types pt,
+                FROM "14trees".plant_types pt,
                 unnest(pt.tags) AS tag;`;
 
         const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
