@@ -556,6 +556,12 @@ class TreeRepository {
         let valuePlaceHolder = filter.columnField
         if (filter.columnField === "plot_id") {
           columnField = 'p.id'
+        } else if (filter.columnField === "plot") {
+          columnField = 'p."name"'
+        } else if (filter.columnField === "plant_type") {
+          columnField = 'pt."name"'
+        } else if (filter.columnField === "category" || filter.columnField === "use") {
+          columnField = 'pt.' + filter.columnField
         }
 
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
@@ -589,11 +595,9 @@ class TreeRepository {
       SELECT count(t.id)
       FROM "14trees".trees t
       JOIN "14trees".plots p ON p.id = t.plot_id
-      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'
       JOIN "14trees".plant_type_card_templates ptt ON ptt.plant_type = pt.name
-      WHERE 
-        pt.habit = 'Tree'
-        AND t.mapped_to_user IS NULL
+      WHERE t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
