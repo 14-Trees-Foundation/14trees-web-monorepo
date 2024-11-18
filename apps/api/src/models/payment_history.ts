@@ -14,7 +14,7 @@ interface PaymentHistoryAttributes {
   updated_at: Date;  
 }
 
-interface PaymentHistoryCreationAttributes extends Optional<PaymentHistoryAttributes, 'id' | 'payment_proof'> {}
+interface PaymentHistoryCreationAttributes extends Optional<PaymentHistoryAttributes, 'id' | 'payment_proof' | 'status'> {}
 
 @Table({ tableName: 'payment_history' })
 class PaymentHistory extends Model<PaymentHistoryAttributes, PaymentHistoryCreationAttributes>

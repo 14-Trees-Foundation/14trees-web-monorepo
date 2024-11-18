@@ -8,4 +8,7 @@ routes.post('/', payment.createPayment);
 routes.put('/:id', payment.updatePayment);
 routes.delete('/:id', payment.deletePayment);
 
+routes.post('/history', payment.addPaymentHistory);
+routes.put('/history/:id', payment.updatePaymentHistory);
+
 export default routes;
