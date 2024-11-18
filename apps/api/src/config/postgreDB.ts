@@ -35,6 +35,7 @@ import { Tag } from "../models/tag";
 import { UserRelation } from "../models/user_relation";
 import { EmailTemplate } from "../models/email_template";
 import { Payment } from "../models/payment";
+import { PaymentHistory } from "../models/payment_history";
 
 
 class Database {
@@ -102,6 +103,7 @@ class Database {
         UserRelation,
         EmailTemplate,
         Payment,
+        PaymentHistory,
       ]
     });
 

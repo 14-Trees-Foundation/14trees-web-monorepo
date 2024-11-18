@@ -1,14 +1,15 @@
 import { QueryTypes } from 'sequelize';
 import { sequelize } from '../config/postgreDB';
 import { Payment , PaymentAttributes, PaymentCreationAttributes} from '../models/payment'
+import { PaymentHistory, PaymentHistoryCreationAttributes } from '../models/payment_history';
 
 export class PaymentRepository {
 
     public static async getPayment(id: number): Promise<Payment | null> {
         const query = `
-            SELECT p.*, array_agg(ph.*) as payment_history
+            SELECT p.*, COALESCE(json_agg(ph) FILTER (WHERE ph.id IS NOT NULL), '[]') AS payment_history
             FROM "14trees_2".payments p
-            JOIN "14trees_2".payment_history ph ON ph.payment_id = p.id
+            LEFT JOIN "14trees_2".payment_history ph ON ph.payment_id = p.id
             WHERE p.id = :id
             GROUP BY p.id;
         `
@@ -39,5 +40,13 @@ export class PaymentRepository {
 
         const updatedPayment = await payment.update(paymentData);
         return updatedPayment;
+    }
+
+    public static async createPaymentHistory(paymentHistoryData: PaymentHistoryCreationAttributes): Promise<any> {
+        return PaymentHistory.create(paymentHistoryData);
+    }
+
+    public static async getPaymentHistory(paymentHistoryId: number): Promise<PaymentHistory | null> {
+        return PaymentHistory.findOne({ where: { id: paymentHistoryId } });
     }
 }
