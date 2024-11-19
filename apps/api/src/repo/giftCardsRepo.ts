@@ -190,6 +190,27 @@ export class GiftCardsRepository {
         return data[0];
     }
 
+    static async getDetailedGiftCardByTreeId(treeId: number): Promise<GiftCard | null> {
+        const getQuery = `
+            SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
+            FROM "14trees_2".gift_cards gc
+            LEFT JOIN "14trees_2".users u ON u.id = gc.gifted_to
+            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            WHERE gc.tree_id = ${treeId};
+        `
+
+        const data: any[] = await sequelize.query(getQuery, {
+            type: QueryTypes.SELECT
+        })
+
+        if (data.length === 0) {
+            return null;
+        }
+
+        return data[0];
+    }
+
     static async updateGiftCard(giftCard: GiftCardAttributes): Promise<void> {
         const card = await GiftCard.findByPk(giftCard.id);
         if (card) {
