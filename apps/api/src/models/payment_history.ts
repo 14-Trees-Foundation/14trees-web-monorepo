@@ -8,13 +8,15 @@ interface PaymentHistoryAttributes {
   amount: number;
   payment_method: string;
   payment_proof: string | null;
+  amount_received: number;
+  payment_date: Date;
   payment_received_date: Date;
   status: string;
   created_at: Date;
   updated_at: Date;  
 }
 
-interface PaymentHistoryCreationAttributes extends Optional<PaymentHistoryAttributes, 'id' | 'payment_proof' | 'status'> {}
+interface PaymentHistoryCreationAttributes extends Optional<PaymentHistoryAttributes, 'id' | 'payment_proof' | 'status' | 'payment_received_date'> {}
 
 @Table({ tableName: 'payment_history' })
 class PaymentHistory extends Model<PaymentHistoryAttributes, PaymentHistoryCreationAttributes>
@@ -36,6 +38,12 @@ implements PaymentHistoryAttributes {
 
     @Column({ type: DataType.STRING })
     payment_method!: string;
+
+    @Column({ type: DataType.NUMBER })
+    amount_received!: number;
+
+    @Column({ type: DataType.DATE })
+    payment_date!: Date;
 
     @Column({ type: DataType.DATE })
     payment_received_date!: Date;

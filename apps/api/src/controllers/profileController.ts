@@ -95,7 +95,7 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
   const fields = req.body;
   let event: Event | undefined;
   try {
-    if (fields.type && fields.type != "") {
+    if (fields.type && fields.type != "" && fields.sponsored_by_user) {
       const data: EventCreationAttributes = {
         name: fields.description,
         type: fields.type,
