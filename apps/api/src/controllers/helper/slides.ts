@@ -215,7 +215,8 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
             if (logoUpdateRequest.length === 2) logoIdx = requests.length - 2; // Set the index of the logo image in request
         }
 
-        const saplingUrl = 'https://dashboard.14trees.org/profile/' + record.sapling;
+        const dashboardUrl = process.env.DASHBOARD_URL || 'https://dashboard.14trees.org';
+        const saplingUrl = dashboardUrl + '/profile/' + record.sapling;
         const qrCodeUrl = `https://quickchart.io/qr?text=${saplingUrl}`;
         const saplingUpdateRequest = getUpdateImageRequest(slide, 'QR', qrCodeUrl, keepImage);
         if (saplingUpdateRequest) {
