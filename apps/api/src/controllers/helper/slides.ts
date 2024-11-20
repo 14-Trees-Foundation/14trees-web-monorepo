@@ -2,7 +2,6 @@ import axios from 'axios';
 import { JWT, Credentials } from 'google-auth-library';
 import * as fs from 'fs';
 import * as path from 'path';
-import { boolean } from 'zod';
 
 interface ServiceAccountCredentials {
     type: string;
@@ -133,7 +132,7 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
         if (content2UpdateRequest) requests.push(...content2UpdateRequest);
 
-        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message, record.logo ? false : !keepImage);
+        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo ? record.logo_message : '', record.logo ? false : !keepImage);
         if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
 
         // Send the request to replace the text
