@@ -723,7 +723,7 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         // send the response - because generating cards may take a while. users can download card later
         res.status(status.success).send();
 
-        const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, giftCardRequest.request_id);
+        const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, `${(giftCardRequest as any).group_name || (giftCardRequest as any).user_name}-[${giftCardRequest.id}]`);
         giftCardRequest.presentation_id = presentationId;
         giftCardRequest.updated_at = new Date();
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
