@@ -8,8 +8,8 @@ export class PaymentRepository {
     public static async getPayment(id: number): Promise<Payment | null> {
         const query = `
             SELECT p.*, COALESCE(json_agg(ph) FILTER (WHERE ph.id IS NOT NULL), '[]') AS payment_history
-            FROM "14trees_2".payments p
-            LEFT JOIN "14trees_2".payment_history ph ON ph.payment_id = p.id
+            FROM "14trees".payments p
+            LEFT JOIN "14trees".payment_history ph ON ph.payment_id = p.id
             WHERE p.id = :id
             GROUP BY p.id;
         `
