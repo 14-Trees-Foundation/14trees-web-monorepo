@@ -9,8 +9,9 @@ import { FilterItem } from "../models/pagination";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { Op } from "sequelize";
 import { DonationRepository } from "../repo/donationsRepo";
-import { UserRepository } from "../repo/userRepo";
 import { status } from "../helpers/status";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { GiftCard } from "../models/gift_card";
 
 export const getAllProfile = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -52,11 +53,17 @@ export const getProfile = async (req: Request, res: Response) => {
 
   try {
     let userTrees: any[] = [];
+    let giftCard: GiftCard | null = null;
     const tree = await TreeRepository.getTreeBySaplingId(req.query.id.toString())
     if (tree && tree.assigned_to) {
       userTrees = await TreeRepository.getUserProfilesForUserId(tree.assigned_to);
+    } else if (tree) {
+      giftCard = await GiftCardsRepository.getDetailedGiftCardByTreeId(tree.id);
     }
-    res.status(status.success).json({ user_trees: userTrees });
+    res.status(status.success).json({ 
+      user_trees: userTrees,
+      gift_tree: giftCard,
+    });
   } catch (error: any) {
     res.status(status.bad).send({ message: error.message });
     return;
@@ -95,7 +102,7 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
   const fields = req.body;
   let event: Event | undefined;
   try {
-    if (fields.type && fields.type != "") {
+    if (fields.type && fields.type != "" && fields.sponsored_by_user) {
       const data: EventCreationAttributes = {
         name: fields.description,
         type: fields.type,

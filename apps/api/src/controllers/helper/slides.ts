@@ -2,7 +2,6 @@ import axios from 'axios';
 import { JWT, Credentials } from 'google-auth-library';
 import * as fs from 'fs';
 import * as path from 'path';
-import { boolean } from 'zod';
 
 interface ServiceAccountCredentials {
     type: string;
@@ -133,7 +132,7 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
         if (content2UpdateRequest) requests.push(...content2UpdateRequest);
 
-        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo_message, record.logo ? false : !keepImage);
+        const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo ? record.logo_message : '', record.logo ? false : !keepImage);
         if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
 
         // Send the request to replace the text
@@ -215,7 +214,8 @@ const updateImagesInSlide = async (presentationId: string, slideId: string, reco
             if (logoUpdateRequest.length === 2) logoIdx = requests.length - 2; // Set the index of the logo image in request
         }
 
-        const saplingUrl = 'https://dashboard.14trees.org/profile/' + record.sapling;
+        const dashboardUrl = process.env.DASHBOARD_URL || 'https://dashboard.14trees.org';
+        const saplingUrl = dashboardUrl + '/profile/' + record.sapling;
         const qrCodeUrl = `https://quickchart.io/qr?text=${saplingUrl}`;
         const saplingUpdateRequest = getUpdateImageRequest(slide, 'QR', qrCodeUrl, keepImage);
         if (saplingUpdateRequest) {

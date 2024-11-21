@@ -32,6 +32,7 @@ interface GiftCardRequestAttributes {
     presentation_id: string | null;
     notes: string | null;
     album_id: number | null;
+    payment_id: number | null;
 }
 
 interface GiftCardRequestCreationAttributes
@@ -139,6 +140,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.INTEGER,
     })
     album_id!: number;
+
+    @Column({
+        type: DataType.INTEGER,
+    })
+    payment_id!: number;
 
     @Column({
         type: DataType.ARRAY(DataType.STRING),

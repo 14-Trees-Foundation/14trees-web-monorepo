@@ -41,6 +41,7 @@ import tagRoutes from "./routes/tagRoutes";
 import { recalculateAggregatedData, startAppV2ErrorLogsCronJob } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
+import paymentRoutes from "./routes/paymentRoutes";
 
 let swaggerFile: any;
 try {
@@ -108,6 +109,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/tags", tagRoutes );
   app.use("/api/utils", utilsRoutes );
   app.use("/api/email-templates", emailTemplateRoutes );
+  app.use("/api/payments", paymentRoutes );
 
   // swagger doc
   if (swaggerFile) {
