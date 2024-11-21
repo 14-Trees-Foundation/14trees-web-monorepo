@@ -12,6 +12,7 @@ import { DonationRepository } from "../repo/donationsRepo";
 import { status } from "../helpers/status";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { GiftCard } from "../models/gift_card";
+import { UserRepository } from "../repo/userRepo";
 
 export const getAllProfile = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
