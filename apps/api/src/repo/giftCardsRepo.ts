@@ -192,8 +192,11 @@ export class GiftCardsRepository {
 
     static async getDetailedGiftCardByTreeId(treeId: number): Promise<GiftCard | null> {
         const getQuery = `
-            SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
+            SELECT gc.*, sg.name as group_name, su.name as sponsor_name, u.name as user_name, t.sapling_id, pt.name as plant_type
             FROM "14trees_2".gift_cards gc
+            JOIN "14trees_2".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+            LEFT JOIN "14trees_2".users su ON su.id = gcr.user_id
+            LEFT JOIN "14trees_2".groups sg ON sg.id = gcr.group_id
             LEFT JOIN "14trees_2".users u ON u.id = gc.gifted_to
             LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id

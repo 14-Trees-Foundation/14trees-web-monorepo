@@ -952,8 +952,8 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 
 
 export const redeemGiftCard = async (req: Request, res: Response) => {
-    const { gift_card_id: giftCardId, user, sapling_id: saplingId, tree_id: treeId } = req.body;
-    if (!giftCardId || isNaN(parseInt(giftCardId)) || !user?.id) {
+    const { gift_card_id: giftCardId, user, tree_id: treeId } = req.body;
+    if (!giftCardId || (!user?.id && (!user?.name || !user?.email))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
         })
@@ -962,7 +962,13 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
 
     try {
 
-        const giftCardUser = await GiftCardsRepository.getGiftCard(parseInt(giftCardId));
+        let userId = user?.id;
+        if (!userId) {
+            const usr = await UserRepository.upsertUser(user);
+            userId = usr.id;
+        } 
+
+        const giftCardUser = await GiftCardsRepository.getGiftCard(giftCardId);
         if (!giftCardUser) {
             res.status(status.bad).json({
                 message: 'Gift card not found!'
@@ -981,8 +987,8 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
 
         const treeUpdateRequest = {
             assigned_at: new Date(),
-            assigned_to: user?.id,
-            gifted_to: user?.id,
+            assigned_to: userId,
+            gifted_to: userId,
             event_type: giftCardRequest.event_type,
             description: giftCardRequest.event_name,
             gifted_by_name: giftCardRequest.planted_by,
@@ -1000,8 +1006,8 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             return;
         }
 
-        giftCardUser.assigned_to = user?.id;
-        giftCardUser.gifted_to = user?.id;
+        giftCardUser.assigned_to = userId;
+        giftCardUser.gifted_to = userId;
         giftCardUser.updated_at = new Date();
         await giftCardUser.save();
 
