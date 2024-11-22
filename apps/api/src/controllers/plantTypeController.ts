@@ -12,13 +12,13 @@ import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 
 export const getPlantTypes = async (req: Request, res: Response) => {
-  const {offset, limit } = getOffsetAndLimitFromRequest(req);
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   const filters: FilterItem[] = req.body?.filters;
   let whereClause = {};
   if (filters && filters.length > 0) {
-      filters.forEach(filter => {
-          whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-      })
+    filters.forEach(filter => {
+      whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
+    })
   }
 
   try {
@@ -119,5 +119,41 @@ export const getPlantTypeTags = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.log("[ERROR]", "PlantTypeController::getPlantTypeTags", error);
     res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+  }
+}
+
+const parseCountToInt = (data: any[]) => {
+  return data.map(item => {
+    return {
+      ...item,
+      total: parseInt(item.total),
+      booked: parseInt(item.booked),
+      assigned: parseInt(item.assigned),
+      available: parseInt(item.available),
+      card_available: parseInt(item.card_available),
+      unbooked_assigned: parseInt(item.unbooked_assigned),
+      void_available: parseInt(item.void_available),
+      void_assigned: parseInt(item.void_assigned),
+      void_booked: parseInt(item.void_booked),
+      void_total: parseInt(item.void_total),
+    }
+  })
+}
+
+export const getTreeCountsForPlantTypes = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const filters: FilterItem[] = req.body?.filters;
+  const order_by: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
+  try {
+    let result = await PlantTypeRepository.getPlantTypeStates(offset, limit, filters, order_by);
+    result.results = parseCountToInt(result.results);
+    res.status(status.success).send(result);
+  } catch (error: any) {
+    console.log("[ERROR]", "PlantTypeController::getTreeCountsForPlantTypes", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: "Something went wrong. Please try again after some time",
+    });
   }
 }
