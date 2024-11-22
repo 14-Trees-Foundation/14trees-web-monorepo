@@ -170,9 +170,9 @@ class PlantTypeRepository {
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
                 SUM(COALESCE(tcg.card_available, 0)) as card_available,
                 SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
-            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
             WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY pt.name
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
@@ -186,8 +186,8 @@ class PlantTypeRepository {
 
         const countQuery = `
             SELECT count(distinct pt.name)
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY pt.name;
         `
