@@ -11,5 +11,6 @@ routes.post('/', users.addUser);
 routes.post('/bulk', uploadFiles.single('file'),users.addUsersBulk);
 routes.put('/:id', users.updateUser);
 routes.delete('/:id', users.deleteUser);
+routes.post("/combine", users.combineUsers);
 
 export default routes;

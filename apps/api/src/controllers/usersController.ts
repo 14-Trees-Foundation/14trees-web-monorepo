@@ -10,6 +10,13 @@ import { constants } from "../constants";
 import { FilterItem } from "../models/pagination";
 import TreeRepository from "../repo/treeRepo";
 import { UserGroupRepository } from "../repo/userGroupRepo";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
+import { VisitRepository } from "../repo/visitsRepo";
+import { VisitUsers } from "../models/visit_users";
+import { VisitUsersRepository } from "../repo/visitUsersRepo";
+import { AlbumRepository } from "../repo/albumRepo";
+import EventRepository from "../repo/eventsRepo";
 
 /*
     Model - User
@@ -210,4 +217,68 @@ export const deleteUser = async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+};
+
+
+export const combineUsers = async (req: Request, res: Response) => {
+
+  const { primary_user, secondary_user, delete_secondary } = req.body;
+  try {
+
+    // Update trees
+    const mappedTrees = { mapped_to_user: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(mappedTrees, { mapped_to_user: secondary_user });
+
+    const sponsoredTrees = { sponsored_by_user: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(sponsoredTrees, { sponsored_by_user: secondary_user });
+
+    const assignedTrees = { assigned_to: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(assignedTrees, { assigned_to: secondary_user });
+
+    const giftedBy = { gifted_by: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(giftedBy, { gifted_by: secondary_user });
+
+    const giftedTo = { gifted_to: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(giftedTo, { gifted_to: secondary_user });
+
+    // gift requests
+    const giftRequests = { user_id: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequests, { user_id: secondary_user });
+
+    const giftCardsGiftedTo = { gifted_to: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCards(giftCardsGiftedTo, { gifted_to: secondary_user });
+
+    const giftCardsAssignedTo = { assigned_to: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCards(giftCardsAssignedTo, { assigned_to: secondary_user });
+
+    // group users
+    await UserGroupRepository.changeUser(primary_user, secondary_user);
+
+    // user relations
+    const secondary = { secondary_user: primary_user, updated_at: new Date() };
+    await UserRelationRepository.updateUserRelations(secondary, { secondary_user: secondary_user });
+
+    const primary = { primary_user: primary_user, updated_at: new Date() };
+    await UserRelationRepository.updateUserRelations(primary, { primary_user: secondary_user });
+
+    // visit users
+    await VisitUsersRepository.changeUser(primary_user, secondary_user);
+
+    // albums
+    const album = { user_id: primary_user, updated_at: new Date() };
+    await AlbumRepository.updateAlbums(album, { user_id: secondary_user });
+
+    // events
+    const event = { assigned_by: primary_user, updated_at: new Date() };
+    await EventRepository.updateEvents(event, { assigned_by: secondary_user });
+
+    if (delete_secondary) {
+      await UserRepository.deleteUser(secondary_user);
+    }
+
+    res.status(status.success).json();
+  } catch (error: any) {
+    console.log("[ERROR]", "usersController.combineUsers", error);
+    res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
+  }
 };

@@ -1,3 +1,4 @@
+import { WhereOptions } from "sequelize";
 import { UserRelation, UserRelationCreationAttributes } from "../models/user_relation";
 
 
@@ -20,6 +21,10 @@ export class UserRelationRepository {
         }
 
         return await UserRelation.create(data);
+    }
+
+    public static async updateUserRelations(fields: any, whereClause: WhereOptions<UserRelation>): Promise<void> {
+        await UserRelation.update(fields, { where: whereClause });
     }
 
 }
