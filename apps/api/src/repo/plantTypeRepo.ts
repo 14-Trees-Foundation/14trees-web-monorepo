@@ -188,8 +188,7 @@ class PlantTypeRepository {
             SELECT count(distinct pt.name)
             FROM "14trees".plant_types pt
             LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
-            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
-            GROUP BY pt.name;
+            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'};
         `
 
         const resp: any[] = await sequelize.query(countQuery, {
