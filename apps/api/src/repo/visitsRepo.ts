@@ -2,7 +2,7 @@ import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { Visit, VisitAttributes, VisitCreationAttributes } from '../models/visits';
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, WhereOptions } from 'sequelize';
 
 export class VisitRepository {
     public static async updateVisit(visitData: VisitAttributes): Promise<Visit> {

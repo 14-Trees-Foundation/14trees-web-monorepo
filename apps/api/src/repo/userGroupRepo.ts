@@ -42,4 +42,28 @@ export class UserGroupRepository {
     public static async countUserGroups(userId: number): Promise<number> {
         return await UserGroup.count({ where: { user_id: userId } });
     }
+
+    public static async changeUser(primaryUser: number, secondaryUser: number): Promise<void> {
+        const primaryUsersGroups = await UserGroup.findAll({ where: { user_id: primaryUser } });
+        const secondaryUsersGroups = await UserGroup.findAll({ where: { user_id: secondaryUser } });
+
+        for (const group of secondaryUsersGroups) {
+            const idx = primaryUsersGroups.findIndex(userGroup => userGroup.group_id === group.group_id);
+            if (idx === -1) {
+                const groupId = group.group_id
+                const date = group.created_at
+                
+
+                const userGroupData: UserGroupCreationAttributes = {
+                    user_id: primaryUser,
+                    group_id: groupId,
+                    created_at: date,
+                };
+        
+                await UserGroup.create(userGroupData);
+            }
+
+            await group.destroy()
+        }
+    }
 }

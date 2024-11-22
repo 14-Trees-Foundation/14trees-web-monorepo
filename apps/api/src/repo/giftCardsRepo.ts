@@ -88,6 +88,10 @@ export class GiftCardsRepository {
         return giftCards.results[0];
     }
 
+    static async updateGiftCardRequests(fields: any, whereClause: WhereOptions): Promise<void> {
+        await GiftCardRequest.update(fields, { where: whereClause });
+    }
+
     static async deleteGiftCardRequest(id: number): Promise<void> {
         const giftCard = await GiftCardRequest.findByPk(id);
         if (!giftCard) {

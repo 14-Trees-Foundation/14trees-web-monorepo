@@ -7,13 +7,13 @@ import { sequelize } from '../config/postgreDB';
 
 export class VisitUsersRepository {
 
-  static async getVisitUsers(visitId: number, offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<User>> {
-    // const results = await VisitUsers.findAll({
-    //     where: { user_id: userId, visit_id: visitId },
-    // });
-    // return results;
+    static async getVisitUsers(visitId: number, offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<User>> {
+        // const results = await VisitUsers.findAll({
+        //     where: { user_id: userId, visit_id: visitId },
+        // });
+        // return results;
 
-    let whereConditions: string = "";
+        let whereConditions: string = "";
         let replacements: any = {}
 
         if (filters && filters.length > 0) {
@@ -58,37 +58,61 @@ export class VisitUsersRepository {
             total: totalResults,
             results: users
         };
-}
+    }
 
-static async addUser(userId: number, visitId: number): Promise<VisitUsers> {
-    const visitUserGroupData: VisitUsersCreationAttributes = {
-        user_id: userId,
-        visit_id: visitId,
-        created_at: new Date(),
-    };
+    static async addUser(userId: number, visitId: number): Promise<VisitUsers> {
+        const visitUserGroupData: VisitUsersCreationAttributes = {
+            user_id: userId,
+            visit_id: visitId,
+            created_at: new Date(),
+        };
 
-    const response = VisitUsers.create(visitUserGroupData);
-    return response;
-}
+        const response = VisitUsers.create(visitUserGroupData);
+        return response;
+    }
 
-static async bulkAddVisitUsers(userIds: number[], visitId: number): Promise<VisitUsers[]> {
-  const visituserGroupsData: VisitUsersCreationAttributes[] = [];
-  userIds.forEach( userId => {
-    visituserGroupsData.push({ 
-         
-          visit_id: visitId, 
-          user_id: userId, 
-          created_at: new Date(), 
-      })
-  });
+    static async bulkAddVisitUsers(userIds: number[], visitId: number): Promise<VisitUsers[]> {
+        const visituserGroupsData: VisitUsersCreationAttributes[] = [];
+        userIds.forEach(userId => {
+            visituserGroupsData.push({
 
-  const response = VisitUsers.bulkCreate(visituserGroupsData);
-  return response;
-}
+                visit_id: visitId,
+                user_id: userId,
+                created_at: new Date(),
+            })
+        });
 
-static async deleteVisitUsers(userIds: number[], visitId: number): Promise<number> {
-    const response = await VisitUsers.destroy({ where: { user_id: {[Op.in]: userIds}, visit_id: visitId } });
-    return response;
-}
+        const response = VisitUsers.bulkCreate(visituserGroupsData);
+        return response;
+    }
+
+    static async deleteVisitUsers(userIds: number[], visitId: number): Promise<number> {
+        const response = await VisitUsers.destroy({ where: { user_id: { [Op.in]: userIds }, visit_id: visitId } });
+        return response;
+    }
+
+    public static async changeUser(primaryUser: number, secondaryUser: number): Promise<void> {
+        const primaryUsersVisits = await VisitUsers.findAll({ where: { user_id: primaryUser } });
+        const secondaryUsersVisits = await VisitUsers.findAll({ where: { user_id: secondaryUser } });
+
+        for (const visit of secondaryUsersVisits) {
+            const idx = primaryUsersVisits.findIndex(userVisit => userVisit.visit_id === visit.visit_id);
+            if (idx === -1) {
+                const visitId = visit.visit_id
+                const date = visit.created_at
+                
+
+                const visitUserGroupData: VisitUsersCreationAttributes = {
+                    user_id: primaryUser,
+                    visit_id: visitId,
+                    created_at: date,
+                };
+        
+                await VisitUsers.create(visitUserGroupData);
+            }
+
+            await visit.destroy()
+        }
+    }
 
 }
