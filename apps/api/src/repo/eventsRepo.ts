@@ -43,6 +43,10 @@ export class EventRepository {
     return updatedEvent;
   }
 
+  public static async updateEvents(fields: any, whereClause: WhereOptions<Event>): Promise<void> {
+    await Event.update(fields, { where: whereClause });
+  }
+
   public static async deleteEvent(id: string): Promise<void> {
     const resp = await Event.destroy({ where: { id: id }});
     console.log("Delete event response for event id: %s", id, resp);

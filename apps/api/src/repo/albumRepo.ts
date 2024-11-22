@@ -22,6 +22,10 @@ export class AlbumRepository {
         return await album.update(albumData);
     }
 
+    static async updateAlbums(fields: any, whereClause: WhereOptions<Album>): Promise<void> {
+        await Album.update(fields, { where: whereClause });
+    }
+
     static async deleteAlbum(albumId: number): Promise<number> {
         return await Album.destroy({ where: { id: albumId } });
     }
