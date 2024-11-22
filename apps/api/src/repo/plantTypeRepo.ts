@@ -3,6 +3,7 @@ import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { PaginatedResponse } from "../models/pagination";
 import { QueryTypes, WhereOptions } from 'sequelize';
 import { sequelize } from "../config/postgreDB";
+import { getSqlQueryExpression } from "../controllers/helper/filters";
 
 class PlantTypeRepository {
     public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<PlantType>> {
@@ -141,6 +142,62 @@ class PlantTypeRepository {
         const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
         const total = parseInt(countResp[0].count);
         return { offset: offset, total: total, results: tags };
+    }
+
+    public static async getPlantTypeStates(offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<PlantType>> {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "pt." + filter.columnField
+                let valuePlaceHolder = filter.columnField
+
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+            SELECT pt.name as plant_type,
+                SUM(COALESCE(tcg.booked, 0)) as booked,
+                SUM(COALESCE(tcg.available, 0)) as available,
+                SUM(COALESCE(tcg.assigned, 0)) as assigned,
+                SUM(COALESCE(tcg.total, 0)) as total,
+                SUM(COALESCE(tcg.void_total, 0)) as void_total,
+                SUM(COALESCE(tcg.void_booked, 0)) as void_booked,
+                SUM(COALESCE(tcg.void_available, 0)) as void_available,
+                SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
+                SUM(COALESCE(tcg.card_available, 0)) as card_available,
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
+            FROM "14trees_2".plant_types pt
+            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY pt.name
+            ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
+            ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
+            `
+
+        const plantTypes: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        const countQuery = `
+            SELECT count(distinct pt.name)
+            FROM "14trees_2".plant_types pt
+            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY pt.name;
+        `
+
+        const resp: any[] = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        return { offset: offset, total: resp[0]?.count ?? 0, results: plantTypes };
     }
 }
 
