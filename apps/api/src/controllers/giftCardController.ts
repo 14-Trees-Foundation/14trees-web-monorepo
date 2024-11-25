@@ -952,7 +952,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 
 
 export const redeemGiftCard = async (req: Request, res: Response) => {
-    const { gift_card_id: giftCardId, user, tree_id: treeId } = req.body;
+    const { gift_card_id: giftCardId, user, tree_id: treeId, profile_image_url: profileImageUrl } = req.body;
     if (!giftCardId || (!user?.id && (!user?.name || !user?.email))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -996,6 +996,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             planted_by: null,
             gifted_by: giftCardRequest.user_id,
             memory_images: memoryImageUrls,
+            user_tree_image: profileImageUrl,
         }
 
         const updatedCount = await TreeRepository.updateTrees(treeUpdateRequest, { id: treeId })
