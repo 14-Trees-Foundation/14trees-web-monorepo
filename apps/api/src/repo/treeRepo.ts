@@ -319,7 +319,7 @@ class TreeRepository {
     });
   }
 
-  public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number, plotIds: number[], count: number) {
+  public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number, plotIds: number[], count: number, bookNonGiftable: boolean = false, diversify: boolean = false) {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
@@ -327,41 +327,65 @@ class TreeRepository {
       updated_at: new Date(),
     }
 
-    const query = `
-      SELECT pt.id FROM "14trees".plant_types pt
-      JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+    let query = `
+      SELECT t.id as tree_id, pt."name" as plant_type
+      FROM "14trees".trees t
+      JOIN "14trees".plant_types pt on pt.id = t.plant_type_id AND pt.habit = 'Tree'
     `
+
+    if (!bookNonGiftable) {
+      query += `JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"\n`
+    }
+
+    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND t.plot_id IN (' + plotIds.join(',') + ')\n'
+    if (!diversify) {
+      query += `LIMIT ${count}`
+    }
 
     const resp: any[] = await sequelize.query(query, {
       type: QueryTypes.SELECT
     })
 
-    const plantTypeIds: number[] = resp.map(row => row.id);
+    const plantTypeTreesMap: Record<string, number[]> = {};
+    const finalTreeIds: number[] = [];
 
-    let remaining = count;
-    const treeIds: number[] = [];
-    for (const plotId of plotIds) {
-      if (remaining === 0) break;
-
-      let trees: Tree[] = await Tree.findAll({
-        where: {
-          mapped_to_user: { [Op.is]: undefined },
-          mapped_to_group: { [Op.is]: undefined },
-          assigned_at: { [Op.is]: undefined },
-          plot_id: plotId,
-          plant_type_id: { [Op.in]: plantTypeIds }
-        },
-        limit: remaining
-      });
-
-      for (let i = 0; i < trees.length; i++) {
-        await trees[i].update(updateConfig);
-        treeIds.push(trees[i].id);
-        remaining--;
+    for (let i = 0; i < resp.length; i++) {
+      if (!plantTypeTreesMap[resp[i].plant_type]) {
+        plantTypeTreesMap[resp[i].plant_type] = [resp[i].tree_id];
+      } else {
+        plantTypeTreesMap[resp[i].plant_type].push(resp[i].tree_id);
       }
     }
 
-    return treeIds;
+    const treeIds2D = Object.values(plantTypeTreesMap);
+    let i = 0, remaining = count, noMoreTrees = false;
+    while (remaining > 0) {
+      noMoreTrees = true;
+      for (const treeIds of treeIds2D) {
+        if (treeIds.length > i) {
+          noMoreTrees = false;
+          finalTreeIds.push(treeIds[i])
+          remaining--;
+        }
+
+        if (remaining === 0) break;
+      }
+
+      i++;
+      if (noMoreTrees) break;
+    }
+
+    if (finalTreeIds.length < count) {
+      return [];
+    }
+
+    await Tree.update( updateConfig, {
+      where: {
+        id: { [Op.in]: finalTreeIds },
+      },
+    });
+
+    return finalTreeIds;
   }
 
   public static async unMapTrees(saplingIds: string[]) {

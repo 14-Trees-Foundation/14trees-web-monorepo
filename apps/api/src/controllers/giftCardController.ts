@@ -533,7 +533,7 @@ export const createGiftCardPlots = async (req: Request, res: Response) => {
 }
 
 export const bookGiftCardTrees = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId, gift_card_trees: giftCardTrees } = req.body;
+    const { gift_card_request_id: giftCardRequestId, gift_card_trees: giftCardTrees, diversify, book_non_giftable } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -561,7 +561,13 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
                 await GiftCardsRepository.updateGiftCards({ tree_id: item.tree_id, updated_at: new Date() }, { id: item.id });
             }
         } else {
-            const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, giftCardRequest.no_of_cards);
+            const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, giftCardRequest.no_of_cards, book_non_giftable, diversify);
+            if (treeIds.length === 0) {
+                res.status(status.bad).json({
+                    message: 'Enough trees not available for this request!'
+                })
+                return;
+            }
             await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
         }
 
