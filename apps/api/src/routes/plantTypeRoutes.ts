@@ -12,5 +12,7 @@ routes.post("/", uploadFiles.array("files", 4), plantTypes.addPlantType);
 routes.put('/:id', uploadFiles.array('files', 4), plantTypes.updatePlantType);
 routes.delete('/:id', plantTypes.deletePlantType);
 routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
+routes.post('/sync', plantTypes.syncPlantTypeIllustrationsDataFromNotion);
+routes.post('/templates/', plantTypes.addPlantTypeTemplate);
 
 export default routes;

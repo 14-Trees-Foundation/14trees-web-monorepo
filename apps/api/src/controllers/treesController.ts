@@ -4,9 +4,10 @@ import { status } from "../helpers/status";
 import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { isArray } from "lodash";
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
+import { Tree } from "../models/tree";
 
 /*
   Model - Tree
@@ -300,6 +301,42 @@ export const getGiftableTrees = async (req: Request, res: Response) => {
     res.status(status.success).send(result);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getGiftableTrees", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: 'Something went wrong. Please try again after some time.',
+    });
+  }
+}
+
+export const getTreesCountForUser = async (req: Request, res: Response) => {
+  const { user_id } = req.params;
+  const userId = parseInt(user_id);
+
+  if (isNaN(userId)) {
+    res.status(status.bad).json({
+      status: status.bad,
+      message: "Invalid User!",
+    })
+    return;
+  }
+
+  try {
+    const mappedTrees: WhereOptions<Tree> = { mapped_to_user: userId }
+    const mappedTreesCount = await TreeRepository.treesCount(mappedTrees);
+
+    const assignedTrees: WhereOptions<Tree> = { assigned_to: userId }
+    const assignedTreesCount = await TreeRepository.treesCount(assignedTrees);
+
+    const giftedTrees: WhereOptions<Tree> = { gifted_to: userId }
+    const giftedTreesCount = await TreeRepository.treesCount(giftedTrees);
+
+    res.status(status.success).send({
+      mapped_trees: mappedTreesCount,
+      assigned_trees: assignedTreesCount,
+      gifted_trees: giftedTreesCount
+    });
+  } catch (error: any) {
+    console.log("[ERROR]", "TreesController::getTreesCountForUser", error);
     res.status(status.error).json({
       status: status.error,
       message: 'Something went wrong. Please try again after some time.',
