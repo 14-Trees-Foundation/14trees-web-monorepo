@@ -11,4 +11,7 @@ routes.delete('/:id', payment.deletePayment);
 routes.post('/history', payment.addPaymentHistory);
 routes.put('/history/:id', payment.updatePaymentHistory);
 
+routes.post('/verify/', payment.verifyPayment);
+routes.get('/order-payments/:order_id', payment.getPaymentsForOrder);
+
 export default routes;
