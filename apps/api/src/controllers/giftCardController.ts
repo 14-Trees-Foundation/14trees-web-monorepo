@@ -571,8 +571,14 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
             await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
         }
 
+        const cards = await GiftCardsRepository.getBookedCards(giftCardRequestId, 0, -1);
+        const treeIds = cards.results.filter(card => card.tree_id).map(card => card.tree_id);
+
+        if (treeIds.length === giftCardRequest.no_of_cards) {
+            giftCardRequest.status = GiftCardRequestStatus.pendingAssignment;
+        }
+
         giftCardRequest.is_active = true;
-        giftCardRequest.status = GiftCardRequestStatus.pendingAssignment;
         giftCardRequest.updated_at = new Date();
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
@@ -619,10 +625,8 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
         }
 
         const giftCards = await GiftCardsRepository.getBookedCards(giftCardRequest.id, 0, -1);
-        let allAssigned = true;
         for (const giftCard of giftCards.results) {
             if (!giftCard.tree_id || !giftCard.gifted_to) {
-                allAssigned = false;
                 continue;
             }
 
@@ -643,8 +647,8 @@ export const autoAssignTrees = async (req: Request, res: Response) => {
             await TreeRepository.updateTrees(updateRequest, { id: giftCard.tree_id });
         }
 
-        if (allAssigned) {
-            giftCardRequest.status = GiftCardRequestStatus.pendingGiftCards;
+        if (giftCardRequest.no_of_cards === (giftCardRequest as any).assigned) {
+            giftCardRequest.status = GiftCardRequestStatus.completed;
             giftCardRequest.updated_at = new Date();
             await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
         }
@@ -679,14 +683,24 @@ const getGiftCardTemplateImage = async (presentationId: string, templateId: stri
     return s3Url;
 }
 
-const getPersonalizedMessage = (primaryMessage: string, userName: string, relation?: string | null) => {
-    const index = primaryMessage.indexOf('your');
-    if (index < 0) return primaryMessage;
-    if (relation) {
-        return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
-    }
+const getPersonalizedMessage = (primaryMessage: string, userName: string, eventType: string | null, relation?: string | null) => {
+    if (eventType === "2") {
+        const index = primaryMessage.indexOf('<name here>');
+        if (index < 0) return primaryMessage;
+        if (relation) {
+            return primaryMessage.substring(0, index) + 'your ' + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
+        }
 
-    return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+        return primaryMessage.substring(0, index) +`${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
+    } else {
+        const index = primaryMessage.indexOf('your');
+        if (index < 0) return primaryMessage;
+        if (relation) {
+            return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+        }
+    
+        return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+    }
 }
 
 const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: number) => {
@@ -694,6 +708,11 @@ const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: numbe
     const index = primaryMessage.indexOf('a tree');
     if (index !== -1) {
         message = primaryMessage.substring(0, index) + count + " trees" + primaryMessage.substring(index + 6);
+    }
+
+    const index2 = primaryMessage.indexOf('A tree');
+    if (index2 !== -1) {
+        message = primaryMessage.substring(0, index2) + count + " trees" + primaryMessage.substring(index2 + 6);
     }
 
     message = message.replace(/This tree/g, 'These trees');
@@ -750,7 +769,7 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             let primaryMessage = giftCardRequest.primary_message;
             if (giftCard.gifted_to && giftCard.assigned_to) {
                 const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
-                if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assigned_to_name, (giftCard as any).relation);
+                if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assigned_to_name, giftCardRequest.event_type, (giftCard as any).relation);
                 if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
             }
 
