@@ -1,3 +1,4 @@
+import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface PlantTypeCardTemplateAttributes {
@@ -9,7 +10,7 @@ interface PlantTypeCardTemplateAttributes {
 }
 
 interface PlantTypeCardTemplateCreationAttributes
-    extends PlantTypeCardTemplateAttributes{ }
+    extends Optional<PlantTypeCardTemplateAttributes, 'id'> {}
 
 @Table({ tableName: 'plant_type_card_templates' })
 class PlantTypeCardTemplate extends Model<PlantTypeCardTemplateAttributes, PlantTypeCardTemplateCreationAttributes>
