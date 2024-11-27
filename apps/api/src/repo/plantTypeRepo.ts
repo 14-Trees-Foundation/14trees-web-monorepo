@@ -151,15 +151,19 @@ class PlantTypeRepository {
             filters.forEach(filter => {
                 let columnField = "pt." + filter.columnField
                 let valuePlaceHolder = filter.columnField
+                if (filter.columnField === "plant_type") {
+                    columnField = "pt.name"
+                }
 
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
                 whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
             })
             whereCondition = whereCondition.substring(0, whereCondition.length - 3);
         }
 
         const query = `
-            SELECT pt.name as plant_type,
+            SELECT pt.id,pt.name as plant_type, pt.illustration_link as illustration_link,
                 SUM(COALESCE(tcg.booked, 0)) as booked,
                 SUM(COALESCE(tcg.available, 0)) as available,
                 SUM(COALESCE(tcg.assigned, 0)) as assigned,
@@ -173,8 +177,8 @@ class PlantTypeRepository {
             FROM "14trees_2".plant_types pt
             LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
-            GROUP BY pt.name
+            WHERE ptct.plant_type IS NULL AND pt.habit = 'Tree' AND ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY pt.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
             `
@@ -189,7 +193,6 @@ class PlantTypeRepository {
             FROM "14trees_2".plant_types pt
             LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
-            GROUP BY pt.name;
         `
 
         const resp: any[] = await sequelize.query(countQuery, {
@@ -198,6 +201,19 @@ class PlantTypeRepository {
         })
 
         return { offset: offset, total: resp[0]?.count ?? 0, results: plantTypes };
+    }
+
+    public static async syncPlantTypeIllustrations() {
+        const query = `
+            update "14trees_2".plant_types pt
+                set illustration_link = pti."Link to artwork "
+            from plant_type_illustrations pti
+            where pt."name" ILIKE '%' || pti."Name" || '%' or pt."name" ILIKE '%' || pti."Common name English" || '%' or pt."name" ILIKE '%' || pti."Common name Marathi" || '%'
+        `
+
+        await sequelize.query(query, {
+            type: QueryTypes.UPDATE
+        })
     }
 }
 

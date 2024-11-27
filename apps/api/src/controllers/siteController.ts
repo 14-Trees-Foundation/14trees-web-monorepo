@@ -1,7 +1,7 @@
 import { status } from "../helpers/status";
 import { FilterItem } from "../models/pagination";
 import { SiteRepository } from "../repo/sitesRepo";
-import { syncDataFromNotionToDb } from "../services/notion";
+import { syncNotionSites } from "../services/notion/sites";
 import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
@@ -102,7 +102,7 @@ export const deleteSite = async (req: Request, res: Response) => {
 
 export const syncSitesDatFromNotion = async (req: Request, res: Response) => {
     try {
-        await syncDataFromNotionToDb();
+        await syncNotionSites();
         await SiteRepository.updateSitesDataUsingNotionData();
         await SiteRepository.insertNewSitesDataUsingNotionData();
 

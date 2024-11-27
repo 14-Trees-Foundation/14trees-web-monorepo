@@ -10,6 +10,8 @@ import { status } from "../helpers/status";
 import { isArray } from "lodash";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
+import { syncNotionPlantTypeIllustrations } from "../services/notion/plant_type_illustrations";
+import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 
 export const getPlantTypes = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -155,5 +157,53 @@ export const getTreeCountsForPlantTypes = async (req: Request, res: Response) =>
       status: status.error,
       message: "Something went wrong. Please try again after some time",
     });
+  }
+}
+
+export const syncPlantTypeIllustrationsDataFromNotion = async (req: Request, res: Response) => {
+  try {
+    await syncNotionPlantTypeIllustrations();
+    await PlantTypeRepository.syncPlantTypeIllustrations()
+
+    res.status(status.success).json();
+  } catch (error: any) {
+    console.log('[ERROR]', 'PlantTypesController::syncPlantTypeIllustrationsDataFromNotion', error);
+    res.status(status.bad).send({ message: 'Something went wrong!' });
+  }
+}
+
+export const addPlantTypeTemplate = async (req: Request, res: Response) => {
+  const { plant_type, template_id } = req.body;
+  if (!plant_type || !template_id) {
+    res.status(status.bad).send({ message: "Please provide valid plantType and templateId!" });
+    return;
+  }
+
+  
+  try {
+    const plantType = plant_type.trim();
+    const templateId = template_id.trim();
+
+    const ptt = await PlantTypeTemplateRepository.getPlantTypeTemplate(plantType, templateId);
+    if (ptt) {
+      if (plantType === ptt.plant_type && templateId === ptt.template_id) {
+        res.status(status.success).send(ptt);
+      } else if (plantType === ptt.plant_type) {
+        res.status(status.bad).send({
+          message: "Plant type template already exists!"
+        });
+      } else if (templateId === ptt.template_id) {
+        res.status(status.bad).send({
+          message: "Plant type template id you provided is already associated with another plant type!"
+        });
+      }
+
+      return;
+    }
+    const result = await PlantTypeTemplateRepository.addPlantTypeTemplate(plantType, templateId);
+    res.status(status.success).send(result);
+  } catch (error: any) {
+    console.log('[ERROR]', 'PlantTypesController::addPlantTypeTemplate', error);
+    res.status(status.bad).send({ message: 'Something went wrong. Please try again after some time!' });
   }
 }
