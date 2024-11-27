@@ -39,6 +39,7 @@
     "moment": "^2.30.1",
     "node-cron": "^3.0.3",
     "pg": "^8.11.5",
+    "razorpay": "^2.9.5",
     "sequelize": "^6.37.3",
     "sequelize-typescript": "^2.1.6"
   }

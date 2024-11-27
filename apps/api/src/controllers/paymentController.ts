@@ -1,10 +1,12 @@
 
 import { Request, Response } from "express";
+import CryptoJS from 'crypto-js';
 
 import { status } from "../helpers/status";
 import { PaymentRepository } from "../repo/paymentsRepo";
 import { PaymentCreationAttributes } from "../models/payment";
 import { PaymentHistoryCreationAttributes } from "../models/payment_history";
+import RazorpayService from "../services/razorpay/razorpay";
 
 export const getPayment = async (req: Request, res: Response) => {
     if (!req.params.id || isNaN(parseInt(req.params.id))) {
@@ -36,10 +38,22 @@ export const createPayment = async (req: Request, res: Response) => {
     }
 
     try {
+
+        const razorpayService = new RazorpayService();
+        const order = await razorpayService.createOrder(data.amount);
+        if (!order) {
+            res.status(status.error).send({
+                status: status.error,
+                message: 'Something went wrong. Please try again later.',
+            })
+            return;
+        }
+
         const request: PaymentCreationAttributes = {
             amount: data.amount,
             donor_type: data.donor_type,
             pan_number: data.pan_number || null,
+            order_id: order.id,
             created_at: new Date(),
             updated_at: new Date(),
         };
@@ -130,6 +144,45 @@ export const updatePaymentHistory = async (req: Request, res: Response) => {
         res.status(status.success).json(result);
     } catch (error) {
         console.log("[ERROR]", "PaymentController::updatePaymentHistory", error);
+        res.status(status.error).send({
+            status: status.error,
+            message: 'Something went wrong. Please try again later.',
+        })
+    }
+}
+
+export const verifyPayment = async (req: Request, res: Response) => {
+    try {
+        const razorpay = new RazorpayService();
+        if (razorpay.verifySignature(req.body.order_id, req.body.razorpay_payment_id, req.body.razorpay_signature)) {
+            res.status(status.bad).json({ message: 'Transaction not legit!' });
+            return;
+        }
+        res.status(status.success).json({ message: 'Transaction is legit!' });
+    } catch (error) {
+        console.log("[ERROR]", "PaymentController::verifyPayment", error);
+        res.status(status.error).send({
+            status: status.error,
+            message: 'Something went wrong. Please try again later.',
+        })
+    }
+}
+
+export const getPaymentsForOrder = async (req: Request, res: Response) => {
+    if (!req.params.order_id) {
+        res.status(status.bad).json({ message: 'Invalid order id!' });
+        return;
+    }
+    try {
+        const razorpay = new RazorpayService();
+        const payments = await razorpay.getPayments(req.params.order_id);
+        if (!payments) {
+            res.status(status.notfound).json({ message: 'Payment not found!' });
+            return;
+        }
+        res.status(status.success).json(payments);
+    } catch (error) {
+        console.log("[ERROR]", "PaymentController::getPaymentsForOrder", error);
         res.status(status.error).send({
             status: status.error,
             message: 'Something went wrong. Please try again later.',
