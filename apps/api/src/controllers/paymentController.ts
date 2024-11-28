@@ -51,7 +51,7 @@ export const createPayment = async (req: Request, res: Response) => {
 
         const request: PaymentCreationAttributes = {
             amount: data.amount,
-            donor_type: data.donor_type,
+            donor_type: data.donor_type || null,
             pan_number: data.pan_number || null,
             order_id: order.id,
             created_at: new Date(),
