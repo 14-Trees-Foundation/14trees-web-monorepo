@@ -27,12 +27,13 @@ export const addStaff = async (req: Request, res: Response): Promise<void> => {
 
     try {
         const user = await UserRepository.addUser(req.body);
-        const staffGroup = await GroupRepository.getGroups(0, 1, {'type': 'onsite_staff'});
-        if (staffGroup.results.length === 1) {
-            const userRes = await UserGroupRepository.addUserGroup(user.id, staffGroup.results[0].id);
-            console.log(user.name, 'added to onsite staff group. User Id:', userRes.user_id)
-        }
-        res.status(status.created).json({ user: user })
+        const userRes = await user.update({ roles: ['user'] });
+        // const staffGroup = await GroupRepository.getGroups(0, 1, {'type': 'onsite_staff'});
+        // if (staffGroup.results.length === 1) {
+        //     const userRes = await UserGroupRepository.addUserGroup(user.id, staffGroup.results[0].id);
+        //     console.log(user.name, 'added to onsite staff group. User Id:', userRes.user_id)
+        // }
+        res.status(status.created).json({ user: userRes })
     } catch (error: any) {
         res.status(status.error).json({ error: error.message });
         return;
