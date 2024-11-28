@@ -5,7 +5,7 @@ import { Optional } from 'sequelize';
 interface PaymentAttributes {
   id: number;
   amount: number;
-  donor_type: string;
+  donor_type: string | null;
   pan_number: string | null;
   order_id: string;
   created_at: Date;

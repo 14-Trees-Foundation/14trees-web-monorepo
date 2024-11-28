@@ -33,6 +33,8 @@ export class PaymentRepository {
     }
 
     public static async updatePayment(paymentData: PaymentAttributes): Promise<Payment>{  
+        paymentData.donor_type = paymentData.donor_type || null;
+        paymentData.pan_number = paymentData.pan_number || null;
         const payment = await Payment.findByPk(paymentData.id);
         if (!payment) {
             throw new Error('Payment not found for given id');
