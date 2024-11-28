@@ -31,6 +31,11 @@ export class VisitRepository {
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "v." + filter.columnField
+                if (filter.columnField === "site_name") {
+                    columnField = "s.name_english"
+                } else if (filter.columnField === "group_name") {
+                    columnField = "g.name"
+                }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
@@ -39,18 +44,22 @@ export class VisitRepository {
         }
 
         const getQuery = `
-            SELECT v.*, array_agg(distinct(vi.image_url)) AS visit_images, count(DISTINCT vu.user_id) as user_count
+            SELECT v.*, s.name_english as site_name, g.name as group_name, array_agg(distinct(vi.image_url)) AS visit_images, count(DISTINCT vu.user_id) as user_count
             FROM "14trees_2".visits v
             LEFT JOIN "14trees_2".visit_images vi ON v.id = vi.visit_id
             LEFT JOIN "14trees_2".visit_users vu ON v.id = vu.visit_id
+            LEFT JOIN "14trees_2".sites s ON s.id = v.site_id
+            LEFT JOIN "14trees_2".groups g ON g.id = v.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            GROUP BY v.id
+            GROUP BY v.id, g.id, s.id
             ORDER BY v.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `
             SELECT COUNT(*) 
             FROM "14trees_2".visits v
+            LEFT JOIN "14trees_2".sites s ON s.id = v.site_id
+            LEFT JOIN "14trees_2".groups g ON g.id = v.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 

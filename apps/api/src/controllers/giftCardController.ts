@@ -774,7 +774,7 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             }
 
             const record = {
-                name: (giftCard as any).gifted_to_name || "____________________________",
+                name: (giftCard as any).gifted_to_name || "",
                 sapling: (giftCard as any).sapling_id,
                 content1: primaryMessage,
                 content2: giftCardRequest.secondary_message,
