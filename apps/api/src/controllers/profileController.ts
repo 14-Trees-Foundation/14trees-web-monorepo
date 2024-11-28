@@ -70,6 +70,25 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 };
 
+export const getUserProfileByUserId = async (req: Request, res: Response) => {
+  const { user_id } = req.params;
+  const userId = parseInt(user_id);
+  if (isNaN(userId)) {
+    res.status(status.bad).send({ message: "Invalid User ID" });
+    return;
+  }
+
+  try {
+    const userTrees = await TreeRepository.getUserProfilesForUserId(userId);
+    res.status(status.success).json({ 
+      user_trees: userTrees,
+    });
+  } catch (error: any) {
+    res.status(status.bad).send({ message: error.message });
+    return;
+  }
+};
+
 export const getProfileById = async (req: Request, res: Response) => {
   if (!req.query.id) {
     res.status(status.bad).send({ error: "User tree ID required" });
