@@ -16,7 +16,7 @@ export class GiftCardsRepository {
 
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
-                let columnField = "gc." + filter.columnField
+                let columnField = "gcr." + filter.columnField
                 if (filter.columnField === "user_name") {
                     columnField = "u.name"
                 } else if (filter.columnField === "group_name") {
@@ -30,21 +30,33 @@ export class GiftCardsRepository {
         }
 
         const getQuery = `
-            SELECT gc.*, u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name, array_agg(DISTINCT gcp.plot_id) as plot_ids
-            FROM "14trees".gift_card_requests gc
-            LEFT JOIN "14trees".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees".groups g ON g.id = gc.group_id
-            LEFT JOIN "14trees".gift_card_plots gcp ON gcp.gift_card_request_id = gc.id
+            SELECT gcr.*, 
+                u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name,
+                SUM(CASE 
+                    WHEN gc.tree_id is not null
+                    THEN 1
+                    ELSE 0
+                END) AS booked,
+                SUM(CASE 
+                    WHEN t.assigned_to is not null
+                    THEN 1
+                    ELSE 0
+                END) AS assigned
+            FROM "14trees".gift_card_requests gcr
+            LEFT JOIN "14trees".users u ON u.id = gcr.user_id
+            LEFT JOIN "14trees".groups g ON g.id = gcr.group_id
+            LEFT JOIN "14trees".gift_cards gc ON gc.gift_card_request_id = gcr.id
+            left join "14trees".trees t on t.id = gc.tree_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            GROUP BY gc.id, u.id, g.name
-            ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            GROUP BY gcr.id, u.id, g.name
+            ORDER BY gcr.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees".gift_card_requests gc
-            LEFT JOIN "14trees".users u ON u.id = gc.user_id
-            LEFT JOIN "14trees".groups g ON g.id = gc.group_id
+            FROM "14trees".gift_card_requests gcr
+            LEFT JOIN "14trees".users u ON u.id = gcr.user_id
+            LEFT JOIN "14trees".groups g ON g.id = gcr.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -266,6 +278,16 @@ export class GiftCardsRepository {
     }
 
     static async addGiftCardPlots(cardId: number, plotIds: number[]): Promise<void> {
+        const plots = await GiftCardPlot.findAll({
+            where: {
+                gift_card_request_id: cardId,
+            }
+        })
+
+        plotIds = plotIds.filter(plotId => {
+            return !plots.find(plot => plot.plot_id === plotId)
+        })
+        
         const giftCardPlots = plotIds.map(plotId => {
             return {
                 gift_card_request_id: cardId,

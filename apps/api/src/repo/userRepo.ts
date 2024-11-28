@@ -16,7 +16,7 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
     const birthDate = new Date(reqBody.birth_date);
     return  {
         name: reqBody.name.trim(),
-        phone: reqBody.phone.trim() || null,
+        phone: reqBody.phone ? reqBody.phone.trim() : null,
         email: reqBody.email.trim(),
         user_id: userId,
         birth_date: isNaN(birthDate?.getDate()) ? null : birthDate,

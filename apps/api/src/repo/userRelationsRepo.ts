@@ -15,7 +15,7 @@ export class UserRelationRepository {
         if (relation && relation.relation !== data.relation) {
             relation.relation = data.relation;
             relation.updated_at = new Date();
-            await relation.save();
+            return await relation.save();
         } else if (relation) {
             return relation;
         }
