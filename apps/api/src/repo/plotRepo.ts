@@ -129,6 +129,7 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND pt.habit = 'Tree'
                     AND ptct.plant_type IS NOT NULL
                 THEN 1 
                 ELSE 0 
@@ -146,6 +147,7 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND pt.habit = 'Tree'
                     AND ptct.plant_type IS NOT NULL
                 THEN ptct.plant_type 
                 ELSE NULL 
