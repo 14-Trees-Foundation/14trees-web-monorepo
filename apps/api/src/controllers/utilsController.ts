@@ -67,7 +67,7 @@ export const scrapImages = async (req: Request, res: Response) => {
     const s3Urls: string[] = [];
     for (const imageUrl of imageUrls) {
         const imageName = imageUrl.split('/').slice(-1)[0];
-        const location = await uploadImageUrlToS3(imageUrl, `gift-card-requests/${requestId}/${imageName}`)
+        const location = await uploadImageUrlToS3(imageUrl, `cards/${requestId}/${imageName}`)
         if (location) s3Urls.push(location);
     }
 
@@ -78,7 +78,7 @@ export const scrapImages = async (req: Request, res: Response) => {
 
 export const getImageUrlsForKeyPrefix = async (req: Request, res: Response) => {
     const { request_id: requestId } = req.params;
-    const prefix = `gift-card-requests/${requestId}/`
+    const prefix = `cards/${requestId}/`
 
 
     const {keys, bucket} = await getObjectKeysForPrefix(prefix)
