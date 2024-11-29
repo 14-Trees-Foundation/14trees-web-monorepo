@@ -123,7 +123,7 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const slide = response.data;
 
         const requests: any[] = [];
-        const nameUpdateRequest = getUpdateTextRequest(slide, 'NAME', 'Dear ' + record.name + ',');
+        const nameUpdateRequest = getUpdateTextRequest(slide, 'NAME', 'Dear ' + record.name + ',', record.name ? false : true);
         if (nameUpdateRequest) requests.push(...nameUpdateRequest);
 
         const content1UpdateRequest = getUpdateTextRequest(slide, 'CONTENT1', record.content1);
