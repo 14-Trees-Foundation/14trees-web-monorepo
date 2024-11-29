@@ -478,14 +478,18 @@ class TreeRepository {
         pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_images, 
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
-        au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at
+        au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at,
+        array_agg(distinct(vi.image_url)) AS visit_images
       FROM "14trees".trees t
       JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
       JOIN "14trees".plots p ON p.id = t.plot_id
       LEFT JOIN "14trees".users du ON du.id = t.sponsored_by_user
       LEFT JOIN "14trees".users au ON au.id = t.assigned_to
       LEFT JOIN "14trees".users gu ON gu.id = t.gifted_by
-      WHERE t.assigned_to = '${userId}';
+      LEFT JOIN "14trees".visits v ON v.id = t.visit_id
+      LEFT JOIN "14trees".visit_images vi ON v.id = vi.visit_id
+      WHERE t.assigned_to = '${userId}'
+      GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id;
     `;
 
     const data: any[] = await sequelize.query(query, {
