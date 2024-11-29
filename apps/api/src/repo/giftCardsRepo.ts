@@ -131,7 +131,7 @@ export class GiftCardsRepository {
         for (const user of users) {
             const userCards = cards.filter(card => (card.gifted_to === user.giftedTo && card.assigned_to === user.assignedTo));
 
-            const profileImageUrl = user.imageName ? 'https://14treesplants.s3.amazonaws.com/gift-card-requests/'+ giftRequest.request_id + '/' + user.imageName : null
+            const profileImageUrl = user.imageName ? 'https://14treesplants.s3.amazonaws.com/cards/'+ giftRequest.request_id + '/' + user.imageName : null
             if (userCards.length > 0 && userCards[0].profile_image_url !== profileImageUrl) {
                 await GiftCard.update({
                     profile_image_url: profileImageUrl,
