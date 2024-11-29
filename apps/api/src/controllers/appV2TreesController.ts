@@ -25,6 +25,7 @@ import { VisitRepository } from "../repo/visitsRepo";
 import { VisitImagesRepository } from "../repo/visitImagesRepo";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
+import { Visit } from "../models/visits";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -98,19 +99,25 @@ export const uploadTrees = async (req: Request, res: Response) => {
             plotId = Number(tree.plot_id);
         }
 
+        let visit: Visit | null = null
+        if (tree.visit_id && tree.assigned_to) {
+            visit = await VisitRepository.getVisit(tree.visit_id);
+        }
+
         const treeObj: TreeCreationAttributes = {
             sapling_id: saplingID,
             plant_type_id: tree.plant_type_id,
             plot_id: plotId,
             image: imageUrl,
             location: location,
-            planted_by: tree.planted_by,
+            planted_by: tree.assigned_to ? null : tree.planted_by,
             tree_status: tree.tree_status,
             assigned_at: tree.assigned_at,
             assigned_to: tree.assigned_to,
             user_tree_image: userTreeImageUrl,
             user_card_image: userTreeCardUrl,
             visit_id: tree.visit_id,
+            description: visit ? visit.visit_name : undefined,
             created_at: new Date(),
             updated_at: new Date(),
         }
