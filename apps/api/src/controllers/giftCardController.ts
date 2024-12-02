@@ -1116,7 +1116,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
         }
 
         const templatesMap: Record<string, string> = {}
-        const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+        const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
         if (!templatesMap[templateType]) {
             const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
             if (templates.length === 0) {
