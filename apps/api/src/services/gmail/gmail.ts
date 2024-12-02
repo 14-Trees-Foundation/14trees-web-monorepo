@@ -79,13 +79,13 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
   return { status: response.status, statusText: response.statusText };
 };
 
-const sendDashboardMail = async (templateName: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[]) => {
+const sendDashboardMail = async (templateName: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[], subject?: string) => {
 
   const options = {
     to: toEmails,
     replyTo: 'admin@14trees.org',
     cc: cc,
-    subject: 'A tree has been planted',
+    subject: subject ? subject : emailData.count > 1 ? `${emailData.count} Trees have been planted` : 'A Tree has been planted',
     html: "",
     textEncoding: 'base64',
     attachments: attachments,

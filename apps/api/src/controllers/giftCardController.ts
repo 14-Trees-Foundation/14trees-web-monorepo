@@ -1126,7 +1126,12 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
             templatesMap[templateType] = templates[0].template_name
         }
 
-        const statusMessage: string = await sendDashboardMail(templatesMap[templateType], emailData, mailIds, ccMailIds, attachments);
+        let subject: string | undefined = undefined;
+        if (eventType === 'birthday') {
+            subject = `Birthday wishes from ${emailData.group_name ? emailData.group_name : emailData.user_name.split(" ")[0]} and 14 Trees`;
+        }
+
+        const statusMessage: string = await sendDashboardMail(templatesMap[templateType], emailData, mailIds, ccMailIds, attachments, subject);
         const updateRequest = {
             mail_sent: (statusMessage === '' && !isTestMail) ? true : false,
             mail_error: statusMessage ? statusMessage : null,
@@ -1216,6 +1221,10 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
             templatesMap[templateType] = templates[0].template_name
         }
 
+        let subject: string | undefined = undefined;
+        if (eventType === 'birthday') {
+            subject = `Birthday wishes from ${emailData.group_name ? emailData.group_name : emailData.user_name.split(" ")[0]} and 14 Trees`;
+        }
         await sendDashboardMail(templatesMap[templateType], emailData, mailIds, ccMailIds, attachments);
 
         count = count - 1;
