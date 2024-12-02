@@ -285,30 +285,35 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
 
 export const updateGiftCardRequestAlbum = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId, album_id: albumId } = req.body;
-    if (!giftCardRequestId || !albumId) {
+    if (!giftCardRequestId) {
         res.status(status.bad).send({ message: "Invalid input!" });
         return;
     }
 
     try {
 
-        const albums = await AlbumRepository.getAlbums({ id: albumId });
-        if (albums.length === 1) {
-
-            const giftCardRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
-            if (giftCardRequestResp.results.length === 1) {
-                const giftCardRequest = giftCardRequestResp.results[0];
-                giftCardRequest.album_id = albums[0].id;
-                giftCardRequest.updated_at = new Date();
-                await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
-
-                const updateMemoryImages = {
-                    memory_images: albums[0].images,
-                    updated_at: new Date(),
-                }
-
-                await updateTreesForGiftRequest(giftCardRequest.id, updateMemoryImages);
+        let memoryImageUrls: string[] | null = [];
+        if (albumId) {
+            const albums = await AlbumRepository.getAlbums({ id: albumId });
+            if (albums.length === 1) {
+                memoryImageUrls = albums[0].images
             }
+        }
+
+
+        const giftCardRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
+        if (giftCardRequestResp.results.length === 1) {
+            const giftCardRequest = giftCardRequestResp.results[0];
+            giftCardRequest.album_id = albumId || null;
+            giftCardRequest.updated_at = new Date();
+            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
+            const updateMemoryImages = {
+                memory_images: memoryImageUrls,
+                updated_at: new Date(),
+            }
+
+            await updateTreesForGiftRequest(giftCardRequest.id, updateMemoryImages);
         }
 
         res.status(status.success).send();
@@ -424,6 +429,46 @@ export const createGiftCards = async (req: Request, res: Response) => {
             })
             return;
         }
+
+        const cards = await GiftCardsRepository.getBookedCards(giftCardRequestId, 0, -1);
+        cards.results = cards.results.sort((a: any, b: any) => {
+            if (a.assigned && !b.assigned) return -1;
+            if (!a.assigned && b.assigned) return 1;
+
+            return 0;
+        });
+        const idsToKeep: number[] = [];
+        for (const user of usersData) {
+            let count = user.count;
+            for (const card of cards.results) {
+                if (card.gifted_to === user.giftedTo && card.assigned_to === user.assignedTo) {
+                    count--;
+                    idsToKeep.push(card.id);
+                    if (count === 0) break;
+                }
+            }
+        }
+
+        const extraCards = cards.results.filter(card => !idsToKeep.includes(card.id));
+        const deleteIds: number[] = [];
+        const resetIds: number[] = [];
+
+        let assignedFound = false;
+        for (const card of extraCards) {
+            if (!card.gifted_to || card.tree_id) resetIds.push(card.id);
+            else deleteIds.push(card.id);
+
+            if ((card as any).assigned) assignedFound = true;
+        }
+
+        if (assignedFound) {
+            res.status(status.bad).json({
+                status: status.bad,
+                message: "Some trees are assigned to user. Please unassign before deleting!"
+            })
+        };
+        if (resetIds.length > 0) await GiftCardsRepository.updateGiftCards({ gifted_to: null, assigned_to: null, profile_image_url: null }, { id: { [Op.in]: resetIds } });
+        if (deleteIds.length > 0) await GiftCardsRepository.deleteGiftCards({ id: { [Op.in]: deleteIds } });
 
         await GiftCardsRepository.upsertGiftCards(giftCardRequestId, usersData);
 
@@ -700,14 +745,14 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, eventT
             return primaryMessage.substring(0, index) + 'your ' + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
         }
 
-        return primaryMessage.substring(0, index) +`${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
+        return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
     } else {
         const index = primaryMessage.indexOf('your');
         if (index < 0) return primaryMessage;
         if (relation) {
             return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
         }
-    
+
         return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
     }
 }
@@ -1000,7 +1045,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
         if (!userId) {
             const usr = await UserRepository.upsertUser(user);
             userId = usr.id;
-        } 
+        }
 
         const giftCardUser = await GiftCardsRepository.getGiftCard(giftCardId);
         if (!giftCardUser) {
