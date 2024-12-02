@@ -131,8 +131,11 @@
           {{else}} 
             his/her 
           {{/if}} 
-          birthday 
-          {{#if trees.[0].planted_via}} by {{trees.[0].planted_via}} {{/if}}.
+          {{#if trees.[0].planted_via}}
+            birthday by {{trees.[0].planted_via}}.
+          {{else}}
+            birthday.
+          {{/if}}
       </p>
       <h3>Tagging Information about the Trees:</h3>
       <div class="info-table-container">
