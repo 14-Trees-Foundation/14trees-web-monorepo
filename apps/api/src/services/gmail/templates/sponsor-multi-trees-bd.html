@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      color: white;
+      color: #333;
       margin: 0;
       padding: 0;
     }
@@ -17,19 +17,15 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #58708a;
+      background-color: #f9f9f9;
       border: 1px solid #e0e0e0;
       border-radius: 8px;
-      background-image: url("https://cdn.designer-images.eu/c195f5a7-e310-1309-524e-40e8cae15fda/d1941b4e628a4a5ba7ca65573748fe27/httpsucarecdn.com4ff5f833-990b-4b27-b46c-0a9f9bace647") !important;
-      background-repeat: repeat !important;
-      background-position: initial !important;
-      background-size: auto !important;
     }
 
     .header {
       text-align: center;
-      background-color: #f3faf6;
-      color: #58708a;
+      background-color: #4CAF50;
+      color: white;
       padding: 10px 0;
       border-radius: 8px 8px 0 0;
     }
@@ -52,10 +48,6 @@
       border-collapse: collapse;
     }
 
-    .info-table th {
-      color: #58708a;
-    }
-
     .info-table th,
     .info-table td {
       border: 1px solid #ddd;
@@ -64,7 +56,7 @@
     }
 
     .info-table th {
-      background-color: #f3faf6;
+      background-color: #f2f2f2;
     }
 
     /* Optional: Enhance table layout for smaller screens */
@@ -82,14 +74,13 @@
       justify-content: space-between;
       margin-top: 30px;
       padding: 10px;
-      background-color: #f3faf6;
+      background-color: #f2f2f2;
       border-radius: 0 0 8px 8px;
     }
 
     .footer-content {
       text-align: left;
       line-height: 0.5;
-      color: #58708a;
     }
 
     .footer-logo {
@@ -102,18 +93,6 @@
       flex-wrap: wrap;
       justify-content: flex-end;
     }
-
-    .image-message {
-      position: absolute;
-      top: 35%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 52px;
-      font-weight: bolder;
-      color: white;
-      z-index: 100;
-      text-align: center;
-    }
   </style>
 </head>
 
@@ -122,72 +101,49 @@
     <div class="header">
       <h2>Greetings from 14 Trees Foundation</h2>
     </div>
-    <div style="position: relative; display: inline-block;">
-      <p class="image-message">Happy New Year</p>
-      <img
-        src="https://images.stockcake.com/public/9/9/7/997faf36-a743-44b1-b5c8-5fb07d18e89b_large/snowy-sunset-lake-stockcake.jpg"
-        alt="Email Image" class="newsletter-image not-resized" height="auto" width="600" data-resize-width="0"
-        data-resize-height="0" align="bottom">
-    </div>
     <div class="content">
       <p>Dear {{user_name}},</p>
       <p>
-        Hope this mail finds you in good health. It gives us great pleasure to inform you that a tree has been planted
-        in
-        {{#if memorial}}
-        memory of {{assigned_to_name}}.
+        With deep gratitude and immense pride, we are delighted to inform you that we have successfully planted
+        {{count}} trees, made possible by
+        {{#if group_name}}
+        {{group_name}}'s
         {{else}}
-        {{#if relational}}
-        your {{relation}} {{assigned_to_name}}'s name.
-        {{else}}
-        {{#if self}}
-        your name.
-        {{else}}
-        {{assigned_to_name}}'s name.
+        your
         {{/if}}
-        {{/if}}
-        {{/if}}
+        generous donation.
       </p>
-      <h3>Tagging Information about the Tree:</h3>
+      <h3>Tracking information about the trees:</h3>
       <div class="info-table-container">
         <table class="info-table">
           <tr>
-            <th>Name</th>
-            <td>{{assigned_to_name}}</td>
-          </tr>
-          {{#if trees.[0].planted_via}}
-          <tr>
-            <th>Planted By</th>
-            <td>{{trees.[0].planted_via}}</td>
-          </tr>
-          {{/if}}
-          <tr>
-            <th>Tree Name</th>
-            <td>{{trees.[0].plant_type}}</td>
-          </tr>
-          <tr>
-            <th>Scientific Name</th>
-            <td>{{trees.[0].scientific_name}}</td>
-          </tr>
-          <tr>
             <th>Tree ID</th>
-            <td>{{trees.[0].sapling_id}}</td>
+            <th>Tree Name</th>
+            <th>Scientific Name</th>
+            <th>Name</th>
+            {{#if event_name}}<th>Event</th>{{/if}}
+            <th>Dashboard Link</th>
           </tr>
-          {{#if trees.[0].event_name}}
+          {{#each trees}}
           <tr>
-            <th>Event</th>
-            <td>{{trees.[0].event_name}}</td>
+            <td>{{sapling_id}}</td>
+            <td>{{plant_type}}</td>
+            <td>{{scientific_name}}</td>
+            <td>{{assigned_to_name}}</td>
+            {{#if event_name}}<td>{{event_name}}</td>{{/if}}
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
           </tr>
-          {{/if}}
+          {{/each}}
         </table>
       </div>
       <p>
-        Below's the link to your personalized dashboard.<br />
-        <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
+        Each tree planted carries with it the hope of a healthier ecosystem, the promise of cleaner air, and the
+        potential for a thriving natural world for generations to come. Thanks to your support, we are one step closer
+        to making this vision a reality.
       </p>
       <p>
-        For it's many living years, this tree will support local biodiversity, rejuvenate the local ecosystem and also
-        offset the devastating effects of carbon consumption and climate change.
+        We extend our heartfelt thanks for your trust and partnership in this meaningful endeavor. Your contribution
+        leaves a lasting legacy that will grow and flourish in the years ahead.
       </p>
       <p>
         You can follow our shared journey and find more ways of continuing to be involved at <a
@@ -202,9 +158,9 @@
     </div>
     <div class="footer">
       <div class="footer-content">
-        <p>With warmest regards,</p>
+        <p>With warmest regards and sincere appreciation,</p>
         <p>14 Trees Foundation</p>
-        <a href="https://14trees.org" style="color: #58708a;">https://14trees.org</a>
+        <a href="https://14trees.org">https://14trees.org</a>
       </div>
       <div class="footer-logo-container">
         <img class="footer-logo"
