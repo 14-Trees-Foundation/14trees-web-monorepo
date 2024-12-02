@@ -91,17 +91,7 @@
     .footer-logo-container {
       display: flex;
       flex-wrap: wrap;
-    }
-
-    .dashboard-link {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 10px 10px;
-      color: white;
-      background-color: #4CAF50;
-      text-decoration: none;
-      border-radius: 5px;
-      cursor: pointer;
+      justify-content: flex-end;
     }
   </style>
 </head>
@@ -114,62 +104,52 @@
     <div class="content">
       <p>Dear {{user_name}},</p>
       <p>
-        Hope this mail finds you in good health. It gives us great pleasure to inform you that a tree has been planted
-        in
-        {{#if memorial}}
-        memory of {{assigned_to_name}}.
-        {{else}}
+        Hope this mail finds you in good health. It gives us great pleasure to inform you that {{count}} trees have been
+        planted in
         {{#if relational}}
-        your {{relation}} {{assigned_to_name}}'s name.
+          your {{relation}} {{assigned_to_name}}'s name
         {{else}}
-        {{#if self}}
-        your name.
-        {{else}}
-        {{assigned_to_name}}'s name.
+          {{#if self}}
+            your name
+          {{else}}
+            {{assigned_to_name}}'s name
+          {{/if}}
         {{/if}}
-        {{/if}}
-        {{/if}}
+        on the occasion of 
+          {{#if self}} 
+            your 
+          {{else}} 
+            his/her 
+          {{/if}} 
+          Birthday 
+          {{#if planted_via}} by {{planted_via}} {{/if}}.
       </p>
-      <h3>Tagging Information about the Tree:</h3>
+      <h3>Tagging Information about the Trees:</h3>
       <div class="info-table-container">
         <table class="info-table">
           <tr>
-            <th>Name</th>
-            <td>{{assigned_to_name}}</td>
-          </tr>
-          {{#if trees.[0].planted_via}}
-          <tr>
-            <th>Planted By</th>
-            <td>{{trees.[0].planted_via}}</td>
-          </tr>
-          {{/if}}
-          <tr>
-            <th>Tree Name</th>
-            <td>{{trees.[0].plant_type}}</td>
-          </tr>
-          <tr>
-            <th>Scientific Name</th>
-            <td>{{trees.[0].scientific_name}}</td>
-          </tr>
-          <tr>
             <th>Tree ID</th>
-            <td>{{trees.[0].sapling_id}}</td>
+            <th>Tree Name</th>
+            <th>Scientific Name</th>
+            <th>Name</th>
+            {{#if event_name}}<th>Event</th>{{/if}}
+            <th>Dashboard Link</th>
           </tr>
-          {{#if trees.[0].event_name}}
+          {{#each trees}}
           <tr>
-            <th>Event</th>
-            <td>{{trees.[0].event_name}}</td>
+            <td>{{sapling_id}}</td>
+            <td>{{plant_type}}</td>
+            <td>{{scientific_name}}</td>
+            <td>{{assigned_to_name}}</td>
+            {{#if event_name}}<td>{{event_name}}</td>{{/if}}
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
           </tr>
-          {{/if}}
+          {{/each}}
         </table>
       </div>
       <p>
-        Below's the link to your personalized dashboard.<br />
-        <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
-      </p>
-      <p>
-        For it's many living years, this tree will support local biodiversity, rejuvenate the local ecosystem and also
-        offset the devastating effects of carbon consumption and climate change.
+        For their many living years, these trees will support local biodiversity, rejuvenate the local ecosystem and
+        also offset the devastating effects of carbon consumption and climate change.
       </p>
       <p>
         You can follow our shared journey and find more ways of continuing to be involved at <a
