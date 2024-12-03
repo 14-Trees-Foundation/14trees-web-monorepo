@@ -1,4 +1,4 @@
-import { QueryTypes } from "sequelize";
+import { QueryTypes, WhereOptions, where } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { DonationUser, DonationUserCreationAttributes } from "../models/donation_user";
 
@@ -19,6 +19,11 @@ export class DonationUserRepository {
 
   static async createDonationUsers(data: DonationUserCreationAttributes[]) {
     await DonationUser.bulkCreate(data, { returning: false });
+  }
+
+
+  static async deleteDonationUsers(whereClause: WhereOptions<DonationUser>) {
+    await DonationUser.destroy({ where: whereClause });
   }
   
 }

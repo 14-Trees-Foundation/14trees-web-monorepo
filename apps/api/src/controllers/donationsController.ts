@@ -3,7 +3,6 @@ import { status } from "../helpers/status";
 import { DonationRepository } from "../repo/donationsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
-import { getWhereOptions } from "./helper/filters";
 import { FilterItem } from "../models/pagination";
 import { DonationCreationAttributes, Donation } from "../models/donation";
 import { DonationUserCreationAttributes } from "../models/donation_user";
@@ -24,72 +23,108 @@ export const getDonations = async (req: Request, res: Response) => {
         let result = await DonationRepository.getDonations(offset, limit, filters);
         res.status(status.success).send(result);
     } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonations", error)
         res.status(status.error).json({
             status: status.error,
-            message: error.message,
+            message: 'Something went wrong. Please try again after some time!',
         });
+        return;
     }
 }
 
 
-export const addDonation = async (req: Request, res: Response) => {
+export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
-    const usersData = data.users || [];
+    const { request_id, users, user_id, group_id, category, grove, pledged, pledged_area, user_visit, payment_id, feedback, created_by } = data;
 
-    let obj: any = {
-        // name: data.name,
-        pledged: data.no_of_trees ? data.no_of_trees : data.no_of_acres ? data.no_of_acres + ' acres' : null,
-        // email_address: data.email,
-        // phone: data.phone,
-        grove: data.grove,
-        // land_type: data.land_type,
-        pan_number: data.pan,
-        associated_tag: data.tag,
-        // py: new Date().toISOString(),
-        created_at: new Date(),
-        updated_at: new Date(),
+    if (!request_id || !user_id || !category || !created_by) {
+        res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        });
+        return;
     }
 
+    const donationRequest: DonationCreationAttributes = {
+        request_id: request_id,
+        user_id: user_id,
+        group_id: group_id,
+        category: category,
+        grove: grove,
+        pledged: pledged,
+        pledged_area: pledged_area,
+        user_visit: user_visit || false,
+        payment_id: payment_id,
+        feedback: feedback,
+        created_by: created_by,
+        created_at: new Date(),
+        updated_at: new Date(),
+    };
+
     try {
-        const user = await UserRepository.addUser(data);
-        
-        const donation = await DonationRepository.addDonation(obj)
-        let donationUsers: DonationUserCreationAttributes[] = [];
-        for (const userDetails of usersData) {
-            const user = await UserRepository.upsertUser(userDetails);
-            donationUsers.push({
-                donation_id: donation.id,
-                user_id: user.id,
-                gifted_trees: userDetails.gifted_trees,
-                created_at: new Date(),
-            })
+
+        const donation = await DonationRepository.createdDonation(donationRequest);
+        if (users && users.length > 0) {
+            const donationUsers: DonationUserCreationAttributes[] = [];
+            for (const user of users) {
+                const userData = {
+                    name: user.name,
+                    phone: user.phone,
+                    email: user.email,
+                };
+
+                const userResponse = await UserRepository.upsertUser(userData);
+
+                donationUsers.push({
+                    user_id: userResponse.id,
+                    donation_id: donation.id,
+                    gifted_trees: user.gifted_trees,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                });
+            }
+            
+            if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers)
         }
 
-        if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers)
         res.status(status.success).json(donation);
-
     } catch (error: any) {
-        console.log("[ERROR]", "addDonation", error)
+        console.log("[ERROR]", "DonationsController::createDonation", error)
         res.status(status.error).json({
             status: status.error,
-            message: 'Something went wrong!',
+            message: 'Something went wrong. Please try again after some time!',
         });
         return;
     }
 }
 
 export const deleteDonation = async (req: Request, res: Response) => {
+    const { donation_id } = req.params;
+    const donationId = parseInt(donation_id);
+    if (isNaN(donationId)) {
+        res.status(status.bad).json({ message: 'Invalid request' });
+        return;
+    }
+
     try {
-        let response = await DonationRepository.deleteDonation(req.params.id);
-        console.log("Delete Donation Response for id: %s", req.params.id, response);
+
+        // Delete donation users
+        await DonationUserRepository.deleteDonationUsers({ donation_id: donationId });
+
+        // delete donation
+        let response = await DonationRepository.deleteDonation(donationId);
 
         res.status(status.success).json({
             message: "Donation deleted successfully",
         });
 
     } catch (error: any) {
-        res.status(status.bad).send({ error: error.message });
+        console.log("[ERROR]", "DonationsController::deleteDonation", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+        return;
     }
 }
 
@@ -97,10 +132,15 @@ export const deleteDonation = async (req: Request, res: Response) => {
 export const updateDonation = async (req: Request, res: Response) => {
     try {
         let result = await DonationRepository.updateDonation(req.body)
-        res.status(status.created).json(result);
+        const donations = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: result.id }])
+        res.status(status.created).json(donations.results.length === 1 ? donations.results[0] : result);
     } catch (error) {
-        console.log(error)
-        res.status(status.error).json({ error: error });
+        console.log("[ERROR]", "DonationsController::updateDonation", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+        return;
     }
 }
 

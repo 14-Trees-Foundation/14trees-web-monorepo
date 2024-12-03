@@ -4,81 +4,81 @@ import { Optional } from 'sequelize';
 
 interface DonationAttributes {
   id: number;
+  request_id: string | null;
   user_id: number;
+  group_id: number | null;
   category: 'Public' | 'Foundation';
   grove: string | null;
   pledged: number;
+  pledged_area: number;
   user_visit: boolean,
-  donor_type: "Foreign Donor" | "Indian Citizen";
-  payment_method: string;
-  payment_proof: string | null;
-  payment_received_date: Date | null;
-  pan_number: string | null;
+  payment_id: number | null,
   feedback: string | null;
-  remarks_for_inventory: string | null;
+  notes: string | null;
   associated_tag: string;
+  created_by: number;
   created_at: Date;
-  updated_at: Date;  
+  updated_at: Date;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'donor_type' | 'payment_method' | 'remarks_for_inventory' | 'feedback' | 'associated_tag'> {}
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'notes' | 'feedback' | 'associated_tag'> { }
 
 @Table({ tableName: 'donations' })
 class Donation extends Model<DonationAttributes, DonationCreationAttributes>
-implements DonationAttributes {
+  implements DonationAttributes {
 
-      @Column({
-        type: DataType.NUMBER,
-        autoIncrement: true,
-        primaryKey: true,
-        unique: true
-    })
-    id!: number;
+  @Column({
+    type: DataType.NUMBER,
+    autoIncrement: true,
+    primaryKey: true,
+    unique: true
+  })
+  id!: number;
 
-    @Column({ type: DataType.INTEGER  })
-    user_id!: number;
+  @Column({ type: DataType.STRING })
+  request_id!: string;
 
-    @Column({ type: DataType.STRING })
-    category!: 'Public' | 'Foundation';
+  @Column({ type: DataType.INTEGER })
+  user_id!: number;
 
-    @Column({ type: DataType.STRING })
-    grove!: string;
+  @Column({ type: DataType.INTEGER })
+  group_id!: number | null;
 
-    @Column({ type: DataType.INTEGER })
-    pledged!: number;
+  @Column({ type: DataType.STRING })
+  category!: 'Public' | 'Foundation';
 
-    @Column({ type: DataType.BOOLEAN })
-    user_visit!: boolean;
+  @Column({ type: DataType.STRING })
+  grove!: string;
 
-    @Column({ type: DataType.STRING })
-    donor_type!: "Foreign Donor" | "Indian Citizen";
+  @Column({ type: DataType.INTEGER })
+  pledged!: number;
 
-    @Column({ type: DataType.STRING })
-    payment_method!: string;
+  @Column({ type: DataType.FLOAT })
+  pledged_area!: number;
 
-    @Column({ type: DataType.STRING })
-    payment_proof!: string | null;
+  @Column({ type: DataType.BOOLEAN })
+  user_visit!: boolean;
 
-    @Column({ type: DataType.DATE })
-    payment_received_date!: Date | null;
+  @Column({ type: DataType.INTEGER })
+  payment_id!: number | null;
 
-    @Column({ type: DataType.STRING })
-    pan_number!: string | null;
+  @Column({ type: DataType.TEXT })
+  feedback!: string | null;
 
-    @Column({ type: DataType.TEXT })
-    feedback!: string | null;
+  @Column({ type: DataType.TEXT })
+  notes!: string | null;
 
-    @Column({ type: DataType.TEXT })
-    remarks_for_inventory!: string | null;
+  @Column({ type: DataType.STRING })
+  associated_tag!: string;
 
-    @Column({ type: DataType.STRING })
-    associated_tag!: string;
+  @Column({ type: DataType.INTEGER })
+  created_by!: number;
 
-    @Column({ type: DataType.DATE })
-    created_at!: Date;
+  @Column({ type: DataType.DATE })
+  created_at!: Date;
 
-    @Column({ type: DataType.DATE })
-    updated_at!: Date;
+  @Column({ type: DataType.DATE })
+  updated_at!: Date;
 }
 
 export { Donation }

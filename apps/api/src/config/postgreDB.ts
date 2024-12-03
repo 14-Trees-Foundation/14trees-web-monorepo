@@ -67,6 +67,7 @@ class Database {
       define: {
         timestamps: false,
       },
+      logging: false,
       models:[
         Pond,
         Plot,
