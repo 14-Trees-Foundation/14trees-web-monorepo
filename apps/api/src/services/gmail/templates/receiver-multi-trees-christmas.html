@@ -119,19 +119,21 @@
       <p>
         Hope this mail finds you in good health. It gives us great pleasure to inform you that {{count}} trees have been
         planted in
-        {{#if memorial}}
-        memory of {{assigned_to_name}}.
-        {{else}}
         {{#if relational}}
-        your {{relation}} {{assigned_to_name}}'s name.
+          your {{relation}} {{assigned_to_name}}'s name
         {{else}}
-        {{#if self}}
-        your name.
-        {{else}}
-        {{assigned_to_name}}'s name.
+          {{#if self}}
+            your name
+          {{else}}
+            {{assigned_to_name}}'s name
+          {{/if}}
         {{/if}}
-        {{/if}}
-        {{/if}}
+        on the occasion of 
+          {{#if trees.[0].planted_via}}
+            christmas by {{trees.[0].planted_via}}.
+          {{else}}
+            christmas.
+          {{/if}}
       </p>
       <h3>Tagging Information about the Trees:</h3>
       <table class="info-table">
