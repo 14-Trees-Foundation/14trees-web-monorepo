@@ -104,11 +104,10 @@
     <div class="content">
       <p>Dear {{user_name}},</p>
       <p>
-        Hope this mail finds you in good health. It gives us great pleasure to inform you that {{count}} trees have been
-        planted in
         {{#if memorial}}
-          memory of {{#if trees.[0].planted_via}} {{assigned_to_name}} by {{trees.[0].planted_via}}. {{else}} {{assigned_to_name}}. {{/if}}
+          Hope this mail finds you in good health. {{count}} trees have been planted in memory of {{#if trees.[0].planted_via}} {{assigned_to_name}} by {{trees.[0].planted_via}}. {{else}} {{assigned_to_name}}. {{/if}}
         {{else}}
+          Hope this mail finds you in good health. It gives us great pleasure to inform you that {{count}} trees have been planted in
           {{#if relational}}
             your {{relation}} {{assigned_to_name}}'s {{#if trees.[0].planted_via}} name by {{trees.[0].planted_via}}. {{else}} name. {{/if}}
           {{else}}
