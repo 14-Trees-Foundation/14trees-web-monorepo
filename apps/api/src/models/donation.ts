@@ -11,17 +11,21 @@ interface DonationAttributes {
   grove: string | null;
   pledged: number;
   pledged_area: number;
-  user_visit: boolean,
-  payment_id: number | null,
+  preference: string;
+  payment_id: number | null;
   feedback: string | null;
   notes: string | null;
   associated_tag: string;
+  event_name: string | null;
+  alternate_email: string | null;
+  source_info: string | null;
+  logo: string | null;
   created_by: number;
   created_at: Date;
   updated_at: Date;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'notes' | 'feedback' | 'associated_tag'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'notes' | 'feedback' | 'source_info' | 'associated_tag'> { }
 
 @Table({ tableName: 'donations' })
 class Donation extends Model<DonationAttributes, DonationCreationAttributes>
@@ -56,8 +60,8 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   @Column({ type: DataType.FLOAT })
   pledged_area!: number;
 
-  @Column({ type: DataType.BOOLEAN })
-  user_visit!: boolean;
+  @Column({ type: DataType.STRING })
+  preference!: string;
 
   @Column({ type: DataType.INTEGER })
   payment_id!: number | null;
@@ -70,6 +74,18 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
 
   @Column({ type: DataType.STRING })
   associated_tag!: string;
+
+  @Column({ type: DataType.STRING })
+  event_name!: string | null;
+
+  @Column({ type: DataType.STRING })
+  alternate_email!: string | null;
+
+  @Column({ type: DataType.TEXT })
+  source_info!: string | null;
+
+  @Column({ type: DataType.STRING })
+  logo!: string | null;
 
   @Column({ type: DataType.INTEGER })
   created_by!: number;

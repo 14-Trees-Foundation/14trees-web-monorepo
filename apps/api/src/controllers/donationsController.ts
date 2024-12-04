@@ -36,7 +36,11 @@ export const getDonations = async (req: Request, res: Response) => {
 export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
-    const { request_id, users, user_id, group_id, category, grove, pledged, pledged_area, user_visit, payment_id, feedback, created_by } = data;
+    const { 
+        request_id, users, user_id, group_id, 
+        category, grove, pledged, pledged_area, 
+        preference, payment_id, event_name, 
+        alternate_email, created_by, logo } = data;
 
     if (!request_id || !user_id || !category || !created_by) {
         res.status(status.bad).json({
@@ -53,9 +57,11 @@ export const createDonation = async (req: Request, res: Response) => {
         grove: grove,
         pledged: pledged,
         pledged_area: pledged_area,
-        user_visit: user_visit || false,
+        preference: preference,
         payment_id: payment_id,
-        feedback: feedback,
+        event_name: event_name?.trim() || null,
+        alternate_email: alternate_email?.trim() || null,
+        logo: logo || null,
         created_by: created_by,
         created_at: new Date(),
         updated_at: new Date(),
@@ -170,5 +176,27 @@ export const createWorkOrder = async (req: Request, res: Response) => {
     } catch (error) {
         console.log(error)
         res.status(status.error).json({ error: error });
+    }
+}
+
+export const updateFeedback = async (req: Request, res: Response) => {
+    const { feedback, source_info, request_id } = req.body;
+    try {
+        const resp = await DonationRepository.getDonations(0, 1, [{ columnField: 'request_id', operatorValue: 'equals', value: request_id }])
+        if (resp.results.length === 1) {
+            const donation = resp.results[0];
+            donation.feedback = feedback;
+            donation.source_info = source_info;
+            await DonationRepository.updateDonation(donation);
+        };
+
+        res.status(status.success).send();
+    } catch (error) {
+        console.log("[ERROR]", "DonationsController::updateFeedback", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+        return;
     }
 }
