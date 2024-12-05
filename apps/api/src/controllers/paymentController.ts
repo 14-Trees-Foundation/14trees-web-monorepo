@@ -54,6 +54,7 @@ export const createPayment = async (req: Request, res: Response) => {
             donor_type: data.donor_type || null,
             pan_number: data.pan_number || null,
             order_id: order.id,
+            consent: data.consent || false,
             created_at: new Date(),
             updated_at: new Date(),
         };

@@ -7,6 +7,7 @@ interface PaymentAttributes {
   amount: number;
   donor_type: string | null;
   pan_number: string | null;
+  consent: boolean;
   order_id: string;
   created_at: Date;
   updated_at: Date;  
@@ -34,6 +35,9 @@ implements PaymentAttributes {
 
     @Column({ type: DataType.STRING })
     pan_number!: string | null;
+
+    @Column({ type: DataType.BOOLEAN })
+    consent!: boolean;
 
     @Column({ type: DataType.STRING })
     order_id!: string;
