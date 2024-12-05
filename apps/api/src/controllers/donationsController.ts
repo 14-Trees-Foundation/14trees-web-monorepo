@@ -10,6 +10,7 @@ import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { createWorkOrderInCSV } from "./helper/uploadtocsv";
 import TreeRepository from "../repo/treeRepo";
+import { sendDashboardMail } from "../services/gmail/gmail";
 
 /*
     Model - Donation
@@ -272,6 +273,45 @@ export const bookTreesForDonation = async (req: Request, res: Response) => {
         res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::bookTreesForDonation", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+        return;
+    }
+}
+
+
+export const sendAckMail = async (req: Request, res: Response) => {
+    const { donation_id: donationId, cc_mails: ccMails, test_mails: testMails } = req.body;
+    if (!donationId) {
+        res.status(status.bad).json({ message: 'Invalid request' });
+        return;
+    }
+
+    try {
+        const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
+        if (donationResp.results.length === 0) {
+            res.status(status.notfound).json({ message: 'Donation not found' });
+            return;
+        }
+
+        const donation = donationResp.results[0];
+        const emailTemplate = 'donor-ack.html';
+        const subject = 'Thank you for your donation';
+
+        const mailAddress = (testMails && testMails.length > 0) ? testMails : [(donation as any).user_email];
+        const emailData = {
+            ...donation,
+            is_pledged: donation.pledged ? true : false,
+            is_grove: donation.grove ? true : false,
+            is_event_name: donation.event_name ? true : false,
+            is_alternate_email: donation.alternate_email ? true : false,
+        }
+        const statusMessage: string = await sendDashboardMail(emailTemplate, emailData, mailAddress, ccMails, undefined, subject);
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::sendAckMail", error)
         res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again after some time!',
