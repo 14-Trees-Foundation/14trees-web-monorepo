@@ -28,12 +28,14 @@ export class DonationRepository {
         const getQuery = `
             SELECT d.*, 
                 u.name as user_name, u.email as user_email, u.phone as user_phone, 
-                g.name as group_name, cu.name as created_by_name
+                g.name as group_name, cu.name as created_by_name, count(t.id) as booked
             FROM "14trees_2".donations d
             LEFT JOIN "14trees_2".users u ON u.id = d.user_id
             LEFT JOIN "14trees_2".users cu ON cu.id = d.created_by
             LEFT JOIN "14trees_2".groups g ON g.id = d.group_id
+            LEFT JOIN "14trees_2".trees t ON t.donation_id = d.id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+            GROUP BY d.id, u.id, g.id, cu.id
             ORDER BY d.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 

@@ -303,10 +303,11 @@ class TreeRepository {
     return trees.map(tree => tree.id);
   }
 
-  public static async mapTreesToUserAndGroup(userId: number, groupId: number, treeIds: number[]) {
+  public static async mapTreesToUserAndGroup(userId: number, groupId: number | null, treeIds: number[], donation_id?: number | null) {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
+      donation_id: donation_id,
       mapped_at: new Date(),
       updated_at: new Date(),
     }
@@ -319,10 +320,11 @@ class TreeRepository {
     });
   }
 
-  public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number, plotIds: number[], count: number, bookNonGiftable: boolean = false, diversify: boolean = false) {
+  public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number | null, plotIds: number[], count: number, bookNonGiftable: boolean = false, diversify: boolean = false, donation_id?: number | null) {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
+      donation_id: donation_id,
       mapped_at: new Date(),
       updated_at: new Date(),
     }

@@ -9,6 +9,7 @@ import { DonationUserCreationAttributes } from "../models/donation_user";
 import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { createWorkOrderInCSV } from "./helper/uploadtocsv";
+import TreeRepository from "../repo/treeRepo";
 
 /*
     Model - Donation
@@ -74,9 +75,9 @@ export const createDonation = async (req: Request, res: Response) => {
             const donationUsers: DonationUserCreationAttributes[] = [];
             for (const user of users) {
                 const userData = {
-                    name: user.name,
-                    phone: user.phone,
-                    email: user.email,
+                    name: user.recipient_name,
+                    phone: user.recipient_phone,
+                    email: user.recipient_email,
                 };
 
                 const userResponse = await UserRepository.upsertUser(userData);
@@ -84,7 +85,7 @@ export const createDonation = async (req: Request, res: Response) => {
                 donationUsers.push({
                     user_id: userResponse.id,
                     donation_id: donation.id,
-                    gifted_trees: user.gifted_trees,
+                    gifted_trees: user.count,
                     created_at: new Date(),
                     updated_at: new Date(),
                 });
@@ -193,6 +194,84 @@ export const updateFeedback = async (req: Request, res: Response) => {
         res.status(status.success).send();
     } catch (error) {
         console.log("[ERROR]", "DonationsController::updateFeedback", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+        return;
+    }
+}
+
+export const getDonationUsers = async (req: Request, res: Response) => {
+    const { donation_id } = req.params;
+    const donationId = parseInt(donation_id);
+    if (isNaN(donationId)) {
+        res.status(status.bad).json({ message: 'Invalid request' });
+        return;
+    }
+
+    try {
+        const donationUsers = await DonationUserRepository.getDonationUsers(donationId);
+        res.status(status.success).json(donationUsers);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationUsers", error)
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+        return;
+    }
+}
+
+export const bookTreesForDonation = async (req: Request, res: Response) => {
+    const { donation_id, plot_ids, trees, diversify } = req.body;
+    if (!donation_id || ((!plot_ids && plot_ids.length === 0) && (!trees && trees.length === 0))) {
+        res.status(status.bad).json({ message: 'Invalid input provided!' });
+        return;
+    }
+
+    try {
+        const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donation_id }])
+        if (donationResp.results.length === 0) {
+            res.status(status.notfound).json({ message: 'Donation not found' });
+            return;
+        }
+
+        const donation = donationResp.results[0];
+        if (!donation.pledged) {
+            res.status(status.bad).json({ message: 'Donor has pledged area!' });
+            return;
+        }
+
+        if (trees.length !== 0) {
+            const treeIds = trees.map((tree: any) => tree.tree_id);
+            await TreeRepository.mapTreesToUserAndGroup(donation.user_id, donation.group_id, treeIds, donation.id);
+
+            for (const tree of trees) {
+                const updateConfig: any = {
+                    assigned_to: tree.user_id,
+                    description: donation.event_name,
+                    assigned_at: new Date(),
+                    updated_at: new Date(),
+                }
+
+                await TreeRepository.updateTrees(updateConfig, { id: tree.tree_id });
+            }
+        } else {
+            if (donation.pledged) {
+                const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(donation.user_id, donation.group_id, plot_ids, donation.pledged, true, diversify, donation.id);
+                if (treeIds.length === 0) {
+                    res.status(status.bad).json({
+                        message: 'Enough trees not available for this request!'
+                    })
+                    return;
+                }
+            }
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::bookTreesForDonation", error)
         res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again after some time!',
