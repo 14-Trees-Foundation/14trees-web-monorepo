@@ -37,7 +37,7 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
 
     if (fieldName.endsWith('.tags') && operatorValue === 'isAnyOf') {
         return {
-            condition: `exists ( SELECT 1 FROM unnest(${fieldName}) AS t(tag) WHERE t.tag = ANY(ARRAY[:${valuePlaceHolder}]))`,
+            condition: `exists ( SELECT 1 FROM unnest(${fieldName}) AS txt(tag) WHERE txt.tag = ANY(ARRAY[:${valuePlaceHolder}]))`,
             replacement: { [valuePlaceHolder]: value }
         }
     }

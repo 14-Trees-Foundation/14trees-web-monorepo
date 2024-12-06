@@ -10,6 +10,29 @@ import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
 
 export class GiftCardsRepository {
 
+    public static async getGiftRequestTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
+        const tags: string[] = [];
+
+        const getUniqueTagsQuery = 
+            `SELECT DISTINCT tag
+                FROM "14trees_2".gift_card_requests gcr,
+                unnest(gcr.tags) AS tag
+                ORDER BY tag
+                OFFSET ${offset} LIMIT ${limit};`;
+
+        const countUniqueTagsQuery = 
+            `SELECT count(DISTINCT tag)
+                FROM "14trees_2".gift_card_requests gcr,
+                unnest(gcr.tags) AS tag;`;
+
+        const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        tagsResp.forEach(r => tags.push(r.tag));
+
+        const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        const total = parseInt(countResp[0].count);
+        return { offset: offset, total: total, results: tags };
+    }
+
     static async getGiftCardRequests(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<GiftCardRequest>> {
         let whereConditions: string = "";
         let replacements: any = {}
@@ -21,6 +44,8 @@ export class GiftCardsRepository {
                     columnField = "u.name"
                 } else if (filter.columnField === "group_name") {
                     columnField = "g.name"
+                } else if (filter.columnField === "created_by_name") {
+                    columnField = "cu.name"
                 }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
@@ -31,7 +56,7 @@ export class GiftCardsRepository {
 
         const getQuery = `
             SELECT gcr.*, 
-                u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name,
+                u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name, cu.name as created_by_name,
                 SUM(CASE 
                     WHEN gc.tree_id is not null
                     THEN 1
@@ -44,11 +69,12 @@ export class GiftCardsRepository {
                 END) AS assigned
             FROM "14trees_2".gift_card_requests gcr
             LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
+            LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
             LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
             LEFT JOIN "14trees_2".gift_cards gc ON gc.gift_card_request_id = gcr.id
             left join "14trees_2".trees t on t.id = gc.tree_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            GROUP BY gcr.id, u.id, g.name
+            GROUP BY gcr.id, u.id, cu.id, g.name
             ORDER BY gcr.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
@@ -56,6 +82,7 @@ export class GiftCardsRepository {
             SELECT COUNT(*) 
             FROM "14trees_2".gift_card_requests gcr
             LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
+            LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
             LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `

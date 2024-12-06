@@ -18,6 +18,15 @@ import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { TemplateType } from "../models/email_template";
 
+export const getGiftRequestTags = async (req: Request, res: Response) => {
+    try {
+      const tags = await GiftCardsRepository.getGiftRequestTags(0, 100);
+      res.status(status.success).send(tags);
+    } catch (error: any) {
+      console.log("[ERROR]", "PlantTypeController::getGiftRequestTags", error);
+      res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+    }
+  }
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -44,6 +53,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         request_id: requestId,
         notes: notes,
         payment_id: paymentId,
+        created_by: createdBy,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -70,7 +80,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         status: GiftCardRequestStatus.pendingPlotSelection,
         validation_errors: groupId ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
         notes: notes || null,
-        payment_id: paymentId || null
+        payment_id: paymentId || null,
+        created_by: createdBy || userId,
     }
 
     try {
@@ -108,6 +119,7 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
         gift_card_request_id: giftCardRequestId,
         request_id: requestId,
+        created_by: createdBy,
     } = req.body;
 
     if (!giftCardRequestId || !requestId) {
@@ -153,6 +165,7 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             album_id: giftCardRequest.album_id,
             notes: null,
             payment_id: null,
+            created_by: createdBy || giftCardRequest.user_id,
         }
 
         let createdRequest = await GiftCardsRepository.createGiftCardRequest(request);
@@ -189,6 +202,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
     const giftCardRequest: GiftCardRequestAttributes = req.body;
     if (!req.body.validation_errors) giftCardRequest.validation_errors = [];
     else giftCardRequest.validation_errors = req.body.validation_errors?.split(',') ?? null
+    if (req.body.tags) giftCardRequest.tags = req.body.tags?.split(',') ?? null;
 
     try {
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequest.id }]);
