@@ -33,10 +33,12 @@ interface GiftCardRequestAttributes {
     notes: string | null;
     album_id: number | null;
     payment_id: number | null;
+    tags: string[] | null;
+    created_by: number;
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -145,6 +147,16 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.INTEGER,
     })
     payment_id!: number;
+
+    @Column({
+        type: DataType.ARRAY(DataType.STRING),
+    })
+    tags!: string[] | null;
+
+    @Column({
+        type: DataType.INTEGER,
+    })
+    created_by!: number;
 
     @Column({
         type: DataType.ARRAY(DataType.STRING),
