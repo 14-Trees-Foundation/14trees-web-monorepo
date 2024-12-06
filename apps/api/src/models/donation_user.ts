@@ -3,15 +3,19 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface DonationUserAttributes {
   id: number;
-	user_id: number;
+	recipient: number;
+	assignee: number;
 	donation_id: number;
   gifted_trees: number;
+  mail_sent: boolean | null;
+  mail_error: string | null;
+  profile_image_url: string | null;
 	created_at: Date;
 	updated_at: Date;
 }
 
 interface DonationUserCreationAttributes
-	extends Optional<DonationUserAttributes, 'id'> {}
+	extends Optional<DonationUserAttributes, 'id' | 'mail_sent' | 'mail_error'> {}
 
 @Table({ tableName: 'donation_users' })
 class DonationUser extends Model<DonationUserAttributes, DonationUserCreationAttributes>
@@ -29,7 +33,13 @@ implements DonationUserAttributes {
     type: DataType.NUMBER,
     allowNull: false,
   })
-  user_id!: number;
+  recipient!: number;
+
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: false,
+  })
+  assignee!: number;
 
   @Column({
     type: DataType.NUMBER,
@@ -42,6 +52,15 @@ implements DonationUserAttributes {
     allowNull: false,
   })
   gifted_trees!: number;
+
+  @Column({ type: DataType.BOOLEAN })
+  mail_sent!: boolean | null;
+
+  @Column({ type: DataType.STRING })
+  mail_error!: string | null;
+
+  @Column({ type: DataType.STRING })
+  profile_image_url!: string | null;
 
   @Column({ type: DataType.DATE, allowNull: false })
   created_at!: Date;

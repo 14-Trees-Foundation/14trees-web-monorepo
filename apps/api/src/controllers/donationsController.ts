@@ -4,13 +4,14 @@ import { DonationRepository } from "../repo/donationsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
-import { DonationCreationAttributes, Donation } from "../models/donation";
-import { DonationUserCreationAttributes } from "../models/donation_user";
+import { Donation, DonationCreationAttributes } from "../models/donation";
+import { DonationUser, DonationUserCreationAttributes } from "../models/donation_user";
 import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { createWorkOrderInCSV } from "./helper/uploadtocsv";
 import TreeRepository from "../repo/treeRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
 
 /*
     Model - Donation
@@ -34,14 +35,67 @@ export const getDonations = async (req: Request, res: Response) => {
     }
 }
 
+const upsertDonationUsers = async (donation: Donation, users: any[]) => {
+    const donationUsers: DonationUserCreationAttributes[] = [];
+    const existingDonationUsers: DonationUser[] = await DonationUserRepository.getDonationUsers(donation.id);
+
+    for (const user of users) {
+        const recipientData = {
+            id: user.recipient,
+            name: user.recipient_name,
+            phone: user.recipient_phone,
+            email: user.recipient_email,
+        };
+        const recipient = await UserRepository.upsertUser(recipientData);
+
+        const assigneeData = {
+            id: user.assignee,
+            name: user.assignee_name,
+            phone: user.assignee_phone,
+            email: user.assignee_email,
+        };
+        const assignee = await UserRepository.upsertUser(assigneeData);
+
+        if (recipient.id !== assignee.id && user.relation?.trim()) {
+            await UserRelationRepository.createUserRelation({
+                primary_user: recipient.id,
+                secondary_user: assignee.id,
+                relation: user.relation.trim(),
+                created_at: new Date(),
+                updated_at: new Date(),
+            })
+        }
+
+        if (user.id && existingDonationUsers.find((donationUser) => donationUser.id === user.id)) {
+            await DonationUserRepository.updateDonationUsers({
+                recipient: recipient.id,
+                assignee: assignee.id,
+                gifted_trees: user.count,
+                updated_at: new Date(),
+            }, { id: user.id });
+        } else {
+            donationUsers.push({
+                recipient: recipient.id,
+                assignee: assignee.id,
+                donation_id: donation.id,
+                gifted_trees: user.count,
+                profile_image_url: user.image_url || null,
+                created_at: new Date(),
+                updated_at: new Date(),
+            });
+        }
+    }
+
+    if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers);
+}
 
 export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
-    const { 
-        request_id, users, user_id, group_id, 
-        category, grove, pledged, pledged_area, 
-        preference, payment_id, event_name, 
+    const {
+        request_id, users, user_id, group_id,
+        category, grove, pledged, pledged_area,
+        preference, payment_id, event_name,
         alternate_email, created_by, logo } = data;
 
     if (!request_id || !user_id || !category || !created_by) {
@@ -73,26 +127,7 @@ export const createDonation = async (req: Request, res: Response) => {
 
         const donation = await DonationRepository.createdDonation(donationRequest);
         if (users && users.length > 0) {
-            const donationUsers: DonationUserCreationAttributes[] = [];
-            for (const user of users) {
-                const userData = {
-                    name: user.recipient_name,
-                    phone: user.recipient_phone,
-                    email: user.recipient_email,
-                };
-
-                const userResponse = await UserRepository.upsertUser(userData);
-
-                donationUsers.push({
-                    user_id: userResponse.id,
-                    donation_id: donation.id,
-                    gifted_trees: user.count,
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                });
-            }
-            
-            if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers)
+            await upsertDonationUsers(donation, users);
         }
 
         res.status(status.success).json(donation);
@@ -138,8 +173,11 @@ export const deleteDonation = async (req: Request, res: Response) => {
 
 
 export const updateDonation = async (req: Request, res: Response) => {
+    const { donation, users } = req.body;
     try {
-        let result = await DonationRepository.updateDonation(req.body)
+        let result = await DonationRepository.updateDonation(donation);
+        await upsertDonationUsers(result, users);
+        
         const donations = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: result.id }])
         res.status(status.created).json(donations.results.length === 1 ? donations.results[0] : result);
     } catch (error) {
@@ -171,8 +209,8 @@ export const createWorkOrder = async (req: Request, res: Response) => {
             res.status(status.success).json({ message: 'No need to create work order. All trees are assigned' });
             return;
         }
-        
-        await createWorkOrderInCSV(donation)
+
+        await createWorkOrderInCSV(donation);
 
         res.status(status.created).send();
     } catch (error) {
@@ -250,7 +288,8 @@ export const bookTreesForDonation = async (req: Request, res: Response) => {
 
             for (const tree of trees) {
                 const updateConfig: any = {
-                    assigned_to: tree.user_id,
+                    assigned_to: tree.assignee,
+                    gifted_to: tree.recipient,
                     description: donation.event_name,
                     assigned_at: new Date(),
                     updated_at: new Date(),

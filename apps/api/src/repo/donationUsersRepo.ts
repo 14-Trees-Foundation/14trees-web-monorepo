@@ -5,23 +5,33 @@ import { DonationUser, DonationUserCreationAttributes } from "../models/donation
 export class DonationUserRepository {
   static async getDonationUsers(donationId: number) {
     const getQuery = `
-            SELECT du.*, u."name" as user_name, u.email as user_email, count(t.id) as assigned_trees
+            SELECT du.*, 
+            ru."name" as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
+            au."name" as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
+            ur.relation, count(t.id) as assigned_trees
             FROM "14trees_2".donation_users du 
-            JOIN "14trees_2".users u ON u.id = du.user_id 
-            LEFT JOIN "14trees_2".trees t ON t.assigned_to = du.user_id AND t.donation_id = du.donation_id
+            JOIN "14trees_2".users ru ON ru.id = du.recipient
+            JOIN "14trees_2".users au ON au.id = du.assignee
+            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = du.recipient AND ur.secondary_user = du.assignee
+            LEFT JOIN "14trees_2".trees t ON t.gifted_to = du.recipient AND t.assigned_to = du.assignee AND t.donation_id = du.donation_id
             WHERE du.donation_id = ${donationId}
-            GROUP BY du.id, u.id
+            GROUP BY du.id, ru.id, au.id, ur.id;
         `;
 
-    return await sequelize.query(getQuery, {
+    const resp: any[] = await sequelize.query(getQuery, {
       type: QueryTypes.SELECT,
     });
+
+    return resp;
   }
 
   static async createDonationUsers(data: DonationUserCreationAttributes[]) {
     await DonationUser.bulkCreate(data, { returning: false });
   }
 
+  static async updateDonationUsers(fields: any, whereClause: WhereOptions<DonationUser>) {
+    await DonationUser.update(fields, { where: whereClause });
+  }
 
   static async deleteDonationUsers(whereClause: WhereOptions<DonationUser>) {
     await DonationUser.destroy({ where: whereClause });
