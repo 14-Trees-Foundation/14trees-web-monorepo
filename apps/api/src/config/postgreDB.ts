@@ -36,6 +36,7 @@ import { UserRelation } from "../models/user_relation";
 import { EmailTemplate } from "../models/email_template";
 import { Payment } from "../models/payment";
 import { PaymentHistory } from "../models/payment_history";
+import { GiftRequestUser } from "../models/gift_request_user";
 
 
 class Database {
@@ -98,6 +99,7 @@ class Database {
         GiftCardRequest,
         GiftCardPlot,
         GiftCardUserTemplate,
+        GiftRequestUser,
         PlantTypeCardTemplate,
         Tag,
         UserRelation,

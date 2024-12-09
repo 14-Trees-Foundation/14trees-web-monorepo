@@ -10,13 +10,16 @@ routes.put('/requests/:id', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {n
 routes.delete('/requests/:id', giftCards.deleteGiftCardRequest);
 routes.post('/requests/clone', giftCards.cloneGiftCardRequest);
 routes.post('/', giftCards.createGiftCards);
+routes.get('/users/:gift_card_request_id', giftCards.getGiftRequestUsers);
+routes.post('/users', giftCards.upsertGiftRequestUsers);
 routes.post('/plots', giftCards.createGiftCardPlots);
-routes.post('/book', giftCards.bookGiftCardTrees);
-routes.get('/:gift_card_request_id', giftCards.getBookedTrees);
+routes.post('/book', giftCards.bookTreesForGiftRequest);
+routes.post('/unbook', giftCards.unBookTrees);
+routes.get('/trees/:gift_card_request_id', giftCards.getBookedTrees);
 routes.post('/generate-template/', giftCards.generateGiftCardSlide);
 routes.post('/update-template', giftCards.updateGiftCardTemplate);
 routes.post('/card/redeem', giftCards.redeemGiftCard);
-routes.post('/auto-assign', giftCards.autoAssignTrees);
+routes.post('/assign', giftCards.assignGiftRequestTrees);
 routes.get('/generate/:gift_card_request_id', giftCards.generateGiftCardTemplatesForGiftCardRequest);
 routes.get('/download/:gift_card_request_id', giftCards.downloadGiftCardTemplatesForGiftCardRequest);
 routes.post('/email', giftCards.sendEmailForGiftCardRequest);
@@ -25,3 +28,4 @@ routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
 routes.get('/requests/tags', giftCards.getGiftRequestTags);
 
 export default routes;
+
