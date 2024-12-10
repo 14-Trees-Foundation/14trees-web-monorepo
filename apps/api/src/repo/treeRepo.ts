@@ -259,17 +259,17 @@ class TreeRepository {
       SELECT t.sapling_id, t."location", t.event_id, t.image,
         pt."name" AS plant_type, p."name" AS plot, 
         u."name" AS assigned_to
-      FROM "14trees_2".trees AS t
-      LEFT JOIN "14trees_2".plant_types AS pt ON pt.id = t.plant_type_id
-      LEFT JOIN "14trees_2".plots AS p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".users AS u ON u.id = t.assigned_to
+      FROM "14trees".trees AS t
+      LEFT JOIN "14trees".plant_types AS pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plots AS p ON p.id = t.plot_id
+      LEFT JOIN "14trees".users AS u ON u.id = t.assigned_to
       WHERE t.mapped_to_group = ${groupId};
       -- OFFSET ${offset} LIMIT ${limit};
     `;
 
     const countQuery = `
       SELECT count(t."id")
-      FROM "14trees_2".trees AS t
+      FROM "14trees".trees AS t
       WHERE t.mapped_to_group = ${groupId};
     `;
 
