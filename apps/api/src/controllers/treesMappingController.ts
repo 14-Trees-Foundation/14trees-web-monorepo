@@ -95,7 +95,12 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
     } else {
       let group = await GroupRepository.getGroup(id);
       if (group === null) {
-        throw new Error("Group with given id not found");
+        if (!fields.name || !fields.type) {
+          throw new Error("group name and type are required");
+        } else {
+          const group = await GroupRepository.addGroup(fields);
+          id = group.id;
+        }
       }
     }
     await TreeRepository.mapTreesInPlot(mapped_to, id, [Number(plotId)], count);
