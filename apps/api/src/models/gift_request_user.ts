@@ -1,28 +1,25 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-interface GiftCardAttributes {
+interface GiftRequestUserAttributes {
     id: number;
-    gifted_to: number | null;
-    assigned_to: number | null;
-    gift_card_request_id: number;
-    gift_request_user_id: number | null;
-    tree_id: number | null;
-    card_image_url: string | null;
+    recipient: number | null;
+    assignee: number | null;
+    gift_request_id: number;
+    gifted_trees: number;
     profile_image_url: string | null;
     mail_sent: boolean | null;
     mail_error: string | null;
-    slide_id: string | null;
     created_at: Date;
     updated_at: Date;
 }
 
-interface GiftCardCreationAttributes
-    extends Optional<GiftCardAttributes, 'id' | 'tree_id' | 'card_image_url' | 'profile_image_url' | 'mail_error' | 'mail_sent' | 'slide_id' > { }
+interface GiftRequestUserCreationAttributes
+    extends Optional<GiftRequestUserAttributes, 'id' | 'profile_image_url' | 'mail_error' | 'mail_sent' > { }
 
-@Table({ tableName: 'gift_cards' })
-class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
-    implements GiftCardAttributes {
+@Table({ tableName: 'gift_request_users' })
+class GiftRequestUser extends Model<GiftRequestUserAttributes, GiftRequestUserCreationAttributes>
+    implements GiftRequestUserAttributes {
 
     @Column({
         type: DataType.NUMBER,
@@ -36,33 +33,24 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
     @Column({
         type: DataType.NUMBER,
     })
-    gifted_to!: number | null;
+    recipient!: number | null;
 
     @Column({
         type: DataType.NUMBER,
     })
-    assigned_to!: number | null;
+    assignee!: number | null;
 
     @Column({
         type: DataType.NUMBER,
         allowNull: false,
     })
-    gift_card_request_id!: number;
+    gift_request_id!: number;
 
     @Column({
         type: DataType.NUMBER,
+        allowNull: false,
     })
-    gift_request_user_id!: number | null;
-
-    @Column({
-        type: DataType.NUMBER,
-    })
-    tree_id!: number;
-
-    @Column({
-        type: DataType.STRING,
-    })
-    card_image_url!: string;
+    gifted_trees!: number;
 
     @Column({
         type: DataType.STRING,
@@ -79,11 +67,6 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
     })
     mail_error!: string;
 
-    @Column({
-        type: DataType.STRING,
-    })
-    slide_id!: string;
-
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;
 
@@ -91,5 +74,5 @@ class GiftCard extends Model<GiftCardAttributes, GiftCardCreationAttributes>
     updated_at!: Date;
 }
 
-export { GiftCard }
-export type { GiftCardAttributes, GiftCardCreationAttributes }
+export { GiftRequestUser }
+export type { GiftRequestUserAttributes, GiftRequestUserCreationAttributes }
