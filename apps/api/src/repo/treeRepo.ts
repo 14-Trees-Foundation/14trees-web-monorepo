@@ -23,6 +23,12 @@ class TreeRepository {
           columnField = 'au."name"'
         } else if (filter.columnField === "mapped_user_name") {
           columnField = 'mu."name"'
+        } else if (filter.columnField === "mapped_group_name") {
+          columnField = 'mg."name"'
+        } else if (filter.columnField === "sponsor_user_name") {
+          columnField = 'su."name"'
+        } else if (filter.columnField === "sponsor_group_name") {
+          columnField = 'sg."name"'
         } else if (filter.columnField === "plot") {
           columnField = 'p."name"'
         } else if (filter.columnField === "plant_type") {
@@ -42,12 +48,18 @@ class TreeRepository {
       pt."name" as plant_type, 
       p."name" as plot, 
       mu."name" as mapped_user_name, 
+      mg."name" as mapped_group_name, 
+      su."name" as sponsor_user_name, 
+      sg."name" as sponsor_group_name, 
       au."name" as assigned_to_name,
       t.tree_status as tree_health
     FROM "14trees_2".trees t 
     LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
     LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
+    LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
+    LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
+    LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
     ORDER BY t.sapling_id
@@ -66,6 +78,9 @@ class TreeRepository {
     LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
     LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
+    LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
+    LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
+    LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
     `
@@ -438,6 +453,7 @@ class TreeRepository {
       assigned_to: user.id,
       assigned_at: new Date(),
       sponsored_by_user: reqBody.sponsored_by_user || null,
+      sponsored_by_group: reqBody.sponsored_by_group || null,
       gifted_by: reqBody.gifted_by || null,
       planted_by: reqBody.planted_by || null,
       user_tree_image: userImageUrl,
