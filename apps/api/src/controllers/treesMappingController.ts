@@ -2,16 +2,18 @@ import { Request, Response } from "express";
 import TreeRepository from "../repo/treeRepo";
 import { UserRepository } from "../repo/userRepo";
 import { GroupRepository } from "../repo/groupRepo";
+import { User } from "../models/user";
+import { Group } from "../models/group";
 
 const { status } = require("../helpers/status");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
 const { getWhereOptions } = require("./helper/filters");
 
 export const getMappedTrees = async (req: Request, res: Response) => {
-  const {offset, limit} = getOffsetAndLimitFromRequest(req);
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   let email = req.params["email"];
   try {
-    const {trees, user} = await TreeRepository.getMappedTrees(email, offset, limit);
+    const { trees, user } = await TreeRepository.getMappedTrees(email, offset, limit);
     res.status(status.success).send({
       user: user,
       trees: trees,
@@ -24,9 +26,86 @@ export const getMappedTrees = async (req: Request, res: Response) => {
   }
 };
 
+export const getMappedTreesForGroup = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  let groupId = req.params["group_id"];
+  try {
+    const { trees } = await TreeRepository.getMappedTreesForGroup(parseInt(groupId), offset, limit);
+    res.status(status.success).send({
+      trees: trees,
+    });
+  } catch (error: any) {
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
+  }
+};
+
+export const upsertUserAndGroup = async (mappedTo: "user" | "group", id: number, sponsorId: number | null, fields: any) => {
+  let data = { id: id, sponsorId: sponsorId as number | null };
+  if (mappedTo === "user") {
+    let userResp = await UserRepository.getUsers(0, 1, [{ columnField: "id", operatorValue: "equals", value: id }]);
+    if (userResp.results.length === 0) {
+      if (!fields.name || !fields.email) {
+        throw new Error("name and email are required");
+      } else {
+        const user = await UserRepository.upsertUser(fields);
+        data.id = user.id;
+      }
+    }
+
+    if (!fields.same_sponsor) {
+      let sponsor: User | null = null;
+      if (sponsorId) {
+        let sponsorResp = await UserRepository.getUsers(0, 1, [{ columnField: "id", operatorValue: "equals", value: sponsorId }]);
+        if (sponsorResp.results.length === 1) sponsor = sponsorResp.results[0];
+      }
+
+      if (!sponsor) {
+        if (!fields.sponsor_name || !fields.sponsor_email) {
+          data.sponsorId = null;
+        } else {
+          const user = await UserRepository.upsertUser({ name: fields.sponsor_name, email: fields.sponsor_email, phone: fields.sponsor_phone });
+          data.sponsorId = user.id;
+        }
+      }
+    }
+  } else {
+    let group = await GroupRepository.getGroup(id);
+    if (group === null) {
+      if (!fields.name || !fields.type) {
+        throw new Error("group name and type are required");
+      } else {
+        const group = await GroupRepository.addGroup(fields);
+        data.id = group.id;
+      }
+    }
+
+    if (!fields.same_sponsor) {
+      let sponsor: Group | null = null;
+      if (sponsorId) {
+        sponsor = await GroupRepository.getGroup(sponsorId);
+      }
+      if (sponsor === null) {
+        if (!fields.sponsor_name || !fields.sponsor_type) {
+          data.sponsorId = null;
+        } else {
+          const group = await GroupRepository.addGroup({ name: fields.sponsor_name, type: fields.sponsor_type, description: fields.sponsor_description });
+          data.sponsorId = group.id;
+        }
+      }
+    }
+  }
+
+  if (fields.same_sponsor) data.sponsorId = data.id;
+  return data;
+}
+
 export const mapTrees = async (req: Request, res: Response) => {
   const fields = req.body;
   let id = fields.id;
+  let sponsorId = fields.sponsorId;
   let saplingIds = fields.sapling_ids as string[]
   saplingIds = saplingIds.map((saplingId) => saplingId.trim());
   const mappingType: string = fields.mapped_to
@@ -39,25 +118,10 @@ export const mapTrees = async (req: Request, res: Response) => {
   }
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
-  
+
   try {
-    if (mapped_to === "user") {
-      let userResp = await UserRepository.getUsers(0, 1, [{ columnField: "id", operatorValue: "equals", value: id }]);
-      if (userResp.results.length === 0) {
-        if (!fields.name || !fields.email) {
-          throw new Error("name and email are required");
-        } else {
-          const user = await UserRepository.upsertUser(fields);
-          id = user.id;
-        }
-      }
-    } else {
-      let group = await GroupRepository.getGroup(id);
-      if (group === null) {
-        throw new Error("Group with given id not found");
-      }
-    }
-    await TreeRepository.mapTrees(mapped_to, saplingIds, id);
+    const data = await upsertUserAndGroup(mapped_to, id, sponsorId, fields);
+    await TreeRepository.mapTrees(mapped_to, saplingIds, data.id, data.sponsorId);
     res.status(status.created).send();
   } catch (error: any) {
     res.status(status.error).send({
@@ -69,6 +133,7 @@ export const mapTrees = async (req: Request, res: Response) => {
 export const mapTreesInPlot = async (req: Request, res: Response) => {
   const fields = req.body;
   let id = fields.id;
+  let sponsorId = fields.sponsor_id;
   const plotId = fields.plot_id;
   const count = fields.count;
   const mappingType: string = fields.mapped_to
@@ -82,28 +147,8 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
-    if (mapped_to === "user") {
-      let userResp = await UserRepository.getUsers(0, 1, [{ columnField: "id", operatorValue: "equals", value: id }]);
-      if (userResp.results.length === 0) {
-        if (!fields.name || !fields.email) {
-          throw new Error("name and email are required");
-        } else {
-          const user = await UserRepository.upsertUser(fields);
-          id = user.id;
-        }
-      }
-    } else {
-      let group = await GroupRepository.getGroup(id);
-      if (group === null) {
-        if (!fields.name || !fields.type) {
-          throw new Error("group name and type are required");
-        } else {
-          const group = await GroupRepository.addGroup(fields);
-          id = group.id;
-        }
-      }
-    }
-    await TreeRepository.mapTreesInPlot(mapped_to, id, [Number(plotId)], count);
+    const data = await upsertUserAndGroup(mapped_to, id, sponsorId, fields);
+    await TreeRepository.mapTreesInPlot(mapped_to, data.id, [Number(plotId)], count, data.sponsorId);
     res.status(status.success).send();
   } catch (error) {
     res.status(status.error).send({
@@ -133,7 +178,7 @@ export const mapTreesInPlots = async (req: Request, res: Response) => {
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
-    await TreeRepository.mapTreesInPlot(mapped_to, id, plotIds, count);
+    await TreeRepository.mapTreesInPlot(mapped_to, id, plotIds, count, id);
     res.status(status.success).send();
   } catch (error) {
     res.status(status.error).send({
@@ -143,16 +188,16 @@ export const mapTreesInPlots = async (req: Request, res: Response) => {
 };
 
 export const unMapTrees = async (req: Request, res: Response) => {
-    const fields = req.body;
-    let saplingIds = fields.sapling_ids;
+  const fields = req.body;
+  let saplingIds = fields.sapling_ids;
 
-    await TreeRepository.unMapTrees(saplingIds);
-    res.status(status.created).send();
+  await TreeRepository.unMapTrees(saplingIds);
+  res.status(status.created).send();
 };
 
 
 export const getUserMappedTreesCount = async (req: Request, res: Response) => {
-  const {offset, limit} = getOffsetAndLimitFromRequest(req);
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
   const filterReq = req.body.filters;
   let filters;
   if (filterReq && filterReq.length != 0) {
@@ -164,9 +209,9 @@ export const getUserMappedTreesCount = async (req: Request, res: Response) => {
   }
 
   try {
-    
+
     let result = await TreeRepository.getUserTreesCount(offset, limit);
-    
+
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({
