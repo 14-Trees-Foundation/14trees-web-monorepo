@@ -214,35 +214,15 @@ export class GiftCardsRepository {
         return await GiftCard.findByPk(id);
     }
 
-    static async getDetailedGiftCard(id: number): Promise<GiftCard | null> {
-        const getQuery = `
-            SELECT gc.*, u.name as user_name, t.sapling_id, pt.name as plant_type
-            FROM "14trees".gift_cards gc
-            LEFT JOIN "14trees".users u ON u.id = gc.gifted_to
-            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
-            WHERE gc.id = ${id};
-        `
-
-        const data: any[] = await sequelize.query(getQuery, {
-            type: QueryTypes.SELECT
-        })
-
-        if (data.length === 0) {
-            return null;
-        }
-
-        return data[0];
-    }
-
     static async getDetailedGiftCardByTreeId(treeId: number): Promise<GiftCard | null> {
         const getQuery = `
             SELECT gc.*, sg.name as group_name, su.name as sponsor_name, u.name as user_name, t.sapling_id, pt.name as plant_type
             FROM "14trees".gift_cards gc
             JOIN "14trees".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+            LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
             LEFT JOIN "14trees".users su ON su.id = gcr.user_id
             LEFT JOIN "14trees".groups sg ON sg.id = gcr.group_id
-            LEFT JOIN "14trees".users u ON u.id = gc.gifted_to
+            LEFT JOIN "14trees".users u ON u.id = gru.recipient
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.tree_id = ${treeId};
@@ -346,7 +326,7 @@ export class GiftCardsRepository {
             SELECT gc.*,
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
-            t.sapling_id, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
+            t.sapling_id, t.assigned_to, t.gifted_to, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
             ur.relation
             FROM "14trees".gift_cards gc
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
@@ -442,14 +422,15 @@ export class GiftCardsRepository {
     static async getGiftCardUserAndTreeDetails(giftCardRequestId: number): Promise<GiftCard[]> {
 
         const getQuery = `
-            SELECT gc.id, gc.card_image_url, gc.mail_sent, gc.slide_id, gc.assigned_to, gc.gifted_to,
-            u.name as user_name, u.email as user_email,
-            au.name as assigned_to_name, u.email as assigned_to_email, ur.relation,
+            SELECT gc.id, gc.card_image_url, gru.mail_sent, gc.slide_id, gru.recipient, gru.assignee,
+            ru.name as user_name, ru.email as user_email,
+            au.name as assigned_to_name, au.email as assigned_to_email, ur.relation,
             t.sapling_id, t.description as event_name, t.event_type, t.gifted_by_name as planted_via, pt.name as plant_type, pt.scientific_name
             FROM "14trees".gift_cards gc
-            LEFT JOIN "14trees".users u ON u.id = gc.gifted_to
-            LEFT JOIN "14trees".users au ON au.id = gc.assigned_to
-            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = gc.gifted_to AND ur.secondary_user = gc.assigned_to
+            LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            LEFT JOIN "14trees".users ru ON ru.id = gru.recipient
+            LEFT JOIN "14trees".users au ON au.id = gru.assignee
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = gru.recipient AND ur.secondary_user = gru.assignee
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}

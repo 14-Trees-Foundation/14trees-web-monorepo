@@ -1043,6 +1043,14 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
             await assignTrees(giftCardRequest, trees, users, existingTreesResp.results, memoryImageUrls);
         }
         
+        const updatedResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
+        const giftRequest: any = updatedResp.results[0];
+        if (giftRequest.no_of_cards == Number(giftRequest.assigned)) {
+            giftCardRequest.status = GiftCardRequestStatus.completed;
+            giftCardRequest.updated_at = new Date();
+            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        }
+
         res.status(status.success).json();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::assignGiftRequestTrees", error);
@@ -1159,12 +1167,12 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             let primaryMessage = giftCardRequest.primary_message;
             if (giftCard.gifted_to && giftCard.assigned_to) {
                 const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
-                if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assigned_to_name, giftCardRequest.event_type, (giftCard as any).relation);
+                if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assignee_name, giftCardRequest.event_type, (giftCard as any).relation);
                 if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
             }
 
             const record = {
-                name: (giftCard as any).gifted_to_name || "",
+                name: (giftCard as any).recipient_name || "",
                 sapling: (giftCard as any).sapling_id,
                 content1: primaryMessage,
                 content2: giftCardRequest.secondary_message,
@@ -1440,7 +1448,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
     for (const giftCard of giftCards) {
         if (giftCard.mail_sent || !giftCard.user_email || (giftCard.user_email as string).trim().endsWith('@14trees')) continue;
 
-        const key = giftCard.gifted_to + "_" + giftCard.assigned_to;
+        const key = giftCard.recipient + "_" + giftCard.assignee;
         const treeData = {
             sapling_id: giftCard.sapling_id,
             dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
@@ -1464,9 +1472,9 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
                 event_name: giftCard.event_name,
                 group_name: giftCardRequest.group_name,
                 company_logo_url: giftCardRequest.logo_url,
-                assigned_to: giftCard.assigned_to,
-                gifted_to: giftCard.gifted_to,
-                self: giftCard.assigned_to === giftCard.gifted_to ? true : undefined,
+                assigned_to: giftCard.assignee,
+                gifted_to: giftCard.recipient,
+                self: giftCard.assignee === giftCard.recipient ? true : undefined,
                 relation: giftCard.relation,
                 relational: giftCard.relation ? true : undefined,
                 memorial: giftCard.event_type == "2" ? true : undefined,
@@ -1518,10 +1526,10 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
             mail_error: statusMessage ? statusMessage : null,
             updated_at: new Date()
         }
-        await GiftCardsRepository.updateGiftCards(updateRequest, {
-            gift_card_request_id: giftCardRequest.id,
-            assigned_to: emailData.assigned_to,
-            gifted_to: emailData.gifted_to,
+        await GiftCardsRepository.updateGiftRequestUsers(updateRequest, {
+            gift_request_id: giftCardRequest.id,
+            assignee: emailData.assigned_to,
+            recipient: emailData.gifted_to,
         });
 
         count = count - 1;
@@ -1536,9 +1544,9 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         if (!giftCard.assigned_to_email || (giftCard.assigned_to_email as string).trim().endsWith('@14trees')) continue;
         if (giftCard.event_type === '2') continue;  // memorial
 
-        if (giftCard.assigned_to === giftCard.gifted_to && giftCard.mail_sent) continue;
+        if (giftCard.assignee === giftCard.recipient && giftCard.mail_sent) continue;
 
-        const key = giftCard.assigned_to;
+        const key = giftCard.assignee;
         const treeData = {
             sapling_id: giftCard.sapling_id,
             dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
@@ -1562,8 +1570,8 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 event_name: giftCard.event_name,
                 group_name: giftCardRequest.group_name,
                 company_logo_url: giftCardRequest.logo_url,
-                assigned_to: giftCard.assigned_to,
-                gifted_to: giftCard.gifted_to,
+                assigned_to: giftCard.assignee,
+                gifted_to: giftCard.recipient,
                 self: true,
                 count: 1
             }
