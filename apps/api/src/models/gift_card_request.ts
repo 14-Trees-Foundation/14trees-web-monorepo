@@ -29,6 +29,8 @@ interface GiftCardRequestAttributes {
     created_at: Date;
     updated_at: Date;
     status: string;
+    category: string;
+    grove: string | null;
     presentation_id: string | null;
     notes: string | null;
     album_id: number | null;
@@ -127,6 +129,16 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.STRING,
     })
     status!: string;
+
+    @Column({
+        type: DataType.STRING,
+    })
+    category!: string;
+
+    @Column({
+        type: DataType.STRING,
+    })
+    grove!: string | null;
 
     @Column({
         type: DataType.STRING,

@@ -19,6 +19,9 @@ import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { TemplateType } from "../models/email_template";
 import { GiftRequestUser, GiftRequestUserAttributes, GiftRequestUserCreationAttributes } from "../models/gift_request_user";
 import { GiftCard } from "../models/gift_card";
+import { PaymentRepository } from "../repo/paymentsRepo";
+import { PaymentHistory } from "../models/payment_history";
+import RazorpayService from "../services/razorpay/razorpay";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -35,9 +38,46 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
     const filters: FilterItem[] = req.body?.filters;
 
     const giftCardRequests = await GiftCardsRepository.getGiftCardRequests(offset, limit, filters);
-    giftCardRequests.results.forEach((giftCard: any) => {
-        giftCard.plot_ids = giftCard.plot_ids.filter((plot_id: any) => plot_id !== null);
-    })
+    const data: any[] = [];
+    const razorpay = new RazorpayService();
+    for (const giftCardRequest of giftCardRequests.results) {
+        let paidAmount = 0;
+        let validatedAmount = 0;
+        const totalAmount = giftCardRequest.no_of_cards * (giftCardRequest.category === "Foundation" ? 3000 : 1500);
+
+        if (giftCardRequest.payment_id) {
+            const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
+            if (payment && payment.payment_history) {
+                const paymentHistory: PaymentHistory[] = payment.payment_history;
+                paymentHistory.forEach(payment => {
+                    if (payment.status !== 'payment_not_received') paidAmount += payment.amount;
+                    if (payment.status === 'validated') validatedAmount += payment.amount;
+                })
+            }
+
+            const rpPayments = await razorpay.getPayments(payment.order_id);
+            if (rpPayments) {
+                rpPayments.forEach((payment: any) => {
+                    if (payment.status !== 'failed') paidAmount += payment.amount;
+                    if (payment.status === 'captured') validatedAmount += payment.amount;
+                })
+            }
+        }
+
+        data.push({
+            ...giftCardRequest,
+            plot_ids: (giftCardRequest as any).plot_ids.filter((plot_id: any) => plot_id !== null),
+            payment_status: validatedAmount === totalAmount
+                            ? "Fully paid"
+                            : validatedAmount < paidAmount
+                            ? "Pending validation"
+                            : paidAmount === 0
+                            ? "Pending payment"
+                            : "Partially paid",
+        })
+
+    }
+    giftCardRequests.results = data;
     res.status(status.success).json(giftCardRequests);
 }
 
@@ -50,6 +90,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         secondary_message: secondaryMessage,
         event_name: eventName,
         event_type: eventType,
+        category: category,
+        grove: grove,
         planted_by: plantedBy,
         logo_message: logoMessage,
         request_id: requestId,
@@ -84,6 +126,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         notes: notes || null,
         payment_id: paymentId || null,
         created_by: createdBy || userId,
+        category: category,
+        grove: grove,
     }
 
     try {
@@ -168,6 +212,8 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             notes: null,
             payment_id: null,
             created_by: createdBy || giftCardRequest.user_id,
+            category: giftCardRequest.category,
+            grove: giftCardRequest.grove,
         }
 
         let createdRequest = await GiftCardsRepository.createGiftCardRequest(request);
@@ -1683,7 +1729,8 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
     const {
         gift_card_request_id: giftCardRequestId,
         test_mails: testMails,
-        cc_mails: ccMails,
+        receiver_cc_mails: receiverCC,
+        sponsor_cc_mails: sponsorCC,
         attach_card,
         event_type: eventType,
         email_sponsor: emailSponsor,
@@ -1709,9 +1756,9 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
         const giftCardRequest: any = resp.results[0];
         const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
 
-        if (emailSponsor) sendMailsToSponsors(giftCardRequest, giftCards, eventType, attach_card, ccMails, testMails);
-        if (emailReceiver) await sendMailsToReceivers(giftCardRequest, giftCards, eventType, attach_card, ccMails, testMails);
-        if (emailAssignee) await sendMailsToAssigneeReceivers(giftCardRequest, giftCards, eventType, attach_card, ccMails, testMails);
+        if (emailSponsor) sendMailsToSponsors(giftCardRequest, giftCards, eventType, attach_card, sponsorCC, testMails);
+        if (emailReceiver) await sendMailsToReceivers(giftCardRequest, giftCards, eventType, attach_card, receiverCC, testMails);
+        if (emailAssignee) await sendMailsToAssigneeReceivers(giftCardRequest, giftCards, eventType, attach_card, receiverCC, testMails);
 
         res.status(status.success).send();
     } catch (error: any) {
