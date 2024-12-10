@@ -253,6 +253,42 @@ class TreeRepository {
     };
   };
 
+  public static async getMappedTreesForGroup(groupId: number, offset: number, limit: number) {
+
+    const query = `
+      SELECT t.sapling_id, t."location", t.event_id, t.image,
+        pt."name" AS plant_type, p."name" AS plot, 
+        u."name" AS assigned_to
+      FROM "14trees_2".trees AS t
+      LEFT JOIN "14trees_2".plant_types AS pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees_2".plots AS p ON p.id = t.plot_id
+      LEFT JOIN "14trees_2".users AS u ON u.id = t.assigned_to
+      WHERE t.mapped_to_group = ${groupId};
+      -- OFFSET ${offset} LIMIT ${limit};
+    `;
+
+    const countQuery = `
+      SELECT count(t."id")
+      FROM "14trees_2".trees AS t
+      WHERE t.mapped_to_group = ${groupId};
+    `;
+
+    const data = await sequelize.query(query, {
+      type: QueryTypes.SELECT
+    })
+
+    const total: any[] = await sequelize.query(countQuery, {
+      type: QueryTypes.SELECT
+    })
+    return {
+      trees: {
+        offset: offset,
+        total: parseInt(total[0].count),
+        results: data
+      }
+    };
+  };
+
   public static async getUserTreesCount(offset: number, limit: number) {
 
     const query = `select u."id", u."name" as user, u.email, count(t."id"), count(t."assigned_to") from 
@@ -268,7 +304,7 @@ class TreeRepository {
     return data;
   };
 
-  public static async mapTrees(mapped_to: 'user' | 'group', saplingIds: string[], id: string) {
+  public static async mapTrees(mapped_to: 'user' | 'group', saplingIds: string[], id: number, sponsorId: number | null) {
 
     const updateConfig: any = {
       mapped_at: new Date(),
@@ -277,15 +313,17 @@ class TreeRepository {
 
     if (mapped_to === "user") {
       updateConfig["mapped_to_user"] = id;
+      updateConfig["sponsored_by_user"] = sponsorId;
     } else {
       updateConfig["mapped_to_group"] = id;
+      updateConfig["sponsored_by_group"] = sponsorId;
     }
 
     const resp = await Tree.update(updateConfig, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("mapped trees %d for %s: %d", resp, mapped_to, id);
   }
 
-  public static async mapTreesInPlot(mapped_to: 'user' | 'group', id: string, plotIds: number[], count: number) {
+  public static async mapTreesInPlot(mapped_to: 'user' | 'group', id: number, plotIds: number[], count: number, sponsorId: number | null) {
     const updateConfig: any = {
       mapped_at: new Date(),
       updated_at: new Date(),
@@ -293,8 +331,10 @@ class TreeRepository {
 
     if (mapped_to === "user") {
       updateConfig["mapped_to_user"] = id;
+      updateConfig["sponsored_by_user"] = sponsorId;
     } else {
       updateConfig["mapped_to_group"] = id;
+      updateConfig["sponsored_by_group"] = sponsorId;
     }
 
     let trees: Tree[] = await Tree.findAll({
@@ -404,7 +444,7 @@ class TreeRepository {
   }
 
   public static async unMapTrees(saplingIds: string[]) {
-    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null, updated_at: new Date(), }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null, sponsored_by_group: null, sponsored_by_user: null,  updated_at: new Date(), }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("un mapped trees response: %s", resp);
   }
 
