@@ -767,7 +767,7 @@ export const createGiftCardPlots = async (req: Request, res: Response) => {
 }
 
 export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId, trees, diversify, book_non_giftable } = req.body;
+    const { gift_card_request_id: giftCardRequestId, gift_card_trees: trees, diversify, book_non_giftable } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -789,7 +789,6 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
         }
 
         let treeIds: number[] = [];
-        console.log(giftCardRequest.no_of_cards, Number((giftCardRequest as any).booked), (giftCardRequest as any).booked)
         const treesCount = giftCardRequest.no_of_cards - Number((giftCardRequest as any).booked);
         if (!trees || trees.length === 0) {
             treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, treesCount, book_non_giftable, diversify);
