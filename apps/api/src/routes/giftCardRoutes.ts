@@ -26,6 +26,7 @@ routes.post('/email', giftCards.sendEmailForGiftCardRequest);
 routes.post('/update-album/', giftCards.updateGiftCardRequestAlbum);
 routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
 routes.get('/requests/tags', giftCards.getGiftRequestTags);
+routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
 
 export default routes;
 

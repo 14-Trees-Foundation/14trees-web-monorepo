@@ -9,6 +9,7 @@ interface GroupAttributes {
 	type: GroupType;
   description?: string;
   logo_url: string | null;
+  address: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -43,6 +44,9 @@ implements GroupAttributes {
 
   @Column(DataType.TEXT)
   logo_url!: string;
+
+  @Column(DataType.TEXT)
+  address!: string;
 
   @Column(DataType.DATE)
   created_at!: Date;

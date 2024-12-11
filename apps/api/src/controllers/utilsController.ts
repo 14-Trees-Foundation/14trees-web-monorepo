@@ -52,28 +52,54 @@ export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
 export const scrapImages = async (req: Request, res: Response) => {
     const { url, request_id: requestId } = req.body;
 
-    const { data: html } = await axios.get(url);
-    const $ = load(html);
-
-    const imageUrls: string[] = [];
-    $('img').each((_, element) => {
-      const src = $(element).attr('src');
-      if (src) {
-        const fullUrl = new URL(src, url).href;
-        imageUrls.push(fullUrl);
-      }
-    });
-
-    const s3Urls: string[] = [];
-    for (const imageUrl of imageUrls) {
-        const imageName = imageUrl.split('/').slice(-1)[0];
-        const location = await uploadImageUrlToS3(imageUrl, `cards/${requestId}/${imageName}`)
-        if (location) s3Urls.push(location);
+    let html: any;
+    try {
+        const { data } = await axios.get(url);
+        html = data;
+    } catch (error) {
+        console.log("[ERROR]", "UtilsController::scrapImages", error);
+        res.status(status.error).send({
+            message: "failed to load page!",
+        });
+        return;
     }
+    try {
 
-    res.status(status.success).send({
-        urls: s3Urls
-    })
+        const $ = load(html);
+        const imageUrls: string[] = [];
+        $('img').each((_, element) => {
+          const src = $(element).attr('src');
+          if (src) {
+            const fullUrl = new URL(src, url).href;
+            imageUrls.push(fullUrl);
+          }
+        });
+    
+        const s3Urls: string[] = [];
+        for (const imageUrl of imageUrls) {
+            try {
+                const headResponse = await axios.head(imageUrl);
+                const contentType = headResponse.headers['content-type'];
+                // Check if the Content-Type is an image
+                if (contentType && contentType.startsWith('image/')) {
+                    const imageName = imageUrl.split('/').slice(-1)[0];
+                    const location = await uploadImageUrlToS3(imageUrl, `cards/${requestId}/${imageName}`)
+                    if (location) s3Urls.push(location);
+                }
+            } catch (error) {
+                console.log("[ERROR]", "UtilsController::scrapImages", error);
+            }
+        }
+    
+        res.status(status.success).send({
+            urls: s3Urls
+        })
+    } catch (error) {
+        console.log("[ERROR]", "UtilsController::scrapImages", error);
+        res.status(status.error).send({
+            message: "Error while scrapping images!",
+        });
+    }
 }
 
 export const getImageUrlsForKeyPrefix = async (req: Request, res: Response) => {

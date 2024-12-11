@@ -7,7 +7,7 @@ import { UserRepository } from "../repo/userRepo";
 import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, deleteUnwantedSlides, getSlideThumbnail, updateSlide } from "./helper/slides";
-import { UploadFileToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
+import { UploadFileToS3, uploadBase64DataToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import archiver from 'archiver';
 import axios from 'axios'
 import { Op } from "sequelize";
@@ -21,6 +21,10 @@ import { GiftRequestUser, GiftRequestUserAttributes, GiftRequestUserCreationAttr
 import { GiftCard } from "../models/gift_card";
 import { PaymentRepository } from "../repo/paymentsRepo";
 import { PaymentHistory } from "../models/payment_history";
+import { GroupRepository } from "../repo/groupRepo";
+import moment from "moment";
+import { formatNumber, numberToWords } from "../helpers/utils";
+import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -1140,7 +1144,7 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, eventT
     if (eventType === "2") {
         const index = primaryMessage.indexOf('<name here>');
         if (index < 0) return primaryMessage;
-        if (relation) {
+        if (relation && relation !== 'other') {
             return primaryMessage.substring(0, index) + 'your ' + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
         }
 
@@ -1148,7 +1152,7 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, eventT
     } else {
         const index = primaryMessage.indexOf('your');
         if (index < 0) return primaryMessage;
-        if (relation) {
+        if (relation && relation !== 'other') {
             return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
         }
 
@@ -1531,7 +1535,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
                 gifted_to: giftCard.recipient,
                 self: giftCard.assignee === giftCard.recipient ? true : undefined,
                 relation: giftCard.relation,
-                relational: giftCard.relation ? true : undefined,
+                relational: giftCard.relation && giftCard.relation !== 'other' ? true : undefined,
                 memorial: giftCard.event_type == "2" ? true : undefined,
                 count: 1
             }
@@ -1772,6 +1776,59 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
         res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::sendEmailForGiftCardRequest", error);
+        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+}
+
+
+export const generateFundRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.params;
+    if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
+        res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        })
+    }
+
+    try {
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }])
+        if (resp.results.length !== 1) {
+            res.status(status.bad).json({
+                message: 'Please provide valid input details!'
+            })
+            return;
+        }
+
+        const giftCardRequest = resp.results[0];
+        if (!giftCardRequest.group_id) {
+            res.status(status.bad).json({
+                message: 'Fund request can be generated only for corporate requests!'
+            })
+            return;
+        }
+        const group = await GroupRepository.getGroup(giftCardRequest.group_id);
+        if (!group) {
+            res.status(status.bad).json({
+                message: 'Group not found!'
+            })
+            return;
+        }
+
+        const filename = `${group.name} [Req. No: ${giftCardRequest.id}] ${new Date().toDateString()}.pdf`;
+        const totalAmount = giftCardRequest.no_of_cards * (giftCardRequest.category === 'Foundation' ? 3000 : 1500);
+        let data: any = {
+            address: group.address?.split('\n').join('<br/>'),
+            date: moment(new Date()).format('MMMM DD, YYYY'),
+            no_of_trees: giftCardRequest.no_of_cards,
+            per_tree_cost: giftCardRequest.category === 'Foundation' ? 3000 : 1500,
+            total_amount: formatNumber(totalAmount),
+            total_amount_words: "Rupees " + numberToWords(totalAmount).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + " only",
+        } 
+
+        const base64Data = await generateFundRequestPdf(data);
+        const s3Resp = await uploadBase64DataToS3(filename, 'gift_cards', base64Data, { 'Content-Type': 'application/pdf' }, giftCardRequest.request_id);
+        res.status(status.success).send({ url: s3Resp.location });
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::generateFundRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
     }
 }
