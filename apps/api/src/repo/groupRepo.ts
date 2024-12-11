@@ -9,6 +9,7 @@ export class GroupRepository {
             type: data.type as GroupType,
             description: data.description ? data.description as string : undefined,
             logo_url: data.logo_url ? data.logo_url : null,
+            address: data.address ? data.address : null,
             created_at: new Date(),
             updated_at: new Date(),
         };

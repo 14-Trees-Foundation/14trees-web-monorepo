@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Request</title>
+    <style>
+        p {
+            margin: 2px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            text-align: left;
+            padding: 5px;
+        }
+
+        th {
+            text-align: center;
+        }
+
+        .header-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .no-border {
+            border: none;
+        }
+
+        .right-align {
+            text-align: right;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body style="width: 794px; height: 1123px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <img src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+                alt="Logo" width="80px" height="80px">
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; flex-grow: 1;">
+            <p><strong>14 Trees Foundation</strong></p>
+            <p>Registered address: A-502 Swojas Anand,</p>
+            <p>Anand Park, Aundh, Pune - 411007</p>
+            <p>CIN: U93090PN2020NPL191410</p>
+        </div>
+        <div style="width: 80px;">
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; padding-left: 30px ; padding-right: 30px;">
+        <p style="text-align: center; font-size: 24px;"><strong>Fund Request</strong></p>
+        <div style="display: flex; justify-content: space-between;">
+            <div style="border: solid; border-width: 1px; border-color: black; padding: 5px; flex-grow: 1;">
+                <p><strong>To,</strong></p>
+                <p>{{address}}</p>
+            </div>
+            <div style="border: solid; border-width: 1px; border-color: black; padding: 10px; margin-left: 5px;">
+                <p><strong>Date: </strong> {{date}}</p>
+                <p><strong>Request No.: </strong> 1224/002</p>
+            </div>
+        </div>
+        <table style="margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th colspan="2" class="header-cell">Particulars</th>
+                    <th class="header-cell">Amount (Rs.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="2">
+                        Contribution towards your participation in the reforestation activity carried out by 14 Trees
+                        Foundation
+                        <div style="margin-left: 20px;">
+                            <p>No of Trees: <span class="bold">{{no_of_trees}}</span></p>
+                            <p>Contribution Per Tree: <span class="bold">{{per_tree_cost}}</span></p>
+                        </div>
+                    </td>
+                    <td class="right-align bold">{{total_amount}}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="bold right-align">Grand Total</td>
+                    <td class="right-align bold">{{total_amount}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>In Words: <span class="bold">{{total_amount_words}}</span></p>
+
+        <br />
+        <p>Thanking you, for your contribution towards the project.</span></p>
+        <p>Kindly fill the form (<a href="https://tinyurl.com/14TF-form-nl" target="_blank"
+                style="color: black;">https://tinyurl.com/14TF-form-nl</a>) if not done already</span></p>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 50px;">
+            <div style="flex-grow: 1;">
+                <p><strong>PAN : AABCZ5333K</strong></p>
+                <p>Payment to be made in the name of 14 Trees Foundation</p>
+                <p>Bank Details as per below:</p>
+                <p>Bank Name: ICICI Bank</p>
+                <p>A/c No: 007305012197</p>
+                <p>IFSC: ICIC0000073</p>
+                <p>Banch Address: Gulmohor Park, ITI road,</p>
+                <p>Aundh, Pune 411007</p>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; align-self: flex-end;">
+                <p><strong>For 14 Trees Foundation</strong></p>
+                <div>
+                    <img src="https://14treesplants.s3.ap-south-1.amazonaws.com/cards/v22zkqxiclirztoul6pqeq/14trees_sign.png"
+                        alt="Logo" height="70px" width="auto">
+                </div>
+                <p>Pravin Bhagwat</p>
+                <p>E.&O.E. Authorised Signatory</p>
+            </div>
+        </div>
+        <br />
+        <br />
+        <p>E.&O.E.</p>
+    </div>
+</body>
+
+</html>

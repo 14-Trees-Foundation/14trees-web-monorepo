@@ -45,7 +45,7 @@ const encodeMessage = (message: string): string => {
 };
 
 interface MailOptions {
-  from?: string;
+  from?: string | { name: string; address: string };
   to: string | string[];
   subject: string;
   text?: string;
@@ -82,6 +82,7 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
 const sendDashboardMail = async (templateName: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[], subject?: string) => {
 
   const options = {
+    from: { name: '14 Trees', address: 'admin@14trees.org' },
     to: toEmails,
     replyTo: 'admin@14trees.org',
     cc: cc,
