@@ -21,7 +21,6 @@ import { GiftRequestUser, GiftRequestUserAttributes, GiftRequestUserCreationAttr
 import { GiftCard } from "../models/gift_card";
 import { PaymentRepository } from "../repo/paymentsRepo";
 import { PaymentHistory } from "../models/payment_history";
-import RazorpayService from "../services/razorpay/razorpay";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -39,7 +38,6 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
 
     const giftCardRequests = await GiftCardsRepository.getGiftCardRequests(offset, limit, filters);
     const data: any[] = [];
-    const razorpay = new RazorpayService();
     for (const giftCardRequest of giftCardRequests.results) {
         let paidAmount = 0;
         let validatedAmount = 0;
@@ -52,14 +50,6 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
                 paymentHistory.forEach(payment => {
                     if (payment.status !== 'payment_not_received') paidAmount += payment.amount;
                     if (payment.status === 'validated') validatedAmount += payment.amount;
-                })
-            }
-
-            const rpPayments = await razorpay.getPayments(payment.order_id);
-            if (rpPayments) {
-                rpPayments.forEach((payment: any) => {
-                    if (payment.status !== 'failed') paidAmount += payment.amount;
-                    if (payment.status === 'captured') validatedAmount += payment.amount;
                 })
             }
         }
@@ -681,7 +671,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
 }
 
 export const updateGiftCardUserDetails = async (req: Request, res: Response) => {
-    const { users } = req.body;
+    const users: any[] = req.body.users;
     let failureCount = 0;
 
     if (!users || users.length === 0) {
@@ -693,35 +683,55 @@ export const updateGiftCardUserDetails = async (req: Request, res: Response) => 
     }
 
     try {
-        const resp = await GiftCardsRepository.getBookedTrees(users[0].gift_card_request_id, 0, -1);
+        const resp = await GiftCardsRepository.getBookedTrees(users[0].gift_request_id, 0, -1);
         const giftCards = resp.results;
-
         for (const user of users) {
 
             try {
                 const updateRequest: any = {
-                    id: user.assigned_to,
-                    name: user.assigned_to_name,
-                    email: user.assigned_to_email,
-                    phone: user.assigned_to_phone,
+                    id: user.recipient,
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
                 }
                 await UserRepository.updateUser(updateRequest);
 
-                const updateGiftCard = {
-                    profile_image_url: user.profile_image_url || null,
-                    updated_at: new Date()
+                if (user.assignee !== user.recipient) {
+                    const updateRequest: any = {
+                        id: user.assignee,
+                        name: user.assignee_name,
+                        email: user.assignee_email,
+                        phone: user.assignee_phone,
+                    }
+                    await UserRepository.updateUser(updateRequest);
+
+                    if (user.relation?.trim()) {
+                        await UserRelationRepository.createUserRelation({
+                            primary_user: user.recipient,
+                            secondary_user: user.assignee,
+                            relation: user.relation.trim(),
+                            created_at: new Date(),
+                            updated_at: new Date(),
+                        })
+                    }
                 }
-                await GiftCardsRepository.updateGiftCards(updateGiftCard, { assigned_to: user.assigned_to, gifted_to: user.gifted_to, gift_card_request_id: user.gift_card_request_id });
+
+                const updateFields = {
+                    ...user,
+                    profile_image_url: user.profile_image_url || null,
+                    updated_at: new Date(),
+                }
+                await GiftCardsRepository.updateGiftRequestUsers(updateFields, { id: user.id });
 
                 const treeIds = giftCards
-                    .filter(card => card.gifted_to === user.gifted_to && card.assigned_to === user.assigned_to && card.tree_id)
+                    .filter(card => card.gift_request_user_id === user.id)
                     .map(card => card.tree_id);
 
                 const updateTree = {
                     user_tree_image: user.profile_image_url || null,
                     updated_at: new Date()
                 }
-                if (treeIds.length > 0) await TreeRepository.updateTrees(updateTree, { id: { [Op.in]: treeIds }, assigned_to: user.assigned_to })
+                if (treeIds.length > 0) await TreeRepository.updateTrees(updateTree, { id: { [Op.in]: treeIds }, assigned_to: user.assignee });
 
             } catch (error: any) {
                 console.log("[ERROR]", "GiftCardController::updateGiftCardUserDetails", user, error);
