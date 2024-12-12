@@ -34,7 +34,7 @@ export class GiftCardsRepository {
         return { offset: offset, total: total, results: tags };
     }
 
-    static async getGiftCardRequests(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<GiftCardRequest>> {
+    static async getGiftCardRequests(offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<GiftCardRequest>> {
         let whereConditions: string = "";
         let replacements: any = {}
 
@@ -67,7 +67,12 @@ export class GiftCardsRepository {
                     WHEN t.assigned_to is not null
                     THEN 1
                     ELSE 0
-                END) AS assigned
+                END) AS assigned,
+                CASE 
+                    WHEN gcr.category = 'Foundation'
+                    THEN 3000 * gcr.no_of_cards
+                    ELSE 2000 * gcr.no_of_cards
+                END AS total_amount
             FROM "14trees".gift_card_requests gcr
             LEFT JOIN "14trees".users u ON u.id = gcr.user_id
             LEFT JOIN "14trees".users cu ON cu.id = gcr.created_by
@@ -76,7 +81,8 @@ export class GiftCardsRepository {
             left join "14trees".trees t on t.id = gc.tree_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY gcr.id, u.id, cu.id, g.name
-            ORDER BY gcr.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'gcr.id DESC'}
+            ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `

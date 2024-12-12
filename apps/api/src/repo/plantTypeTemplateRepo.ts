@@ -4,6 +4,10 @@ import { PlantTypeCardTemplate, PlantTypeCardTemplateCreationAttributes } from "
 
 class PlantTypeTemplateRepository {
 
+    public static async getAll(): Promise<PlantTypeCardTemplate[]> {
+        return await PlantTypeCardTemplate.findAll();
+    }
+
     public static async addPlantTypeTemplate(plantType: string, templateId: string): Promise<PlantTypeCardTemplate> {
         const data: PlantTypeCardTemplateCreationAttributes = {
             plant_type: plantType,
