@@ -28,19 +28,20 @@ import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
-      const tags = await GiftCardsRepository.getGiftRequestTags(0, 100);
-      res.status(status.success).send(tags);
+        const tags = await GiftCardsRepository.getGiftRequestTags(0, 100);
+        res.status(status.success).send(tags);
     } catch (error: any) {
-      console.log("[ERROR]", "PlantTypeController::getGiftRequestTags", error);
-      res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+        console.log("[ERROR]", "PlantTypeController::getGiftRequestTags", error);
+        res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
     }
-  }
+}
 
 export const getGiftCardRequests = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
+    const orderBy: any[] = req.body?.order_by;
 
-    const giftCardRequests = await GiftCardsRepository.getGiftCardRequests(offset, limit, filters);
+    const giftCardRequests = await GiftCardsRepository.getGiftCardRequests(offset, limit, filters, orderBy);
     const data: any[] = [];
     for (const giftCardRequest of giftCardRequests.results) {
         let paidAmount = 0;
@@ -62,12 +63,12 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             ...giftCardRequest,
             plot_ids: (giftCardRequest as any).plot_ids.filter((plot_id: any) => plot_id !== null),
             payment_status: validatedAmount === totalAmount
-                            ? "Fully paid"
-                            : validatedAmount < paidAmount
-                            ? "Pending validation"
-                            : paidAmount === 0
-                            ? "Pending payment"
-                            : "Partially paid",
+                ? "Fully paid"
+                : validatedAmount < paidAmount
+                    ? "Pending validation"
+                    : paidAmount === 0
+                        ? "Pending payment"
+                        : "Partially paid",
         })
 
     }
@@ -275,6 +276,34 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         if (!giftCardRequest.validation_errors || giftCardRequest.validation_errors.length === 0) giftCardRequest.validation_errors = null;
         const updatedGiftCardRequest = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
+        let paidAmount = 0;
+        let validatedAmount = 0;
+        const totalAmount = giftCardRequest.no_of_cards * (giftCardRequest.category === "Foundation" ? 3000 : 1500);
+
+        if (giftCardRequest.payment_id) {
+            const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
+            if (payment && payment.payment_history) {
+                const paymentHistory: PaymentHistory[] = payment.payment_history;
+                paymentHistory.forEach(payment => {
+                    if (payment.status !== 'payment_not_received') paidAmount += payment.amount;
+                    if (payment.status === 'validated') validatedAmount += payment.amount;
+                })
+            }
+        }
+
+        const updateData = {
+            ...updatedGiftCardRequest,
+            plot_ids: (updatedGiftCardRequest as any).plot_ids.filter((plot_id: any) => plot_id !== null),
+            payment_status: validatedAmount === totalAmount
+                ? "Fully paid"
+                : validatedAmount < paidAmount
+                    ? "Pending validation"
+                    : paidAmount === 0
+                        ? "Pending payment"
+                        : "Partially paid",
+        }
+
         let treeUpdateRequest: any = {};
         if (updatedGiftCardRequest.planted_by !== originalRequest.planted_by) {
             treeUpdateRequest = { gifted_by_name: updatedGiftCardRequest.planted_by };
@@ -300,7 +329,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
             await updateTreesForGiftRequest(giftCardRequest.id, treeUpdateRequest);
         }
 
-        res.status(status.success).json(updatedGiftCardRequest);
+        res.status(status.success).json(updateData);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::updateGiftCardRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
@@ -837,7 +866,7 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
         await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
         res.status(status.success).send();
-        
+
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::bookTreesForGiftRequest", error);
         res.status(status.error).json({
@@ -947,7 +976,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
             const bookedTreesResp = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
             treeIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.tree_id);
         }
-        
+
         if (treeIds.length > 0) {
             const updateConfig = {
                 mapped_to_user: null,
@@ -957,9 +986,9 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 sponsored_by_group: null,
                 gifted_to: null,
                 gifted_by: null,
-                gifted_by_name: null, 
-                assigned_to: null, 
-                assigned_at: null, 
+                gifted_by_name: null,
+                assigned_to: null,
+                assigned_at: null,
                 memory_images: null,
                 description: null,
                 planted_by: null,
@@ -970,8 +999,8 @@ export const unBookTrees = async (req: Request, res: Response) => {
             await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
             await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
         }
-        
-        
+
+
         res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::unBookTrees", error);
@@ -984,7 +1013,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
 const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users: GiftRequestUser[], cards: GiftCard[], memoryImageUrls: string[] | null) => {
     const userTreesMap: Record<number, GiftCard[]> = {};
     for (const user of users) {
-        const userCards = cards.filter(card => card.gift_request_user_id === user.id); 
+        const userCards = cards.filter(card => card.gift_request_user_id === user.id);
         userTreesMap[user.id] = userCards;
     }
 
@@ -1029,9 +1058,9 @@ const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users
 }
 
 const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: GiftCard[], users: GiftRequestUser[], cards: GiftCard[], memoryImageUrls: string[] | null) => {
-    const existingTreesMap: Record<number, GiftCard>  = {};
+    const existingTreesMap: Record<number, GiftCard> = {};
     for (const tree of cards) {
-        existingTreesMap[tree.id] = tree;    
+        existingTreesMap[tree.id] = tree;
     }
     for (const tree of trees) {
         const data = {
@@ -1057,7 +1086,7 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
                     user_tree_image: user.profile_image_url,
                     memory_images: memoryImageUrls,
                 }
-    
+
                 await TreeRepository.updateTrees(updateRequest, { id: tree.tree_id });
             }
         } else if (existingTree.tree_id) {
@@ -1107,7 +1136,7 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
         } else {
             await assignTrees(giftCardRequest, trees, users, existingTreesResp.results, memoryImageUrls);
         }
-        
+
         const updatedResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
         const giftRequest: any = updatedResp.results[0];
         if (giftRequest.no_of_cards == Number(giftRequest.assigned)) {
@@ -1835,7 +1864,7 @@ export const generateFundRequest = async (req: Request, res: Response) => {
             per_tree_cost: giftCardRequest.category === 'Foundation' ? 3000 : 1500,
             total_amount: formatNumber(totalAmount),
             total_amount_words: "Rupees " + numberToWords(totalAmount).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + " only",
-        } 
+        }
 
         const base64Data = await generateFundRequestPdf(data);
         const s3Resp = await uploadBase64DataToS3(filename, 'gift_cards', base64Data, { 'Content-Type': 'application/pdf' }, giftCardRequest.request_id);
