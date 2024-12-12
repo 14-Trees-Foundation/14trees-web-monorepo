@@ -38,7 +38,7 @@ import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import tagRoutes from "./routes/tagRoutes";
-import { recalculateAggregatedData, startAppV2ErrorLogsCronJob } from "./services/cron";
+import { recalculateAggregatedData, cleanUpGiftCardLiveTemplates, startAppV2ErrorLogsCronJob } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
@@ -145,6 +145,8 @@ const app = express();
 const initServer = async () => {
   startAppV2ErrorLogsCronJob();
   recalculateAggregatedData();
+  cleanUpGiftCardLiveTemplates();
+  
   initExpressApp(app);
 };
 

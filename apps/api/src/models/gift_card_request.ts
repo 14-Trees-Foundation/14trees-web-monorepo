@@ -36,6 +36,7 @@ interface GiftCardRequestAttributes {
     album_id: number | null;
     payment_id: number | null;
     tags: string[] | null;
+    gifted_on: Date;
     created_by: number;
 }
 
@@ -174,6 +175,9 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.ARRAY(DataType.STRING),
     })
     validation_errors!: GiftCardRequestValidationError[];
+
+    @Column({ type: DataType.DATE, allowNull: false })
+    gifted_on!: Date;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

@@ -52,14 +52,22 @@ export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
 export const scrapImages = async (req: Request, res: Response) => {
     const { url, request_id: requestId } = req.body;
 
+    if (!url || !requestId || !url.startsWith('https://')) {
+        res.status(status.bad).send({
+            status: status.bad,
+            message: 'Invalid request!'
+        })
+        return;
+    }
+
     let html: any;
     try {
         const { data } = await axios.get(url);
         html = data;
     } catch (error) {
         console.log("[ERROR]", "UtilsController::scrapImages", error);
-        res.status(status.error).send({
-            message: "failed to load page!",
+        res.status(status.bad).send({
+            message: "Failed to load page! Is the webpage publicly accessible?",
         });
         return;
     }

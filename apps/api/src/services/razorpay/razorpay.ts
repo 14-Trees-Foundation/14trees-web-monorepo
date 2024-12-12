@@ -24,7 +24,6 @@ class RazorpayService {
                 amount: amount * 100,
                 currency: "INR",
                 notes: notes,
-                partial_payment: true,
             };
 
             const order = await this.razorpay.orders.create(options);

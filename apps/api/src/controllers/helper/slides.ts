@@ -126,6 +126,9 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const nameUpdateRequest = getUpdateTextRequest(slide, 'NAME', 'Dear ' + record.name + ',', record.name ? false : true);
         if (nameUpdateRequest) requests.push(...nameUpdateRequest);
 
+        const treeIdUpdateRequest = getUpdateTextRequest(slide, 'SAPLING_ID', 'Tree ID: ' + record.sapling);
+        if (treeIdUpdateRequest) requests.push(...treeIdUpdateRequest);
+
         const content1UpdateRequest = getUpdateTextRequest(slide, 'CONTENT1', record.content1);
         if (content1UpdateRequest) requests.push(...content1UpdateRequest);
 
@@ -392,4 +395,44 @@ export async function deleteUnwantedSlides(presentationId: string, allowedIds: s
     );
 
     console.log('[INFO]', `Deleted slides with IDs: ${idsToDelete.join(', ')}`);
+}
+
+export const reorderSlides = async (presentationId: string, slideIds: string[]) => {
+    const token = await getJwtToken();
+    
+    const response = await axios.get(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const currentSlides = response.data.slides;
+    const currentIds: string[] = currentSlides.map((slide: any) => slide.objectId);
+
+    const orderIds = slideIds.filter(id => currentIds.includes(id));
+
+    if (orderIds.length === 0) {
+        console.log('[INFO]' ,'No slides to reorder.');
+        return;
+    }
+
+    const slidePosUpdateRequests = orderIds.map((id, index) => ({
+        updateSlidesPosition: {
+            slideObjectIds: [id],
+            insertionIndex: index,
+        },
+    }));
+
+    await axios.post(
+        `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`,
+        {
+            requests: slidePosUpdateRequests,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        }
+    );
 }
