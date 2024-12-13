@@ -33,6 +33,8 @@ class TreeRepository {
           columnField = 'p."name"'
         } else if (filter.columnField === "plant_type") {
           columnField = 'pt."name"'
+        } else if (filter.columnField === "habit") {
+          columnField = 'pt.habit'
         } else if (filter.columnField === "tree_health") {
           columnField = 't.tree_status'
         }

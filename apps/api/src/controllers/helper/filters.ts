@@ -2,15 +2,15 @@ import { Op, WhereOptions } from "sequelize";
 
 export const getWhereOptions = (fieldName: string, operatorValue: string, value?: any): WhereOptions => {
 
-    switch(operatorValue) {
+    switch (operatorValue) {
         case 'contains':
-            return { [fieldName]: { [Op.iLike]: `%${value}%` }};
+            return { [fieldName]: { [Op.iLike]: `%${value}%` } };
         case 'equals':
             return { [fieldName]: value };
         case 'startsWith':
-            return { [fieldName]: { [Op.iLike]: `${value}%` }};
+            return { [fieldName]: { [Op.iLike]: `${value}%` } };
         case 'endsWith':
-            return { [fieldName]: { [Op.iLike]: `%${value}` }};
+            return { [fieldName]: { [Op.iLike]: `%${value}` } };
         case 'isEmpty':
             return { [fieldName]: { [Op.is]: null } };
         case 'isNotEmpty':
@@ -42,7 +42,7 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
         }
     }
 
-    switch(operatorValue) {
+    switch (operatorValue) {
         case 'contains':
             return { condition: `${fieldName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}%` } };
         case 'equals':
@@ -55,35 +55,35 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
             return { condition: `${fieldName} IS NULL`, replacement: {} };
         case 'isNotEmpty':
             return { condition: `${fieldName} IS NOT NULL`, replacement: {} }
-            case 'isAnyOf':
-                if (Array.isArray(value)) {
-                    const hasNull = value.includes(null);
-                    const nonNullValues = value.filter(v => v !== null);
-                    
-                    let conditionParts = [];
-                    let replacement: any = {};
-            
-                    if (hasNull) {
-                        conditionParts.push(`${fieldName} IS NULL`);
-                    }
-            
-                    if (nonNullValues.length > 0) {
-                        conditionParts.push(`${fieldName} IN (:${valuePlaceHolder})`);
-                        replacement[valuePlaceHolder] = nonNullValues;
-                    }
-            
-                    return {
-                        condition: '(' + conditionParts.join(' OR ') + ')',
-                        replacement: replacement
-                    };
+        case 'isAnyOf':
+            if (Array.isArray(value)) {
+                const hasNull = value.includes(null);
+                const nonNullValues = value.filter(v => v !== null);
+
+                let conditionParts = [];
+                let replacement: any = {};
+
+                if (hasNull) {
+                    conditionParts.push(`${fieldName} IS NULL`);
                 }
-                return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
+
+                if (nonNullValues.length > 0) {
+                    conditionParts.push(`${fieldName} IN (:${valuePlaceHolder})`);
+                    replacement[valuePlaceHolder] = nonNullValues;
+                }
+
+                return {
+                    condition: '(' + conditionParts.join(' OR ') + ')',
+                    replacement: replacement
+                };
+            }
+            return { condition: `${fieldName} IN (:${valuePlaceHolder})`, replacement: { [valuePlaceHolder]: value } };
         case 'greaterThan':
             return { condition: `${fieldName} > :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };;
         case 'lessThan':
             return { condition: `${fieldName} < :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };;
         case 'between':
-            return { condition: `${fieldName} BETWEEN :${valuePlaceHolder}_0 AND :${valuePlaceHolder}_1`, replacement: { [valuePlaceHolder+'_0']: value[0], [valuePlaceHolder+'_1']: value[1] } };;
+            return { condition: `${fieldName} BETWEEN :${valuePlaceHolder}_0 AND :${valuePlaceHolder}_1`, replacement: { [valuePlaceHolder + '_0']: value[0], [valuePlaceHolder + '_1']: value[1] } };;
 
         default:
             return { condition: `${fieldName} = :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: value } };
