@@ -46,6 +46,7 @@ class TreeRepository {
     let query = `
     SELECT t.*, 
       pt."name" as plant_type, 
+      pt.habit as habit, 
       p."name" as plot, 
       mu."name" as mapped_user_name, 
       mg."name" as mapped_group_name, 
