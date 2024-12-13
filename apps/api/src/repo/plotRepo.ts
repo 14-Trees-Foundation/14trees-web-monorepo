@@ -141,6 +141,21 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS unbooked_assigned,
+            SUM(CASE 
+                WHEN pt.habit = 'Tree'
+                THEN 1
+                ELSE 0
+            END) AS tree_count,
+            SUM(CASE 
+                WHEN pt.habit = 'Shrub'
+                THEN 1
+                ELSE 0
+            END) AS shrub_count,
+            SUM(CASE 
+                WHEN pt.habit = 'Herb'
+                THEN 1
+                ELSE 0
+            END) AS herb_count,
             array_agg(distinct CASE 
                 WHEN t.mapped_to_user IS NULL 
                     AND t.mapped_to_group IS NULL 
