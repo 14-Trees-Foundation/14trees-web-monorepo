@@ -39,21 +39,25 @@ export const createPayment = async (req: Request, res: Response) => {
 
     try {
 
+        let orderId: string | null = null;
         const razorpayService = new RazorpayService();
-        const order = await razorpayService.createOrder(data.amount);
-        if (!order) {
-            res.status(status.error).send({
-                status: status.error,
-                message: 'Something went wrong. Please try again later.',
-            })
-            return;
+        if (data.amount < 500000) {
+            const order = await razorpayService.createOrder(data.amount);
+            if (!order) {
+                res.status(status.error).send({
+                    status: status.error,
+                    message: 'Something went wrong. Please try again later.',
+                })
+                return;
+            }
+            orderId = order.id;
         }
 
         const request: PaymentCreationAttributes = {
             amount: data.amount,
             donor_type: data.donor_type || null,
             pan_number: data.pan_number || null,
-            order_id: order.id,
+            order_id: orderId,
             consent: data.consent || false,
             created_at: new Date(),
             updated_at: new Date(),

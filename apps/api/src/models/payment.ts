@@ -8,7 +8,7 @@ interface PaymentAttributes {
   donor_type: string | null;
   pan_number: string | null;
   consent: boolean;
-  order_id: string;
+  order_id: string | null;
   created_at: Date;
   updated_at: Date;  
 }
@@ -40,7 +40,7 @@ implements PaymentAttributes {
     consent!: boolean;
 
     @Column({ type: DataType.STRING })
-    order_id!: string;
+    order_id!: string | null;
 
     @Column({ type: DataType.DATE })
     created_at!: Date;
