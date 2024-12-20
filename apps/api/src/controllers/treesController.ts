@@ -343,3 +343,29 @@ export const getTreesCountForUser = async (req: Request, res: Response) => {
     });
   }
 }
+
+export const getMappedTreesForUser = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const { user_id } = req.params;
+  const userId = parseInt(user_id);
+
+  if (isNaN(userId)) {
+    res.status(status.bad).json({
+      status: status.bad,
+      message: "Invalid User!",
+    })
+    return;
+  }
+
+  try {
+    const trees = await TreeRepository.getTrees(offset, limit, [{ operatorValue: 'equals', value: userId, columnField: 'mapped_to_user' }]);
+    res.status(status.success).send(trees);
+  } catch (error: any) {
+    console.log("[ERROR]", "TreesController::getMappedTreesForUser", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: 'Something went wrong. Please try again after some time.',
+    });
+  }
+
+}

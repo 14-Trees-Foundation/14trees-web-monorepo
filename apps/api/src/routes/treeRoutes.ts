@@ -38,6 +38,7 @@ routes.get("/treetypecount", trees.treeCountTreeType);
 routes.get("/treetypecount/plotwise", trees.treeTypeCountByPlot);
 
 routes.get("/assigned/:user_id", trees.getAssignedTrees);
+routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
 // routes.get("/plot/count", trees.countByPlot);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
