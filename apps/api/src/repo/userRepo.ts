@@ -22,6 +22,11 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
         birth_date: isNaN(birthDate?.getDate()) ? null : birthDate,
         created_at: new Date(),
         updated_at: new Date(),
+        communication_email: reqBody.communication_email && !reqBody.communication_email.trim().endsWith("@14trees")
+                                ? reqBody.communication_email
+                                : !reqBody.email.trim().endsWith("@14trees")
+                                    ? reqBody.email.trim()
+                                    : null
     } as UserCreationAttributes;
 }
 
