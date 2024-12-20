@@ -246,7 +246,22 @@ export class SiteRepository {
                 SUM(COALESCE(tcg.void_available, 0)) as void_available,
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
                 SUM(COALESCE(tcg.card_available, 0)) as card_available,
-                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS tree_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS shrub_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS herb_count
             FROM "14trees_2".sites s
             LEFT JOIN "14trees_2".plots p ON s.id = p.site_id
             LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plot_id = p.id
@@ -310,7 +325,22 @@ export class SiteRepository {
                 SUM(COALESCE(tcg.void_available, 0)) as void_available,
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
                 SUM(COALESCE(tcg.card_available, 0)) as card_available,
-                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS tree_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS shrub_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS herb_count
             FROM "14trees_2".tree_count_aggregations tcg
             LEFT JOIN "14trees_2".plots p ON tcg.plot_id = p.id
             LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
@@ -399,7 +429,22 @@ export class SiteRepository {
                 SUM(tcg.void_available) AS void_available,
                 SUM(tcg.void_assigned) AS void_assigned,
                 SUM(tcg.card_available) AS card_available,
-                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS tree_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS shrub_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.total
+                    ELSE 0
+                END) AS herb_count
             FROM "14trees_2".tree_count_aggregations tcg
             JOIN (
                 SELECT id, site_id, unnest(tags) AS tag
