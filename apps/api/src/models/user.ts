@@ -9,6 +9,7 @@ interface UserAttributes {
 	user_id: string;
   phone: string;
   email: string;
+  communication_email: string | null;
   birth_date?: Date | null;
   pin: string | null;
   roles: string[] | null;
@@ -45,6 +46,9 @@ implements UserAttributes {
 
   @Column(DataType.STRING)
   email!: string;
+
+  @Column(DataType.STRING)
+  communication_email!: string | null;
 
   @Column(DataType.DATE)
   birth_date?: Date;

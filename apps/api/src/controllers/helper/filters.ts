@@ -35,9 +35,14 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
         throw new Error("Value is required");
     }
 
-    if (fieldName.endsWith('.tags') && operatorValue === 'isAnyOf') {
+    if (fieldName.endsWith('.tags')) {
+        let condition = "";
+        if (operatorValue === 'isAnyOf') condition = `${fieldName} && ARRAY[:${valuePlaceHolder}]::varchar[]`;
+        else if (operatorValue === 'contains') condition = `${fieldName} @> ARRAY[:${valuePlaceHolder}]::varchar[]`;
+
         return {
-            condition: `exists ( SELECT 1 FROM unnest(${fieldName}) AS txt(tag) WHERE txt.tag = ANY(ARRAY[:${valuePlaceHolder}]))`,
+            // condition: `exists ( SELECT 1 FROM unnest(${fieldName}) AS txt(tag) WHERE txt.tag = ANY(ARRAY[:${valuePlaceHolder}]))`,
+            condition: condition,
             replacement: { [valuePlaceHolder]: value }
         }
     }
