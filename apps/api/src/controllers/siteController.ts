@@ -127,6 +127,9 @@ const parseCountToInt = (data: any[]) => {
             void_assigned: parseInt(item.void_assigned),
             void_booked: parseInt(item.void_booked),
             void_total: parseInt(item.void_total),
+            tree_count: parseInt(item.tree_count),
+            shrub_count: parseInt(item.shrub_count),
+            herb_count: parseInt(item.herb_count),
         }
     })
 }
