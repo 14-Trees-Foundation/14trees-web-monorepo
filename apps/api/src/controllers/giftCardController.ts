@@ -27,6 +27,7 @@ import { formatNumber, numberToWords } from "../helpers/utils";
 import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
+import { Readable } from "stream";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -1338,7 +1339,6 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         }
 
         const giftCardRequest = resp.results[0];
-
         if (!process.env.GIFT_CARD_PRESENTATION_ID) {
             console.log('[ERROR]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', 'Missing gift card template presentation id in ENV variables.')
             res.status(status.error).json({
@@ -1346,16 +1346,11 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             })
             return;
         }
+        const templatePresentationId: string = process.env.GIFT_CARD_PRESENTATION_ID;
 
         // send the response - because generating cards may take a while. users can download card later
         res.status(status.success).send();
 
-        const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, `${(giftCardRequest as any).group_name || (giftCardRequest as any).user_name}-[${giftCardRequest.id}]`);
-        giftCardRequest.presentation_id = presentationId;
-        giftCardRequest.updated_at = new Date();
-        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
-
-        // const slideIds: string[] = []
         const userTreeCount: Record<string, number> = {};
         const idToCardMap: Map<number, GiftCard> = new Map();
         const giftCards = await GiftCardsRepository.getBookedTrees(giftCardRequest.id, 0, -1);
@@ -1389,54 +1384,78 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             cardIds.push(giftCard.id);
         }
 
+        const copyTasks: Task<string>[] = [];
+        const batchSize = 200;
+        const requiredPresentations = Math.ceil(cardIds.length / batchSize);
+
+        for (let i = 0; i < requiredPresentations; i++) {
+            copyTasks.push(() => copyFile(templatePresentationId, `${(giftCardRequest as any).group_name || (giftCardRequest as any).user_name}-[${giftCardRequest.id}] (${i + 1})`))
+        }
+
         let time = new Date().getTime();
-        const records: any[] = [];
-        const slideIds: string[] = await createCopyOfTheCardTemplates(presentationId, templateIds);
-        for (let i = 0; i < cardIds.length; i++) {
-            const templateId = slideIds[i];
-            const cardId = cardIds[i];
-            const giftCard = idToCardMap.get(cardId);
-            if (giftCard) {
-                let primaryMessage = giftCardRequest.primary_message;
-                if (giftCard.gifted_to && giftCard.assigned_to) {
-                    const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
-                    if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assignee_name, giftCardRequest.event_type, (giftCard as any).relation);
-                    if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
+        const presentationIds = await runWithConcurrency(copyTasks, 10);
+        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate presentations: ${new Date().getTime() - time}ms`);
+        // const presentationId = await copyFile(process.env.GIFT_CARD_PRESENTATION_ID, `${(giftCardRequest as any).group_name || (giftCardRequest as any).user_name}-[${giftCardRequest.id}]`);
+        // giftCardRequest.presentation_id = presentationId;
+        // giftCardRequest.updated_at = new Date();
+        // await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
+        for (let batch = 0; batch < presentationIds.length; batch++ ) {
+
+            console.log("[INFO]", `Batch: ${batch + 1} --------------------------- START`)
+            const presentationId = presentationIds[batch];
+            let time = new Date().getTime();
+
+            const records: any[] = [];
+            const slideIds: string[] = await createCopyOfTheCardTemplates(presentationId, templateIds.slice(batch * batchSize, (batch + 1)*batchSize));
+            for (let i = 0; i < slideIds.length; i++) {
+                const templateId = slideIds[i];
+                const cardId = cardIds[(batch*batchSize) + i];
+                const giftCard = idToCardMap.get(cardId);
+                if (giftCard) {
+                    let primaryMessage = giftCardRequest.primary_message;
+                    if (giftCard.gifted_to && giftCard.assigned_to) {
+                        const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
+                        if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assignee_name, giftCardRequest.event_type, (giftCard as any).relation);
+                        if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
+                    }
+    
+                    const record = {
+                        slideId: templateId,
+                        name: (giftCard as any).recipient_name || "",
+                        sapling: (giftCard as any).sapling_id,
+                        content1: primaryMessage,
+                        content2: giftCardRequest.secondary_message,
+                        logo: giftCardRequest.logo_url,
+                        logo_message: giftCardRequest.logo_message
+                    }
+    
+                    records.push(record);
                 }
-
-                const record = {
-                    slideId: templateId,
-                    name: (giftCard as any).recipient_name || "",
-                    sapling: (giftCard as any).sapling_id,
-                    content1: primaryMessage,
-                    content2: giftCardRequest.secondary_message,
-                    logo: giftCardRequest.logo_url,
-                    logo_message: giftCardRequest.logo_message
-                }
-
-                records.push(record);
             }
-        }
-        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate gift cards: ${new Date().getTime() - time}ms`);
+            console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate gift cards: ${new Date().getTime() - time}ms`);
+    
+            time = new Date().getTime();
+            await bulkUpdateSlides(presentationId, records);
+            console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to update slides: ${new Date().getTime() - time}ms`);
+            await deleteUnwantedSlides(presentationId, slideIds);
+            await reorderSlides(presentationId, slideIds);
 
-        time = new Date().getTime();
-        await bulkUpdateSlides(presentationId, records);
-        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to update slides: ${new Date().getTime() - time}ms`);
-
-        await deleteUnwantedSlides(giftCardRequest.presentation_id, slideIds);
-        await reorderSlides(giftCardRequest.presentation_id, slideIds);
-
-        const tasks: Task<void>[] = []
-        for (let i = 0; i < cardIds.length; i++) {
-            const templateId = slideIds[i];
-            const cardId = cardIds[i];
-            const giftCard = idToCardMap.get(cardId);
-            if (giftCard) {
-                tasks.push(() => generateTreeCardImage(giftCardRequest, giftCard, templateId));
-            }
+            console.log(presentationId);
+            console.log("[INFO]", `Batch: ${batch + 1} --------------------------- END`)
         }
 
-        await runWithConcurrency(tasks, 3);
+        // const tasks: Task<void>[] = []
+        // for (let i = 0; i < cardIds.length; i++) {
+        //     const templateId = slideIds[i];
+        //     const cardId = cardIds[i];
+        //     const giftCard = idToCardMap.get(cardId);
+        //     if (giftCard) {
+        //         tasks.push(() => generateTreeCardImage(giftCardRequest, giftCard, templateId));
+        //     }
+        // }
+
+        // await runWithConcurrency(tasks, 3);
 
         if (giftCardRequest.status === GiftCardRequestStatus.pendingGiftCards) {
             giftCardRequest.status = GiftCardRequestStatus.completed;
@@ -1479,18 +1498,25 @@ export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         }
 
         const giftCardRequest = resp.results[0];
-        if (giftCardRequest.status !== GiftCardRequestStatus.completed) {
+        if (!giftCardRequest.presentation_id) {
             res.status(status.error).json({
-                message: 'Gift request is not complete yet!'
+                message: 'Gift cards not generated yet!'
             })
             return;
         }
 
         if (downloadType !== 'zip') {
-            const fileData = await downloadSlide(giftCardRequest.presentation_id, mimeType);
             res.setHeader('Content-Type', mimeType);
             res.setHeader('Content-Disposition', `attachment; filename="slide.${downloadType}"`);
-            res.send(fileData);
+            const fileData = await downloadSlide(giftCardRequest.presentation_id, mimeType);
+
+            fileData.pipe(res);
+
+            // Handle errors during streaming
+            fileData.on('error', (error) => {
+                console.error('Error streaming the file:', error);
+                res.status(500).send('Error streaming the file');
+            });
         } else {
             res.setHeader('Content-Disposition', `attachment; filename=${(giftCardRequest as any).user_name + '_' + giftCardRequest.no_of_cards}.zip`);
             res.setHeader('Content-Type', 'application/zip');
