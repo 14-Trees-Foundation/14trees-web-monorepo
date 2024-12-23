@@ -358,7 +358,7 @@ export const getMappedTreesForUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const trees = await TreeRepository.getTrees(offset, limit, [{ operatorValue: 'equals', value: userId, columnField: 'mapped_to_user' }]);
+    const trees = await TreeRepository.getTrees(offset, limit, [{ operatorValue: 'equals', value: userId, columnField: 'mapped_to_user' }, { operatorValue: 'isNotEmpty', value: userId, columnField: 'assigned_to' }]);
     res.status(status.success).send(trees);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getMappedTreesForUser", error);
