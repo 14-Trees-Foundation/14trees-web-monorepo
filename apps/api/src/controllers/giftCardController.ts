@@ -485,6 +485,9 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
         const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
 
+        const cardsResp = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
+        const giftCards = cardsResp.results;
+
         const addUsersData: GiftRequestUserCreationAttributes[] = []
         const updateUsersData: GiftRequestUserAttributes[] = []
         let count = 0;
@@ -552,10 +555,38 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
 
         const existingUsers = await GiftCardsRepository.getGiftRequestUsers(giftCardRequestId);
         const deleteIds = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1).map(item => item.id);
-        if (deleteIds.length > 0) await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
+        if (deleteIds.length > 0) {
+            const treeIds = giftCards.filter(item => item.gift_request_user_id && item.tree_id && deleteIds.includes(item.gift_request_user_id)).map(item => item.tree_id);
+            await TreeRepository.updateTrees({ 
+                description: null,
+                assigned_to: null,
+                assigned_at: null,
+                gifted_to: null,
+                gifted_by: null,
+                planted_by: null,
+                gifted_by_name: null,
+                event_type: null,
+                user_tree_image: null,
+                memory_images: null,
+                updated_at: new Date() 
+            }, { id: { [Op.in]: treeIds } });
+
+            await GiftCardsRepository.updateGiftCards({ gift_request_user_id: null }, { gift_card_request_id: giftCardRequestId, gift_request_user_id: { [Op.in]: deleteIds } });
+            await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
+        }
 
         if (addUsersData.length > 0) await GiftCardsRepository.addGiftRequestUsers(addUsersData);
         for (const user of updateUsersData) {
+
+            const treeIds = giftCards.filter(item => item.tree_id && item.gift_request_user_id === user.id).map(item => item.tree_id);
+            await TreeRepository.updateTrees({ 
+                assigned_to: user.assignee,
+                assigned_at: giftCardRequest.gifted_on,
+                gifted_to: user.recipient,
+                user_tree_image: user.profile_image_url,
+                updated_at: new Date() 
+            }, { id: { [Op.in]: treeIds } });
+
             await GiftCardsRepository.updateGiftRequestUsers(user, { id: user.id });
         }
 
