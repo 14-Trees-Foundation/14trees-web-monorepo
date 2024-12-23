@@ -68,3 +68,15 @@ export async function downloadSlide(fileId: string, mimeType: string): Promise<R
     //     stream.on('error', (error) => reject(error));
     // });
 }
+
+export async function downloadFile(fileId: string): Promise<Readable> {
+    const response = await drive.files.get(
+        {
+            fileId,
+            alt: 'media',
+        },
+        { responseType: 'stream' }
+    );
+
+    return response.data as Readable;
+}
