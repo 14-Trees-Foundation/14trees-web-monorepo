@@ -12,6 +12,8 @@ import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 import { syncNotionPlantTypeIllustrations } from "../services/notion/plant_type_illustrations";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
+import { Op } from "sequelize";
+import { streamIllustrationToS3 } from "./helper/plant_types";
 
 export const getPlantTypes = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -179,7 +181,7 @@ export const addPlantTypeTemplate = async (req: Request, res: Response) => {
     return;
   }
 
-  
+
   try {
     const plantType = plant_type.trim();
     const templateId = template_id.trim();
@@ -204,6 +206,37 @@ export const addPlantTypeTemplate = async (req: Request, res: Response) => {
     res.status(status.success).send(result);
   } catch (error: any) {
     console.log('[ERROR]', 'PlantTypesController::addPlantTypeTemplate', error);
+    res.status(status.bad).send({ message: 'Something went wrong. Please try again after some time!' });
+  }
+}
+
+export const uploadIllustrationsToS3 = async (req: Request, res: Response) => {
+
+  try {
+
+    let total = 200;
+    const limit = 200;
+    let offset = 0;
+
+    while (offset < total) {
+      const response = await PlantTypeRepository.getPlantTypes(offset, limit, { illustration_link: { [Op.ne]: null }, illustration_s3_path: { [Op.is]: null } });
+      total = response.total;
+      offset += limit;
+
+      for (const plantType of response.results) {
+        if (!plantType.illustration_link) continue;
+
+        try {
+          const location = await streamIllustrationToS3(plantType.illustration_link, `${plantType.name}.jpg`);
+          if (location) await plantType.update({ illustration_s3_path: location, updated_at: new Date() });
+        } catch (error: any) {
+          console.log('[ERROR]', 'PlantTypesController::uploadIllustrationsToS3', error);
+        }
+      }
+    }
+
+  } catch (error: any) {
+    console.log('[ERROR]', 'PlantTypesController::uploadIllustrationsToS3', error);
     res.status(status.bad).send({ message: 'Something went wrong. Please try again after some time!' });
   }
 }
