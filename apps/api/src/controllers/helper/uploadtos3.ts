@@ -232,3 +232,22 @@ export async function getObjectKeysForPrefix(prefix: string) {
 
     return {keys: objectKeys, bucket: bucketName};
 }
+
+export async function uploadFileToS3(
+    type: string,
+    data: Readable,
+    key: string,
+): Promise<string> {
+    const bucketName = getBucketFromTypeAndFolderName(type, '').split('/')[0];
+
+    const uploadParams: AWS.S3.PutObjectRequest = {
+        Bucket: bucketName,
+        Key: key,
+        Body: data,
+        ACL: 'public-read',
+    };
+
+    const uploadResult = await s3.upload(uploadParams).promise();
+
+    return uploadResult.Location;
+}

@@ -22,12 +22,14 @@ interface PlantTypeAttributes {
   status?: string;
   status_message?: string[];
   last_system_updated_at?: Date;
+  illustration_link: string | null;
+  illustration_s3_path: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
 
 interface PlantTypeCreationAttributes
-	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'use' | 'status'> {}
+	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'use' | 'status' | 'illustration_link' | 'illustration_s3_path'> {}
 
 @Table({ tableName: 'plant_types' })
 class PlantType extends Model<PlantTypeAttributes, PlantTypeCreationAttributes>
@@ -92,6 +94,12 @@ implements PlantTypeAttributes {
   @Column(DataType.STRING)
   names_index!: string;
   
+  @Column(DataType.STRING)
+  illustration_link!: string | null;
+
+  @Column(DataType.STRING)
+  illustration_s3_path!: string | null;
+
   @Column(DataType.STRING)
   status!: string;
 

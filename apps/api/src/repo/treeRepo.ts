@@ -49,7 +49,7 @@ class TreeRepository {
     SELECT t.*, 
       pt."name" as plant_type, 
       pt.habit as habit, 
-      pt.illustration_link as illustration_link, 
+      pt.illustration_s3_path as illustration_s3_path, 
       p."name" as plot, 
       mu."name" as mapped_user_name, 
       mg."name" as mapped_group_name, 

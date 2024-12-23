@@ -6,7 +6,7 @@ import { sequelize } from "../config/postgreDB";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 
 class PlantTypeRepository {
-    public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<PlantType>> {
+    public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions<PlantType>): Promise<PaginatedResponse<PlantType>> {
         if (limit === -1) {
             return {
                 results: await PlantType.findAll({ where: whereClause, order: [['id', 'DESC']], offset }),
