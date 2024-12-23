@@ -14,5 +14,6 @@ routes.delete('/:id', plantTypes.deletePlantType);
 routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
 routes.post('/sync', plantTypes.syncPlantTypeIllustrationsDataFromNotion);
 routes.post('/templates/', plantTypes.addPlantTypeTemplate);
+routes.post('/illustrations/', plantTypes.uploadIllustrationsToS3);
 
 export default routes;
