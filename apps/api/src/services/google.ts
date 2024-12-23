@@ -62,11 +62,11 @@ export async function downloadSlide(fileId: string, mimeType: string): Promise<B
     const stream = response.data as Readable;
 
     // Accumulate the data chunks
-    // return new Promise<Buffer>((resolve, reject) => {
-    //     stream.on('data', (chunk) => chunks.push(chunk));
-    //     stream.on('end', () => resolve(Buffer.concat(chunks)));
-    //     stream.on('error', (error) => reject(error));
-    // });
+    return new Promise<Buffer>((resolve, reject) => {
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+        stream.on('error', (error) => reject(error));
+    });
 }
 
 export async function downloadFile(fileId: string): Promise<Readable> {
