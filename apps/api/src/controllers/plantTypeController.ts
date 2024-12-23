@@ -219,7 +219,7 @@ export const uploadIllustrationsToS3 = async (req: Request, res: Response) => {
     let offset = 0;
 
     while (offset < total) {
-      const response = await PlantTypeRepository.getPlantTypes(offset, limit, { illustration_link: { [Op.ne]: null } });
+      const response = await PlantTypeRepository.getPlantTypes(offset, limit, { illustration_link: { [Op.ne]: null }, illustration_s3_path: { [Op.is]: null } });
       total = response.total;
       offset += limit;
 
