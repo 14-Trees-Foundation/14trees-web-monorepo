@@ -36,6 +36,7 @@ export class PlotRepository {
             site_id: siteId || null,
             label: plotData.label || null,
             accessibility_status: plotData.accessibility_status || null,
+            pit_count: plotData.pit_count || null,
             created_at: new Date(),
             updated_at: new Date()
         };
