@@ -130,6 +130,18 @@ const parseCountToInt = (data: any[]) => {
             tree_count: parseInt(item.tree_count),
             shrub_count: parseInt(item.shrub_count),
             herb_count: parseInt(item.herb_count),
+            booked_trees: parseInt(item.booked_trees),
+            assigned_trees: parseInt(item.assigned_trees),
+            unbooked_assigned_trees: parseInt(item.unbooked_assigned_trees),
+            available_trees: parseInt(item.available_trees),
+            booked_shrubs: parseInt(item.booked_shrubs),
+            assigned_shrubs: parseInt(item.assigned_shrubs),
+            unbooked_assigned_shrubs: parseInt(item.unbooked_assigned_shrubs),
+            available_shrubs: parseInt(item.available_shrubs),
+            booked_herbs: parseInt(item.booked_herbs),
+            assigned_herbs: parseInt(item.assigned_herbs),
+            unbooked_assigned_herbs: parseInt(item.unbooked_assigned_herbs),
+            available_herbs: parseInt(item.available_herbs),
         }
     })
 }
