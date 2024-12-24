@@ -100,6 +100,16 @@ export const deleteTree = async (req: Request, res: Response) => {
   }
 };
 
+export const getTreeTags = async (req: Request, res: Response) => {
+  try {
+    const response = await TreeRepository.getTreeTags(0, 100);
+    res.status(status.success).send(response);
+  } catch (error: any) {
+    console.log("[ERROR]", "TreeController::getTreeTags", error);
+    res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+  }
+}
+
 export const getTreeFromId = async (req: Request, res: Response) => {
   try {
     if (!req.query.id) {

@@ -24,6 +24,7 @@ routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
 routes.delete('/:id', uploadFiles.array('files', 1), trees.deleteTree);
 routes.post('/change-plot', trees.changeTreesPlot);
 routes.post('/get-giftable', trees.getGiftableTrees);
+routes.get('/tags', trees.getTreeTags);
 
 // // the below route should be /get-tree-by-mongo-id or /get-tree-by-id
 routes.get("/getsaplingid", trees.getTreeFromId);
