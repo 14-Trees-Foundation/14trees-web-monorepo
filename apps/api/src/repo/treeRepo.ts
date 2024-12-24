@@ -146,12 +146,15 @@ class TreeRepository {
       };
     }
 
+    const tags = data.tags ?? null;
+
     let treeObj: TreeCreationAttributes = {
       sapling_id: data.sapling_id,
       plant_type_id: plantType.id,
       plot_id: plot.id,
       image: imageUrl,
       location: loc,
+      tags: tags,
       mapped_to_user: mapped_to?.id,
       created_at: new Date(),
       updated_at: new Date(),
@@ -711,6 +714,29 @@ class TreeRepository {
       results: result
     };
   }
+
+  public static async getTreeTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
+    const tags: string[] = [];
+
+    const getUniqueTagsQuery = 
+        `SELECT DISTINCT tag
+            FROM "14trees_2".trees t,
+            unnest(t.tags) AS tag
+            ORDER BY tag
+            OFFSET ${offset} LIMIT ${limit};`;
+
+    const countUniqueTagsQuery = 
+        `SELECT count(DISTINCT tag)
+            FROM "14trees_2".trees t,
+            unnest(t.tags) AS tag;`;
+
+    const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
+    tagsResp.forEach(r => tags.push(r.tag));
+
+    const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
+    const total = parseInt(countResp[0].count);
+    return { offset: offset, total: total, results: tags };
+}
 }
 
 export default TreeRepository;
