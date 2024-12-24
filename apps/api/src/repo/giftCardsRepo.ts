@@ -72,7 +72,8 @@ export class GiftCardsRepository {
                     WHEN gcr.category = 'Foundation'
                     THEN 3000 * gcr.no_of_cards
                     ELSE 2000 * gcr.no_of_cards
-                END AS total_amount
+                END AS total_amount,
+                array_agg(distinct gc.presentation_id) as presentation_ids
             FROM "14trees_2".gift_card_requests gcr
             LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
             LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
@@ -248,7 +249,7 @@ export class GiftCardsRepository {
     static async updateGiftCard(giftCard: GiftCardAttributes): Promise<void> {
         const card = await GiftCard.findByPk(giftCard.id);
         if (card) {
-            await card.update(giftCard);
+            await card.update(giftCard, { returning: false });
         }
     }
 
