@@ -714,14 +714,14 @@ class TreeRepository {
 
     const getUniqueTagsQuery = 
         `SELECT DISTINCT tag
-            FROM "14trees_2".trees t,
+            FROM "14trees".trees t,
             unnest(t.tags) AS tag
             ORDER BY tag
             OFFSET ${offset} LIMIT ${limit};`;
 
     const countUniqueTagsQuery = 
         `SELECT count(DISTINCT tag)
-            FROM "14trees_2".trees t,
+            FROM "14trees".trees t,
             unnest(t.tags) AS tag;`;
 
     const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
