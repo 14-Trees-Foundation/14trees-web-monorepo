@@ -22,7 +22,7 @@ routes.post('/card/redeem', giftCards.redeemGiftCard);
 routes.post('/assign', giftCards.assignGiftRequestTrees);
 routes.get('/generate/:gift_card_request_id', giftCards.generateGiftCardTemplatesForGiftCardRequest);
 routes.get('/download/:gift_card_request_id', giftCards.downloadGiftCardTemplatesForGiftCardRequest);
-routes.post('/email', giftCards.sendEmailForGiftCardRequest);
+// routes.post('/email', giftCards.sendEmailForGiftCardRequest);
 routes.post('/update-album/', giftCards.updateGiftCardRequestAlbum);
 routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
 routes.get('/requests/tags', giftCards.getGiftRequestTags);
