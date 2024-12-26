@@ -8,6 +8,7 @@ import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
 import { Tree } from "../models/tree";
+import { SortOrder } from "../models/common";
 
 /*
   Model - Tree
@@ -51,9 +52,10 @@ export const getTree = async (req: Request, res: Response) => {
 export const getTrees = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   const filters: FilterItem[] = req.body?.filters;
+  const orderBy: SortOrder[] = req.body?.order_by;
 
   try {
-    let result = await TreeRepository.getTrees(offset, limit, filters);
+    let result = await TreeRepository.getTrees(offset, limit, filters, orderBy);
     res.status(status.success).send(result);
   } catch (error: any) {
     res.status(status.error).json({

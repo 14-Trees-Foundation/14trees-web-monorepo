@@ -3,7 +3,7 @@ import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
 import { User } from "../models/user";
-import { Center } from "../models/common";
+import { Center, SortOrder } from "../models/common";
 import { sequelize } from "../config/postgreDB";
 import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
@@ -11,7 +11,7 @@ import { getUserDocumentFromRequestBody } from "./userRepo";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 
 class TreeRepository {
-  public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[]): Promise<PaginatedResponse<Tree>> {
+  public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Tree>> {
 
     let whereCondition = "";
     let replacements: any = {}
@@ -66,7 +66,7 @@ class TreeRepository {
     LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-    ORDER BY t.sapling_id
+    ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => 't.' + o.column + " " + o.order).join(", ") : 't.sapling_id'}
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
