@@ -261,7 +261,82 @@ export class SiteRepository {
                     WHEN pt.habit = 'Herb'
                     THEN tcg.total
                     ELSE 0
-                END) AS herb_count
+                END) AS herb_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.assigned
+                    ELSE 0 
+                END) as assigned_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.booked
+                    ELSE 0 
+                END) AS booked_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.unbooked_assigned
+                    ELSE 0 
+                END) AS unbooked_assigned_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.available
+                    ELSE 0 
+                END) AS available_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.assigned 
+                    ELSE 0 
+                END) as assigned_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.booked 
+                    ELSE 0 
+                END) AS booked_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.unbooked_assigned 
+                    ELSE 0 
+                END) AS unbooked_assigned_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.available 
+                    ELSE 0 
+                END) AS available_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.assigned 
+                    ELSE 0 
+                END) as assigned_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.booked 
+                    ELSE 0 
+                END) AS booked_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.unbooked_assigned 
+                    ELSE 0 
+                END) AS unbooked_assigned_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.available 
+                    ELSE 0 
+                END) AS available_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_shrubs
             FROM "14trees".sites s
             LEFT JOIN "14trees".plots p ON s.id = p.site_id
             LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
@@ -340,7 +415,82 @@ export class SiteRepository {
                     WHEN pt.habit = 'Herb'
                     THEN tcg.total
                     ELSE 0
-                END) AS herb_count
+                END) AS herb_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.assigned
+                    ELSE 0 
+                END) as assigned_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.booked
+                    ELSE 0 
+                END) AS booked_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.unbooked_assigned
+                    ELSE 0 
+                END) AS unbooked_assigned_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.available
+                    ELSE 0 
+                END) AS available_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.assigned 
+                    ELSE 0 
+                END) as assigned_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.booked 
+                    ELSE 0 
+                END) AS booked_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.unbooked_assigned 
+                    ELSE 0 
+                END) AS unbooked_assigned_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.available 
+                    ELSE 0 
+                END) AS available_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.assigned 
+                    ELSE 0 
+                END) as assigned_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.booked 
+                    ELSE 0 
+                END) AS booked_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.unbooked_assigned 
+                    ELSE 0 
+                END) AS unbooked_assigned_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.available 
+                    ELSE 0 
+                END) AS available_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_shrubs
             FROM "14trees".tree_count_aggregations tcg
             LEFT JOIN "14trees".plots p ON tcg.plot_id = p.id
             LEFT JOIN "14trees".sites s ON p.site_id = s.id
@@ -444,7 +594,82 @@ export class SiteRepository {
                     WHEN pt.habit = 'Herb'
                     THEN tcg.total
                     ELSE 0
-                END) AS herb_count
+                END) AS herb_count,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.assigned
+                    ELSE 0 
+                END) as assigned_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.booked
+                    ELSE 0 
+                END) AS booked_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.unbooked_assigned
+                    ELSE 0 
+                END) AS unbooked_assigned_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.available
+                    ELSE 0 
+                END) AS available_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Tree'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_trees,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.assigned 
+                    ELSE 0 
+                END) as assigned_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.booked 
+                    ELSE 0 
+                END) AS booked_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.unbooked_assigned 
+                    ELSE 0 
+                END) AS unbooked_assigned_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.available 
+                    ELSE 0 
+                END) AS available_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Herb'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_herbs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.assigned 
+                    ELSE 0 
+                END) as assigned_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.booked 
+                    ELSE 0 
+                END) AS booked_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.unbooked_assigned 
+                    ELSE 0 
+                END) AS unbooked_assigned_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.available 
+                    ELSE 0 
+                END) AS available_shrubs,
+                SUM(CASE 
+                    WHEN pt.habit = 'Shrub'
+                    THEN tcg.card_available
+                    ELSE 0 
+                END) AS card_available_shrubs
             FROM "14trees".tree_count_aggregations tcg
             JOIN (
                 SELECT id, site_id, unnest(tags) AS tag

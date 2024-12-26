@@ -19,6 +19,7 @@ interface PlotAttributes {
   created_at: Date;
   updated_at: Date;
   site_id: number | null;
+  pit_count: number | null,
   label: string | null;
   accessibility_status: string | null;
   acres_area: number | null;
@@ -89,6 +90,9 @@ implements PlotAttributes {
 
     @Column({ type: DataType.REAL })
     acres_area!: number | null;
+
+    @Column({ type: DataType.INTEGER })
+    pit_count!: number | null;
 }
 
 export { Plot }

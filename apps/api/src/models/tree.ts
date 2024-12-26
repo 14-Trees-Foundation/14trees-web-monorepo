@@ -17,7 +17,7 @@ interface TreeAttributes {
     plant_type_id: number,
     plot_id: number,
     image: string | null,
-    tags: string[],
+    tags: string[] | null,
     location: Center,
     planted_by?: string,
     mapped_to_user?: number | null,
@@ -83,7 +83,7 @@ implements TreeAttributes {
   planted_by!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
-  tags!: string[];
+  tags!: string[] | null;
 
   @Column(DataType.JSON)
   location!: Center;
