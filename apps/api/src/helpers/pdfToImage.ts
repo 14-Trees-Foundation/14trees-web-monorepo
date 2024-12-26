@@ -45,6 +45,6 @@ export const convertPdfToImage = async (pdfData: Buffer, s3Keys: string[]) => {
         tasks.push(() => extractImage(convert, s3Keys[i], result, i+1));
     }
 
-    await runWithConcurrency(tasks, 50);
+    await runWithConcurrency(tasks, 25);
     return result;
 }
