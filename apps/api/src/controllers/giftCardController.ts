@@ -1067,11 +1067,15 @@ const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users
         }
     }
 
+    const update = async (user: GiftRequestUser, updateRequest: any, treeIds: number[]) => {
+        await GiftCardsRepository.updateGiftCards({ gift_request_user_id: user.id, updated_at: new Date() }, { gift_card_request_id: giftCardRequest.id, tree_id: { [Op.in]: treeIds } });
+        await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds } });
+    }
+
+    const tasks: Task<void>[] = [];
     for (const user of users) {
         const cards = userTreesMap[user.id];
         const treeIds = cards.map(card => card.tree_id);
-
-        await GiftCardsRepository.updateGiftCards({ gift_request_user_id: user.id, updated_at: new Date() }, { gift_card_request_id: giftCardRequest.id, tree_id: { [Op.in]: treeIds } });
 
         const updateRequest = {
             assigned_at: giftCardRequest.gifted_on,
@@ -1087,9 +1091,10 @@ const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users
             memory_images: memoryImageUrls,
         }
 
-        await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds } });
+        tasks.push(() =>  update(user, updateRequest, treeIds));        
     }
 
+    runWithConcurrency(tasks, 10);
 }
 
 const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: GiftCard[], users: GiftRequestUser[], cards: GiftCard[], memoryImageUrls: string[] | null) => {
@@ -1385,7 +1390,7 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
             if (!giftCard.tree_id) continue;
             const templateId = plantTypeTemplateIdMap.get((giftCard as any).plant_type);
             if (!templateId) continue;
-            
+
             templateIds.push(templateId);
             cardIds.push(giftCard.id);
         }
@@ -1708,7 +1713,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
     }
 };
 
-const emailReceiver = async (giftCardRequest: any, emailData: any, eventType: string, attachCard: boolean, ccMailIds?: string[], testMails?: string[]) => {
+const emailReceiver = async (giftCardRequest: any, emailData: any, eventType: string, template: string, attachCard: boolean, ccMailIds?: string[], testMails?: string[]) => {
     const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
     const isTestMail = (testMails && testMails.length !== 0) ? true : false
 
@@ -1727,35 +1732,36 @@ const emailReceiver = async (giftCardRequest: any, emailData: any, eventType: st
         if (files.length > 0) attachments = files;
     }
 
-    const templatesMap: Record<string, string> = {}
-    const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
-    if (!templatesMap[templateType]) {
-        const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
-        if (templates.length === 0) {
-            console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
-            return;
-        }
-        templatesMap[templateType] = templates[0].template_name
-    }
-
     let subject: string | undefined = undefined;
     if (eventType === 'birthday') {
         subject = `Birthday wishes from ${giftCardRequest.planted_by ? giftCardRequest.planted_by : giftCardRequest.group_name ? giftCardRequest.group_name : giftCardRequest.user_name.split(" ")[0]} and 14 Trees`;
     }
 
-    const statusMessage: string = await sendDashboardMail(templatesMap[templateType], emailData, mailIds, ccMailIds, attachments, subject);
-    const updateRequest = {
-        mail_sent: (statusMessage === '' && !isTestMail) ? true : false,
-        mail_error: statusMessage ? statusMessage : null,
-        updated_at: new Date()
+    let tries = 3;
+    const backOff = 2;
+    while (tries > 0) {
+        try {
+            const statusMessage: string = await sendDashboardMail(template, emailData, mailIds, ccMailIds, attachments, subject);
+            const updateRequest = {
+                mail_sent: (statusMessage === '' && !isTestMail) ? true : false,
+                mail_error: statusMessage ? statusMessage : null,
+                updated_at: new Date()
+            }
+
+
+            await GiftCardsRepository.updateGiftRequestUsers(updateRequest, {
+                gift_request_id: giftCardRequest.id,
+                assignee: emailData.assigned_to,
+                recipient: emailData.gifted_to,
+            });
+            break;
+        } catch (error) {
+            console.log('[ERROR]', 'GiftCardController::emailReceiver', error);
+            tries--;
+            // sleep 
+            await new Promise(resolve => setTimeout(resolve, Math.pow(backOff, (3 - tries)) * 1000));
+        }
     }
-
-
-    await GiftCardsRepository.updateGiftRequestUsers(updateRequest, {
-        gift_request_id: giftCardRequest.id,
-        assignee: emailData.assigned_to,
-        recipient: emailData.gifted_to,
-    });
 }
 
 const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
@@ -1803,8 +1809,20 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
     const isTestMail = (testMails && testMails.length !== 0) ? true : false
 
     const tasks: Task<void>[] = [];
+    const templatesMap: Record<string, string> = {}
+
     for (const emailData of Object.values(userEmailDataMap)) {
-        tasks.push(() => emailReceiver(giftCardRequest, emailData, eventType, attachCard, ccMailIds, testMails));
+        const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+        if (!templatesMap[templateType]) {
+            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+            if (templates.length === 0) {
+                console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+                return;
+            }
+            templatesMap[templateType] = templates[0].template_name
+        }
+
+        tasks.push(() => emailReceiver(giftCardRequest, emailData, eventType, templatesMap[templateType], attachCard, ccMailIds, testMails));
 
         count = count - 1;
         if (isTestMail && count === 0) break;
