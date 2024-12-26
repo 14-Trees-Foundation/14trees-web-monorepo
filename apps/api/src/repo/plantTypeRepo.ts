@@ -163,7 +163,7 @@ class PlantTypeRepository {
         }
 
         const query = `
-            SELECT pt.id,pt.name as plant_type, pt.illustration_link as illustration_link,
+            SELECT pt.id,pt.name as plant_type, pt.habit, pt.illustration_link as illustration_link,
                 SUM(COALESCE(tcg.booked, 0)) as booked,
                 SUM(COALESCE(tcg.available, 0)) as available,
                 SUM(COALESCE(tcg.assigned, 0)) as assigned,
@@ -177,7 +177,7 @@ class PlantTypeRepository {
             FROM "14trees".plant_types pt
             LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            WHERE ptct.plant_type IS NULL AND pt.habit = 'Tree' AND ${whereCondition ? whereCondition : '1=1'}
+            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY pt.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
