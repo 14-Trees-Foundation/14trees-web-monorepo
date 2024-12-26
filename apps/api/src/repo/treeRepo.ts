@@ -434,10 +434,6 @@ class TreeRepository {
       if (noMoreTrees) break;
     }
 
-    if (finalTreeIds.length < count) {
-      return [];
-    }
-
     await Tree.update( updateConfig, {
       where: {
         id: { [Op.in]: finalTreeIds },
