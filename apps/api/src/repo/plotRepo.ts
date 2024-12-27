@@ -130,7 +130,6 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
-                    AND pt.habit = 'Tree'
                     AND ptct.plant_type IS NOT NULL
                 THEN 1 
                 ELSE 0 
@@ -185,6 +184,17 @@ export class PlotRepository {
                 ELSE 0 
             END) AS available_trees,
             SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND pt.habit = 'Tree'
+                    AND ptct.plant_type IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS card_available_trees,
+            SUM(CASE 
                 WHEN t.assigned_to IS NOT NULL 
                     AND pt.habit = 'Herb'
                 THEN 1 
@@ -212,6 +222,17 @@ export class PlotRepository {
                 ELSE 0 
             END) AS available_herbs,
             SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND pt.habit = 'Herb'
+                    AND ptct.plant_type IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS card_available_herbs,
+            SUM(CASE 
                 WHEN t.assigned_to IS NOT NULL 
                     AND pt.habit = 'Shrub'
                 THEN 1 
@@ -238,6 +259,17 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS available_shrubs,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND pt.habit = 'Shrub'
+                    AND ptct.plant_type IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS card_available_shrubs,
             array_agg(distinct CASE 
                 WHEN t.mapped_to_user IS NULL 
                     AND t.mapped_to_group IS NULL 

@@ -88,14 +88,17 @@ export const getPlots = async (req: Request, res: Response) => {
                 assigned_trees: parseInt(item.assigned_trees),
                 unbooked_assigned_trees: parseInt(item.unbooked_assigned_trees),
                 available_trees: parseInt(item.available_trees),
+                card_available_trees: parseInt(item.card_available_trees),
                 booked_shrubs: parseInt(item.booked_shrubs),
                 assigned_shrubs: parseInt(item.assigned_shrubs),
                 unbooked_assigned_shrubs: parseInt(item.unbooked_assigned_shrubs),
                 available_shrubs: parseInt(item.available_shrubs),
+                card_available_shrubs: parseInt(item.card_available_shrubs),
                 booked_herbs: parseInt(item.booked_herbs),
                 assigned_herbs: parseInt(item.assigned_herbs),
                 unbooked_assigned_herbs: parseInt(item.unbooked_assigned_herbs),
                 available_herbs: parseInt(item.available_herbs),
+                card_available_herbs: parseInt(item.card_available_herbs),
                 distinct_plants: item.distinct_plants ? item.distinct_plants.filter((item: any) => item !== null) : [],
             }
         })
