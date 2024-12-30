@@ -154,6 +154,8 @@ class PlantTypeRepository {
                 let valuePlaceHolder = filter.columnField
                 if (filter.columnField === "plant_type") {
                     columnField = "pt.name"
+                } else if (filter.columnField === "template_id") {
+                    columnField = "ptct.template_id"
                 }
 
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
@@ -164,7 +166,7 @@ class PlantTypeRepository {
         }
 
         const query = `
-            SELECT pt.id,pt.name as plant_type, pt.habit, pt.illustration_link as illustration_link,
+            SELECT pt.id,pt.name as plant_type, pt.habit, pt.illustration_link as illustration_link, ptct.template_id as template_id,
                 SUM(COALESCE(tcg.booked, 0)) as booked,
                 SUM(COALESCE(tcg.available, 0)) as available,
                 SUM(COALESCE(tcg.assigned, 0)) as assigned,
@@ -178,8 +180,8 @@ class PlantTypeRepository {
             FROM "14trees".plant_types pt
             LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
-            GROUP BY pt.id
+            WHERE ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY pt.id, ptct.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
             `
@@ -193,7 +195,7 @@ class PlantTypeRepository {
             SELECT count(distinct pt.name)
             FROM "14trees".plant_types pt
             LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
-            WHERE ptct.plant_type IS NULL AND pt.habit = 'Tree' AND ${whereCondition ? whereCondition : '1=1'};
+            WHERE pt.habit = 'Tree' AND ${whereCondition ? whereCondition : '1=1'};
         `
 
         const resp: any[] = await sequelize.query(countQuery, {
@@ -213,10 +215,14 @@ class PlantTypeRepository {
                 let valuePlaceHolder = filter.columnField
                 if (filter.columnField === "plant_type") {
                     columnField = "pt.name"
+                } else if (filter.columnField === "template_id") {
+                    columnField = "ptct.template_id"
                 } else if (filter.columnField === "plot_name") {
                     columnField = "p.name"
                 } else if (filter.columnField === "site_name") {
                     columnField = "s.name_english"
+                } else if (filter.columnField === "plot_tags") {
+                    columnField = "p.tags"
                 }
 
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
@@ -227,9 +233,9 @@ class PlantTypeRepository {
         }
 
         const query = `
-            SELECT pt.id, pt.name as plant_type, pt.habit, pt.illustration_link as illustration_link,
+            SELECT pt.id, pt.name as plant_type, pt.habit, pt.illustration_link as illustration_link, ptct.template_id as template_id,
                 s.id as site_id, s.name_english as site_name,
-                p.id as plot_id, p.name as plot_name,
+                p.id as plot_id, p.name as plot_name, p.tags as plot_tags,
                 SUM(COALESCE(tcg.booked, 0)) as booked,
                 SUM(COALESCE(tcg.available, 0)) as available,
                 SUM(COALESCE(tcg.assigned, 0)) as assigned,
@@ -240,12 +246,13 @@ class PlantTypeRepository {
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
                 SUM(COALESCE(tcg.card_available, 0)) as card_available,
                 SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            LEFT JOIN "14trees_2".plots p ON p.id = tcg.plot_id
-            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            LEFT JOIN "14trees".plots p ON p.id = tcg.plot_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE ${whereCondition ? whereCondition : '1=1'}
-            GROUP BY pt.id, s.id, p.id
+            GROUP BY pt.id, s.id, p.id, ptct.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
             `
@@ -257,10 +264,11 @@ class PlantTypeRepository {
 
         const countQuery = `
             SELECT count(distinct (pt.id, s.id, p.id))
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            LEFT JOIN "14trees_2".plots p ON p.id = tcg.plot_id
-            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            LEFT JOIN "14trees".plots p ON p.id = tcg.plot_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
