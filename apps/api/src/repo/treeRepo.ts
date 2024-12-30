@@ -642,7 +642,7 @@ class TreeRepository {
   }
 
 
-  public static async getGiftableTrees(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<any>> {
+  public static async getGiftableTrees(offset: number, limit: number, filters?: FilterItem[], include_no_giftable: boolean = false): Promise<PaginatedResponse<any>> {
 
     let whereCondition = "";
     let replacements: any = {}
@@ -667,13 +667,18 @@ class TreeRepository {
       whereCondition = whereCondition.substring(0, whereCondition.length - 3);
     }
 
-    const query = `
+    let query = `
       SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot
       FROM "14trees_2".trees t
       JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'
-      JOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name
-      WHERE 
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'`
+
+    if (!include_no_giftable) {
+      query += '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+    }
+
+    query += `
+      WHERE
         t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
@@ -687,13 +692,15 @@ class TreeRepository {
       replacements
     })
 
-    const countQuery = `
+    let countQuery = `
       SELECT count(t.id)
       FROM "14trees_2".trees t
       JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'
-      JOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name
-      WHERE t.mapped_to_user IS NULL
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'`
+
+    if (!include_no_giftable) '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+
+    countQuery += `WHERE t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
         AND ${whereCondition !== "" ? whereCondition : "1=1"}

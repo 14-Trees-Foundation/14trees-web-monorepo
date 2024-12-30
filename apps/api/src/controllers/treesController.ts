@@ -307,9 +307,10 @@ export const getTreePlantationsInfo = async (req: Request, res: Response) => {
 export const getGiftableTrees = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   const filters: FilterItem[] = req.body?.filters;
+  const includeNoGiftable = req.body?.include_no_giftable;
 
   try {
-    const result = await TreeRepository.getGiftableTrees(offset, limit, filters);
+    const result = await TreeRepository.getGiftableTrees(offset, limit, filters, includeNoGiftable);
     res.status(status.success).send(result);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getGiftableTrees", error);
