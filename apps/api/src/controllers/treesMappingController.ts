@@ -4,6 +4,8 @@ import { UserRepository } from "../repo/userRepo";
 import { GroupRepository } from "../repo/groupRepo";
 import { User } from "../models/user";
 import { Group } from "../models/group";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { Op } from "sequelize";
 
 const { status } = require("../helpers/status");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
@@ -190,6 +192,17 @@ export const mapTreesInPlots = async (req: Request, res: Response) => {
 export const unMapTrees = async (req: Request, res: Response) => {
   const fields = req.body;
   let saplingIds = fields.sapling_ids;
+
+  const trees = await TreeRepository.getTrees(0, -1, [{ columnField: "sapling_id", operatorValue: "isAnyOf", value: saplingIds }]);
+  const treeIds = trees.results.map((tree) => tree.id);
+
+  const cards = await GiftCardsRepository.getGiftCards(0, -1, { tree_id: {[Op.in]: treeIds} })
+  if (cards.results.length > 0) {
+    res.status(status.bad).send({
+      message: "Some trees are part of gift requests",
+    })
+    return;
+  }
 
   await TreeRepository.unMapTrees(saplingIds);
   res.status(status.created).send();

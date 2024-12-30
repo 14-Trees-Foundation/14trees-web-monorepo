@@ -220,6 +220,14 @@ export class GiftCardsRepository {
         return await GiftCard.findByPk(id);
     }
 
+    static async getGiftCards(offset: number, limit: number, whereClause: WhereOptions<GiftCard>): Promise<PaginatedResponse<GiftCard>> {
+        return {
+            offset: offset,
+            total: await GiftCard.count({ where: whereClause }),
+            results: await GiftCard.findAll({ where: whereClause, limit: limit !== -1 ? limit : undefined, offset: offset })
+        }
+    }
+
     static async getDetailedGiftCardByTreeId(treeId: number): Promise<GiftCard | null> {
         const getQuery = `
             SELECT gc.*, sg.name as group_name, su.name as sponsor_name, u.name as user_name, t.sapling_id, pt.name as plant_type
