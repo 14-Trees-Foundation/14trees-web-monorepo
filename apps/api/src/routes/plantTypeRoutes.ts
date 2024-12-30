@@ -12,6 +12,7 @@ routes.post("/", uploadFiles.array("files", 4), plantTypes.addPlantType);
 routes.put('/:id', uploadFiles.array('files', 4), plantTypes.updatePlantType);
 routes.delete('/:id', plantTypes.deletePlantType);
 routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
+routes.post('/plot-states', plantTypes.getPlantTypeStateForPlots);
 routes.post('/sync', plantTypes.syncPlantTypeIllustrationsDataFromNotion);
 routes.post('/templates/', plantTypes.addPlantTypeTemplate);
 routes.post('/illustrations/', plantTypes.uploadIllustrationsToS3);

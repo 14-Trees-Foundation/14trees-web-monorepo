@@ -4,6 +4,7 @@ import { PaginatedResponse } from "../models/pagination";
 import { QueryTypes, WhereOptions } from 'sequelize';
 import { sequelize } from "../config/postgreDB";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
+import { SortOrder } from "../models/common";
 
 class PlantTypeRepository {
     public static async getPlantTypes(offset: number = 0, limit: number = 20, whereClause: WhereOptions<PlantType>): Promise<PaginatedResponse<PlantType>> {
@@ -193,6 +194,74 @@ class PlantTypeRepository {
             FROM "14trees_2".plant_types pt
             LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             WHERE ptct.plant_type IS NULL AND ${whereCondition ? whereCondition : '1=1'}
+        `
+
+        const resp: any[] = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        return { offset: offset, total: resp[0]?.count ?? 0, results: plantTypes };
+    }
+
+    public static async getPlantTypeStateForPlots(offset: number, limit: number, filters: any[], orderBy: SortOrder[]): Promise<PaginatedResponse<any>> {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "pt." + filter.columnField
+                let valuePlaceHolder = filter.columnField
+                if (filter.columnField === "plant_type") {
+                    columnField = "pt.name"
+                } else if (filter.columnField === "plot_name") {
+                    columnField = "p.name"
+                } else if (filter.columnField === "site_name") {
+                    columnField = "s.name_english"
+                }
+
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+            SELECT pt.id, pt.name as plant_type, pt.habit, pt.illustration_link as illustration_link,
+                s.id as site_id, s.name_english as site_name,
+                p.id as plot_id, p.name as plot_name,
+                SUM(COALESCE(tcg.booked, 0)) as booked,
+                SUM(COALESCE(tcg.available, 0)) as available,
+                SUM(COALESCE(tcg.assigned, 0)) as assigned,
+                SUM(COALESCE(tcg.total, 0)) as total,
+                SUM(COALESCE(tcg.void_total, 0)) as void_total,
+                SUM(COALESCE(tcg.void_booked, 0)) as void_booked,
+                SUM(COALESCE(tcg.void_available, 0)) as void_available,
+                SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
+                SUM(COALESCE(tcg.card_available, 0)) as card_available,
+                SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
+            FROM "14trees_2".plant_types pt
+            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            LEFT JOIN "14trees_2".plots p ON p.id = tcg.plot_id
+            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            WHERE ${whereCondition ? whereCondition : '1=1'}
+            GROUP BY pt.id, s.id, p.id
+            ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
+            ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''};
+            `
+
+        const plantTypes: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        const countQuery = `
+            SELECT count(distinct (pt.id, s.id, p.id))
+            FROM "14trees_2".plant_types pt
+            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            LEFT JOIN "14trees_2".plots p ON p.id = tcg.plot_id
+            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
         const resp: any[] = await sequelize.query(countQuery, {
