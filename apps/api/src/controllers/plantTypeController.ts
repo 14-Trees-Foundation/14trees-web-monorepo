@@ -162,6 +162,24 @@ export const getTreeCountsForPlantTypes = async (req: Request, res: Response) =>
   }
 }
 
+export const getPlantTypeStateForPlots = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const filters: FilterItem[] = req.body?.filters;
+  const order_by: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
+  try {
+    let result = await PlantTypeRepository.getPlantTypeStateForPlots(offset, limit, filters, order_by);
+    result.results = parseCountToInt(result.results);
+    res.status(status.success).send(result);
+  } catch (error: any) {
+    console.log("[ERROR]", "PlantTypeController::getPlantTypeStateForPlots", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: "Something went wrong. Please try again after some time",
+    });
+  }
+}
+
 export const syncPlantTypeIllustrationsDataFromNotion = async (req: Request, res: Response) => {
   try {
     await syncNotionPlantTypeIllustrations();
