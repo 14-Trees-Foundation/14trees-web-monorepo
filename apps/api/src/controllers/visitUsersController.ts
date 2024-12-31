@@ -8,6 +8,7 @@ import { VisitUsersCreationAttributes } from "../models/visit_users";
 import { VisitRepository} from "../repo/visitsRepo"
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
+import { syncNotionVisitUsers } from "../services/notion/visit_users";
 
 /*
     Model - VisitUserGroup
@@ -128,3 +129,14 @@ export const addVisitUsersBulk = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const syncVisitUsersDataFromNotion = async (req: Request, res: Response) => {
+  try {
+    await syncNotionVisitUsers();
+
+    res.status(status.success).json();
+  } catch (error: any) {
+    console.log('[ERROR]', 'VisitUsersController::syncVisitUsersDataFromNotion', error);
+    res.status(status.bad).send({ message: 'Something went wrong!' });
+  }
+}
