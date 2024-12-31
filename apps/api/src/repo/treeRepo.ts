@@ -502,7 +502,6 @@ class TreeRepository {
       user_tree_image: userImageUrl,
       memory_images: memoryImageUrls,
       description: reqBody.description || null,
-      visit_id: reqBody.visit_id || null,
       event_id: eventId || null,
       event_type: reqBody.type || null,
       updated_at: new Date(),

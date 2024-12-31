@@ -14,7 +14,7 @@ import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { GiftCard } from "../models/gift_card";
 import { getUserDocumentFromRequestBody, UserRepository } from "../repo/userRepo";
 import { User } from "../models/user";
-import { VisitUsersRepository } from "../repo/visitUsersRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
 
 export const getAllProfile = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -144,9 +144,7 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
     })
     let trees = [];
 
-    if (fields.visit_id) {
-      fields.mapped_to_user = fields.assigned_to;
-
+    if (fields.visited) {
       let userDoc = getUserDocumentFromRequestBody(fields);
       let user: User | null = null;
       let usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: userDoc.email, operatorValue: 'equals' }]);
@@ -156,7 +154,7 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
         user = usersResp.results[0];
       }
 
-      await VisitUsersRepository.addUser(user.id, fields.visit_id);
+      await UserGroupRepository.addUsersToVisitorsGroup([user.id]);
     }
 
     for (let i = 0; i < saplingIds.length; i++) {

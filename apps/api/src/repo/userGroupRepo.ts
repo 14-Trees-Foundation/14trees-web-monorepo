@@ -94,4 +94,9 @@ export class UserGroupRepository {
         const group = await Group.findOne({ where: { type: 'giftee' } });
         if (group) await this.upsertUsersIntoGroup(group.id, userIds);
     }
+
+    public static async addUsersToVisitorsGroup(userIds: number[]): Promise<void> {
+        const group = await Group.findOne({ where: { type: 'visitor' } });
+        if (group) await this.upsertUsersIntoGroup(group.id, userIds);
+    }
 }
