@@ -61,6 +61,9 @@ export class VisitUsersRepository {
     }
 
     static async addUser(userId: number, visitId: number): Promise<VisitUsers> {
+        const existing = await VisitUsers.findOne({ where: { user_id: userId, visit_id: visitId } });
+        if (existing) return existing;
+        
         const visitUserGroupData: VisitUsersCreationAttributes = {
             user_id: userId,
             visit_id: visitId,

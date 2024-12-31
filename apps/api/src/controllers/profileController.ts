@@ -12,6 +12,9 @@ import { DonationRepository } from "../repo/donationsRepo";
 import { status } from "../helpers/status";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { GiftCard } from "../models/gift_card";
+import { getUserDocumentFromRequestBody, UserRepository } from "../repo/userRepo";
+import { User } from "../models/user";
+import { VisitUsersRepository } from "../repo/visitUsersRepo";
 
 export const getAllProfile = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -140,6 +143,22 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
       return saplingId.trim();
     })
     let trees = [];
+
+    if (fields.visit_id) {
+      fields.mapped_to_user = fields.assigned_to;
+
+      let userDoc = getUserDocumentFromRequestBody(fields);
+      let user: User | null = null;
+      let usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: userDoc.email, operatorValue: 'equals' }]);
+      if (usersResp.results.length === 0) {
+        user = await User.create(userDoc);
+      } else {
+        user = usersResp.results[0];
+      }
+
+      await VisitUsersRepository.addUser(user.id, fields.visit_id);
+    }
+
     for (let i = 0; i < saplingIds.length; i++) {
       const result = await TreeRepository.assignTree(saplingIds[i], fields, event?.id);
       trees.push(result);
