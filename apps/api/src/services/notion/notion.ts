@@ -10,6 +10,7 @@ interface dbIdModel {
 export const dataBaseId: dbIdModel[] = [
   { key: "notion_db", value: 'b95af058814241c3bd4cb060a93185d4' },
   { key: "plant_type_illustrations", value: '72349ec04ef4414db51406715a7f9e6e' },
+  { key: "visit_users", value: 'a1e2a3bf94b2415bb1570aae158740e9' },
 ];
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
