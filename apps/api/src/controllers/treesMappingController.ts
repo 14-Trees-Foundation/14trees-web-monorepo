@@ -6,6 +6,7 @@ import { User } from "../models/user";
 import { Group } from "../models/group";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { Op } from "sequelize";
+import { UserGroupRepository } from "../repo/userGroupRepo";
 
 const { status } = require("../helpers/status");
 const { getOffsetAndLimitFromRequest } = require("./helper/request");
@@ -123,6 +124,10 @@ export const mapTrees = async (req: Request, res: Response) => {
 
   try {
     const data = await upsertUserAndGroup(mapped_to, id, sponsorId, fields);
+
+    // if user then add user to donor group
+    if (mapped_to === 'user') await UserGroupRepository.addUserToDonorGroup(data.sponsorId ? data.sponsorId : data.id);
+
     await TreeRepository.mapTrees(mapped_to, saplingIds, data.id, data.sponsorId);
     res.status(status.created).send();
   } catch (error: any) {
@@ -150,6 +155,10 @@ export const mapTreesInPlot = async (req: Request, res: Response) => {
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
     const data = await upsertUserAndGroup(mapped_to, id, sponsorId, fields);
+
+    // if user then add user to donor group
+    if (mapped_to === 'user') await UserGroupRepository.addUserToDonorGroup(data.sponsorId ? data.sponsorId : data.id);
+
     await TreeRepository.mapTreesInPlot(mapped_to, data.id, [Number(plotId)], count, data.sponsorId);
     res.status(status.success).send();
   } catch (error) {
@@ -180,6 +189,10 @@ export const mapTreesInPlots = async (req: Request, res: Response) => {
 
   const mapped_to: 'user' | 'group' = mappingType === 'user' ? 'user' : 'group';
   try {
+
+    // if user then add user to donor group
+    if (mapped_to === 'user') await UserGroupRepository.addUserToDonorGroup(id);
+
     await TreeRepository.mapTreesInPlot(mapped_to, id, plotIds, count, id);
     res.status(status.success).send();
   } catch (error) {
