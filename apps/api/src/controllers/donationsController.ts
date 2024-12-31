@@ -12,6 +12,7 @@ import { createWorkOrderInCSV } from "./helper/uploadtocsv";
 import TreeRepository from "../repo/treeRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { UserRelationRepository } from "../repo/userRelationsRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
 
 /*
     Model - Donation
@@ -282,9 +283,11 @@ export const bookTreesForDonation = async (req: Request, res: Response) => {
             return;
         }
 
+        let addUserToDonorGroup = false;
         if (trees.length !== 0) {
             const treeIds = trees.map((tree: any) => tree.tree_id);
             await TreeRepository.mapTreesToUserAndGroup(donation.user_id, donation.group_id, treeIds, donation.id);
+            if (treeIds.length > 0) addUserToDonorGroup = true;
 
             for (const tree of trees) {
                 const updateConfig: any = {
@@ -306,8 +309,12 @@ export const bookTreesForDonation = async (req: Request, res: Response) => {
                     })
                     return;
                 }
+                addUserToDonorGroup = true;
             }
         }
+
+        // add user to donations group
+        if (addUserToDonorGroup) await UserGroupRepository.addUserToDonorGroup(donation.user_id);
 
         res.status(status.success).send();
     } catch (error: any) {
