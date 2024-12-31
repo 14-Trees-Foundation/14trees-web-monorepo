@@ -11,6 +11,7 @@ routes.get('/', visitUsers.getVisitUsers);
 routes.post('/', visitUsers.addVisitUsers);
 routes.post('/bulk', uploadFiles.single('file'), visitUsers.addVisitUsersBulk);
 routes.delete('/', visitUsers.deleteVisitUsers);
+routes.post('/sync-notion', visitUsers.syncVisitUsersDataFromNotion);
 
 
 export default routes;
