@@ -517,15 +517,15 @@ class TreeRepository {
     await Tree.update({
       assigned_to: null,
       assigned_at: null,
-      description: undefined,
-      event_id: undefined,
+      description: null,
+      event_id: null,
       user_tree_image: null,
       memory_images: null,
       gifted_by_name: null,
-      gifted_by: undefined,
-      gifted_to: undefined,
-      sponsored_by_user: undefined,
-      sponsored_by_group: undefined,
+      gifted_by: null,
+      gifted_to: null,
+      sponsored_by_user: null,
+      sponsored_by_group: null,
       updated_at: new Date(),
     }, { where: { sapling_id: { [Op.in]: saplingIds } } });
   }
