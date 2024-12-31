@@ -28,6 +28,7 @@ import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { convertPdfToImage } from "../helpers/pdfToImage";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -474,6 +475,87 @@ export const getGiftRequestUsers = async (req: Request, res: Response) => {
     }
 }
 
+const upsertGiftRequestUsersAndRelations = async (users: any[], giftCardRequestId: number) => {
+    const addUsersData: GiftRequestUserCreationAttributes[] = []
+    const updateUsersData: GiftRequestUserAttributes[] = []
+    let count = 0;
+    for (const user of users) {
+
+        // gifted To
+        const recipientUser = {
+            id: user.recipient,
+            name: user.recipient_name,
+            email: user.recipient_email,
+            phone: user.recipient_phone,
+        }
+        const recipient = await UserRepository.upsertUser(recipientUser);
+
+        // assigned To
+        const assigneeUser = {
+            id: user.assignee,
+            name: user.assignee_name,
+            email: user.assignee_email,
+            phone: user.assignee_phone,
+        }
+        const assignee = await UserRepository.upsertUser(assigneeUser);
+
+        if (recipient.id !== assignee.id && user.relation?.trim()) {
+            await UserRelationRepository.createUserRelation({
+                primary_user: recipient.id,
+                secondary_user: assignee.id,
+                relation: user.relation.trim(),
+                created_at: new Date(),
+                updated_at: new Date(),
+            })
+        }
+
+        if (user.id) {
+            updateUsersData.push({
+                ...user,
+                gift_request_id: giftCardRequestId,
+                recipient: recipient.id,
+                assignee: assignee.id,
+                profile_image_url: user.image_url || null,
+                updated_at: new Date(),
+            })
+        } else {
+            addUsersData.push({
+                ...user,
+                gift_request_id: giftCardRequestId,
+                recipient: recipient.id,
+                assignee: assignee.id,
+                profile_image_url: user.image_url || null,
+                created_at: new Date(),
+                updated_at: new Date(),
+            })
+        }
+
+        count += parseInt(user.gifted_trees) || 1;
+    }
+
+    return { addUsersData, updateUsersData, count };
+}
+
+const deleteGiftRequestUsersAndResetTrees = async (deleteIds: number[], giftCards: GiftCard[], giftCardRequestId: number) => {
+    const treeIds = giftCards.filter(item => item.gift_request_user_id && item.tree_id && deleteIds.includes(item.gift_request_user_id)).map(item => item.tree_id);
+    await TreeRepository.updateTrees({
+        description: null,
+        assigned_to: null,
+        assigned_at: null,
+        gifted_to: null,
+        gifted_by: null,
+        planted_by: null,
+        gifted_by_name: null,
+        event_type: null,
+        user_tree_image: null,
+        memory_images: null,
+        updated_at: new Date()
+    }, { id: { [Op.in]: treeIds } });
+
+    await GiftCardsRepository.updateGiftCards({ gift_request_user_id: null }, { gift_card_request_id: giftCardRequestId, gift_request_user_id: { [Op.in]: deleteIds } });
+    await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
+}
+
 export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId, users } = req.body;
 
@@ -492,62 +574,7 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
         const cardsResp = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
         const giftCards = cardsResp.results;
 
-        const addUsersData: GiftRequestUserCreationAttributes[] = []
-        const updateUsersData: GiftRequestUserAttributes[] = []
-        let count = 0;
-        for (const user of users) {
-
-            // gifted To
-            const recipientUser = {
-                id: user.recipient,
-                name: user.recipient_name,
-                email: user.recipient_email,
-                phone: user.recipient_phone,
-            }
-            const recipient = await UserRepository.upsertUser(recipientUser);
-
-            // assigned To
-            const assigneeUser = {
-                id: user.assignee,
-                name: user.assignee_name,
-                email: user.assignee_email,
-                phone: user.assignee_phone,
-            }
-            const assignee = await UserRepository.upsertUser(assigneeUser);
-
-            if (recipient.id !== assignee.id && user.relation?.trim()) {
-                await UserRelationRepository.createUserRelation({
-                    primary_user: recipient.id,
-                    secondary_user: assignee.id,
-                    relation: user.relation.trim(),
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                })
-            }
-
-            if (user.id) {
-                updateUsersData.push({
-                    ...user,
-                    gift_request_id: giftCardRequestId,
-                    recipient: recipient.id,
-                    assignee: assignee.id,
-                    profile_image_url: user.image_url || null,
-                    updated_at: new Date(),
-                })
-            } else {
-                addUsersData.push({
-                    ...user,
-                    gift_request_id: giftCardRequestId,
-                    recipient: recipient.id,
-                    assignee: assignee.id,
-                    profile_image_url: user.image_url || null,
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                })
-            }
-
-            count += parseInt(user.gifted_trees) || 1;
-        }
+        const { addUsersData, updateUsersData, count } = await upsertGiftRequestUsersAndRelations(users, giftCardRequestId);
 
         if (count > giftCardRequest.no_of_cards) {
             res.status(status.bad).json({
@@ -560,23 +587,7 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
         const existingUsers = await GiftCardsRepository.getGiftRequestUsers(giftCardRequestId);
         const deleteIds = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1).map(item => item.id);
         if (deleteIds.length > 0) {
-            const treeIds = giftCards.filter(item => item.gift_request_user_id && item.tree_id && deleteIds.includes(item.gift_request_user_id)).map(item => item.tree_id);
-            await TreeRepository.updateTrees({
-                description: null,
-                assigned_to: null,
-                assigned_at: null,
-                gifted_to: null,
-                gifted_by: null,
-                planted_by: null,
-                gifted_by_name: null,
-                event_type: null,
-                user_tree_image: null,
-                memory_images: null,
-                updated_at: new Date()
-            }, { id: { [Op.in]: treeIds } });
-
-            await GiftCardsRepository.updateGiftCards({ gift_request_user_id: null }, { gift_card_request_id: giftCardRequestId, gift_request_user_id: { [Op.in]: deleteIds } });
-            await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
+            await deleteGiftRequestUsersAndResetTrees(deleteIds, giftCards, giftCardRequestId);
         }
 
         if (addUsersData.length > 0) await GiftCardsRepository.addGiftRequestUsers(addUsersData);
@@ -593,6 +604,12 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
 
             await GiftCardsRepository.updateGiftRequestUsers(user, { id: user.id });
         }
+
+        // add recipients to Giftee group
+        let recipientIds: number[] = []
+        addUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
+        updateUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
+        await UserGroupRepository.addUsersToGifteeGroup(recipientIds);
 
         // validation on user details
         if (giftCardRequest.no_of_cards !== count && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
@@ -887,6 +904,8 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
             await TreeRepository.mapTreesToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, treeIds)
         }
 
+        // add user to donations group
+        if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftCardRequest.user_id);
         await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
 
         const cards = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
@@ -931,6 +950,7 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
             return;
         }
 
+        let addUserToDonorGroup = false;
         if (giftCardTrees && giftCardTrees.length) {
             const treeIds: number[] = giftCardTrees.map((item: any) => item.tree_id);
             await TreeRepository.mapTreesToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, treeIds)
@@ -944,7 +964,10 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
                 }
             }
 
-            if (bookTreeIds.length > 0) await GiftCardsRepository.bookGiftCards(giftCardRequestId, bookTreeIds);
+            if (bookTreeIds.length > 0) {
+                await GiftCardsRepository.bookGiftCards(giftCardRequestId, bookTreeIds);
+                addUserToDonorGroup = true;
+            }
         } else {
             const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, giftCardRequest.no_of_cards, book_non_giftable, diversify);
             if (treeIds.length === 0) {
@@ -954,7 +977,11 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
                 return;
             }
             await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
+            addUserToDonorGroup = true;
         }
+
+        // add user to donations group
+        if (addUserToDonorGroup) await UserGroupRepository.addUserToDonorGroup(giftCardRequest.user_id);
 
         const cards = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
         const treeIds = cards.results.filter(card => card.tree_id).map(card => card.tree_id);
@@ -1091,7 +1118,7 @@ const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users
             memory_images: memoryImageUrls,
         }
 
-        tasks.push(() =>  update(user, updateRequest, treeIds));        
+        tasks.push(() => update(user, updateRequest, treeIds));
     }
 
     runWithConcurrency(tasks, 10);

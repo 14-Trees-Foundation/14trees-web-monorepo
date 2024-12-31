@@ -38,14 +38,34 @@ export class UserRepository {
     }
 
     public static async bulkAddUsers(users: UserCreationAttributes[]): Promise<User[]> {
-        const user = await User.bulkCreate(users);
-        return user;
+        // avoid adding duplicate emails
+        const existingUsers = await User.findAll({
+            where: {
+                email: { [Op.in]: users.map(user => user.email) }
+            }
+        });
+        const existingEmailsMap: Map<string, boolean> = new Map();
+        existingUsers.forEach(user => existingEmailsMap.set(user.email, true));
+
+        const filteredUsers = users.filter(user => !existingEmailsMap.has(user.email));
+        const newUsers = await User.bulkCreate(filteredUsers);
+        return [...existingUsers, ...newUsers];
     }
 
     public static async updateUser(data: UserAttributes): Promise<User> {
         const user = await User.findByPk(data.id);
         if (!user) {
             throw new Error("User not found")
+        }
+
+        const emailUser = await User.findOne({
+            where: {
+                email: data.email,
+            }
+        });
+
+        if (emailUser && emailUser.id !== data.id) {
+            throw new Error("Email already exists");
         }
 
         // user validation/invalidation update logic
