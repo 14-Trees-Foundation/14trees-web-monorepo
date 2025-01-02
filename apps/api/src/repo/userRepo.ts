@@ -133,10 +133,11 @@ export class UserRepository {
     }
 
     public static async searchUsers(searchStr: string, offset: number, limit: number): Promise<User[]> {
-        const whereClause: Record<string, any> = { [Op.or]: [
+        const whereClause: WhereOptions<User> = { [Op.or]: [
             { name: {[Op.iLike]:`%${searchStr}%` } },
             { phone: {[Op.iLike]:`%${searchStr}%` } },
             { email: {[Op.iLike]:`%${searchStr}%` } },
+            { communication_email: {[Op.iLike]:`%${searchStr}%` } },
         ]};
     
         return await User.findAll({
