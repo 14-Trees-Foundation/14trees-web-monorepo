@@ -235,7 +235,7 @@ export class SiteRepository {
                     THEN s.name_marathi
                     ELSE s.name_english 
                 END site_name,
-                s.land_type, s.category, s.maintenance_type, s.district, s.taluka, s.village, s.kml_file_link,
+                s.land_type, s.category, s.maintenance_type, s.district, s.taluka, s.village, s.kml_file_link, s.tags, s.area_acres, s.length_km,
                 SUM(COALESCE(pa.total_acres_area, 0)) AS acres_area,
                 SUM(COALESCE(tcg.booked, 0)) as booked,
                 SUM(COALESCE(tcg.available, 0)) as available,

@@ -19,24 +19,24 @@ interface TreeAttributes {
     image: string | null,
     tags: string[] | null,
     location: Center,
-    planted_by?: string,
-    mapped_to_user?: number | null,
-    mapped_to_group?: number | null,
-    mapped_at?: Date | null,
-    sponsored_by_user?: number | null,
-    sponsored_by_group?: number | null,
-    gifted_by?: number,
+    planted_by: string | null,
+    mapped_to_user: number | null,
+    mapped_to_group: number | null,
+    mapped_at: Date | null,
+    sponsored_by_user: number | null,
+    sponsored_by_group: number | null,
+    gifted_by: number | null,
     gifted_by_name: string | null,
-    gifted_to?: number,
+    gifted_to: number | null,
     assigned_at: Date | null,
     assigned_to: number | null,
-    user_tree_image?: string | null,
-    user_card_image?: string | null,
-    memory_images?: string[] | null,
-    event_id?: number,
+    user_tree_image: string | null,
+    user_card_image: string | null,
+    memory_images: string[] | null,
+    event_id: number | null,
     donation_id: number | null,
     visit_id: number | null,
-    description?: string,
+    description: string | null,
     event_type: string | null,
     tree_status?: string;
     status?: string;
@@ -47,7 +47,7 @@ interface TreeAttributes {
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name' | 'gifted_to' | 'gifted_by' | 'sponsored_by_user' | 'sponsored_by_group' | 'event_id' | 'memory_images'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>

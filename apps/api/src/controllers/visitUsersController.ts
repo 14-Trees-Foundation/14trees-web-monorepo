@@ -51,7 +51,7 @@ export const addVisitUsers = async (req: Request, res: Response) => {
               return;
           }
       } else {
-          let user = await UserRepository.addUser(req.body);
+          let user = await UserRepository.upsertUser(req.body);
           userId = user.id;
       }
 
