@@ -8,8 +8,8 @@ import { constants } from "../constants";
 import { getPlotNameAndCoordinatesFromKml } from "./helper/parsekml";
 import { UploadFileToS3 } from "./helper/uploadtos3";
 import { SiteRepository } from "../repo/sitesRepo";
-import { TreeCountAggregationsRepo } from "../repo/treeCountAggregationsRepo";
 import { TagRepository } from "../repo/tagRepo";
+import { SortOrder } from "../models/common";
 
 /*
     Model - Plot
@@ -216,6 +216,38 @@ export const getPlotAggregations = async (req: Request, res: Response) => {
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "PlotsController::getPlotAggregations", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
+
+export const getPlotStatesForCorporate = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: SortOrder[] = req.body?.order_by;
+    const groupId: number = req.body?.group_id;
+
+    if (!groupId) {
+        res.status(status.bad).send({ error: "Please select Corporate to fetch plot analytics!" });
+        return;
+    }
+
+    try {
+        let result = await PlotRepository.getPlotStatesForCorporate(offset, limit, groupId, filters, orderBy);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                available: parseInt(item.available),
+                card_available: parseInt(item.card_available),
+            }
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::getPlotStatesForCorporate", error);
         res.status(status.error).json({
             status: status.error,
             message: "Something went wrong. Please try again after some time.",
