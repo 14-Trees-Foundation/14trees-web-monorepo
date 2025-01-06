@@ -3,6 +3,7 @@ import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
+import { SortOrder } from '../models/common';
 
 export class PlotRepository {
     public static async updatePlot(plotData: PlotAttributes): Promise<Plot> {
@@ -13,7 +14,7 @@ export class PlotRepository {
         plotData.updated_at = new Date();
         const updatedPlot = await plot.update(plotData);
 
-        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot.id.toString()}];
+        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot.id.toString() }];
         const plotsResp = await this.getPlots(0, 1, filters);
         return plotsResp.results[0] || updatedPlot;
     }
@@ -41,8 +42,8 @@ export class PlotRepository {
             updated_at: new Date()
         };
         const plot = await Plot.create(obj);
-        
-        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: plot.id.toString()}];
+
+        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: plot.id.toString() }];
         const plotsResp = await this.getPlots(0, 1, filters);
         return plotsResp.results[0] || plot;
     }
@@ -54,7 +55,7 @@ export class PlotRepository {
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "p." + filter.columnField
-                if (filter.columnField === 'site_name' && filter.operatorValue === 'isEmpty' ) columnField = 'p.site_id';
+                if (filter.columnField === 'site_name' && filter.operatorValue === 'isEmpty') columnField = 'p.site_id';
                 else if (filter.columnField === 'site_name') {
                     const condition1 = getSqlQueryExpression("s.name_english", filter.operatorValue, filter.columnField + "_1", filter.value);
                     const condition2 = getSqlQueryExpression("s.name_marathi", filter.operatorValue, filter.columnField + "_2", filter.value);
@@ -288,17 +289,17 @@ export class PlotRepository {
         LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
-        ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
+        ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
-        const countPlotsQuery = 
+        const countPlotsQuery =
             `SELECT count(*)
             FROM "14trees_2".plots p
             LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
             `
-        
+
         const plots: any = await sequelize.query(query, {
             replacements: replacements,
             type: QueryTypes.SELECT
@@ -310,7 +311,7 @@ export class PlotRepository {
         })
         const totalResults = parseInt(countPlots[0].count)
 
-        return { offset: offset, total: totalResults, results: plots as Plot[]};
+        return { offset: offset, total: totalResults, results: plots as Plot[] };
     }
 
     public static async deletePlot(plotId: string): Promise<number> {
@@ -325,22 +326,22 @@ export class PlotRepository {
     public static async getPlotTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
         const tags: string[] = [];
 
-        const getUniqueTagsQuery = 
+        const getUniqueTagsQuery =
             `SELECT DISTINCT tag
                 FROM "14trees_2".plots p,
                 unnest(p.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
-        const countUniqueTagsQuery = 
+        const countUniqueTagsQuery =
             `SELECT count(DISTINCT tag)
                 FROM "14trees_2".plots p,
                 unnest(p.tags) AS tag;`;
 
-        const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
         tagsResp.forEach(r => tags.push(r.tag));
 
-        const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        const countResp: any[] = await sequelize.query(countUniqueTagsQuery, { type: QueryTypes.SELECT });
         const total = parseInt(countResp[0].count);
         return { offset: offset, total: total, results: tags };
     }
@@ -351,12 +352,12 @@ export class PlotRepository {
         LEFT JOIN "14trees_2".plots AS p
         ON num = p.id
         WHERE p.id IS NULL;`
-    
+
         const result = await sequelize.query(query, {
             replacements: { plot_ids: plotIds },
             type: QueryTypes.SELECT
         })
-    
+
         return result.map((row: any) => row.num);
     }
 
@@ -445,16 +446,16 @@ export class PlotRepository {
             LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id ${treeCondition !== "" ? "AND " + treeCondition : ""}
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             GROUP BY p.id
-            ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
+            ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
             OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
         `
 
-        const countPlotsQuery = 
+        const countPlotsQuery =
             `SELECT count(*)
             FROM "14trees_2".plots p
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
             `
-        
+
         const plots: any = await sequelize.query(query, {
             replacements: replacements,
             type: QueryTypes.SELECT
@@ -466,6 +467,98 @@ export class PlotRepository {
         })
         const totalResults = parseInt(countPlots[0].count)
 
-        return { offset: offset, total: totalResults, results: plots as Plot[]};
+        return { offset: offset, total: totalResults, results: plots as Plot[] };
+    }
+
+    public static async getPlotStatesForCorporate(offset: number, limit: number, groupId: number, filters?: any[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Plot>> {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "p." + filter.columnField
+                if (filter.columnField === 'site_name' && filter.operatorValue === 'isEmpty') columnField = 'p.site_id';
+                else if (filter.columnField === 'site_name') {
+                    const condition1 = getSqlQueryExpression("s.name_english", filter.operatorValue, filter.columnField + "_1", filter.value);
+                    const condition2 = getSqlQueryExpression("s.name_marathi", filter.operatorValue, filter.columnField + "_2", filter.value);
+
+                    whereCondition = whereCondition + " (" + condition1.condition + " OR " + condition2.condition + ") AND";
+                    replacements = { ...replacements, ...condition1.replacement, ...condition2.replacement }
+
+                    return;
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+        SELECT p.id, p.name, p.tags, p.category, p.accessibility_status,
+            case 
+                when s.name_english is null 
+                    then s.name_marathi
+                    else s.name_english 
+                end site_name,
+            COUNT(t.id) as total, 
+            SUM(CASE 
+                WHEN t.mapped_to_group = ${groupId}
+                THEN 1 
+                ELSE 0 
+            END) AS booked,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS available,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND ptct.plant_type IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS card_available
+        FROM "14trees_2".plots p
+        LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
+        LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
+        LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
+        LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        GROUP BY p.id, s.id
+        HAVING SUM(CASE 
+            WHEN t.mapped_to_group = ${groupId}
+            THEN 1 
+            ELSE 0 
+        END) > 0
+        ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
+        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+        `
+
+        const countPlotsQuery =
+            `SELECT count(distinct p.id)
+            FROM "14trees_2".plots p
+            LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
+            LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
+            WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"};
+            `
+
+        const plots: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countPlots: any = await sequelize.query(countPlotsQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countPlots[0].count)
+
+        return { offset: offset, total: totalResults, results: plots as Plot[] };
     }
 }

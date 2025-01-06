@@ -31,6 +31,8 @@ class TreeRepository {
           columnField = 'sg."name"'
         } else if (filter.columnField === "plot") {
           columnField = 'p."name"'
+        } else if (filter.columnField === "site_name") {
+          columnField = 's.name_english'
         } else if (filter.columnField === "plant_type") {
           columnField = 'pt."name"'
         } else if (filter.columnField === "habit") {
@@ -50,7 +52,8 @@ class TreeRepository {
       pt."name" as plant_type, 
       pt.habit as habit, 
       pt.illustration_s3_path as illustration_s3_path, 
-      p."name" as plot, 
+      p."name" as plot,
+      s.name_english as site_name,
       mu."name" as mapped_user_name, 
       mg."name" as mapped_group_name, 
       su."name" as sponsor_user_name, 
@@ -60,6 +63,7 @@ class TreeRepository {
     FROM "14trees_2".trees t 
     LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+    LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
     LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
     LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
@@ -81,6 +85,7 @@ class TreeRepository {
     FROM "14trees_2".trees t 
     LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+    LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
     LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
     LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
     LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
