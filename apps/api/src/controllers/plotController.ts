@@ -254,3 +254,16 @@ export const getPlotStatesForCorporate = async (req: Request, res: Response) => 
         });
     }
 }
+
+export const getCSRTreesAnalysis = async (req: Request, res: Response) => {
+    try {
+        let result = await PlotRepository.getCSRTreesAnalysis();
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::getCSRTreesAnalysis", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}

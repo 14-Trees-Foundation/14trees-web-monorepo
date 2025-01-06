@@ -15,5 +15,6 @@ routes.post('/kml', uploadFiles.single('file'), plot.updateCoordinatesUsingKml);
 routes.get('/stats/category', plot.treesCountForCategory);
 routes.post('/stats', plot.getPlotAggregations);
 routes.post('/corporate-stats', plot.getPlotStatesForCorporate);
+routes.get('/corporate-analytics', plot.getCSRTreesAnalysis);
 
 export default routes;
