@@ -235,7 +235,7 @@ export async function getObjectKeysForPrefix(prefix: string) {
 
 export async function uploadFileToS3(
     type: string,
-    data: Readable,
+    data: Readable | Buffer,
     key: string,
 ): Promise<string> {
     const bucketName = getBucketFromTypeAndFolderName(type, '').split('/')[0];

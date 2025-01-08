@@ -16,7 +16,7 @@ const getObjectKey = (type: string, subKey: string) => {
     }
 }
 
-export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
+export const getS3UploadSignedUrl = async (req: Request, res: Response) => {
     const query = req.query;
     const key = query.key as string;
     const objectType = query.type as string;
@@ -46,7 +46,7 @@ export const getS3UploadSignedUrl =  async (req: Request, res: Response) => {
         }
         return res.json({ url });
     })
-    
+
 }
 
 export const scrapImages = async (req: Request, res: Response) => {
@@ -76,13 +76,13 @@ export const scrapImages = async (req: Request, res: Response) => {
         const $ = load(html);
         const imageUrls: string[] = [];
         $('img').each((_, element) => {
-          const src = $(element).attr('src');
-          if (src) {
-            const fullUrl = new URL(src, url).href;
-            imageUrls.push(fullUrl);
-          }
+            const src = $(element).attr('src');
+            if (src) {
+                const fullUrl = new URL(src, url).href;
+                imageUrls.push(fullUrl);
+            }
         });
-    
+
         const s3Urls: string[] = [];
         for (const imageUrl of imageUrls) {
             try {
@@ -98,7 +98,7 @@ export const scrapImages = async (req: Request, res: Response) => {
                 console.log("[ERROR]", "UtilsController::scrapImages", error);
             }
         }
-    
+
         res.status(status.success).send({
             urls: s3Urls
         })
@@ -115,7 +115,7 @@ export const getImageUrlsForKeyPrefix = async (req: Request, res: Response) => {
     const prefix = `cards/${requestId}/`
 
 
-    const {keys, bucket} = await getObjectKeysForPrefix(prefix)
+    const { keys, bucket } = await getObjectKeysForPrefix(prefix)
 
     res.status(status.success).send({ urls: keys.filter(key => !key.endsWith('.csv')).map(key => `https://${bucket}.s3.amazonaws.com/` + key) })
 }

@@ -358,7 +358,7 @@ export const getSlideThumbnail = async (
 
 export async function deleteUnwantedSlides(presentationId: string, allowedIds: string[]): Promise<void> {
     const token = await getJwtToken();
-    
+
     const response = await axios.get(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -371,7 +371,7 @@ export async function deleteUnwantedSlides(presentationId: string, allowedIds: s
     const idsToDelete = currentIds.filter(id => !allowedIds.includes(id));
 
     if (idsToDelete.length === 0) {
-        console.log('[INFO]' ,'No slides to delete.');
+        console.log('[INFO]', 'No slides to delete.');
         return;
     }
 
@@ -398,41 +398,175 @@ export async function deleteUnwantedSlides(presentationId: string, allowedIds: s
 }
 
 export const reorderSlides = async (presentationId: string, slideIds: string[]) => {
-    const token = await getJwtToken();
-    
-    const response = await axios.get(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    try {
+        const token = await getJwtToken();
 
-    const currentSlides = response.data.slides;
-    const currentIds: string[] = currentSlides.map((slide: any) => slide.objectId);
-
-    const orderIds = slideIds.filter(id => currentIds.includes(id));
-
-    if (orderIds.length === 0) {
-        console.log('[INFO]' ,'No slides to reorder.');
-        return;
-    }
-
-    const slidePosUpdateRequests = orderIds.map((id, index) => ({
-        updateSlidesPosition: {
-            slideObjectIds: [id],
-            insertionIndex: index,
-        },
-    }));
-
-    await axios.post(
-        `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`,
-        {
-            requests: slidePosUpdateRequests,
-        },
-        {
+        const response = await axios.get(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
             },
+        });
+
+        const currentSlides = response.data.slides;
+        const currentIds: string[] = currentSlides.map((slide: any) => slide.objectId);
+
+        const orderIds = slideIds.filter(id => currentIds.includes(id));
+
+        if (orderIds.length === 0) {
+            console.log('[INFO]', 'No slides to reorder.');
+            return;
         }
-    );
+
+        const slidePosUpdateRequests = orderIds.map((id, index) => ({
+            updateSlidesPosition: {
+                slideObjectIds: [id],
+                insertionIndex: index,
+            },
+        }));
+
+        for (let i = 0; i < slidePosUpdateRequests.length; i += 100) {
+            await axios.post(
+                `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`,
+                {
+                    requests: slidePosUpdateRequests.slice(i, i + 100),
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        }
+
+    } catch (error) {
+        console.error('Error reordering slides:', error);
+    }
 }
+
+
+
+
+
+///*** BULK CARD CREATION ***///
+
+export async function createCopyOfTheCardTemplates(
+    presentationId: string,
+    slidePageIds: string[],
+): Promise<string[]> {
+    try {
+        const token = await getJwtToken()
+
+        const requests = slidePageIds.map((slidePageId) => ({
+            duplicateObject: {
+                objectId: slidePageId,
+            },
+        }))
+
+        const pageIds: string[] = [];
+        for (let i = 0; i < requests.length; i += 100) {
+            // Duplicate the template card
+            const requestBody = {
+                requests: requests.slice(i, i + 100),
+            };
+
+            const response = await axios.post(
+                `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`,
+                requestBody,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+            response.data.replies?.forEach((reply: any) => {
+                const newPageId = reply?.duplicateObject?.objectId
+                if (!newPageId) {
+                    throw new Error('Failed to duplicate the slide.');
+                }
+
+                pageIds.push(newPageId);
+            });
+        }
+
+        return pageIds
+    } catch (error) {
+        console.error('Error duplicating slide:', error);
+        throw error;
+    }
+}
+
+export const bulkUpdateSlides = async (presentationId: string, records: (Record & { slideId: string })[], keepImage: boolean = false) => {
+
+    const slidesUpdateUrl = `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`;
+    try {
+        const token = await getJwtToken()
+        const response = await axios.get(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const slideIdToSlideMap: Map<string, any> = new Map();
+        const currentSlides = response.data.slides;
+        currentSlides.forEach((slide: any) => {
+            slideIdToSlideMap.set(slide.objectId, slide)
+        });
+
+        const requests: any[] = [];
+        for (const record of records) {
+            const slide = slideIdToSlideMap.get(record.slideId);
+            if (!slide) {
+                throw new Error(`Slide with ID ${record.slideId} not found.`);
+            }
+
+            const nameUpdateRequest = getUpdateTextRequest(slide, 'NAME', 'Dear ' + record.name + ',', record.name ? false : true);
+            if (nameUpdateRequest) requests.push(...nameUpdateRequest);
+
+            const treeIdUpdateRequest = getUpdateTextRequest(slide, 'SAPLING_ID', 'Tree ID: ' + record.sapling);
+            if (treeIdUpdateRequest) requests.push(...treeIdUpdateRequest);
+
+            const content1UpdateRequest = getUpdateTextRequest(slide, 'CONTENT1', record.content1);
+            if (content1UpdateRequest) requests.push(...content1UpdateRequest);
+
+            const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
+            if (content2UpdateRequest) requests.push(...content2UpdateRequest);
+
+            const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo ? record.logo_message : '', record.logo ? false : !keepImage);
+            if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
+
+            const logoUpdateRequest = getUpdateImageRequest(slide, 'LOGO', record.logo, keepImage);
+            if (logoUpdateRequest) {
+                requests.push(...logoUpdateRequest);
+            }
+
+            const dashboardUrl = process.env.DASHBOARD_URL || 'https://dashboard.14trees.org';
+            const saplingUrl = dashboardUrl + '/profile/' + record.sapling;
+            const qrCodeUrl = `https://quickchart.io/qr?text=${saplingUrl}`;
+            const saplingUpdateRequest = getUpdateImageRequest(slide, 'QR', qrCodeUrl, keepImage);
+            if (saplingUpdateRequest) {
+                requests.push(...saplingUpdateRequest);
+            }
+        }
+
+        for (let i = 0; i < requests.length; i += 100) {
+            // Send the request to replace the text
+            const time = new Date().getTime();
+            await axios.post(
+                slidesUpdateUrl,
+                { requests: requests.slice(i, i + 100) },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            console.log("[INFO]", `Updated slide ${i + 100}/${requests.length} in ${new Date().getTime() - time}ms`);
+        }
+    } catch (error) {
+        console.error('Error updating slide:', error);
+    }
+};

@@ -57,16 +57,20 @@ export const getProfile = async (req: Request, res: Response) => {
 
   try {
     let userTrees: any[] = [];
+    let sponsoredTrees = 0;
     let giftCard: GiftCard | null = null;
     const tree = await TreeRepository.getTreeBySaplingId(req.query.id.toString())
     if (tree && tree.assigned_to) {
       userTrees = await TreeRepository.getUserProfilesForUserId(tree.assigned_to);
+      sponsoredTrees = await TreeRepository.treesCount({ mapped_to_user: tree.assigned_to })
     } else if (tree) {
       giftCard = await GiftCardsRepository.getDetailedGiftCardByTreeId(tree.id);
     }
-    res.status(status.success).json({ 
+
+    res.status(status.success).json({
       user_trees: userTrees,
       gift_tree: giftCard,
+      sponsored_trees: sponsoredTrees,
     });
   } catch (error: any) {
     res.status(status.bad).send({ message: error.message });
@@ -84,8 +88,10 @@ export const getUserProfileByUserId = async (req: Request, res: Response) => {
 
   try {
     const userTrees = await TreeRepository.getUserProfilesForUserId(userId);
-    res.status(status.success).json({ 
+    const sponsoredTrees = await TreeRepository.treesCount({ mapped_to_user: userId })
+    res.status(status.success).json({
       user_trees: userTrees,
+      sponsored_trees: sponsoredTrees,
     });
   } catch (error: any) {
     res.status(status.bad).send({ message: error.message });

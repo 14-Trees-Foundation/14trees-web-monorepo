@@ -49,7 +49,7 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
     return newFileId;
 }
 
-export async function downloadSlide(fileId: string, mimeType: string): Promise<Buffer> {
+export async function downloadSlide(fileId: string, mimeType: string): Promise<Readable> {
     const response = await drive.files.export(
         {
             fileId,
@@ -58,15 +58,15 @@ export async function downloadSlide(fileId: string, mimeType: string): Promise<B
         { responseType: 'stream' }
     );
 
-    const chunks: Buffer[] = [];
-    const stream = response.data as Readable;
+    // const chunks: Buffer[] = [];
+    return response.data as Readable;
 
     // Accumulate the data chunks
-    return new Promise<Buffer>((resolve, reject) => {
-        stream.on('data', (chunk) => chunks.push(chunk));
-        stream.on('end', () => resolve(Buffer.concat(chunks)));
-        stream.on('error', (error) => reject(error));
-    });
+    // return new Promise<Buffer>((resolve, reject) => {
+    //     stream.on('data', (chunk) => chunks.push(chunk));
+    //     stream.on('end', () => resolve(Buffer.concat(chunks)));
+    //     stream.on('error', (error) => reject(error));
+    // });
 }
 
 export async function downloadFile(fileId: string): Promise<Readable> {
