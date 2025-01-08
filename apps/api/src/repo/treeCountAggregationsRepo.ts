@@ -59,6 +59,7 @@ export class TreeCountAggregationsRepo {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available,
@@ -99,6 +100,7 @@ export class TreeCountAggregationsRepo {
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available,
@@ -113,6 +115,7 @@ export class TreeCountAggregationsRepo {
             LEFT JOIN "14trees".trees t ON t.plot_id = p.id
             LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
             LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+            LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
             GROUP by p.id, pt.id
             ORDER BY p.id
             OFFSET ${offset} LIMIT ${limit};
