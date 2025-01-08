@@ -9,6 +9,7 @@ export const GiftCardRequestStatus = {
 }
 
 export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETAILS'
+export type GiftCardRequestType = 'Cards Request' | 'Normal Assignment' | 'Test' | 'Promotion'
 
 interface GiftCardRequestAttributes {
     id: number;
@@ -38,6 +39,7 @@ interface GiftCardRequestAttributes {
     tags: string[] | null;
     gifted_on: Date;
     created_by: number;
+    request_type: GiftCardRequestType | null,
 }
 
 interface GiftCardRequestCreationAttributes
@@ -62,6 +64,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         unique: true
     })
     request_id!: string;
+
+    @Column({
+        type: DataType.STRING,
+    })
+    request_type!: GiftCardRequestType | null;
 
     @Column({
         type: DataType.NUMBER,
