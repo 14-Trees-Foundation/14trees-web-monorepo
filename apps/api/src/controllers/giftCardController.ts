@@ -600,7 +600,7 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
             await TreeRepository.updateTrees({
                 assigned_to: user.assignee,
                 assigned_at: giftCardRequest.gifted_on,
-                gifted_to: user.recipient,
+                gifted_to: giftCardRequest.request_type === 'Normal Assignment' ? null : user.recipient,
                 user_tree_image: user.profile_image_url,
                 updated_at: new Date()
             }, { id: { [Op.in]: treeIds } });
@@ -1102,21 +1102,23 @@ const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users
         await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds } });
     }
 
+    const normalAssignment = giftCardRequest.request_type === 'Normal Assignment'
+
     const tasks: Task<void>[] = [];
     for (const user of users) {
         const cards = userTreesMap[user.id];
         const treeIds = cards.map(card => card.tree_id);
 
         const updateRequest = {
-            assigned_at: giftCardRequest.gifted_on,
+            assigned_at: normalAssignment ? new Date() : giftCardRequest.gifted_on,
             assigned_to: user.assignee,
-            gifted_to: user.recipient,
+            gifted_to: normalAssignment ? null : user.recipient,
             updated_at: new Date(),
             description: giftCardRequest.event_name,
             event_type: giftCardRequest.event_type,
             planted_by: null,
-            gifted_by: giftCardRequest.user_id,
-            gifted_by_name: giftCardRequest.planted_by,
+            gifted_by: normalAssignment ? null : giftCardRequest.user_id,
+            gifted_by_name: normalAssignment ? null : giftCardRequest.planted_by,
             user_tree_image: user.profile_image_url,
             memory_images: memoryImageUrls,
         }
@@ -1132,6 +1134,8 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
     for (const tree of cards) {
         existingTreesMap[tree.id] = tree;
     }
+
+    const normalAssignment = giftCardRequest.request_type === 'Normal Assignment'
     for (const tree of trees) {
         const data = {
             ...tree,
@@ -1144,15 +1148,15 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
             const user = users.find(user => user.id === tree.gift_request_user_id);
             if (user) {
                 const updateRequest = {
-                    assigned_at: giftCardRequest.gifted_on,
+                    assigned_at: normalAssignment ? new Date() : giftCardRequest.gifted_on,
                     assigned_to: user.assignee,
-                    gifted_to: user.recipient,
+                    gifted_to: normalAssignment ? null : user.recipient,
                     updated_at: new Date(),
                     description: giftCardRequest.event_name,
                     event_type: giftCardRequest.event_type,
                     planted_by: null,
-                    gifted_by: giftCardRequest.user_id,
-                    gifted_by_name: giftCardRequest.planted_by,
+                    gifted_by: normalAssignment ? null : giftCardRequest.user_id,
+                    gifted_by_name: normalAssignment ? null : giftCardRequest.planted_by,
                     user_tree_image: user.profile_image_url,
                     memory_images: memoryImageUrls,
                 }
