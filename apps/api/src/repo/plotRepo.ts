@@ -92,6 +92,7 @@ export class PlotRepository {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available,
@@ -132,6 +133,7 @@ export class PlotRepository {
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available,
@@ -181,6 +183,7 @@ export class PlotRepository {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL) AND pt.habit = 'Tree'
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available_trees,
@@ -192,6 +195,7 @@ export class PlotRepository {
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND pt.habit = 'Tree'
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available_trees,
@@ -219,6 +223,7 @@ export class PlotRepository {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL) AND pt.habit = 'Herb'
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available_herbs,
@@ -230,6 +235,7 @@ export class PlotRepository {
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND pt.habit = 'Herb'
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available_herbs,
@@ -257,6 +263,7 @@ export class PlotRepository {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL) AND pt.habit = 'Shrub'
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available_shrubs,
@@ -268,6 +275,7 @@ export class PlotRepository {
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND pt.habit = 'Shrub'
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available_shrubs,
@@ -279,6 +287,7 @@ export class PlotRepository {
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND pt.habit = 'Tree'
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN ptct.plant_type 
                 ELSE NULL 
             END) AS distinct_plants
@@ -287,6 +296,7 @@ export class PlotRepository {
         LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
         LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
         LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
         ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
@@ -511,6 +521,7 @@ export class PlotRepository {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available,
@@ -521,6 +532,7 @@ export class PlotRepository {
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available
@@ -529,6 +541,7 @@ export class PlotRepository {
         LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
         LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
         LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
         HAVING SUM(CASE 
