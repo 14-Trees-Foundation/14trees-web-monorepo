@@ -15,6 +15,7 @@ import { GiftCard } from "../models/gift_card";
 import { getUserDocumentFromRequestBody, UserRepository } from "../repo/userRepo";
 import { User } from "../models/user";
 import { UserGroupRepository } from "../repo/userGroupRepo";
+import { UploadFileToS3 } from "./helper/uploadtos3";
 
 export const getAllProfile = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -142,26 +143,65 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
     saplingIds = saplingIds.map((saplingId: string) => {
       return saplingId.trim();
     })
-    let trees = [];
 
-    if (fields.visited) {
-      let userDoc = getUserDocumentFromRequestBody(fields);
-      let user: User | null = null;
-      let usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: userDoc.email, operatorValue: 'equals' }]);
-      if (usersResp.results.length === 0) {
-        user = await User.create(userDoc);
-      } else {
-        user = usersResp.results[0];
+    // Get the user
+    let userDoc = getUserDocumentFromRequestBody(fields);
+    let user = await User.findOne({ where: { email: userDoc.email } });
+    if (!user) {
+      user = await User.create(userDoc);
+    }
+
+    // Upload images to S3
+    let userImageUrl: string | null = null;
+    let memoryImageUrls: string[] | null = null;
+
+    // User Profile images
+    if (fields.user_image !== undefined) {
+      if (fields.user_image.length > 0) {
+        const location = await UploadFileToS3(fields.user_image, "users");
+        if (location != "") {
+          userImageUrl = location;
+        }
       }
+    }
 
+    // Memories for the visit
+    if (fields.album_images !== undefined) {
+      if (fields.album_images.length > 0) {
+        let memoryImages = fields.album_images.split(",");
+        if (memoryImages.length > 0) {
+          memoryImageUrls = memoryImages;
+        }
+      }
+    }
+
+    const updateFields: any = {
+      assigned_to: user.id,
+      assigned_at: new Date(),
+      sponsored_by_user: fields.sponsored_by_user || null,
+      sponsored_by_group: fields.sponsored_by_group || null,
+      gifted_by: fields.gifted_by || null,
+      planted_by: fields.planted_by || null,
+      user_tree_image: userImageUrl,
+      memory_images: memoryImageUrls,
+      description: fields.description || null,
+      event_id: event?.id || null,
+      event_type: fields.type || null,
+      updated_at: new Date(),
+    }
+
+    if (fields.visited && user) {
       await UserGroupRepository.addUsersToVisitorsGroup([user.id]);
     }
 
-    for (let i = 0; i < saplingIds.length; i++) {
-      const result = await TreeRepository.assignTree(saplingIds[i], fields, event?.id);
-      trees.push(result);
-    }
-    res.status(status.created).json(trees);
+    // for (let i = 0; i < saplingIds.length; i++) {
+    //   const result = await TreeRepository.assignTree(saplingIds[i], fields, event?.id);
+    //   trees.push(result);
+    // }
+
+    await TreeRepository.updateTrees(updateFields, { sapling_ids: { [Op.in]: saplingIds } });
+
+    res.status(status.created).json();
   } catch (error: any) {
     res.status(status.error).send({ error: error.message });
     return;
@@ -196,24 +236,24 @@ export const assignTreesBulk = async (req: Request, res: Response) => {
   try {
     const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
     const donation = donationResp.results[0];
-  
+
     const tags: string[] = donation.associated_tag ? [donation.associated_tag] : [];
     const plotsFilter: FilterItem[] = [{ columnField: 'tags', operatorValue: 'isAnyOf', value: tags }]
     const plotResp = await PlotRepository.getPlots(0, -1, plotsFilter)
     const plotIds = plotResp.results.map(plot => plot.id);
-  
+
     // const user = await UserRepository.getUser(donation.name, donation.email_address);
     // if (!user) {
     //   res.status(status.error).send({ message: 'Donor user not found. Please create user first.' })
     //   return;
     // }
-  
+
     const success = await assignTrees(donation.id, donation.user_id, donation.pledged, plotIds);
     if (success) {
       res.status(status.success).send();
       return;
     }
-  } catch(error: any) {
+  } catch (error: any) {
     console.log('[ERROR]', "assignTreesBulk", error);
   }
 
@@ -273,7 +313,7 @@ const assignTreesToDonationUser = async (donationId: number, donorId: number, us
     gifted_to: userId,
     donation_id: donationId,
   }
-  
-  const updatedCount = await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds }})
+
+  const updatedCount = await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds } })
   return updatedCount;
 }
