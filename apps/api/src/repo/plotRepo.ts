@@ -580,9 +580,9 @@ export class PlotRepository {
                 sum(case when t.assigned_to is not null then 1 else 0 end) as assigned_trees,
                 count(distinct t.plant_type_id) as plant_types,
                 sum(p.acres_area) as area
-            FROM "14trees_2".trees t
-            JOIN "14trees_2".plots p ON p.id = t.plot_id
-            JOIN "14trees_2".groups g on g.id = t.mapped_to_group
+            FROM "14trees".trees t
+            JOIN "14trees".plots p ON p.id = t.plot_id
+            JOIN "14trees".groups g on g.id = t.mapped_to_group
         `
 
         const resp = await sequelize.query(query, {

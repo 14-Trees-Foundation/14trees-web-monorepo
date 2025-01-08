@@ -50,7 +50,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
     for (const giftCardRequest of giftCardRequests.results) {
         let paidAmount = 0;
         let validatedAmount = 0;
-        const totalAmount = giftCardRequest.no_of_cards * (giftCardRequest.category === "Foundation" ? 3000 : 1500);
+        const totalAmount = giftCardRequest.no_of_cards * 2000;
 
         if (giftCardRequest.payment_id) {
             const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
@@ -99,6 +99,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         payment_id: paymentId,
         created_by: createdBy,
         gifted_on: giftedOn,
+        request_type: requestType,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -130,6 +131,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         category: category,
         grove: grove,
         gifted_on: giftedOn,
+        request_type: requestType ? requestType : null,
     }
 
     try {
@@ -217,6 +219,7 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             category: giftCardRequest.category,
             grove: giftCardRequest.grove,
             gifted_on: giftCardRequest.gifted_on,
+            request_type: giftCardRequest.request_type,
         }
 
         let createdRequest = await GiftCardsRepository.createGiftCardRequest(request);
@@ -284,7 +287,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         let paidAmount = 0;
         let validatedAmount = 0;
-        const totalAmount = giftCardRequest.no_of_cards * (giftCardRequest.category === "Foundation" ? 3000 : 1500);
+        const totalAmount = giftCardRequest.no_of_cards * 2000;
 
         if (giftCardRequest.payment_id) {
             const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
@@ -2076,12 +2079,12 @@ export const generateFundRequest = async (req: Request, res: Response) => {
         }
 
         const filename = `${group.name} [Req. No: ${giftCardRequest.id}] ${new Date().toDateString()}.pdf`;
-        const totalAmount = giftCardRequest.no_of_cards * (giftCardRequest.category === 'Foundation' ? 3000 : 1500);
+        const totalAmount = giftCardRequest.no_of_cards * (2000);
         let data: any = {
             address: group.address?.split('\n').join('<br/>'),
             date: moment(new Date()).format('MMMM DD, YYYY'),
             no_of_trees: giftCardRequest.no_of_cards,
-            per_tree_cost: giftCardRequest.category === 'Foundation' ? 3000 : 1500,
+            per_tree_cost: 2000,
             total_amount: formatNumber(totalAmount),
             total_amount_words: "Rupees " + numberToWords(totalAmount).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + " only",
         }

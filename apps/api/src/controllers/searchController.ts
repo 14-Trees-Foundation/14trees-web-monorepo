@@ -15,9 +15,9 @@ export const getAll = async (req: Request, res: Response): Promise<void> => {
     }
     
     try {
-        const data = await UserRepository.search(key);
+        const data: any[] = await UserRepository.search(key);
         res.status(status.success).json({
-            users: data,
+            users: data.map(item => ({ ...item, sponsored_trees: Number(item.sponsored_trees) })),
             total_results: data.length,
         })
     } catch (error: any) {
