@@ -393,6 +393,7 @@ class TreeRepository {
       SELECT t.id as tree_id, pt."name" as plant_type
       FROM "14trees".trees t
       JOIN "14trees".plant_types pt on pt.id = t.plant_type_id AND pt.habit = 'Tree'
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
     `
 
     if (!bookNonGiftable) {
@@ -670,7 +671,8 @@ class TreeRepository {
       SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot
       FROM "14trees".trees t
       JOIN "14trees".plots p ON p.id = t.plot_id
-      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'`
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
     if (!include_no_giftable) {
       query += '\nJOIN "14trees".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
@@ -695,11 +697,13 @@ class TreeRepository {
       SELECT count(t.id)
       FROM "14trees".trees t
       JOIN "14trees".plots p ON p.id = t.plot_id
-      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'`
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id AND pt.habit = 'Tree'
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
     if (!include_no_giftable) '\nJOIN "14trees".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
 
-    countQuery += `WHERE t.mapped_to_user IS NULL
+    countQuery += `
+        WHERE t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
