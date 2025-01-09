@@ -10,6 +10,7 @@ export const GiftCardRequestStatus = {
 
 export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETAILS'
 export type GiftCardRequestType = 'Cards Request' | 'Normal Assignment' | 'Test' | 'Promotion'
+export type SponsorshipType = 'Unverified' | 'Pledged' | 'Promotional' | 'Unsponsored Visit' | 'Donation Received'
 
 interface GiftCardRequestAttributes {
     id: number;
@@ -40,10 +41,13 @@ interface GiftCardRequestAttributes {
     gifted_on: Date;
     created_by: number;
     request_type: GiftCardRequestType | null,
+    sponsorship_type: SponsorshipType,
+    donation_receipt_number: string | null,
+    amount_received: number | null,
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -172,6 +176,15 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.ARRAY(DataType.STRING),
     })
     tags!: string[] | null;
+
+    @Column({ type: DataType.STRING })
+    sponsorship_type!: SponsorshipType;
+
+    @Column({ type: DataType.STRING })
+    donation_receipt_number!: string;
+
+    @Column({ type: DataType.INTEGER })
+    amount_received!: number;
 
     @Column({
         type: DataType.INTEGER,
