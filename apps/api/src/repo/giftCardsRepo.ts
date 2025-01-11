@@ -458,6 +458,10 @@ export class GiftCardsRepository {
 
     /// *** GIFT REQUEST USERS *** ///
 
+    static async getGiftRequestUsersByQuery(whereClause: WhereOptions<GiftRequestUser>): Promise<GiftRequestUser[]> {
+        return await GiftRequestUser.findAll({ where: whereClause });
+    }
+
     static async getGiftRequestUsers(giftCardRequestId: number): Promise<GiftRequestUser[]> {
         const getQuery = `
             SELECT gru.*, 
@@ -478,8 +482,9 @@ export class GiftCardsRepository {
         return data;
     }
 
-    static async addGiftRequestUsers(data: GiftRequestUserCreationAttributes[]): Promise<void> {
-        await GiftRequestUser.bulkCreate(data);
+    static async addGiftRequestUsers(data: GiftRequestUserCreationAttributes[], returning: boolean = false): Promise<GiftRequestUser[] | void> {
+        const response =  await GiftRequestUser.bulkCreate(data, { returning: returning });
+        return returning ? response : undefined;
     }
 
     static async updateGiftRequestUsers(fields: any, whereClause: WhereOptions<GiftRequestUserAttributes>): Promise<void> {

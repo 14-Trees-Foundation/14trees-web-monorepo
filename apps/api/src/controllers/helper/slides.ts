@@ -491,8 +491,8 @@ export async function createCopyOfTheCardTemplates(
         }
 
         return pageIds
-    } catch (error) {
-        console.error('Error duplicating slide:', error);
+    } catch (error: any) {
+        console.error('Error duplicating slide:', JSON.stringify(error.response.data, null, 2));
         throw error;
     }
 }
@@ -566,7 +566,7 @@ export const bulkUpdateSlides = async (presentationId: string, records: (Record 
 
             console.log("[INFO]", `Updated slide ${i + 100}/${requests.length} in ${new Date().getTime() - time}ms`);
         }
-    } catch (error) {
-        console.error('Error updating slide:', error);
+    } catch (error: any) {
+        console.error('Error updating slide:', JSON.stringify(error.response.data, null, 2));
     }
 };
