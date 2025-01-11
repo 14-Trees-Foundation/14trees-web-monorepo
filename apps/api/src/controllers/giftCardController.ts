@@ -1696,15 +1696,24 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             userId = usr.id;
         }
 
-        const giftCardUser = await GiftCardsRepository.getGiftCard(giftCardId);
-        if (!giftCardUser) {
+        const giftCard = await GiftCardsRepository.getGiftCard(giftCardId);
+        if (!giftCard) {
             res.status(status.bad).json({
                 message: 'Gift card not found!'
             })
             return;
         }
 
-        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardUser.gift_card_request_id }])
+        let giftRequestUser: GiftRequestUser | null = null;
+        const giftCardUsers = await GiftCardsRepository.getGiftRequestUsersByQuery({ gift_request_id: giftCard.gift_card_request_id, assignee: userId });
+        if (giftCardUsers.length > 0) {
+            giftRequestUser = giftCardUsers[0];
+        } else {
+            const resp = await GiftCardsRepository.addGiftRequestUsers([{ gift_request_id: giftCard.gift_card_request_id, gifted_trees: 1, assignee: userId, recipient: userId, profile_image_url: profileImageUrl, created_at: new Date(), updated_at: new Date() }], true);
+            if (resp && resp.length === 1) giftRequestUser = resp[0];
+        }
+
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCard.gift_card_request_id }])
         const giftCardRequest = resp.results[0];
 
         let memoryImageUrls: string[] | null = null;
@@ -1719,7 +1728,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             gifted_to: userId,
             event_type: giftCardRequest.event_type,
             description: giftCardRequest.event_name,
-            gifted_by_name: giftCardRequest.planted_by,
+            gifted_by_name: user?.gifted_by ? user.gifted_by : giftCardRequest.planted_by,
             updated_at: new Date(),
             planted_by: null,
             gifted_by: giftCardRequest.user_id,
@@ -1735,10 +1744,11 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             return;
         }
 
-        giftCardUser.assigned_to = userId;
-        giftCardUser.gifted_to = userId;
-        giftCardUser.updated_at = new Date();
-        await giftCardUser.save();
+        giftCard.assigned_to = userId;
+        giftCard.gifted_to = userId;
+        giftCard.gift_request_user_id = giftRequestUser ? giftRequestUser.id : null;
+        giftCard.updated_at = new Date();
+        await giftCard.save();
 
         res.status(status.success).send();
     } catch (error: any) {
