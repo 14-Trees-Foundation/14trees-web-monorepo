@@ -1065,6 +1065,8 @@ export const unBookTrees = async (req: Request, res: Response) => {
             await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
         }
 
+        // delete gift request plots
+        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
 
         res.status(status.success).send();
     } catch (error: any) {
