@@ -504,7 +504,7 @@ export class PlotRepository {
         }
 
         const query = `
-        SELECT p.id, p.name, p.tags, p.category, p.accessibility_status,
+        SELECT p.id, p.name, p.tags, p.category, p.accessibility_status, p.boundaries, p.label,
             case 
                 when s.name_english is null 
                     then s.name_marathi
@@ -516,6 +516,11 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS booked,
+            SUM(CASE 
+                WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND t.assigned_to IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS assigned,
             SUM(CASE 
                 WHEN t.mapped_to_user IS NULL 
                     AND t.mapped_to_group IS NULL 
