@@ -1128,7 +1128,7 @@ const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes, users
         tasks.push(() => update(user, updateRequest, treeIds));
     }
 
-    runWithConcurrency(tasks, 10);
+    await runWithConcurrency(tasks, 10);
 }
 
 const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: GiftCard[], users: GiftRequestUser[], cards: GiftCard[], memoryImageUrls: string[] | null) => {
@@ -1215,10 +1215,11 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
 
         const updatedResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
         const giftRequest: any = updatedResp.results[0];
+
         if (giftRequest.no_of_cards == Number(giftRequest.assigned)) {
-            giftCardRequest.status = GiftCardRequestStatus.completed;
-            giftCardRequest.updated_at = new Date();
-            await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+            giftRequest.status = GiftCardRequestStatus.completed;
+            giftRequest.updated_at = new Date();
+            await GiftCardsRepository.updateGiftCardRequest(giftRequest);
         }
 
         res.status(status.success).json();
