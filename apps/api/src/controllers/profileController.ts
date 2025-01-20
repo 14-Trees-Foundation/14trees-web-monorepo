@@ -205,7 +205,7 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
     //   trees.push(result);
     // }
 
-    await TreeRepository.updateTrees(updateFields, { sapling_ids: { [Op.in]: saplingIds } });
+    await TreeRepository.updateTrees(updateFields, { sapling_id: { [Op.in]: saplingIds } });
 
     res.status(status.created).json();
   } catch (error: any) {
