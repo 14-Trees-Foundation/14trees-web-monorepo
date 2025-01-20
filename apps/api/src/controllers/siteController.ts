@@ -247,11 +247,6 @@ export const getSiteStatesForCorporate = async (req: Request, res: Response) => 
     const orderBy: SortOrder[] = req.body?.order_by;
     const groupId: number = req.body?.group_id;
 
-    if (!groupId) {
-        res.status(status.bad).send({ error: "Please select Corporate to fetch plot analytics!" });
-        return;
-    }
-
     try {
         let result = await SiteRepository.getSiteStatesForCorporate(offset, limit, groupId, filters, orderBy);
         result.results = result.results.map((item: any) => {
