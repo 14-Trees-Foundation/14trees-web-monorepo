@@ -480,7 +480,7 @@ export class PlotRepository {
         return { offset: offset, total: totalResults, results: plots as Plot[] };
     }
 
-    public static async getPlotStatesForCorporate(offset: number, limit: number, groupId: number, filters?: any[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Plot>> {
+    public static async getPlotStatesForCorporate(offset: number, limit: number, groupId?: number, filters?: any[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Plot>> {
         let whereCondition = "";
         let replacements: any = {}
         if (filters && filters.length > 0) {
@@ -512,7 +512,7 @@ export class PlotRepository {
                 end site_name,
             COUNT(t.id) as total, 
             SUM(CASE 
-                WHEN t.mapped_to_group = ${groupId}
+                WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
                 THEN 1 
                 ELSE 0 
             END) AS booked,
@@ -545,7 +545,7 @@ export class PlotRepository {
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
         HAVING SUM(CASE 
-            WHEN t.mapped_to_group = ${groupId}
+            WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
             THEN 1 
             ELSE 0 
         END) > 0
@@ -558,7 +558,7 @@ export class PlotRepository {
             FROM "14trees_2".plots p
             LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
             LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
-            WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"};
+            WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND ${whereCondition !== "" ? whereCondition : "1=1"};
             `
 
         const plots: any = await sequelize.query(query, {
@@ -576,22 +576,37 @@ export class PlotRepository {
     }
 
     ///*** CSR Queries ***/
-    public static async getCSRTreesAnalysis(): Promise<any> {
+    public static async getCSRTreesAnalysis(groupId?: number): Promise<any> {
 
         const query = `SELECT
                 count(t.id) as sponsored_trees,
                 sum(case when t.assigned_to is not null then 1 else 0 end) as assigned_trees,
-                count(distinct t.plant_type_id) as plant_types,
-                sum(p.acres_area) as area
+                count(distinct t.plant_type_id) as plant_types
             FROM "14trees_2".trees t
             JOIN "14trees_2".plots p ON p.id = t.plot_id
             JOIN "14trees_2".groups g on g.id = t.mapped_to_group
+            WHERE ${groupId ? `g.id = ${groupId}` : `1 = 1`}
         `
 
         const resp = await sequelize.query(query, {
             type: QueryTypes.SELECT
         })
 
-        return resp[0];
+        const areaQuery = `
+            SELECT SUM(COALESCE(p.acres_area, 0)) as area
+            FROM "14trees_2".plots p
+            WHERE p.id IN (SELECT distinct t.plot_id 
+                FROM "14trees_2".trees t
+                WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`})
+        `
+
+        const resp2 = await sequelize.query(areaQuery, {
+            type: QueryTypes.SELECT
+        })
+
+        return {
+            ...resp[0],
+            ...resp2[0]
+        };
     }
 }

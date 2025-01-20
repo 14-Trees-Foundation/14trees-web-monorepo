@@ -741,7 +741,7 @@ export class SiteRepository {
         return resp;
     }
 
-    public static async getSiteStatesForCorporate(offset: number, limit: number, groupId: number, filters?: any[], orderBy?: SortOrder[]): Promise<PaginatedResponse<any>> {
+    public static async getSiteStatesForCorporate(offset: number, limit: number, groupId?: number, filters?: any[], orderBy?: SortOrder[]): Promise<PaginatedResponse<any>> {
         let whereCondition = "";
         let replacements: any = {}
         if (filters && filters.length > 0) {
@@ -758,7 +758,7 @@ export class SiteRepository {
         SELECT s.id, s.name_english, s.tags,
             COUNT(t.id) as total, 
             SUM(CASE 
-                WHEN t.mapped_to_group = ${groupId}
+                WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
                 THEN 1 
                 ELSE 0 
             END) AS booked,
@@ -791,7 +791,7 @@ export class SiteRepository {
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY s.id
         HAVING SUM(CASE 
-            WHEN t.mapped_to_group = ${groupId}
+            WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
             THEN 1 
             ELSE 0 
         END) > 0
@@ -804,7 +804,7 @@ export class SiteRepository {
             FROM "14trees_2".plots p
             LEFT JOIN "14trees_2".sites s ON p.site_id = s.id
             LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
-            WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"};
+            WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND ${whereCondition !== "" ? whereCondition : "1=1"};
             `
 
         const sites: any = await sequelize.query(query, {
