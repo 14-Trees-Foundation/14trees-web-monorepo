@@ -229,11 +229,6 @@ export const getPlotStatesForCorporate = async (req: Request, res: Response) => 
     const orderBy: SortOrder[] = req.body?.order_by;
     const groupId: number = req.body?.group_id;
 
-    if (!groupId) {
-        res.status(status.bad).send({ error: "Please select Corporate to fetch plot analytics!" });
-        return;
-    }
-
     try {
         let result = await PlotRepository.getPlotStatesForCorporate(offset, limit, groupId, filters, orderBy);
         result.results = result.results.map((item: any) => {
@@ -241,6 +236,7 @@ export const getPlotStatesForCorporate = async (req: Request, res: Response) => 
                 ...item,
                 total: parseInt(item.total),
                 booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
                 available: parseInt(item.available),
                 card_available: parseInt(item.card_available),
             }
@@ -256,8 +252,12 @@ export const getPlotStatesForCorporate = async (req: Request, res: Response) => 
 }
 
 export const getCSRTreesAnalysis = async (req: Request, res: Response) => {
+    const groupId: string = req.query.group_id as string;
+    let grId: number | undefined = undefined;
+    if (!isNaN(parseInt(groupId))) grId = parseInt(groupId);
+
     try {
-        let result = await PlotRepository.getCSRTreesAnalysis();
+        let result = await PlotRepository.getCSRTreesAnalysis(grId);
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "PlotsController::getCSRTreesAnalysis", error);

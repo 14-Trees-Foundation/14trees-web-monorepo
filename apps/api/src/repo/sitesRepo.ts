@@ -3,6 +3,7 @@ import { Site, SiteAttributes, SiteCreationAttributes } from '../models/sites';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
+import { SortOrder } from '../models/common';
 
 export class SiteRepository {
 
@@ -738,5 +739,85 @@ export class SiteRepository {
         });
 
         return resp;
+    }
+
+    public static async getSiteStatesForCorporate(offset: number, limit: number, groupId?: number, filters?: any[], orderBy?: SortOrder[]): Promise<PaginatedResponse<any>> {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "s." + filter.columnField
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+        SELECT s.id, s.name_english, s.tags,
+            COUNT(t.id) as total, 
+            SUM(CASE 
+                WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+                THEN 1 
+                ELSE 0 
+            END) AS booked,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND ppt.sustainable = true
+                THEN 1 
+                ELSE 0 
+            END) AS available,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                    AND t.mapped_to_group IS NULL 
+                    AND t.assigned_to IS NULL 
+                    AND t.id IS NOT NULL
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                    AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
+                THEN 1 
+                ELSE 0 
+            END) AS card_available
+        FROM "14trees".sites s
+        LEFT JOIN "14trees".plots p ON p.site_id = s.id
+        LEFT JOIN "14trees".trees t ON t.plot_id = p.id
+        LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
+        LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        GROUP BY s.id
+        HAVING SUM(CASE 
+            WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+            THEN 1 
+            ELSE 0 
+        END) > 0
+        ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 's.id DESC'}
+        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+        `
+
+        const countSitesQuery =
+            `SELECT count(distinct s.id)
+            FROM "14trees".plots p
+            LEFT JOIN "14trees".sites s ON p.site_id = s.id
+            LEFT JOIN "14trees".trees t ON t.plot_id = p.id
+            WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND ${whereCondition !== "" ? whereCondition : "1=1"};
+            `
+
+        const sites: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countSites: any = await sequelize.query(countSitesQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countSites[0].count)
+
+        return { offset: offset, total: totalResults, results: sites as any[] };
     }
 }

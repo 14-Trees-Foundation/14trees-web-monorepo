@@ -6,6 +6,7 @@ import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { UploadFileToS3 } from "./helper/uploadtos3";
+import { SortOrder } from "../models/common";
 
   
 
@@ -233,6 +234,33 @@ export const getCorporateTreeDistribution = async (req: Request, res: Response) 
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "SitesController::getCorporateTreeDistribution", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
+
+export const getSiteStatesForCorporate = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: SortOrder[] = req.body?.order_by;
+    const groupId: number = req.body?.group_id;
+
+    try {
+        let result = await SiteRepository.getSiteStatesForCorporate(offset, limit, groupId, filters, orderBy);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                available: parseInt(item.available),
+                card_available: parseInt(item.card_available),
+            }
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "SitesController::getSiteStatesForCorporate", error);
         res.status(status.error).json({
             status: status.error,
             message: "Something went wrong. Please try again after some time.",
