@@ -236,6 +236,7 @@ export const getPlotStatesForCorporate = async (req: Request, res: Response) => 
                 ...item,
                 total: parseInt(item.total),
                 booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
                 available: parseInt(item.available),
                 card_available: parseInt(item.card_available),
             }
