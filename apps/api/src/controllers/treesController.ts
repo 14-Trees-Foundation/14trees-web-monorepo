@@ -382,3 +382,33 @@ export const getMappedTreesForUser = async (req: Request, res: Response) => {
   }
 
 }
+
+export const treePlantedByCorporate = async (req: Request, res: Response) => {
+  const group_id: string = req.query?.group_id as string;
+  let groupId: number | undefined = undefined;
+  if (!isNaN(parseInt(group_id))) groupId = parseInt(group_id);
+
+  try {
+    const query = `SELECT DATE_TRUNC('year', t.created_at) AS year, COUNT(t.id) AS tree_count
+                    FROM "14trees_2".trees AS t
+                    WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`}
+                    GROUP BY year
+                    ORDER BY year ASC;
+        `
+    let result: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT
+    })
+    result.forEach(item => {
+      item.tree_count = parseInt(item.tree_count);
+      const year: Date = item.year
+      item.year = year.getFullYear();
+    })
+    res.status(status.success).send(result);
+
+  } catch (error: any) {
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
+  }
+}

@@ -292,6 +292,53 @@ class PlantTypeRepository {
             type: QueryTypes.UPDATE
         })
     }
+
+    ///*** CSR Stats ***/
+    public static async getPlantTypeStatsForCorporate(offset: number, limit: number, groupId?: number, filters?: any[]): Promise<PaginatedResponse<PlantType>> {
+        let whereCondition = "";
+        let replacements: any = {}
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "pt." + filter.columnField
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+
+        const query = `
+        SELECT pt.id, pt.name, pt.habit, pt.category, pt.scientific_name, pt.known_as,
+            count(t.id) AS booked
+        FROM "14trees_2".plant_types pt
+        JOIN "14trees_2".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+        WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+        GROUP BY pt.id
+        ORDER BY booked DESC
+        OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
+        `
+
+        const countPlantTypesQuery =
+            `SELECT count(distinct pt.id)
+                FROM "14trees_2".plant_types pt
+                JOIN "14trees_2".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+                WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+            `
+
+        const plantTypes: any = await sequelize.query(query, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+
+        const countPlantTypes: any = await sequelize.query(countPlantTypesQuery, {
+            replacements: replacements,
+            type: QueryTypes.SELECT
+        })
+        const totalResults = parseInt(countPlantTypes[0].count)
+
+        return { offset: offset, total: totalResults, results: plantTypes as PlantType[] };
+    }
+
 }
 
 export default PlantTypeRepository;
