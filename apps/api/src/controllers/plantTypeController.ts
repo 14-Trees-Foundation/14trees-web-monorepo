@@ -258,3 +258,27 @@ export const uploadIllustrationsToS3 = async (req: Request, res: Response) => {
     res.status(status.bad).send({ message: 'Something went wrong. Please try again after some time!' });
   }
 }
+
+export const getPlantTypeStatsForCorporate = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const groupId: number = req.body?.group_id;
+
+    try {
+        let result = await PlantTypeRepository.getPlantTypeStatsForCorporate(offset, limit, groupId, filters);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                booked: parseInt(item.booked),
+            }
+        })
+
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlantTypesController::getPlantTypeStatesForCorporate", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
