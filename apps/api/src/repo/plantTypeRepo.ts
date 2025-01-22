@@ -310,8 +310,8 @@ class PlantTypeRepository {
         const query = `
         SELECT pt.id, pt.name, pt.habit, pt.category, pt.scientific_name, pt.known_as,
             count(t.id) AS booked
-        FROM "14trees_2".plant_types pt
-        JOIN "14trees_2".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+        FROM "14trees".plant_types pt
+        JOIN "14trees".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY pt.id
         ORDER BY booked DESC
@@ -320,8 +320,8 @@ class PlantTypeRepository {
 
         const countPlantTypesQuery =
             `SELECT count(distinct pt.id)
-                FROM "14trees_2".plant_types pt
-                JOIN "14trees_2".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+                FROM "14trees".plant_types pt
+                JOIN "14trees".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
                 WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             `
 

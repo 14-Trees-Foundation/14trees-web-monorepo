@@ -390,7 +390,7 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
 
   try {
     const query = `SELECT DATE_TRUNC('year', t.created_at) AS year, COUNT(t.id) AS tree_count
-                    FROM "14trees_2".trees AS t
+                    FROM "14trees".trees AS t
                     WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`}
                     GROUP BY year
                     ORDER BY year ASC;
