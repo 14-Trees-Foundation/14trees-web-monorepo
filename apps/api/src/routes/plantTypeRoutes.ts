@@ -16,5 +16,6 @@ routes.post('/plot-states', plantTypes.getPlantTypeStateForPlots);
 routes.post('/sync', plantTypes.syncPlantTypeIllustrationsDataFromNotion);
 routes.post('/templates/', plantTypes.addPlantTypeTemplate);
 routes.post('/illustrations/', plantTypes.uploadIllustrationsToS3);
+routes.post('/corporate-stats', plantTypes.getPlantTypeStatsForCorporate);
 
 export default routes;
