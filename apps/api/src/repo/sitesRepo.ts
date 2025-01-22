@@ -755,7 +755,7 @@ export class SiteRepository {
         }
 
         const query = `
-        SELECT s.id, s.name_english, s.tags,
+        SELECT s.id, s.name_english, s.tags, s.kml_file_link, s.area_acres,
             COUNT(t.id) as total, 
             SUM(CASE 
                 WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}

@@ -389,7 +389,7 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
   if (!isNaN(parseInt(group_id))) groupId = parseInt(group_id);
 
   try {
-    const query = `SELECT DATE_TRUNC('year', t.created_at) AS year, COUNT(t.id) AS tree_count
+    const query = `SELECT DATE_TRUNC('year', t.mapped_at) AS year, COUNT(t.id) AS tree_count
                     FROM "14trees_2".trees AS t
                     WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`}
                     GROUP BY year
@@ -398,6 +398,7 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
     let result: any[] = await sequelize.query(query, {
       type: QueryTypes.SELECT
     })
+    
     result.forEach(item => {
       item.tree_count = parseInt(item.tree_count);
       const year: Date = item.year
