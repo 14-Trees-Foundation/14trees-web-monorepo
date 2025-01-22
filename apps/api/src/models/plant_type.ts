@@ -24,12 +24,13 @@ interface PlantTypeAttributes {
   last_system_updated_at?: Date;
   illustration_link: string | null;
   illustration_s3_path: string | null;
+  combined_name: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
 interface PlantTypeCreationAttributes
-	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'use' | 'status' | 'illustration_link' | 'illustration_s3_path'> {}
+	extends Optional<PlantTypeAttributes, 'id' | 'tags' | 'images' | 'family' | 'use' | 'status' | 'illustration_link' | 'illustration_s3_path' | 'combined_name'> {}
 
 @Table({ tableName: 'plant_types' })
 class PlantType extends Model<PlantTypeAttributes, PlantTypeCreationAttributes>
@@ -102,6 +103,9 @@ implements PlantTypeAttributes {
 
   @Column(DataType.STRING)
   status!: string;
+
+  @Column(DataType.STRING)
+  combined_name!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
   status_message!: string[];
