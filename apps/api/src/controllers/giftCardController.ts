@@ -333,7 +333,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
             treeUpdateRequest = { ...treeUpdateRequest, event_type: updatedGiftCardRequest.event_type }
         }
 
-        if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && Object.keys(treeUpdateRequest).length !== 0) {
+        if (Object.keys(treeUpdateRequest).length !== 0) {
             await updateTreesForGiftRequest(giftCardRequest.id, treeUpdateRequest);
         }
 
@@ -1065,6 +1065,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 description: null,
                 planted_by: null,
                 user_tree_image: null,
+                event_type: null,
                 updated_at: new Date(),
             }
 
