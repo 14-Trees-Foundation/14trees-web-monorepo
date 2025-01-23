@@ -401,8 +401,8 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
     
     result.forEach(item => {
       item.tree_count = parseInt(item.tree_count);
-      const year: Date = item.year
-      item.year = year.getFullYear();
+      const year: Date = item.year;
+      item.year = year ? year.getFullYear() : 'Unknown';
     })
     res.status(status.success).send(result);
 
