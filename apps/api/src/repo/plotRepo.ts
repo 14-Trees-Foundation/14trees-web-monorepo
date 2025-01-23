@@ -517,6 +517,11 @@ export class PlotRepository {
                 ELSE 0 
             END) AS booked,
             SUM(CASE 
+                WHEN t.mapped_to_user IS NOT NULL OR t.mapped_to_group IS NOT NULL
+                THEN 1 
+                ELSE 0 
+            END) AS total_booked,
+            SUM(CASE 
                 WHEN ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND t.assigned_to IS NOT NULL
                 THEN 1 
                 ELSE 0 
