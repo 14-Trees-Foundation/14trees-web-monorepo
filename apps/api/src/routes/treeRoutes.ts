@@ -47,5 +47,6 @@ routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
 routes.post("/get-trees-plantation-info", trees.getTreePlantationsInfo);
 routes.get("/count/user/:user_id", trees.getTreesCountForUser);
 routes.get("/corporate-stats/tree-logged", trees.treePlantedByCorporate);
+routes.post("/mapped-gift/get", trees.getMappedGiftTrees);
 
 export default routes;

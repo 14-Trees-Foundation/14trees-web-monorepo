@@ -747,7 +747,52 @@ class TreeRepository {
     const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
     const total = parseInt(countResp[0].count);
     return { offset: offset, total: total, results: tags };
-}
+  }
+
+  public static async getMappedGiftTrees(offset: number, limit: number, groupId: number): Promise<PaginatedResponse<Tree>> {
+
+    const query = `
+      SELECT t.*,
+        pt."name" as plant_type, 
+        pt.habit as habit, 
+        pt.illustration_s3_path as illustration_s3_path, 
+        p."name" as plot,
+        s.name_english as site_name,
+        mu."name" as mapped_user_name, 
+        mg."name" as mapped_group_name, 
+        su."name" as sponsor_user_name, 
+        sg."name" as sponsor_group_name, 
+        au."name" as assigned_to_name,
+        t.tree_status as tree_health
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
+      LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+      LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
+      WHERE t.mapped_to_group = ${groupId}
+      ${ limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
+
+    const countQuery = `
+      SELECT count(*)
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
+      WHERE t.mapped_to_group = ${groupId}`;
+
+      const trees: any = await sequelize.query(query, {
+        type: QueryTypes.SELECT
+      })
+  
+      const resp = await sequelize.query(countQuery, {
+        type: QueryTypes.SELECT
+      });
+
+      return { offset: offset, total: (resp[0] as any)?.count, results: trees as Tree[] };
+  }
 }
 
 export default TreeRepository;
