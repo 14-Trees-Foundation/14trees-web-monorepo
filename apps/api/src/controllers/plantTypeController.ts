@@ -14,6 +14,8 @@ import { syncNotionPlantTypeIllustrations } from "../services/notion/plant_type_
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 import { Op } from "sequelize";
 import { streamIllustrationToS3 } from "./helper/plant_types";
+import { getSlideThumbnail } from "./helper/slides";
+import { uploadImageUrlToS3 } from "./helper/uploadtos3";
 
 export const getPlantTypes = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -199,6 +201,12 @@ export const addPlantTypeTemplate = async (req: Request, res: Response) => {
     return;
   }
 
+  const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
+  if (!presentationId) {
+    res.status(status.error).send({ message: "Can't add new plant type templates at the moment!" });
+    return;
+  }
+
 
   try {
     const plantType = plant_type.trim();
@@ -220,7 +228,11 @@ export const addPlantTypeTemplate = async (req: Request, res: Response) => {
 
       return;
     }
-    const result = await PlantTypeTemplateRepository.addPlantTypeTemplate(plantType, templateId);
+
+    const templateImageUrl = await getSlideThumbnail(presentationId, templateId);
+    const s3Path = await uploadImageUrlToS3(templateImageUrl, `plant-types/${templateId}_${plantType}.jpg`)
+
+    const result = await PlantTypeTemplateRepository.addPlantTypeTemplate(plantType, templateId, s3Path);
     res.status(status.success).send(result);
   } catch (error: any) {
     console.log('[ERROR]', 'PlantTypesController::addPlantTypeTemplate', error);

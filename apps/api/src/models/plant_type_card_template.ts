@@ -5,6 +5,7 @@ interface PlantTypeCardTemplateAttributes {
     id: number;
     plant_type: string;
     template_id: string;
+    template_image: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -35,6 +36,12 @@ class PlantTypeCardTemplate extends Model<PlantTypeCardTemplateAttributes, Plant
         allowNull: false,
     })
     template_id!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
+    template_image!: string;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;

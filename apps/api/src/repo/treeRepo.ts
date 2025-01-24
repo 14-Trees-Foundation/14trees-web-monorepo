@@ -763,10 +763,12 @@ class TreeRepository {
         su."name" as sponsor_user_name, 
         sg."name" as sponsor_group_name, 
         au."name" as assigned_to_name,
-        t.tree_status as tree_health
+        t.tree_status as tree_health,
+        ptct.template_image
       FROM "14trees_2".trees t
       JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
       LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt.name = ptct.plant_type
       LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
       LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
       LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
