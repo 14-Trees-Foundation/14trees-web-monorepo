@@ -752,7 +752,7 @@ class TreeRepository {
   public static async getMappedGiftTrees(offset: number, limit: number, groupId: number): Promise<PaginatedResponse<Tree>> {
 
     const query = `
-      SELECT t.*,
+      SELECT t.*, gc.id as gift_card_id, gcr.request_id,
         pt."name" as plant_type, 
         pt.habit as habit, 
         pt.illustration_s3_path as illustration_s3_path, 
@@ -767,6 +767,7 @@ class TreeRepository {
         ptct.template_image
       FROM "14trees_2".trees t
       JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
+      JOIN "14trees_2".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
       LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt.name = ptct.plant_type
       LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
@@ -777,6 +778,7 @@ class TreeRepository {
       LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
       LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
       WHERE t.mapped_to_group = ${groupId}
+      ORDER BY t.id DESC
       ${ limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
 
     const countQuery = `
