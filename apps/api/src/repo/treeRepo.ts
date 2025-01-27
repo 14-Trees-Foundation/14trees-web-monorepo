@@ -765,26 +765,26 @@ class TreeRepository {
         au."name" as assigned_to_name,
         t.tree_status as tree_health,
         ptct.template_image
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
-      JOIN "14trees_2".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
-      LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-      LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt.name = ptct.plant_type
-      LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
-      LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
-      LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
-      LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
-      LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
-      LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
+      FROM "14trees".trees t
+      JOIN "14trees".gift_cards gc on gc.tree_id = t.id
+      JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
+      LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".sites s ON s.id = p.site_id
+      LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
       WHERE t.mapped_to_group = ${groupId}
       ORDER BY t.id DESC
       ${ limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
 
     const countQuery = `
       SELECT count(*)
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
+      FROM "14trees".trees t
+      JOIN "14trees".gift_cards gc on gc.tree_id = t.id
       WHERE t.mapped_to_group = ${groupId}`;
 
       const trees: any = await sequelize.query(query, {
