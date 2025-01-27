@@ -753,7 +753,7 @@ class TreeRepository {
   public static async getMappedGiftTrees(offset: number, limit: number, groupId: number): Promise<PaginatedResponse<Tree>> {
 
     const query = `
-      SELECT t.*, gc.id as gift_card_id, gcr.request_id,
+      SELECT t.*, gc.id as gift_card_id, gcr.request_id, gcr.planted_by as gifted_by,
         pt."name" as plant_type, 
         pt.habit as habit, 
         pt.illustration_s3_path as illustration_s3_path, 
