@@ -8,10 +8,11 @@ class PlantTypeTemplateRepository {
         return await PlantTypeCardTemplate.findAll();
     }
 
-    public static async addPlantTypeTemplate(plantType: string, templateId: string): Promise<PlantTypeCardTemplate> {
+    public static async addPlantTypeTemplate(plantType: string, templateId: string, templateImage: string): Promise<PlantTypeCardTemplate> {
         const data: PlantTypeCardTemplateCreationAttributes = {
             plant_type: plantType,
             template_id: templateId,
+            template_image: templateImage,
             created_at: new Date(),
             updated_at: new Date(),
         }

@@ -333,7 +333,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
             treeUpdateRequest = { ...treeUpdateRequest, event_type: updatedGiftCardRequest.event_type }
         }
 
-        if ((updatedGiftCardRequest.status === GiftCardRequestStatus.pendingGiftCards || updatedGiftCardRequest.status === GiftCardRequestStatus.completed) && Object.keys(treeUpdateRequest).length !== 0) {
+        if (Object.keys(treeUpdateRequest).length !== 0) {
             await updateTreesForGiftRequest(giftCardRequest.id, treeUpdateRequest);
         }
 
@@ -1065,6 +1065,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 description: null,
                 planted_by: null,
                 user_tree_image: null,
+                event_type: null,
                 updated_at: new Date(),
             }
 
@@ -1600,6 +1601,9 @@ export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, 
 
 export const generateGiftCardSlide = async (req: Request, res: Response) => {
     const {
+        sapling_id: saplingId,
+        plant_type: plantType,
+        user_name: userName,
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         logo,
@@ -1615,8 +1619,8 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
     }
 
     const record = {
-        name: "<User's Name>",
-        sapling: '00000',
+        name: userName ? userName : "<User's Name>",
+        sapling: saplingId ? saplingId : '00000',
         content1: primaryMessage,
         content2: secondaryMessage,
         logo: logo,
@@ -1625,7 +1629,10 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
 
     try {
         let pId: string = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
-        const slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record, true);
+        let slideId: string | null = null;
+        if (plantType) slideId = await generateGiftCardTemplate(pId, plantType, record, true);
+
+        if (!slideId) slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record, true);
 
         res.status(status.success).send({
             presentation_id: pId,
@@ -1642,6 +1649,8 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
 export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 
     const {
+        user_name: userName,
+        sapling_id: saplingId,
         slide_id: slideId,
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
@@ -1650,8 +1659,8 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
     } = req.body;
 
     const record = {
-        name: "<User's Name>",
-        sapling: '00000',
+        name: userName ? userName : "<User's Name>",
+        sapling: saplingId ? saplingId : '00000',
         content1: primaryMessage,
         content2: secondaryMessage,
         logo: logo,
@@ -1690,7 +1699,17 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 
 
 export const redeemGiftCard = async (req: Request, res: Response) => {
-    const { gift_card_id: giftCardId, user, tree_id: treeId, profile_image_url: profileImageUrl } = req.body;
+    const { 
+        gift_card_id: giftCardId, 
+        event_type: eventType, 
+        event_name: eventName,
+        gifted_on: giftedOn,
+        gifted_by: giftedBy,
+        user, 
+        tree_id: treeId, 
+        profile_image_url: profileImageUrl 
+    } = req.body;
+
     if (!giftCardId || (!user?.id && (!user?.name || !user?.email))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -1733,12 +1752,12 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
         }
 
         const treeUpdateRequest = {
-            assigned_at: giftCardRequest.gifted_on,
+            assigned_at: giftedOn ? giftedOn : giftCardRequest.gifted_on,
             assigned_to: userId,
             gifted_to: userId,
-            event_type: giftCardRequest.event_type,
-            description: giftCardRequest.event_name,
-            gifted_by_name: user?.gifted_by ? user.gifted_by : giftCardRequest.planted_by,
+            event_type: eventType?.trim() ? eventType.trim() : giftCardRequest.event_type,
+            description: eventName?.trim() ? eventName.trim() : giftCardRequest.event_name,
+            gifted_by_name: giftedBy?.trim() ? giftedBy.trin() : giftCardRequest.planted_by,
             updated_at: new Date(),
             planted_by: null,
             gifted_by: giftCardRequest.user_id,
