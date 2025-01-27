@@ -302,7 +302,7 @@ export const bookTreesForDonation = async (req: Request, res: Response) => {
             }
         } else {
             if (donation.pledged) {
-                const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(donation.user_id, donation.group_id, plot_ids, donation.pledged, true, diversify, donation.id);
+                const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(donation.user_id, donation.group_id, plot_ids, donation.pledged, true, diversify, false, donation.id);
                 if (treeIds.length === 0) {
                     res.status(status.bad).json({
                         message: 'Enough trees not available for this request!'
