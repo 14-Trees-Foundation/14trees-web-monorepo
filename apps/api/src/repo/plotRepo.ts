@@ -505,6 +505,7 @@ export class PlotRepository {
 
         const query = `
         SELECT p.id, p.name, p.tags, p.category, p.accessibility_status, p.boundaries, p.label, p.acres_area,
+            s.kml_file_link,
             case 
                 when s.name_english is null 
                     then s.name_marathi
