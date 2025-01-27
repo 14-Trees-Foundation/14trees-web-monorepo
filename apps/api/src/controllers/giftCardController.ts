@@ -871,7 +871,7 @@ export const createGiftCardPlots = async (req: Request, res: Response) => {
 }
 
 export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId, gift_card_trees: trees, diversify, book_non_giftable } = req.body;
+    const { gift_card_request_id: giftCardRequestId, gift_card_trees: trees, diversify, book_non_giftable, book_all_habits } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -895,7 +895,7 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
         let treeIds: number[] = [];
         const treesCount = giftCardRequest.no_of_cards - Number((giftCardRequest as any).booked);
         if (!trees || trees.length === 0) {
-            treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, treesCount, book_non_giftable, diversify);
+            treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, treesCount, book_non_giftable, diversify, book_all_habits);
             if (treeIds.length === 0) {
                 res.status(status.bad).json({
                     message: 'Enough trees not available for this request!'
@@ -904,6 +904,13 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
             }
         } else {
             treeIds = trees.map((item: any) => item.tree_id);
+            const giftCards = await GiftCardsRepository.getGiftCards(0, -1, { tree_id: { [Op.in]: treeIds } });
+            if (giftCards.results.some(card => card.gift_card_request_id !== giftCardRequestId)) {
+                res.status(status.bad).json({
+                    message: 'Some trees are already assigned to other gift card request!'
+                })
+                return;
+            }
             await TreeRepository.mapTreesToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, treeIds)
         }
 
