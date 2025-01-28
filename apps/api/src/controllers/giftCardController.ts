@@ -1757,7 +1757,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             gifted_to: userId,
             event_type: eventType?.trim() ? eventType.trim() : giftCardRequest.event_type,
             description: eventName?.trim() ? eventName.trim() : giftCardRequest.event_name,
-            gifted_by_name: giftedBy?.trim() ? giftedBy.trin() : giftCardRequest.planted_by,
+            gifted_by_name: giftedBy?.trim() ? giftedBy.trim() : giftCardRequest.planted_by,
             updated_at: new Date(),
             planted_by: null,
             gifted_by: giftCardRequest.user_id,
