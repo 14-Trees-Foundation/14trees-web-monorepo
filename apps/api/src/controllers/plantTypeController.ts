@@ -43,9 +43,6 @@ export const addPlantType = async (req: Request, res: Response) => {
     if (!req.body.name) {
       throw new Error("PlantName (name) is required");
     }
-    if (!req.body.plant_type_id) {
-      throw new Error("PlantTypeID (plant_type_id) is required");
-    }
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
     return;
