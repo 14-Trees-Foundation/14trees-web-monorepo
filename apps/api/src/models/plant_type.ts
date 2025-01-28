@@ -66,8 +66,6 @@ implements PlantTypeAttributes {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
-    unique: true
   })
   plant_type_id!: string;
 
