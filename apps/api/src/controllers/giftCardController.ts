@@ -50,7 +50,13 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
     for (const giftCardRequest of giftCardRequests.results) {
         let paidAmount = 0;
         let validatedAmount = 0;
-        const totalAmount = giftCardRequest.no_of_cards * 2000;
+        const totalAmount = 
+            (giftCardRequest.request_type === 'Normal Assignment'
+                ? giftCardRequest.category === 'Foundation'
+                    ? 3000
+                    : 1500
+                : 2000
+            ) * giftCardRequest.no_of_cards;
 
         if (giftCardRequest.payment_id) {
             const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
@@ -287,7 +293,13 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         let paidAmount = 0;
         let validatedAmount = 0;
-        const totalAmount = giftCardRequest.no_of_cards * 2000;
+        const totalAmount = 
+            (updatedGiftCardRequest.request_type === 'Normal Assignment'
+                ? updatedGiftCardRequest.category === 'Foundation'
+                    ? 3000
+                    : 1500
+                : 2000
+            ) * updatedGiftCardRequest.no_of_cards;
 
         if (giftCardRequest.payment_id) {
             const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
@@ -1757,7 +1769,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             gifted_to: userId,
             event_type: eventType?.trim() ? eventType.trim() : giftCardRequest.event_type,
             description: eventName?.trim() ? eventName.trim() : giftCardRequest.event_name,
-            gifted_by_name: giftedBy?.trim() ? giftedBy.trin() : giftCardRequest.planted_by,
+            gifted_by_name: giftedBy?.trim() ? giftedBy.trim() : giftCardRequest.planted_by,
             updated_at: new Date(),
             planted_by: null,
             gifted_by: giftCardRequest.user_id,
@@ -2121,13 +2133,20 @@ export const generateFundRequest = async (req: Request, res: Response) => {
             return;
         }
 
+        const perTreeCost = 
+            giftCardRequest.request_type === 'Normal Assignment'
+            ? giftCardRequest.category === 'Foundation'
+                ? 3000
+                : 1500
+            : 2000
+
         const filename = `${group.name} [Req. No: ${giftCardRequest.id}] ${new Date().toDateString()}.pdf`;
-        const totalAmount = giftCardRequest.no_of_cards * (2000);
+        const totalAmount = giftCardRequest.no_of_cards * (perTreeCost);
         let data: any = {
             address: group.address?.split('\n').join('<br/>'),
             date: moment(new Date()).format('MMMM DD, YYYY'),
             no_of_trees: giftCardRequest.no_of_cards,
-            per_tree_cost: 2000,
+            per_tree_cost: perTreeCost,
             total_amount: formatNumber(totalAmount),
             total_amount_words: "Rupees " + numberToWords(totalAmount).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + " only",
         }
