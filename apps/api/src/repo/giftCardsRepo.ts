@@ -68,7 +68,17 @@ export class GiftCardsRepository {
                     THEN 1
                     ELSE 0
                 END) AS assigned,
-                gcr.no_of_cards * 2000 AS total_amount,
+                CASE
+                    WHEN gcr.request_type = 'Normal Assignment'
+                    THEN (
+                        CASE 
+                            WHEN gcr.category = 'Foundation'
+                            THEN 3000
+                            ELSE 1500
+                        END
+                    )
+                    ELSE 2000
+                END * gcr.no_of_cards AS total_amount,
                 array_agg(distinct gc.presentation_id) as presentation_ids
             FROM "14trees".gift_card_requests gcr
             LEFT JOIN "14trees".users u ON u.id = gcr.user_id
