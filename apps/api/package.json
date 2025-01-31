@@ -45,6 +45,7 @@
     "sequelize-typescript": "^2.1.5",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.0",
+    "x-hub-signature": "^2.1.2",
     "zod": "^3.20.6"
   },
   "devDependencies": {
