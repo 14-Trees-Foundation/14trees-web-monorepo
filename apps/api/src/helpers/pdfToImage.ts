@@ -17,7 +17,7 @@ const extractImage = async (convert: Convert, s3Key: string, result: any, page: 
             readableStream.push(buffer);
             readableStream.push(null); // Indicates the end of the stream
 
-            const location = await uploadFileToS3('cards', readableStream, s3Key);
+            const location = await uploadFileToS3('cards', readableStream, s3Key, 'image/png');
             result[s3Key] = location;
         }
 
