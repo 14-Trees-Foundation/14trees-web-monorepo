@@ -9,6 +9,7 @@ import processIncomingWAMessage from '../services/WhatsApp/incomingWebhook';
 import { decryptRequest, encryptResponse } from '../services/WhatsApp/incomingFlowWebhook';
 import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
 import { getSlideThumbnail, updateSlide } from './helper/slides';
+import { GiftCardsRepository } from '../repo/giftCardsRepo';
 
 const verificationToken = process.env.WA_WEBHOOK_VERIFICATION_TOKEN;
 const appSecret = process.env.WA_APP_SECRET;
@@ -95,7 +96,27 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
     let response = null;
     if (decryptedBody && decryptedBody.action === 'ping') {
         response = { version: decryptedBody.version, data: { status: 'active' } }
-    } else if (decryptedBody.action === "INIT") {
+    } 
+    // else if (decryptedBody.action === 'INIT') {
+    //     const recipients = await GiftCardsRepository.getGiftRequestUsers(382);
+    //     let data: any = { recipients_count: recipients.length }
+    //     recipients.forEach((recipient: any, i: number) => {
+    //         data = {
+    //             ...data,
+    //             [`id_${i + 1}`]: recipient.id,
+    //             [`recipient_${i + 1}`]: recipient.recipient,
+    //             [`recipient_name_${i + 1}`]: recipient.recipient_name,
+    //             [`recipient_email_${i + 1}`]: recipient.recipient_email,
+    //             [`recipient_phone_${i + 1}`]: recipient.recipient_phone ?? '',
+    //         }
+    //     })
+    //     response = {
+    //         version: decryptedBody.version,
+    //         screen: "RECIPIENTS_A",
+    //         data: data,
+    //     }
+    // }
+    else if (decryptedBody.action === "INIT") {
         response = { version: decryptedBody.version, screen: "GIFTING_TREES", data: { gifted_on: new Date().toISOString().slice(0, 10) } }
     } else if (decryptedBody.action === "data_exchange" && decryptedBody.screen === 'DASHBOARD') {
         const { ocassion_type, slide_id } = decryptedBody.data;
@@ -142,5 +163,6 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
 
         response = { version: decryptedBody.version, screen: "CARD_PREVIEW", data: { card_image: base64 } }
     }
+
     res.status(200).send(encryptResponse(response, aesKeyBuffer, initialVectorBuffer));
 }
