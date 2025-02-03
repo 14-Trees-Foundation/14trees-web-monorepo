@@ -103,5 +103,26 @@ const sendDashboardMail = async (templateName: string, emailData: any, toEmails:
   return statusText;
 }
 
-export { sendDashboardMail };
+const sendTemplateMail = async (templateName: string, options: MailOptions, emailData: any) => {
+
+  const mailOptions = {
+    ...options,
+    from: { name: '14 Trees', address: 'admin@14trees.org' },
+    replyTo: 'admin@14trees.org',
+    html: "",
+    textEncoding: 'base64',
+  }
+
+  mailOptions.html = getHtmlTemplate(templateName, emailData)
+
+  const { status, statusText } = await sendMail(mailOptions)
+  if (status === 200) {
+    console.log("Email send Successfully to " + mailOptions.to);
+    return '';
+  }
+
+  return statusText;
+}
+
+export { sendDashboardMail, sendTemplateMail };
 export default sendMail;
