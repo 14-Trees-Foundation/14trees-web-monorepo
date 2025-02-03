@@ -136,7 +136,7 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
         }
 
         let imageUrl = await getSlideThumbnail(presentationId, slideId);
-        imageUrl = imageUrl.slice(0, imageUrl.length - 4) + "400";
+        imageUrl = imageUrl.slice(0, imageUrl.length - 4) + "600";
         const resp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const base64 = Buffer.from(resp.data, 'binary').toString('base64');
 
