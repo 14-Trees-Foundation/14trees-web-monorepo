@@ -3,7 +3,8 @@ import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
 import { processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
 import RazorpayService from '../razorpay/razorpay';
-import sendMail, { sendTemplateMail } from '../gmail/gmail';
+import { sendTemplateMail } from '../gmail/gmail';
+import { GiftCardsRepository } from '../../repo/giftCardsRepo';
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -17,7 +18,7 @@ async function processIncomingWAMessage(message: any) {
     const textMessage = message.text.body;
 
     try {
-      let replyButtonMessage = interactiveReplyButton;
+      let replyButtonMessage = { ...interactiveReplyButton };
       replyButtonMessage.to = customerPhoneNumber;
       await sendWhatsAppMessage(replyButtonMessage);
     } catch (error) {
@@ -47,6 +48,11 @@ async function processIncomingWAMessage(message: any) {
         const requestId = parseInt(requestIdStr);
 
         sendEmailsToGiftRecipients(customerPhoneNumber, requestId);
+      } else if (buttonId.startsWith('edit_recipients')) {
+        const requestIdStr = buttonId.split('_').slice(-1)[0];
+        const requestId = parseInt(requestIdStr);
+
+        await sendEditRecipientsFlow(customerPhoneNumber, requestId);
       }
     }
     else if (interactiveType === "nfm_reply") {
@@ -60,6 +66,14 @@ async function processIncomingWAMessage(message: any) {
 }
 
 async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any) {
+  if (formData.flow_token.startsWith("edit_recipients")){
+
+  } else {
+    await handleGiftFormSubmit(customerPhoneNumber, formData);
+  }
+}
+
+async function handleGiftFormSubmit(customerPhoneNumber: string, formData: any) {
   const recipientsCount = parseInt(formData.recipients_count);
 
   if (recipientsCount <= 5) {
@@ -245,6 +259,38 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   }
 
   return requestId;
+}
+
+async function sendEditRecipientsFlow(customerPhoneNumber: string, requestId: number) {
+  const flowId = "615014964807600";
+
+  const recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
+  let data: any = { recipients_count: recipients.length }
+  recipients.forEach((recipient: any, i: number) => {
+    data = {
+      ...data,
+      [`id_${i + 1}`]: recipient.id,
+      [`recipient_${i + 1}`]: recipient.recipient,
+      [`recipient_name_${i + 1}`]: recipient.recipient_name,
+      [`recipient_email_${i + 1}`]: recipient.recipient_email,
+      [`recipient_phone_${i + 1}`]: recipient.recipient_phone ?? '',
+    }
+  })
+
+  const flowMessage = { ...interactiveGiftTreesFlow };
+  flowMessage.to = customerPhoneNumber;
+  flowMessage.interactive.body.text = "Edit recipient names, emails or phone number.";
+  flowMessage.interactive.action.parameters.flow_cta = "Edit Recipients";
+  flowMessage.interactive.action.parameters.flow_id = flowId;
+  flowMessage.interactive.action.parameters.flow_token = 'edit_recipients_' + requestId;
+  flowMessage.interactive.action.parameters.flow_action_payload = { screen: 'RECIPIENTS_A', data: data }
+
+  try {
+    await sendWhatsAppMessage(flowMessage);
+  } catch (error) {
+    logResponseError(error);
+  }
+
 }
 
 export default processIncomingWAMessage;
