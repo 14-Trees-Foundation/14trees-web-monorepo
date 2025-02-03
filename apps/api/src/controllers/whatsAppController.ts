@@ -1,11 +1,14 @@
 import * as crypto from 'crypto'
 import * as fs from 'fs'
+import axios from 'axios'
 
 import { Request, Response } from "express";
 import { messageStatuses } from '../services/WhatsApp/messageStatuses';
 import { sendWhatsAppMessage } from '../services/WhatsApp/messageHelper';
 import processIncomingWAMessage from '../services/WhatsApp/incomingWebhook';
 import { decryptRequest, encryptResponse } from '../services/WhatsApp/incomingFlowWebhook';
+import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
+import { getSlideThumbnail, updateSlide } from './helper/slides';
 
 const verificationToken = process.env.WA_WEBHOOK_VERIFICATION_TOKEN;
 const appSecret = process.env.WA_APP_SECRET;
@@ -94,7 +97,50 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
         response = { version: decryptedBody.version, data: { status: 'active' } }
     } else if (decryptedBody.action === "INIT") {
         response = { version: decryptedBody.version, screen: "GIFTING_TREES", data: { gifted_on: new Date().toISOString().slice(0, 10) } }
-    }
+    } else if (decryptedBody.action === "data_exchange" && decryptedBody.screen === 'DASHBOARD') {
+        const { ocassion_type, slide_id } = decryptedBody.data;
 
+        let slideId: string | null = slide_id;
+        if (!slideId) {
+            const record = {
+                name: "<User's Name>",
+                sapling: '00000',
+                content1: '',
+                content2: '',
+                logo: null,
+                logo_message: ''
+            }
+    
+            const resp = await generateGiftCardTemplate(record, undefined, true);
+            slideId = resp.slideId
+        }
+
+        const primary_message = ocassion_type === '1' ? defaultGiftMessages.birthday : ocassion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary;
+        const secondary_message = defaultGiftMessages.secondary;
+        response = { version: decryptedBody.version, screen: "GIFT_MESSAGES", data: { slide_id: slideId, primary_message, secondary_message } }
+    } else if (decryptedBody.action === 'data_exchange' && decryptedBody.screen === 'GIFT_MESSAGES') {
+        const { primary_message, secondary_message, slide_id: slideId } = decryptedBody.data;
+
+        const record = {
+            name: "<User's Name>",
+            sapling: '00000',
+            content1: primary_message,
+            content2: secondary_message,
+            logo_message: ''
+        }
+
+        const presentationId = process.env.LIVE_GIFT_CARD_PRESENTATION_ID || '';
+
+        if (presentationId && slideId) {
+            await updateSlide(presentationId, slideId, record, true);
+        }
+
+        let imageUrl = await getSlideThumbnail(presentationId, slideId);
+        imageUrl = imageUrl.slice(0, imageUrl.length - 4) + "400";
+        const resp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const base64 = Buffer.from(resp.data, 'binary').toString('base64');
+
+        response = { version: decryptedBody.version, screen: "CARD_PREVIEW", data: { card_image: base64 } }
+    }
     res.status(200).send(encryptResponse(response, aesKeyBuffer, initialVectorBuffer));
 }
