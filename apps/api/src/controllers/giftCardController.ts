@@ -25,12 +25,12 @@ import { GroupRepository } from "../repo/groupRepo";
 import moment from "moment";
 import { formatNumber, numberToWords } from "../helpers/utils";
 import { generateFundRequestPdf } from "../services/invoice/generatePdf";
-import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
 import { autoAssignTrees, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import runWithConcurrency, { Task } from "../helpers/consurrency";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
