@@ -553,7 +553,8 @@ class TreeRepository {
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
         au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at,
-        array_agg(distinct(vi.image_url)) AS visit_images
+        array_agg(distinct(vi.image_url)) AS visit_images,
+        json_agg(ts) AS tree_audits
       FROM "14trees_2".trees t
       JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
       JOIN "14trees_2".plots p ON p.id = t.plot_id
@@ -562,6 +563,7 @@ class TreeRepository {
       LEFT JOIN "14trees_2".users gu ON gu.id = t.gifted_by
       LEFT JOIN "14trees_2".visits v ON v.id = t.visit_id
       LEFT JOIN "14trees_2".visit_images vi ON v.id = vi.visit_id
+      LEFT JOIN "14trees_2".trees_snapshots ts ON ts.sapling_id = t.sapling_id
       WHERE t.assigned_to = '${userId}'
       GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id;
     `;
