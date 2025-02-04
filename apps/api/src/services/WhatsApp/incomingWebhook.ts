@@ -159,13 +159,19 @@ async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: 
 
   await autoAssignTrees(giftRequestResp.results[0], recipients, cardsResp.results, null);
 
-  let giftMessage = textMessage;
-  giftMessage.to = customerPhoneNumber;
+  const buttonMessage = JSON.parse(JSON.stringify(interactiveReplyButton));
+  buttonMessage.to = customerPhoneNumber;
+  buttonMessage.interactive.body.text =
+    `Recipient details have been updated for request number ${requestId}.`
 
-  giftMessage.text.body = `Recipient details have been updated for request number ${requestId}.`;
+  buttonMessage.interactive.action.buttons = [
+    { type: 'reply', reply: { id: `edit_recipients_${requestId}`, title: 'Edit Recipients' } },
+    { type: 'reply', reply: { id: `edit_gift_message_${requestId}`, title: 'Edit Gift Message' } },
+    { type: 'reply', reply: { id: `send_mail_${requestId}`, title: 'Send Emails' } },
+  ]
 
   try {
-    await sendWhatsAppMessage(giftMessage);
+    await sendWhatsAppMessage(buttonMessage);
   } catch (error) {
     logResponseError(error);
   }
@@ -314,7 +320,7 @@ async function sendEditRecipientsFlow(customerPhoneNumber: string, requestId: nu
       [`id_${i + 1}`]: recipient.id,
       [`recipient_${i + 1}`]: recipient.recipient,
       [`recipient_name_${i + 1}`]: recipient.recipient_name,
-      [`recipient_email_${i + 1}`]: recipient.recipient_email,
+      [`recipient_email_${i + 1}`]: recipient.recipient_email.endsWith("14trees") ? '' : recipient.recipient_email,
       [`recipient_phone_${i + 1}`]: recipient.recipient_phone ?? '',
     }
   })
