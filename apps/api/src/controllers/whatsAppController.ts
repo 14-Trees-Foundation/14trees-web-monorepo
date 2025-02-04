@@ -132,7 +132,7 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
                 logo_message: ''
             }
     
-            const resp = await generateGiftCardTemplate(record, undefined, true);
+            const resp = await generateGiftCardTemplate(record, undefined, false);
             slideId = resp.slideId
         }
 
