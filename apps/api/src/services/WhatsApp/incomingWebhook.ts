@@ -1,10 +1,11 @@
 import { giftSuccessMessage, imageMessage, interactiveGiftTreesFlow, interactiveReplyButton, textMessage } from './messages';
 import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
-import { processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
+import { autoAssignTrees, processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
 import RazorpayService from '../razorpay/razorpay';
 import { sendTemplateMail } from '../gmail/gmail';
 import { GiftCardsRepository } from '../../repo/giftCardsRepo';
+import { UserRepository } from '../../repo/userRepo';
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -66,8 +67,8 @@ async function processIncomingWAMessage(message: any) {
 }
 
 async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any) {
-  if (formData.flow_token.startsWith("edit_recipients")){
-
+  if (formData.flow_token.startsWith("edit_recipients")) {
+    await handleRecipientEditSubmit(customerPhoneNumber, formData);
   } else {
     await handleGiftFormSubmit(customerPhoneNumber, formData);
   }
@@ -129,6 +130,45 @@ async function handleGiftFormSubmit(customerPhoneNumber: string, formData: any) 
     }
   }
 
+}
+
+async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: any) {
+  const requestIdStr = formData.flow_token.split("_").slice(-1)[0];
+  const requestId: number = parseInt(requestIdStr);
+
+  const numberOfRecipients = parseInt(formData.recipients_count);
+  let recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
+  for (let i = 1; i <= numberOfRecipients; i++) {
+    const id = parseInt(formData[`id_${i}`]);
+    const recipient = parseInt(formData[`recipient_${i}`]);
+    const name = parseInt(formData[`recipient_name_${i}`]);
+    const email = parseInt(formData[`recipient_email_${i}`]);
+    const phone = parseInt(formData[`recipient_phone_${i}`]);
+
+    const user = await UserRepository.upsertUser({ name, email, phone });
+    if (user.id !== recipient) {
+      const recipientUser = recipients.find(item => recipient === item.recipient);
+      if (recipientUser) {
+        await GiftCardsRepository.updateGiftRequestUsers({ recipient: user.id, assignee: user.id, updated_at: new Date() }, { id: id, recipient: recipient });
+      }
+    }
+  }
+
+  const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }]);
+  const cardsResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
+
+  await autoAssignTrees(giftRequestResp.results[0], recipients, cardsResp.results, null);
+
+  let giftMessage = textMessage;
+  giftMessage.to = customerPhoneNumber;
+
+  giftMessage.text.body = `Recipient details have been updated for request number ${requestId}.`;
+
+  try {
+    await sendWhatsAppMessage(giftMessage);
+  } catch (error) {
+    logResponseError(error);
+  }
 }
 
 async function sendGiftCardsToCustomer(customerPhoneNumber: string, imageUrls: string[]) {
