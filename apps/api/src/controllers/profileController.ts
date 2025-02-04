@@ -68,7 +68,7 @@ export const getProfile = async (req: Request, res: Response) => {
     }
 
     res.status(status.success).json({
-      user_trees: userTrees,
+      user_trees: userTrees.map(item => ({ ...item, tree_audits: item?.tree_audits?.filter((audit: any) => audit?.id) })),
       gift_tree: giftCard,
       sponsored_trees: sponsoredTrees,
     });
@@ -90,7 +90,7 @@ export const getUserProfileByUserId = async (req: Request, res: Response) => {
     const userTrees = await TreeRepository.getUserProfilesForUserId(userId);
     const sponsoredTrees = await TreeRepository.treesCount({ mapped_to_user: userId })
     res.status(status.success).json({
-      user_trees: userTrees,
+      user_trees: userTrees.map(item => ({ ...item, tree_audits: item?.tree_audits?.filter((audit: any) => audit?.id) })),
       sponsored_trees: sponsoredTrees,
     });
   } catch (error: any) {
