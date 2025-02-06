@@ -39,6 +39,7 @@ import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
 import { View, ViewPermission } from "../models/permissions";
 import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transaction";
+import { WAChatMessage } from "../models/wa_chat_message";
 
 
 class Database {
@@ -113,6 +114,7 @@ class Database {
         ViewPermission,
         GiftRedeemTransaction,
         GRTCard,
+        WAChatMessage,
       ]
     });
 
