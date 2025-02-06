@@ -37,6 +37,7 @@ import { EmailTemplate } from "../models/email_template";
 import { Payment } from "../models/payment";
 import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
+import { WAChatMessage } from "../models/wa_chat_message";
 
 
 class Database {
@@ -107,6 +108,7 @@ class Database {
         EmailTemplate,
         Payment,
         PaymentHistory,
+        WAChatMessage,
       ]
     });
 
