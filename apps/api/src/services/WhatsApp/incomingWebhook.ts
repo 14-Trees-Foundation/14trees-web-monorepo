@@ -6,9 +6,44 @@ import RazorpayService from '../razorpay/razorpay';
 import { sendTemplateMail } from '../gmail/gmail';
 import { GiftCardsRepository } from '../../repo/giftCardsRepo';
 import { UserRepository } from '../../repo/userRepo';
+import { interactWithGiftingAgent } from '../genai/agent';
+import { WAChatHistoryRepository } from '../../repo/waChatHistoryRepo';
+import { Op } from 'sequelize';
+import { AIMessage, HumanMessage } from '@langchain/core/messages';
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function processIncomingWAMessageUsingGenAi(message: any) {
+  const customerPhoneNumber = message.from;
+  const messageType = message.type;
+
+  if (messageType === "text") {
+    const text = message.text.body;
+
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const chatHistory = await WAChatHistoryRepository.getWAChatMessages({ user_phone: customerPhoneNumber, timestamp: { [Op.gte]: fifteenMinutesAgo } })
+
+    const history = chatHistory.map(item => {
+      if (item.message_type === 'ai') return new AIMessage(item.message);
+      
+      return new HumanMessage(item.message);
+    })
+    await WAChatHistoryRepository.addWAChatMessage(text, 'human', customerPhoneNumber);
+    const resp = await interactWithGiftingAgent(text, history);
+    await WAChatHistoryRepository.addWAChatMessage(resp, 'ai', customerPhoneNumber);
+
+    let messageUser = textMessage;
+    messageUser.to = customerPhoneNumber;
+    messageUser.text.body = resp
+
+    try {
+      await sendWhatsAppMessage(messageUser);
+    } catch (error) {
+      logResponseError(error);
+    }
+  }
 }
 
 async function processIncomingWAMessage(message: any) {
@@ -16,7 +51,7 @@ async function processIncomingWAMessage(message: any) {
   const messageType = message.type;
 
   if (messageType === "text") {
-    const textMessage = message.text.body;
+    const text = message.text.body;
 
     try {
       let replyButtonMessage = { ...interactiveReplyButton };
@@ -142,7 +177,7 @@ async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: 
     const id = parseInt(formData[`id_${i}`]);
     const recipient = parseInt(formData[`recipient_${i}`]);
     const name = formData[`recipient_name_${i}`].trim();
-    const email = formData[`recipient_email_${i}`]?.trim() ? formData[`recipient_email_${i}`].trim() : name.split(' ').join('.') +"@14trees" ;
+    const email = formData[`recipient_email_${i}`]?.trim() ? formData[`recipient_email_${i}`].trim() : name.split(' ').join('.') + "@14trees";
     const phone = formData[`recipient_phone_${i}`]?.trim() ? formData[`recipient_phone_${i}`].trim() : null;
 
     const user = await UserRepository.upsertUser({ name, email, phone });

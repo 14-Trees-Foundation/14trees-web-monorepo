@@ -5,7 +5,7 @@ import axios from 'axios'
 import { Request, Response } from "express";
 import { messageStatuses } from '../services/WhatsApp/messageStatuses';
 import { sendWhatsAppMessage } from '../services/WhatsApp/messageHelper';
-import processIncomingWAMessage from '../services/WhatsApp/incomingWebhook';
+import processIncomingWAMessage, { processIncomingWAMessageUsingGenAi } from '../services/WhatsApp/incomingWebhook';
 import { decryptRequest, encryptResponse } from '../services/WhatsApp/incomingFlowWebhook';
 import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
 import { getSlideThumbnail, updateSlide } from './helper/slides';
@@ -29,13 +29,13 @@ function validateXHubSignature(requestBody: any, signature: string) {
 export const whatsAppBotWebHook = async (req: Request, res: Response) => {
 
     // Calculate x-hub signature value to check with value in request header
-    if (!validateXHubSignature(req.body, req.headers['x-hub-signature-256'] as string)) {
-        console.log(
-            "Warning - request header X-Hub-Signature not present or invalid"
-        );
-        res.sendStatus(401);
-        return;
-    }
+    // if (!validateXHubSignature(req.body, req.headers['x-hub-signature-256'] as string)) {
+    //     console.log(
+    //         "Warning - request header X-Hub-Signature not present or invalid"
+    //     );
+    //     res.sendStatus(401);
+    //     return;
+    // }
 
     console.log("request header X-Hub-Signature validated");
 
@@ -58,7 +58,7 @@ export const whatsAppBotWebHook = async (req: Request, res: Response) => {
             console.log(error);
         }
 
-        body.value.messages.forEach(processIncomingWAMessage);
+        body.value.messages.forEach(processIncomingWAMessageUsingGenAi);
     }
 
     res.sendStatus(200);

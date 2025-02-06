@@ -38,6 +38,7 @@ import { Payment } from "../models/payment";
 import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
 import { PlotPlantType } from "../models/plot_plant_type";
+import { WAChatMessage } from "../models/wa_chat_message";
 
 
 class Database {
@@ -108,6 +109,7 @@ class Database {
         Payment,
         PaymentHistory,
         PlotPlantType,
+        WAChatMessage,
       ]
     });
 
