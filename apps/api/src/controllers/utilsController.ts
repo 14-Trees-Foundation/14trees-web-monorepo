@@ -6,6 +6,7 @@ import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import { processDonationRequestSheet, revertDonationRequestSheet } from "../scripts/donationRequests";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { checkLatestIncomingMail } from "../services/gmail/gmail";
 
 const getObjectKey = (type: string, subKey: string) => {
     switch (type) {
@@ -142,4 +143,13 @@ export const handleRevertDonationSheetRequests = async (req: Request, res: Respo
     res.status(status.created).send("Processing your request!");
 
     await revertDonationRequestSheet(spreadsheetId);
+}
+
+
+export const test = async (req: Request, res: Response) => {
+
+    console.log(req.body);
+    const resp = await checkLatestIncomingMail();
+
+    res.status(status.success).send();
 }
