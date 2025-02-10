@@ -10,7 +10,6 @@
     "swagger-autogen": "npx ts-node src/swagger.ts"
   },
   "dependencies": {
-    "@google-cloud/local-auth": "^3.0.1",
     "@langchain/community": "^0.3.29",
     "@langchain/core": "^0.3.38",
     "@langchain/openai": "^0.4.2",

@@ -12,7 +12,7 @@ enum OccasionType {
 // Define Recipient Schema
 const RecipientSchema = z.object({
     recipient_name: z.string().describe("Full name of the recipient"),
-    recipient_email: z.string().optional().describe("Optional: email address of the recipient. This will be used to share tree cards and personalised dashboard links to recipient!"),
+    recipient_email: z.string().optional().describe("Optional email address for notifications"),
     recipient_phone: z.string().optional().describe("Optional contact number of the recipient"),
     trees_count: z.number().default(1).describe("Number of trees to gift"),
 });
@@ -29,18 +29,9 @@ const CreateGiftTreesRequestSchema = z.object({
     gifted_on: z.string().optional(),
 });
 
-const description = `
-Want to gift trees to someone? 
-
-Create a gift trees request. It will internally reserve trees for recipients and create personalized tree cards and dashboards for recipients.
-
-Response: Request Id
-Sponsor can see all this using gift trees request id!
-`;
-
 const createGiftTreesRequestTool = new DynamicStructuredTool({
     name: "create_gift_trees_request",
-    description: description,
+    description: "Want to gift trees to someone? Create a gift trees request!",
     schema: CreateGiftTreesRequestSchema,
     func: async (data): Promise<String> => {
 
