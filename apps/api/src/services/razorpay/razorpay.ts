@@ -41,6 +41,23 @@ class RazorpayService {
             console.log("[ERROR] RazorpayService.getPayments: ", error);
         }
     }
+
+    async generatePaymentQRCode(amount: number): Promise<string> {
+        try {
+            const qrResp = await this.razorpay.qrCode.create({
+                type: 'upi_qr',
+                usage: 'single_use',
+                fixed_amount: true,
+                payment_amount: amount,
+            })
+
+            return qrResp.image_url;
+        } catch (error) {
+            console.log("[ERROR] RazorpayService.generatePaymentQRCode: ", error);
+            throw error;
+        }
+    }
+
 }
 
 export default RazorpayService;

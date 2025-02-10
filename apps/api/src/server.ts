@@ -42,6 +42,7 @@ import { recalculateAggregatedData, cleanUpGiftCardLiveTemplates, startAppV2Erro
 import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
+import whatsAppRoutes from "./routes/whatsAppRoutes";
 
 let swaggerFile: any;
 try {
@@ -110,6 +111,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/utils", utilsRoutes );
   app.use("/api/email-templates", emailTemplateRoutes );
   app.use("/api/payments", paymentRoutes );
+  app.use("/api/wa", whatsAppRoutes);
 
   // swagger doc
   if (swaggerFile) {
