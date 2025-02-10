@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DynamicStructuredTool, Tool } from "langchain/tools";
 import { defaultGiftMessages, processGiftRequest } from "../../../controllers/helper/giftRequestHelper";
+import RazorpayService from "../../razorpay/razorpay";
 
 // Define Enum for Occasion Type
 enum OccasionType {
@@ -83,7 +84,20 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
                 console.log(requestId, images)
             })
 
-            return `Successfully created gift request. Request Id is ${requestId}`;
+            const razorpayService = new RazorpayService();
+            const qrCode = await razorpayService.generatePaymentQRCode(trees * 1 * 100);
+
+            return JSON.stringify({
+                status: 'Success',
+                output: `Successfully created gift request. Request Id is ${requestId}.`,
+                next_step: {
+                    payment_request: {
+                        note: 'This should be sent as seperate media image to user and not as hyper link!',
+                        rq_code_image_url: qrCode,
+                        image_caption: `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${trees * 1}/-*.`
+                    }
+                }
+            });
         } catch (error: any) {
             console.log("[ERROR]", "GiftCardController::quickServeGiftRequest", error);
             throw new Error("Failed to create gift request!")

@@ -6,7 +6,8 @@ import { logResponseError } from "../../WhatsApp/logResponseError";
 
 // Define Main Request Schema
 const SendImagesToUserRequestSchema = z.object({
-    image_urls: z.array(z.string()).describe("Array of s3 image links"),
+    image_urls: z.array(z.string()).describe("Array of image links"),
+    image_caption: z.string().optional().describe("Caption text to show below image. Only applicable when there is single image url")
 });
 
 const description = `
@@ -27,7 +28,7 @@ function createSendImagesToUserTool(customerPhoneNumber: string) {
                 const message = imageMessage;
                 message.to = customerPhoneNumber;
                 message.image.link = imageUrl;
-                message.image.caption = "";
+                message.image.caption = image_urls.length === 1 && data.image_caption ? data.image_caption : "";
 
                 try {
                     await sendWhatsAppMessage(message);
