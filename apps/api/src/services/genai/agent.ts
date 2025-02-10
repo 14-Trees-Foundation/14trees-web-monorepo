@@ -43,25 +43,18 @@ Your goal is to assist users efficiently while ensuring accuracy and predictabil
 `;
 
 // Function to get today's date
-function getDate(): string {
+function getTodaysDate(): string {
     return new Date().toISOString().split("T")[0];
 }
 
 const dateTool = new DynamicTool({
-    name: "get_date",
+    name: "get_todays_date",
     description: "Get today's date in YYYY-MM-DD format",
-    func: async () => getDate(),
+    func: async () => getTodaysDate(),
 });
 
 const messages = [
-    SystemMessagePromptTemplate.fromTemplate(`
-    Follow below rules when serving user request:
-    1. Ask user any necessary information.
-    2. First collect mandatory fields then ask user for optional fields if any.
-    3. If user has provided partial details, send back a summary of provided details so far and ask for remaining details.
-    4. Once user provides all necessary details, show all the details as a summary and ask for confirmation.
-    5. Do not invoke any tool without required input details. You are not allowed to make any assumptions.
-    `),
+    SystemMessagePromptTemplate.fromTemplate(systemMessage),
     new MessagesPlaceholder({ variableName: "history" }),
     HumanMessagePromptTemplate.fromTemplate("{input}"),
     new MessagesPlaceholder({ variableName: "agent_scratchpad" }),
