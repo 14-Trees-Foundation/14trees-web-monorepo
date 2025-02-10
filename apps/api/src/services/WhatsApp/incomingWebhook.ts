@@ -27,7 +27,7 @@ export async function processIncomingWAMessageUsingGenAi(message: any) {
 
     const history = chatHistory.map(item => {
       if (item.message_type === 'ai') return new AIMessage(item.message);
-      
+
       return new HumanMessage(item.message);
     })
     await WAChatHistoryRepository.addWAChatMessage(text, 'human', customerPhoneNumber);
@@ -42,6 +42,15 @@ export async function processIncomingWAMessageUsingGenAi(message: any) {
       await sendWhatsAppMessage(messageUser);
     } catch (error) {
       logResponseError(error);
+    }
+  } else if (messageType === "interactive") {
+    const interactiveType = message.interactive.type;
+    if (interactiveType === "nfm_reply") {
+      const formDataStr = message.interactive.nfm_reply.response_json;
+      const formData = JSON.parse(formDataStr);
+
+      console.log(formData);
+      await handleFlowFormSubmit(customerPhoneNumber, formData, false);
     }
   }
 }
@@ -96,14 +105,14 @@ async function processIncomingWAMessage(message: any) {
       const formData = JSON.parse(formDataStr);
 
       console.log(formData);
-      await handleFlowFormSubmit(customerPhoneNumber, formData);
+      await handleFlowFormSubmit(customerPhoneNumber, formData, true);
     }
   }
 }
 
-async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any) {
+async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any, sendActionButtons: boolean) {
   if (formData.flow_token.startsWith("edit_recipients")) {
-    await handleRecipientEditSubmit(customerPhoneNumber, formData);
+    await handleRecipientEditSubmit(customerPhoneNumber, formData, sendActionButtons);
   } else {
     await handleGiftFormSubmit(customerPhoneNumber, formData);
   }
@@ -167,7 +176,7 @@ async function handleGiftFormSubmit(customerPhoneNumber: string, formData: any) 
 
 }
 
-async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: any) {
+async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: any, sendActionButtons: boolean = false) {
   const requestIdStr = formData.flow_token.split("_").slice(-1)[0];
   const requestId: number = parseInt(requestIdStr);
 
@@ -191,8 +200,24 @@ async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: 
 
   const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }]);
   const cardsResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
+  recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
 
   await autoAssignTrees(giftRequestResp.results[0], recipients, cardsResp.results, null);
+
+  if (!sendActionButtons) {
+    const message = textMessage;
+    message.to = customerPhoneNumber;
+    message.text.body =
+      `Recipient details have been updated for request number ${requestId}.`
+
+    try {
+      await sendWhatsAppMessage(message);
+    } catch (error) {
+      logResponseError(error);
+    }
+
+    return;
+  }
 
   const buttonMessage = JSON.parse(JSON.stringify(interactiveReplyButton));
   buttonMessage.to = customerPhoneNumber;
@@ -344,7 +369,7 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   return requestId;
 }
 
-async function sendEditRecipientsFlow(customerPhoneNumber: string, requestId: number) {
+export async function sendEditRecipientsFlow(customerPhoneNumber: string, requestId: number) {
   const flowId = "615014964807600";
 
   const recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
