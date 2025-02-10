@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { DynamicStructuredTool, Tool } from "langchain/tools";
-import { StructuredToolInterface } from "@langchain/core/tools";
-import { defaultGiftMessages, processGiftRequest } from "../../controllers/helper/giftRequestHelper";
+import { defaultGiftMessages, processGiftRequest } from "../../../controllers/helper/giftRequestHelper";
 
 // Define Enum for Occasion Type
 enum OccasionType {
@@ -93,8 +92,4 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
 
 })
 
-// Function to get tools
-export function getGiftingTools(): StructuredToolInterface[] {
-
-    return [createGiftTreesRequestTool];
-}
+export default createGiftTreesRequestTool
