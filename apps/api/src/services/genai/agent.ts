@@ -72,13 +72,16 @@ export const waInteractionsWithGiftingAgent = async (query: string, history: Bas
     const agentExecutor = new AgentExecutor({
         agent,
         tools: newTools,
-        verbose: true,
     });
 
     const result = await agentExecutor.invoke({ input: query, history: history });
     console.log("Result:", result);
 
-    return result["output"];
+    let output = result["output"];
+    if (typeof output === 'string') {
+        output = output.replace(/\*\*/g, '*');
+    }
+    return output;
 }
 
 // TODO: Remove this later
@@ -88,12 +91,16 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
     const agentExecutor = new AgentExecutor({
         agent,
         tools,
-        verbose: true,
     });
 
     const result = await agentExecutor.invoke({ input: query, history: history });
     console.log("Result:", result);
 
-    return result["output"];
+    let output = result["output"];
+    if (typeof output === 'string') {
+        output = output.replace(/\*\*/g, '*');
+    }
+
+    return output;
 }
 
