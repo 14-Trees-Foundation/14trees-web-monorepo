@@ -4,7 +4,7 @@ import { sendEditRecipientsFlow } from "../../WhatsApp/incomingWebhook";
 
 // Define Main Request Schema
 const SendEditRecipientsFlowRequestSchema = z.object({
-    request_id: z.number().describe("Gift trees request id for which you wjat to edit recipients")
+    request_id: z.number().describe("Gift trees request id for which you want to edit recipients")
 });
 
 const description = `
