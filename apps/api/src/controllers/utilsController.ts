@@ -6,7 +6,7 @@ import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import { processDonationRequestSheet, revertDonationRequestSheet } from "../scripts/donationRequests";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
-import { checkLatestIncomingMail } from "../services/gmail/gmail";
+import { checkLatestIncomingMail } from "../services/genai/email_agent";
 
 const getObjectKey = (type: string, subKey: string) => {
     switch (type) {
