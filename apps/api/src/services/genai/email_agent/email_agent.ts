@@ -109,5 +109,5 @@ export const interactWithEmailAgent = traceable(async (query: string, history: B
         console.log("JSON parse error for", result.messages[result.messages.length - 1].content)
     }
 
-    return await interactWithEmailAgent("You haved provided invalid output format", result.messages, --tries);
+    return await interactWithEmailAgent("You haved provided invalid JSON output format", result.messages, --tries);
 })
