@@ -11,6 +11,547 @@
     "http"
   ],
   "paths": {
+    "/api/appv2/healthCheck": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/test-upload": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/login": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "last_hash": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchShifts": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "example": "any"
+                },
+                "last_hash": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/uploadShifts": {
+      "post": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/appv2/uploadLogs": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/uploadTrees": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/uploadNewImages": {
+      "post": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/appv2/treesUpdatePlot": {
+      "post": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/appv2/getSapling": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sapling_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/updateSapling": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tree": {
+                  "example": "any"
+                },
+                "delete_image": {
+                  "example": "any"
+                },
+                "new_image": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/users": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "timestamp": {
+                  "example": "any"
+                },
+                "user_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/trees": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "site_id": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "tree_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/sites": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "timestamp": {
+                  "example": "any"
+                },
+                "site_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/plots": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "site_id": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "plot_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/visits": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "site_id": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "visit_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/visit-images": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "site_id": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "visit_image_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/tree-snapshots": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "site_id": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "tree_snapshot_ids": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/sync-history": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/fetchHelperData/plant-types": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "plant_type_ids": {
+                  "example": "any"
+                },
+                "timestamp": {
+                  "example": "any"
+                },
+                "offset": {
+                  "example": "any"
+                },
+                "limit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/sync-history": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "example": "any"
+                },
+                "sync_info": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/appv2/trees-count": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/users/": {
       "get": {
         "description": "",
@@ -124,6 +665,36 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/users/combine": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "primary_user": {
+                  "example": "any"
+                },
+                "secondary_user": {
+                  "example": "any"
+                },
+                "delete_secondary": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -333,6 +904,36 @@
         }
       }
     },
+    "/api/admin/users": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "example": "any"
+                },
+                "phone": {
+                  "example": "any"
+                },
+                "email": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/trees/addtree": {
       "post": {
         "description": "",
@@ -390,6 +991,53 @@
             "type": "string"
           }
         ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/change-plot": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tree_ids": {
+                  "example": "any"
+                },
+                "plot_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/get-giftable": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/tags": {
+      "get": {
+        "description": "",
         "responses": {
           "default": {
             "description": ""
@@ -491,9 +1139,135 @@
         }
       }
     },
+    "/api/trees/assigned/{user_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/mapped/{user_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/get-trees-plantation-info": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/count/user/{user_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/corporate-stats/tree-logged": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/trees/mapped-gift/get": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "group_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/tags/get": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/plant-types/get": {
       "post": {
         "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/{plot_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "plot_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -512,9 +1286,6 @@
               "type": "object",
               "properties": {
                 "name": {
-                  "example": "any"
-                },
-                "plant_type_id": {
                   "example": "any"
                 }
               }
@@ -555,6 +1326,83 @@
             "type": "string"
           }
         ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/states": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/plot-states": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/sync": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/templates/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "plant_type": {
+                  "example": "any"
+                },
+                "template_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/illustrations/": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plant-types/corporate-stats": {
+      "post": {
+        "description": "",
         "responses": {
           "default": {
             "description": ""
@@ -645,6 +1493,24 @@
         }
       }
     },
+    "/api/profile/user/{user_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/profile/usertreereg": {
       "post": {
         "description": "",
@@ -682,10 +1548,10 @@
                 "type": {
                   "example": "any"
                 },
-                "description": {
+                "sponsored_by_user": {
                   "example": "any"
                 },
-                "sponsored_by_user": {
+                "description": {
                   "example": "any"
                 },
                 "site_id": {
@@ -702,9 +1568,45 @@
                 },
                 "sapling_ids": {
                   "example": "any"
+                },
+                "user_image": {
+                  "example": "any"
+                },
+                "album_images": {
+                  "example": "any"
+                },
+                "sponsored_by_group": {
+                  "example": "any"
+                },
+                "gifted_by": {
+                  "example": "any"
+                },
+                "planted_by": {
+                  "example": "any"
+                },
+                "visited": {
+                  "example": "any"
                 }
               }
             }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/profile/assignBulk/{donation_id}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "donation_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
@@ -737,7 +1639,43 @@
                 "id": {
                   "example": "any"
                 },
+                "sponsor_id": {
+                  "example": "any"
+                },
                 "plot_id": {
+                  "example": "any"
+                },
+                "count": {
+                  "example": "any"
+                },
+                "mapped_to": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/mapping/map-multi-plots-trees": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                },
+                "plot_ids": {
                   "example": "any"
                 },
                 "count": {
@@ -768,6 +1706,9 @@
               "type": "object",
               "properties": {
                 "id": {
+                  "example": "any"
+                },
+                "sponsorId": {
                   "example": "any"
                 },
                 "sapling_ids": {
@@ -829,6 +1770,24 @@
         }
       }
     },
+    "/api/mapping/group/{group_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/mapping/count/usertreescount": {
       "get": {
         "description": "",
@@ -865,13 +1824,7 @@
                 "name": {
                   "example": "any"
                 },
-                "plot_id": {
-                  "example": "any"
-                },
-                "plot_code": {
-                  "example": "any"
-                },
-                "boundaries": {
+                "tags": {
                   "example": "any"
                 }
               }
@@ -894,6 +1847,18 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tags": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -919,9 +1884,97 @@
         }
       }
     },
-    "/api/plots/tags": {
+    "/api/plots/assign-site": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "plot_ids": {
+                  "example": "any"
+                },
+                "site_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plots/kml": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "site_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plots/stats/category": {
       "get": {
         "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plots/stats": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plots/corporate-stats": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/plots/corporate-analytics": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "query",
+            "type": "string"
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -1000,6 +2053,733 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/sync-sites": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/stats": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/stats/{field}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/districts": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/tags": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/corporate/{groupId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/sites/corporate-stats": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/requests/get": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/requests": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "example": "any"
+                },
+                "group_id": {
+                  "example": "any"
+                },
+                "no_of_cards": {
+                  "example": "any"
+                },
+                "primary_message": {
+                  "example": "any"
+                },
+                "secondary_message": {
+                  "example": "any"
+                },
+                "event_name": {
+                  "example": "any"
+                },
+                "event_type": {
+                  "example": "any"
+                },
+                "category": {
+                  "example": "any"
+                },
+                "grove": {
+                  "example": "any"
+                },
+                "planted_by": {
+                  "example": "any"
+                },
+                "logo_message": {
+                  "example": "any"
+                },
+                "request_id": {
+                  "example": "any"
+                },
+                "notes": {
+                  "example": "any"
+                },
+                "payment_id": {
+                  "example": "any"
+                },
+                "created_by": {
+                  "example": "any"
+                },
+                "gifted_on": {
+                  "example": "any"
+                },
+                "request_type": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/requests/{id}": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "validation_errors": {
+                  "example": "any"
+                },
+                "tags": {
+                  "example": "any"
+                },
+                "id": {
+                  "example": "any"
+                },
+                "request_id": {
+                  "example": "any"
+                },
+                "logo_url": {
+                  "example": "any"
+                },
+                "users_csv_file_url": {
+                  "example": "any"
+                },
+                "payment_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/requests/clone": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_request_id": {
+                  "example": "any"
+                },
+                "request_id": {
+                  "example": "any"
+                },
+                "created_by": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "users": {
+                  "example": "any"
+                },
+                "gift_card_request_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/users/{gift_card_request_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "gift_card_request_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/users": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_request_id": {
+                  "example": "any"
+                },
+                "users": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/plots": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "plot_ids": {
+                  "example": "any"
+                },
+                "gift_card_request_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/book": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_request_id": {
+                  "example": "any"
+                },
+                "gift_card_trees": {
+                  "example": "any"
+                },
+                "diversify": {
+                  "example": "any"
+                },
+                "book_non_giftable": {
+                  "example": "any"
+                },
+                "book_all_habits": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/unbook": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_request_id": {
+                  "example": "any"
+                },
+                "tree_ids": {
+                  "example": "any"
+                },
+                "unmap_all": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/trees/{gift_card_request_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "gift_card_request_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/generate-template/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sapling_id": {
+                  "example": "any"
+                },
+                "plant_type": {
+                  "example": "any"
+                },
+                "user_name": {
+                  "example": "any"
+                },
+                "primary_message": {
+                  "example": "any"
+                },
+                "secondary_message": {
+                  "example": "any"
+                },
+                "logo": {
+                  "example": "any"
+                },
+                "logo_message": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/update-template": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_name": {
+                  "example": "any"
+                },
+                "sapling_id": {
+                  "example": "any"
+                },
+                "slide_id": {
+                  "example": "any"
+                },
+                "primary_message": {
+                  "example": "any"
+                },
+                "secondary_message": {
+                  "example": "any"
+                },
+                "logo": {
+                  "example": "any"
+                },
+                "logo_message": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/card/redeem": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_id": {
+                  "example": "any"
+                },
+                "event_type": {
+                  "example": "any"
+                },
+                "event_name": {
+                  "example": "any"
+                },
+                "gifted_on": {
+                  "example": "any"
+                },
+                "gifted_by": {
+                  "example": "any"
+                },
+                "user": {
+                  "example": "any"
+                },
+                "tree_id": {
+                  "example": "any"
+                },
+                "profile_image_url": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/assign": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_request_id": {
+                  "example": "any"
+                },
+                "trees": {
+                  "example": "any"
+                },
+                "auto_assign": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/generate/{gift_card_request_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "gift_card_request_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/download/{gift_card_request_id}": {
+      "get": {
+        "description": "",
+        "produces": [
+          null
+        ],
+        "parameters": [
+          {
+            "name": "gift_card_request_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "downloadType",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/gift-cards/update-album/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gift_card_request_id": {
+                  "example": "any"
+                },
+                "album_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/update-users/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "users": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/requests/tags": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/gift-cards/requests/fund-request/{gift_card_request_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "gift_card_request_id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1394,7 +3174,7 @@
         }
       }
     },
-    "/api/donations/getDonations": {
+    "/api/donations/get": {
       "post": {
         "description": "",
         "responses": {
@@ -1404,7 +3184,7 @@
         }
       }
     },
-    "/api/donations/add": {
+    "/api/donations/": {
       "post": {
         "description": "",
         "responses": {
@@ -1414,12 +3194,12 @@
         }
       }
     },
-    "/api/donations/{id}": {
+    "/api/donations/{donation_id}": {
       "delete": {
         "description": "",
         "parameters": [
           {
-            "name": "id",
+            "name": "donation_id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1430,7 +3210,9 @@
             "description": ""
           }
         }
-      },
+      }
+    },
+    "/api/donations/{id}": {
       "put": {
         "description": "",
         "parameters": [
@@ -1439,6 +3221,150 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "donation": {
+                  "example": "any"
+                },
+                "users": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/work-order/{donation_id}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "donation_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/update-feedback": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "feedback": {
+                  "example": "any"
+                },
+                "source_info": {
+                  "example": "any"
+                },
+                "request_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/book-trees": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "donation_id": {
+                  "example": "any"
+                },
+                "plot_ids": {
+                  "example": "any"
+                },
+                "trees": {
+                  "example": "any"
+                },
+                "diversify": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/users/{donation_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "donation_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/donations/emails/ack": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "donation_id": {
+                  "example": "any"
+                },
+                "cc_mails": {
+                  "example": "any"
+                },
+                "test_mails": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -1776,6 +3702,51 @@
         }
       }
     },
+    "/api/albums/id/{album_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "album_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/albums/": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "album_id": {
+                  "example": "any"
+                },
+                "files": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/visits/get": {
       "post": {
         "description": "",
@@ -1789,6 +3760,23 @@
     "/api/visits/": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "visit_type": {
+                  "example": "any"
+                },
+                "group_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -1834,11 +3822,6 @@
       "get": {
         "description": "",
         "parameters": [
-          {
-            "name": "user_id",
-            "in": "query",
-            "type": "string"
-          },
           {
             "name": "visit_id",
             "in": "query",
@@ -1937,6 +3920,570 @@
           },
           "500": {
             "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/visit-users/sync-notion": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/visit-images/{visit_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "visit_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/visit-images/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "visit_id": {
+                  "example": "any"
+                },
+                "images": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/visit-images/delete": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_ids": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/tree-snapshots/{sapling_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "sapling_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/tree-snapshots/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sapling_id": {
+                  "example": "any"
+                },
+                "user_id": {
+                  "example": "any"
+                },
+                "images": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/tree-snapshots/delete": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_ids": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/tags/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tags": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/utils/signedPutUrl": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/utils/scrap": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "example": "any"
+                },
+                "request_id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/utils/s3keys/{request_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/utils/gmail": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/email-templates/{id}": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/email-templates/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "template_name": {
+                  "example": "any"
+                },
+                "event_type": {
+                  "example": "any"
+                },
+                "event_name": {
+                  "example": "any"
+                },
+                "template_type": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/payments/{id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/payments/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "example": "any"
+                },
+                "donor_type": {
+                  "example": "any"
+                },
+                "pan_number": {
+                  "example": "any"
+                },
+                "consent": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/payments/history": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                },
+                "payment_method": {
+                  "example": "any"
+                },
+                "payment_proof": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/payments/history/{id}": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/payments/verify/": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order_id": {
+                  "example": "any"
+                },
+                "razorpay_payment_id": {
+                  "example": "any"
+                },
+                "razorpay_signature": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/payments/order-payments/{order_id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/wa/incoming": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "entry": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      },
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/api/wa/incoming-flow": {
+      "post": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
