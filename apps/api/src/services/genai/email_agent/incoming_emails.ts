@@ -1,16 +1,19 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { MailSubsRepository } from "../../../repo/mailSubsRepo";
-import sendMail, { getGmailService } from "../../gmail/gmail";
+import sendMail, { getAttachmentData, getGmailService } from "../../gmail/gmail";
 import { interactWithEmailAgent } from "./email_agent";
 import { gmail_v1 } from "googleapis";
+import { Readable } from "stream";
+import csv from 'csv-parser';
+import { parseCsv } from "../../../helpers/utils";
 
-const getEmailBodyText = (parts: gmail_v1.Schema$MessagePart[]) => {
+const getEmailBodyText = (parts: gmail_v1.Schema$MessagePart[]): string => {
     for (const part of parts) {
         if (part.mimeType === "text/plain" && part.body?.data) {
             return Buffer.from(part.body.data, 'base64').toString('utf-8');
         }
         if (part.parts) {
-            getEmailBodyText(part.parts); // Recursively check nested parts
+            return getEmailBodyText(part.parts); // Recursively check nested parts
         }
     }
 
@@ -19,10 +22,10 @@ const getEmailBodyText = (parts: gmail_v1.Schema$MessagePart[]) => {
 
 const getEmailBodyAndAttachments = (parts: gmail_v1.Schema$MessagePart[]) => {
 
-    const emailBody = getEmailBodyText(parts);
+    const emailBody: string = getEmailBodyText(parts);
     const attachments: any[] = [];
     for (const part of parts) {
-       if (part.filename && part.body?.attachmentId) {
+        if (part.filename && part.body?.attachmentId) {
             attachments.push({
                 filename: part.filename,
                 mimeType: part.mimeType,
@@ -119,8 +122,8 @@ const getLatestThreadDetails = async () => {
                 for (const attachment of attachments) {
                     if (!attachmentsSet.has(attachment.filename)) {
                         attachmentsSet.add(attachment.filename);
-    
-                        emailDetails.attachments.push(attachment);
+
+                        emailDetails.attachments.push({ ...attachment, messageId: email.id });
                     }
                 }
             } else if (email?.payload?.body?.data) {
@@ -141,10 +144,44 @@ const getLatestThreadDetails = async () => {
     }
 };
 
+async function getValidCsvFileAndImage(attachments: any[]) {
+    const requiredHeaders = [
+        'Recipient Name', 'Recipient Email', 'Recipient Communication Email (optional)',
+        'Recipient Phone (optional)', 'Number of trees to assign', 'Assignee Name',
+        'Assignee Email (optional)', 'Assignee Communication Email (optional)',
+        'Assignee Phone (optional)', 'Image Name (optional)'
+    ];
 
+    let csvFile = null;
+    let imageFile = null;
+
+    for (const attachment of attachments) {
+        const { filename, mimeType, messageId, attachmentId } = attachment;
+        const data = await getAttachmentData(messageId, attachmentId);
+
+        if (!data) continue;
+        if (mimeType === 'text/csv' || filename.endsWith('.csv')) {
+            const csvData = await parseCsv(data);
+            const headers = Object.keys(csvData[0]);
+            const isValid = requiredHeaders.every(header => headers.includes(header));
+
+            csvFile = {
+                attachment,
+                status: isValid ? 'valid' : 'invalid'
+            };
+        } else if (mimeType.startsWith('image/')) {
+            imageFile = attachment;
+        }
+    }
+
+    return {
+        recipients_csv_file: csvFile,
+        corporate_logo: imageFile
+    };
+}
 
 export async function checkLatestIncomingMail() {
-    
+
     const emailDetails = await getLatestThreadDetails();
     if (emailDetails) {
         console.log(JSON.stringify(emailDetails, null, 2))
@@ -155,8 +192,11 @@ export async function checkLatestIncomingMail() {
             await MailSubsRepository.addMailSub(emailDetails.messageId, emailDetails.threadId);
         }
 
-        const userQuery = emailDetails.bodies[emailDetails.bodies.length - 1];
+        let userQuery = emailDetails.bodies[emailDetails.bodies.length - 1];
         const history = emailDetails.bodies.slice(0, -1).map((text, index) => { return index % 2 ? new AIMessage(text) : new HumanMessage(text) })
+
+        const attachmentData = await getValidCsvFileAndImage(emailDetails.attachments)
+        userQuery += "\n\n" + JSON.stringify(attachmentData, null, 2);
         const messageResp = await interactWithEmailAgent(userQuery, history);
 
         console.log(messageResp);
