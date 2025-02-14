@@ -62,10 +62,9 @@ function swaggerSpecification() {
     basePath: '/api',
   };
 
-  console.log(`${__dirname}/src/routes*.ts`);
   const options = {
     swaggerDefinition,
-    apis: [`${__dirname}/routes/*.ts`, `${__dirname}/definitions.yml`],
+    apis: [`${process.env.SOURCE_PATH}/routes/*.ts`, `${process.env.SOURCE_PATH}/definitions.yml`],
   };
 
   const swaggerSpec = swaggerJSDoc(options);
