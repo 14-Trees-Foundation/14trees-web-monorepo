@@ -1,0 +1,750 @@
+
+definitions:
+  Filter:
+    type: object
+    properties:
+      columnField:
+        type: string
+        example: "user_name"
+      operatorValue:
+        type: string
+        enum: 
+          - contains
+          - equals
+          - startsWith
+          - endsWith
+          - isEmpty
+          - isNotEmpty
+          - isAnyOf
+          - greaterThan
+          - lessThan
+          - between
+        example: "contains"
+      value:
+        oneOf:
+          - type: string
+            example: "Sponsor"
+          - type: array
+            items:
+              type: string
+            example: ["Sponsor1", "Sponsor2"]
+          - type: number
+            example: 100
+          - type: array
+            items:
+              type: number
+            example: [10, 20]
+          - type: "null"
+            example: null
+  OrderBy:
+    type: object
+    properties:
+      column:
+        type: string
+        example: "created_at"
+      direction:
+        type: string
+        enum:
+          - ASC
+          - DESC
+        example: "DESC"
+  GiftTreesRequest:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      user_id:
+        type: integer
+        example: 1
+      group_id:
+        type: integer
+        example: 1
+      is_active:
+        type: boolean
+        example: false
+      no_of_cards:
+        type: integer
+        example: 1
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:57.901Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:24:22.761Z"
+      logo_url:
+        type: string
+        format: uri
+        example: "https://14treesplants.s3.amazonaws.com/vinjj0hgzzhrdk8x92xfm/logo.png"
+      primary_message:
+        type: string
+        example: "We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change."
+      secondary_message:
+        type: string
+        example: "We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future."
+      event_name:
+        type: string
+        example: "10 years of service"
+      planted_by:
+        type: string
+        example: "Acme"
+      users_csv_file_url:
+        type: string
+        format: uri
+        nullable: true
+        example: null
+      logo_message:
+        type: string
+        example: "Gifted by 14 Trees in partnership with"
+      request_id:
+        type: string
+        example: "vinjj0hgzzhrdk8x92xfm"
+      status:
+        type: string
+        example: "completed"
+      validation_errors:
+        type: string
+        nullable: true
+        example: null
+      presentation_id:
+        type: string
+        nullable: true
+        example: null
+      notes:
+        type: string
+        nullable: true
+        example: null
+      album_id:
+        type: string
+        nullable: true
+        example: null
+      event_type:
+        type: string
+        example: "3"
+      payment_id:
+        type: integer
+        example: 1
+      grove:
+        type: string
+        nullable: true
+        example: null
+      created_by:
+        type: integer
+        example: 16649
+      tags:
+        type: array
+        items:
+          type: string
+        example: ["Email"]
+      gifted_on:
+        type: string
+        format: date
+        example: "2025-02-25"
+      category:
+        type: string
+        example: "Public"
+      request_type:
+        type: string
+        example: "Cards Request"
+      sponsorship_type:
+        type: string
+        example: "Donation Received"
+      donation_receipt_number:
+        type: string
+        example: "don/test/001"
+      amount_received:
+        type: number
+        format: float
+        example: 1
+      user_name:
+        type: string
+        example: "Sponsor name"
+      user_email:
+        type: string
+        format: email
+        example: "sponsor@dummymail.com"
+      user_phone:
+        type: string
+        nullable: true
+        example: null
+      group_name:
+        type: string
+        example: "Acme"
+      created_by_name:
+        type: string
+        example: "Some User"
+      booked:
+        type: string
+        example: "1"
+      assigned:
+        type: string
+        example: "1"
+      total_amount:
+        type: number
+        format: float
+        example: 2000
+      presentation_ids:
+        type: array
+        items:
+          type: string
+        example: ["1_77lYyZ0zXjV5mYFaeWxyJDef1xyobd5xdLwKrd9byw"]
+      plot_ids:
+        type: array
+        items:
+          type: string
+        example: []
+      payment_status:
+        type: string
+        example: "Pending payment"
+  GiftRequestUser:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      recipient:
+        type: integer
+        example: 1
+      assignee:
+        type: integer
+        example: 2
+      gift_request_id:
+        type: integer
+        example: 1
+      gifted_trees:
+        type: integer
+        example: 1
+      profile_image_url:
+        type: string
+        format: uri
+        nullable: true
+        example: null
+      mail_sent:
+        type: boolean
+        nullable: true
+        example: null
+      mail_error:
+        type: string
+        nullable: true
+        example: null
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
+      recipient_name:
+        type: string
+        example: "Recipient Name"
+      recipient_email:
+        type: string
+        format: email
+        example: "recipient@gmail.com"
+      recipient_phone:
+        type: string
+        example: "9876543210"
+      assignee_name:
+        type: string
+        example: "Assignee Name"
+      assignee_email:
+        type: string
+        format: email
+        example: "assignee@gmail.com"
+      assignee_phone:
+        type: string
+        example: "9876543210"
+      relation:
+        type: string
+        nullable: true
+        example: null
+  GiftRequestTree:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      gifted_to:
+        type: integer
+        example: 1
+      gift_card_request_id:
+        type: integer
+        example: 1
+      tree_id:
+        type: integer
+        example: 245554
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:59.027Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:07:34.946Z"
+      card_image_url:
+        type: string
+        format: uri
+        example: "https://14treesplants.s3.ap-south-1.amazonaws.com/vinjj0hgzzhrdk8x92xfm/126783.png"
+      profile_image_url:
+        type: string
+        format: uri
+        nullable: true
+        example: null
+      mail_sent:
+        type: boolean
+        nullable: true
+        example: null
+      mail_error:
+        type: string
+        nullable: true
+        example: null
+      slide_id:
+        type: string
+        example: "SLIDES_API264552363_0"
+      in_name_of:
+        type: string
+        nullable: true
+        example: null
+      relation:
+        type: string
+        nullable: true
+        example: null
+      assigned_to:
+        type: integer
+        example: 1
+      gift_request_user_id:
+        type: integer
+        example: 1
+      presentation_id:
+        type: string
+        example: "1_77lYyZ0zXjV5mYFaeWxyJDef1xyobd5xdLwKrd9byw"
+      recipient_name:
+        type: string
+        example: "Recipient Name"
+      recipient_email:
+        type: string
+        format: email
+        example: "recipient@gmail.com"
+      recipient_phone:
+        type: string
+        example: "9876543210"
+      assignee_name:
+        type: string
+        example: "Assignee Name"
+      assignee_email:
+        type: string
+        format: email
+        example: "assignee@gmail.com"
+      assignee_phone:
+        type: string
+        example: "9876543210"
+      sapling_id:
+        type: string
+        example: "126783"
+      assigned:
+        type: integer
+        example: 1
+      plant_type:
+        type: string
+        example: "Kadulimb (कडुलिंब)"
+      scientific_name:
+        type: string
+        example: "Azadirachta indica"
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      name:
+        type: string
+        example: "John Doe"
+      user_id:
+        type: string
+        example: "johndoe123"
+      phone:
+        type: string
+        example: "9876543210"
+      email:
+        type: string
+        format: email
+        example: "john.doe@example.com"
+      communication_email:
+        type: string
+        format: email
+        nullable: true
+        example: null
+      birth_date:
+        type: string
+        format: date
+        nullable: true
+        example: null
+      pin:
+        type: string
+        nullable: true
+        example: null
+      roles:
+        type: array
+        items:
+          type: string
+        nullable: true
+        example: ["admin", "treelogging", "super-admin", "user"]
+      status:
+        type: string
+        nullable: true
+        example: "active"
+      status_message:
+        type: array
+        items:
+          type: string
+        nullable: true
+      last_system_updated_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: null
+      created_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: "2025-02-13T09:06:58.283Z"
+      updated_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: "2025-02-13T09:24:22.761Z"
+  Group:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      name:
+        type: string
+        example: "Acme Group"
+      type:
+        type: string
+        example: "Corporate"
+      description:
+        type: string
+        nullable: true
+        example: "A leading company in renewable energy."
+      logo_url:
+        type: string
+        format: uri
+        nullable: true
+        example: "https://example.com/logo.png"
+      address:
+        type: string
+        nullable: true
+        example: "123 Main Street, Pune, India"
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:24:22.761Z"
+  Payment:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 101
+      amount:
+        type: number
+        format: float
+        example: 2000.50
+      donor_type:
+        type: string
+        nullable: true
+        example: "Individual"
+      pan_number:
+        type: string
+        nullable: true
+        example: "ABCDE1234F"
+      consent:
+        type: boolean
+        example: true
+      order_id:
+        type: string
+        nullable: true
+        example: "ORD123456789"
+      qr_id:
+        type: string
+        nullable: true
+        example: "QR789456123"
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:24:22.761Z"
+  PaymentHistory:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 201
+      payment_id:
+        type: integer
+        example: 101
+      amount:
+        type: number
+        format: float
+        example: 2000.50
+      payment_method:
+        type: string
+        example: "Credit Card"
+      payment_proof:
+        type: string
+        nullable: true
+        example: "https://example.com/payment-proof.jpg"
+      amount_received:
+        type: number
+        format: float
+        example: 2000.50
+      payment_date:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
+      payment_received_date:
+        type: string
+        format: date-time
+        example: "2025-02-14T10:00:00.000Z"
+      status:
+        type: string
+        example: "Completed"
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:24:22.761Z"
+  Plot:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 2985
+      name:
+        type: string
+        example: "(14TF)-(पुणे)-(खेड)-(वेताळे)-(गट-नं-651)-(फॉरेस्ट-भाग-2)"
+      plot_id:
+        type: integer
+        nullable: true
+        example: null
+      tags:
+        type: array
+        items:
+          type: string
+        example: []
+      boundaries:
+        type: object
+        nullable: true
+        example: null
+      center:
+        type: object
+        nullable: true
+        example: null
+      gat:
+        type: string
+        nullable: true
+        example: null
+      status:
+        type: string
+        nullable: true
+        example: null
+      land_type_mongo_id:
+        type: string
+        nullable: true
+        example: null
+      category_monogo_id:
+        type: string
+        nullable: true
+        example: null
+      land_type:
+        type: string
+        nullable: true
+        example: null
+      site_id:
+        type: integer
+        example: 1163
+      category:
+        type: string
+        nullable: true
+        example: null
+      mongo_id:
+        type: string
+        nullable: true
+        example: null
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-01-20T09:21:21.182Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-01-21T06:12:18.608Z"
+      label:
+        type: string
+        nullable: true
+        example: null
+      acres_area:
+        type: number
+        format: float
+        nullable: true
+        example: null
+      accessibility_status:
+        type: string
+        nullable: true
+        example: null
+      pit_count:
+        type: integer
+        nullable: true
+        example: null
+      site_name:
+        type: string
+        example: "Zone 2 - 780 - 10 acres"
+      total:
+        type: integer
+        example: 20
+      assigned:
+        type: integer
+        example: 0
+      booked:
+        type: integer
+        example: 0
+      available:
+        type: integer
+        example: 20
+      void_total:
+        type: integer
+        example: 0
+      void_assigned:
+        type: integer
+        example: 0
+      void_booked:
+        type: integer
+        example: 0
+      void_available:
+        type: integer
+        example: 0
+      card_available:
+        type: integer
+        example: 20
+      unbooked_assigned:
+        type: integer
+        example: 0
+      tree_count:
+        type: integer
+        example: 20
+      shrub_count:
+        type: integer
+        example: 0
+      herb_count:
+        type: integer
+        example: 0
+      assigned_trees:
+        type: integer
+        example: 0
+      booked_trees:
+        type: integer
+        example: 0
+      unbooked_assigned_trees:
+        type: integer
+        example: 0
+      available_trees:
+        type: integer
+        example: 20
+      card_available_trees:
+        type: integer
+        example: 20
+      assigned_herbs:
+        type: integer
+        example: 0
+      booked_herbs:
+        type: integer
+        example: 0
+      unbooked_assigned_herbs:
+        type: integer
+        example: 0
+      available_herbs:
+        type: integer
+        example: 0
+      card_available_herbs:
+        type: integer
+        example: 0
+      assigned_shrubs:
+        type: integer
+        example: 0
+      booked_shrubs:
+        type: integer
+        example: 0
+      unbooked_assigned_shrubs:
+        type: integer
+        example: 0
+      available_shrubs:
+        type: integer
+        example: 0
+      card_available_shrubs:
+        type: integer
+        example: 0
+      distinct_plants:
+        type: array
+        items:
+          type: string
+        example:
+          - "Arjun (अर्जुन)"
+          - "Behada (बेहडा)"
+          - "Kadulimb (कडुलिंब)"
+          - "Kanchan (कांचन)"
+          - "Karanj (करंज)"
+          - "Pimpal (पिंपळ)"
+          - "Umber (उंबर)"
+  Tag:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      tag:
+        type: string
+        example: "example_tag"
+      type:
+        type: string
+        enum:
+          - "SYSTEM_DEFINED"
+          - "USER_DEFINED"
+        example: "USER_DEFINED"
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-01-01T12:00:00.000Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-01-02T12:00:00.000Z"
+  GiftableTree:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 328176
+      sapling_id:
+        type: string
+        example: "253439"
+      plant_type:
+        type: string
+        example: "Arjun (अर्जुन)"
+      plot:
+        type: string
+        example: "(14TF)-(पुणे)-(खेड)-(वेताळे)-(गट-नं-651)-(फॉरेस्ट-भाग-2)"

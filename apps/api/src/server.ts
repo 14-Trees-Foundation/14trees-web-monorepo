@@ -1,6 +1,6 @@
 require("dotenv").config();
 import path from "path";
-import express, { Request } from "express";
+import express, { Request, Response } from "express";
 const morgan = require("morgan");
 import cors from "cors";
 import swaggerUi from "swagger-ui-express"
@@ -43,20 +43,36 @@ import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import whatsAppRoutes from "./routes/whatsAppRoutes";
-
-let swaggerFile: any;
-try {
-  const data = readFileSync('src/swagger_output.json', 'utf8');
-  swaggerFile = JSON.parse(data);
-} catch (error) {
-  console.error("Error reading swagger file:", error);
-}
+import swaggerJSDoc from "swagger-jsdoc";
 
 interface ResponseError extends Error {
   status?: number;
 }
 
 const port = process.env.SERVER_PORT ?? 8088;
+
+function swaggerSpecification() {
+
+  const swaggerDefinition = {
+    info: {
+      title: '14 Trees Backend Service',
+      version: '1.0.0', // Version (required)
+      description: 'APIs for 14trees Dashboard & Mobile application', // Description (optional)
+    },
+    host: `localhost:${port}`,
+    basePath: '/api',
+  };
+
+  console.log(`${__dirname}/src/routes*.ts`);
+  const options = {
+    swaggerDefinition,
+    apis: [`${__dirname}/routes/*.ts`, `${__dirname}/definitions.yml`],
+  };
+
+  const swaggerSpec = swaggerJSDoc(options);
+
+  return swaggerUi.setup(swaggerSpec);
+}
 
 const initExpressApp = (app: express.Application) => {
   console.log("Initializing Express App...");
@@ -113,10 +129,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/payments", paymentRoutes );
   app.use("/api/wa", whatsAppRoutes);
 
-  // swagger doc
-  if (swaggerFile) {
-    app.use('/api/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
-  }
+  app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {

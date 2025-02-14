@@ -23,6 +23,84 @@ routes.post('/', uploadFiles.array('files', 1), trees.addTree);
 routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
 routes.delete('/:id', uploadFiles.array('files', 1), trees.deleteTree);
 routes.post('/change-plot', trees.changeTreesPlot);
+
+
+/**
+ * @swagger
+ * /trees/get-giftable:
+ *   post:
+ *     summary: Get giftable trees
+ *     description: Fetches a list of giftable trees with optional filters.
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for fetching giftable trees
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             filters:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   columnField:
+ *                     type: string
+ *                     example: "species"
+ *                   operatorValue:
+ *                     type: string
+ *                     example: "equals"
+ *                   value:
+ *                     type: string
+ *                     example: "Oak"
+ *             include_no_giftable:
+ *               type: boolean
+ *               example: false
+ *             include_all_habits:
+ *               type: boolean
+ *               example: false
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: Giftable trees fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/GiftableTree'
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
+ */
 routes.post('/get-giftable', trees.getGiftableTrees);
 routes.get('/tags', trees.getTreeTags);
 
