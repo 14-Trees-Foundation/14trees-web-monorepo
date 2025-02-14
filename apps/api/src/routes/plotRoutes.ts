@@ -4,6 +4,68 @@ import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
+
+/**
+ * @swagger
+ * /plots/get:
+ *   post:
+ *     summary: Get plots
+ *     description: Fetches a list of plots with optional filters and sorting.
+ *     tags:
+ *       - Plots
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for fetching plots
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             filters:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Filter'
+ *             order_by:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/OrderBy'
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: Plots fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Plot'
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time"
+ */
 routes.post('/get', plot.getPlots);
 routes.post('/', plot.addPlot);
 routes.put('/:id', plot.updatePlot);
