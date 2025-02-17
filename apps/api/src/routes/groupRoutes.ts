@@ -64,7 +64,7 @@ routes.get('/:search', group.searchGroups);
  *             results:
  *               type: array
  *               items:
- *                 $ref: '#/definitons/Group'
+ *                 $ref: '#/definitions/Group'
  *       500:
  *         description: Internal server error
  *         schema:

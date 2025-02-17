@@ -748,3 +748,179 @@ definitions:
       plot:
         type: string
         example: "(14TF)-(पुणे)-(खेड)-(वेताळे)-(गट-नं-651)-(फॉरेस्ट-भाग-2)"
+  Tree:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      sapling_id:
+        type: string
+        example: "000000"
+      plant_type_id:
+        type: integer
+        example: 1
+      plot_id:
+        type: integer
+        example: 1
+      image:
+        type: string
+        nullable: true
+        example: null
+      tags:
+        type: array
+        items:
+          type: string
+        nullable: true
+        example: null
+      location:
+        type: object
+        nullable: true
+        example: null
+      planted_by:
+        type: string
+        nullable: true
+        example: null
+      mapped_to_user:
+        type: integer
+        nullable: true
+        example: null
+      mapped_to_group:
+        type: integer
+        nullable: true
+        example: null
+      mapped_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: null
+      sponsored_by_user:
+        type: integer
+        nullable: true
+        example: null
+      sponsored_by_group:
+        type: integer
+        nullable: true
+        example: null
+      gifted_by:
+        type: string
+        nullable: true
+        example: null
+      gifted_to:
+        type: string
+        nullable: true
+        example: null
+      assigned_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: null
+      assigned_to:
+        type: integer
+        nullable: true
+        example: null
+      user_tree_image:
+        type: string
+        nullable: true
+        example: null
+      mongo_id:
+        type: string
+      tree_type:
+        type: string
+      plot:
+        type: string
+        example: "(14TF)-XYZ"
+      description:
+        type: string
+        nullable: true
+        example: null
+      event_id:
+        type: integer
+        nullable: true
+        example: null
+      memory_images:
+        type: array
+        items:
+          type: string
+        nullable: true
+        example: null
+      status:
+        type: string
+        nullable: true
+        example: null
+      status_message:
+        type: string
+        nullable: true
+        example: null
+      last_system_updated_at:
+        type: string
+        format: date-time
+        nullable: true
+        example: null
+      created_at:
+        type: string
+        format: date-time
+        example: "2023-08-16T07:39:03.000Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2024-10-03T11:52:27.092Z"
+      tree_status:
+        type: string
+        example: "healthy"
+      event_type:
+        type: string
+        nullable: true
+        example: null
+      user_card_image:
+        type: string
+        nullable: true
+        example: null
+      visit_id:
+        type: integer
+        nullable: true
+        example: null
+      donation_id:
+        type: integer
+        nullable: true
+        example: null
+      gifted_by_name:
+        type: string
+        nullable: true
+        example: null
+      plant_type:
+        type: string
+        example: "Sonchafa (सोनचाफा)"
+      habit:
+        type: string
+        example: "Tree"
+      illustration_s3_path:
+        type: string
+        format: uri
+        example: "https://14treesplants.s3.ap-south-1.amazonaws.com/Sonchafa%20%28%E0%A4%B8%E0%A5%8B%E0%A4%A8%E0%A4%9A%E0%A4%BE%E0%A4%AB%E0%A4%BE%29.jpg"
+      site_name:
+        type: string
+        example: "14 Trees XYZ"
+      mapped_user_name:
+        type: string
+        nullable: true
+        example: null
+      mapped_group_name:
+        type: string
+        nullable: true
+        example: null
+      sponsor_user_name:
+        type: string
+        nullable: true
+        example: null
+      sponsor_group_name:
+        type: string
+        nullable: true
+        example: null
+      assigned_to_name:
+        type: string
+        nullable: true
+        example: null
+      tree_health:
+        type: string
+        example: "healthy"
