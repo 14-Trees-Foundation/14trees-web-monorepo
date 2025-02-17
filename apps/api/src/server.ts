@@ -59,7 +59,7 @@ function swaggerSpecification() {
       version: '1.0.0', // Version (required)
       description: 'APIs for 14trees Dashboard & Mobile application', // Description (optional)
     },
-    host: `localhost:${port}`,
+    host: `dev-api.14trees.org`,
     basePath: '/api',
   };
 
