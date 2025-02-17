@@ -374,6 +374,8 @@ class TreeRepository {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
+      sponsored_by_user: userId,
+      sponsored_by_group: groupId,
       donation_id: donation_id,
       mapped_at: new Date(),
       updated_at: new Date(),
@@ -391,6 +393,8 @@ class TreeRepository {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
+      sponsored_by_user: userId,
+      sponsored_by_group: groupId,
       donation_id: donation_id,
       mapped_at: new Date(),
       updated_at: new Date(),
