@@ -122,9 +122,165 @@ routes.get('/:search', users.searchUsers);
  *               example: "Something went wrong. Please try again later."
  */
 routes.post('/', users.addUser);
+
+
+/**
+ * @swagger
+ * /users/bulk:
+ *   post:
+ *     summary: Add users in bulk
+ *     description: Adds multiple users in bulk using a CSV file.
+ *     tags:
+ *       - Users
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: file
+ *         description: CSV file containing user data
+ *         required: true
+ *         type: file
+ *     responses:
+ *       200:
+ *         description: Users added successfully
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Error saving users data."
+ */
 routes.post('/bulk', uploadFiles.single('file'),users.addUsersBulk);
+
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update user
+ *     description: Updates an existing user.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for updating a user
+ *         required: true
+ *         schema:
+ *           $ref: '#/definitions/User'
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         schema:
+ *           $ref: '#/definitions/User'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Invalid input data"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
 routes.put('/:id', users.updateUser);
+
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete user
+ *     description: Deletes a user by their ID.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the user to delete
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *         schema:
+ *           type: string
+ *           example: "User deleted successfully"
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "User id is required"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
+ */
 routes.delete('/:id', users.deleteUser);
+
+
+/**
+ * @swagger
+ * /users/combine:
+ *   post:
+ *     summary: Combine users
+ *     description: Combines two user accounts into one.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for combining users
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             primary_user:
+ *               type: integer
+ *               example: 1
+ *             secondary_user:
+ *               type: integer
+ *               example: 2
+ *             delete_secondary:
+ *               type: boolean
+ *               example: true
+ *     responses:
+ *       200:
+ *         description: Users combined successfully
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
 routes.post("/combine", users.combineUsers);
 
 export default routes;

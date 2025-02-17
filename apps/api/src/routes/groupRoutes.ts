@@ -142,7 +142,88 @@ routes.post('/get', group.getGroups);
  *               example: "Something went wrong. Please try again later."
  */
 routes.post('/', uploadFiles.fields([{name: 'logo', maxCount: 1 }]), group.addGroup);
+
+
+/**
+ * @swagger
+ * /groups/{id}:
+ *   put:
+ *     summary: Update group
+ *     description: Updates an existing group.
+ *     tags:
+ *       - Groups
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: logo
+ *         description: Logo file for the group
+ *         required: false
+ *         type: file
+ *       - in: body
+ *         name: body
+ *         description: Request body for updating a group
+ *         required: true
+ *         schema:
+ *           $ref: '#/definitions/Group'
+ *     responses:
+ *       201:
+ *         description: Group updated successfully
+ *         schema:
+ *           $ref: '#/definitions/Group'
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
 routes.put('/:id', uploadFiles.fields([{name: 'logo', maxCount: 1 }]), group.updateGroup);
+
+
+/**
+ * @swagger
+ * /groups/{id}:
+ *   delete:
+ *     summary: Delete group
+ *     description: Deletes a group by its ID.
+ *     tags:
+ *       - Groups
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the group to delete
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Group deleted successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Group deleted successfully"
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Invalid group ID"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
 routes.delete('/:id', group.deleteGroup);
 
 
