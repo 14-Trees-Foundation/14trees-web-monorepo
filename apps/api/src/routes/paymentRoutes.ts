@@ -143,6 +143,52 @@ routes.post('/', payment.createPayment);
  *               example: "Something went wrong. Please try again later."
  */
 routes.put('/:id', payment.updatePayment);
+
+
+/**
+ * @swagger
+ * /payments/{id}:
+ *   delete:
+ *     summary: Delete payment
+ *     description: Deletes a payment by its ID.
+ *     tags:
+ *       - Payments
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the payment to delete
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Payment deleted successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Payment deleted successfully"
+ *       400:
+ *         description: Invalid payment ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid payment id!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
 routes.delete('/:id', payment.deletePayment);
 
 

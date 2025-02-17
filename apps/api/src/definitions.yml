@@ -449,6 +449,19 @@ definitions:
         type: string
         format: date-time
         example: "2025-02-13T09:24:22.761Z"
+  UserGroup:
+    type: object
+    properties:
+      user_id:
+        type: integer
+        example: 1
+      group_id:
+        type: integer
+        example: 1
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-02-13T09:06:58.283Z"
   Payment:
     type: object
     properties:
@@ -924,3 +937,195 @@ definitions:
       tree_health:
         type: string
         example: "healthy"
+  Site:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 986
+      name_marathi:
+        type: string
+        example: "कन्या विद्यालय चाकण"
+      name_english:
+        type: string
+        example: "Girls School Chakan"
+      owner:
+        type: string
+        example: "Govt. Dept."
+      land_type:
+        type: string
+        example: "School"
+      land_strata:
+        type: string
+        nullable: true
+        example: null
+      district:
+        type: string
+        example: "Pune (पुणे)"
+      taluka:
+        type: string
+        example: "Khed (खेड)"
+      village:
+        type: string
+        example: "Chakan (चाकण)"
+      area_acres:
+        type: number
+        nullable: true
+        example: null
+      length_km:
+        type: number
+        nullable: true
+        example: null
+      tree_count:
+        type: string
+        example: "17"
+      unique_id:
+        type: string
+        example: "PUB/CHAKA/SCHO/0163"
+      photo_album:
+        type: string
+        format: uri
+        example: "https://photos.app.goo.gl/5JFQbhc6ga9rqN9q8"
+      consent_letter:
+        type: string
+        nullable: true
+        example: null
+      grove_type:
+        type: string
+        nullable: true
+        example: null
+      consent_document_link:
+        type: string
+        format: uri
+        nullable: true
+        example: null
+      google_earth_link:
+        type: string
+        nullable: true
+        example: "{NULL}"
+      trees_planted:
+        type: integer
+        nullable: true
+        example: null
+      account:
+        type: string
+        nullable: true
+        example: null
+      data_errors:
+        type: array
+        items:
+          type: string
+        nullable: true
+        example: null
+      date_planted:
+        type: string
+        format: date
+        nullable: true
+        example: null
+      site_data_check:
+        type: string
+        nullable: true
+        example: null
+      album:
+        type: string
+        nullable: true
+        example: null
+      album_contains:
+        type: string
+        nullable: true
+        example: null
+      tags:
+        type: array
+        items:
+          type: string
+        nullable: true
+        example: null
+      status:
+        type: string
+        example: "Done-X-संगोपन"
+      remark:
+        type: string
+        nullable: true
+        example: null
+      hosted_at:
+        type: string
+        nullable: true
+        example: null
+      created_at:
+        type: string
+        format: date-time
+        example: "2024-09-04T08:57:16.613Z"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-02-15T08:58:34.963Z"
+      maintenance_type:
+        type: string
+        example: "FULL_MAINTENANCE"
+      kml_file_link:
+        type: string
+        format: uri
+        nullable: true
+        example: null
+      category:
+        type: string
+        example: "Public"
+  TreeAggCount:
+    type: object
+    properties:
+      total:
+        type: integer
+      booked:
+        type: integer
+      assigned:
+        type: integer
+      available:
+        type: integer
+      card_available:
+        type: integer
+      unbooked_assigned:
+        type: integer
+      void_available:
+        type: integer
+      void_assigned:
+        type: integer
+      void_booked:
+        type: integer
+      void_total:
+        type: integer
+      tree_count:
+        type: integer
+      shrub_count:
+        type: integer
+      herb_count:
+        type: integer
+      booked_trees:
+        type: integer
+      assigned_trees:
+        type: integer
+      unbooked_assigned_trees:
+        type: integer
+      available_trees:
+        type: integer
+      card_available_trees:
+        type: integer
+      booked_shrubs:
+        type: integer
+      assigned_shrubs:
+        type: integer
+      unbooked_assigned_shrubs:
+        type: integer
+      available_shrubs:
+        type: integer
+      card_available_shrubs:
+        type: integer
+      booked_herbs:
+        type: integer
+      assigned_herbs:
+        type: integer
+      unbooked_assigned_herbs:
+        type: integer
+      available_herbs:
+        type: integer
+      card_available_herbs:
+        type: integer
