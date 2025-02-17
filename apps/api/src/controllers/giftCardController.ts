@@ -1885,6 +1885,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
                 relation: giftCard.relation,
                 relational: giftCard.relation && giftCard.relation !== 'other' ? true : undefined,
                 memorial: giftCard.event_type == "2" ? true : undefined,
+                is_gift: giftCardRequest.request_type === 'Cards Request',
                 count: 1
             }
         }
@@ -1952,6 +1953,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 assigned_to: giftCard.assignee,
                 gifted_to: giftCard.recipient,
                 self: true,
+                is_gift: giftCardRequest.request_type === 'Cards Request',
                 count: 1
             }
         }
@@ -2008,6 +2010,7 @@ const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], event
         event_name: giftCardRequest.event_name,
         group_name: giftCardRequest.group_name,
         company_logo_url: giftCardRequest.logo_url,
+        is_gift: giftCardRequest.request_type === 'Cards Request',
         count: 0
     };
 

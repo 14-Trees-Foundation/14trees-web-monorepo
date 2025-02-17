@@ -212,7 +212,7 @@ export const unMapTrees = async (req: Request, res: Response) => {
   const cards = await GiftCardsRepository.getGiftCards(0, -1, { tree_id: {[Op.in]: treeIds} })
   if (cards.results.length > 0) {
     res.status(status.bad).send({
-      message: "Some trees are part of gift requests",
+      message: "Some trees are part of tree cards requests. Please unreserve these trees from tree cards page.",
     })
     return;
   }
