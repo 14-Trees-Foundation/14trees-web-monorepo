@@ -146,7 +146,11 @@
           </tr>
           {{#if trees.[0].planted_via}}
           <tr>
+            {{#if is_gift}}
+            <th>Gifted By</th>
+            {{else}}
             <th>Planted By</th>
+            {{/if}}
             <td>{{trees.[0].planted_via}}</td>
           </tr>
           {{/if}}

@@ -356,6 +356,7 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
         event_name: giftCardRequest.event_name,
         group_name: giftCardRequest.group_name,
         company_logo_url: giftCardRequest.logo_url,
+        is_gift: giftCardRequest.request_type === 'Cards Request',
         count: 0
     };
 
@@ -492,6 +493,7 @@ export const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[
                 relation: giftCard.relation,
                 relational: giftCard.relation && giftCard.relation !== 'other' ? true : undefined,
                 memorial: giftCard.event_type == "2" ? true : undefined,
+                is_gift: giftCardRequest.request_type === 'Cards Request',
                 count: 1
             }
         }

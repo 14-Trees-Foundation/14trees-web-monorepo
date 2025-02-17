@@ -1524,6 +1524,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 assigned_to: giftCard.assignee,
                 gifted_to: giftCard.recipient,
                 self: true,
+                is_gift: giftCardRequest.request_type === 'Cards Request',
                 count: 1
             }
         }
