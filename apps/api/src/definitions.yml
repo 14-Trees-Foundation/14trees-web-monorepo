@@ -761,6 +761,65 @@ definitions:
       plot:
         type: string
         example: "(14TF)-(पुणे)-(खेड)-(वेताळे)-(गट-नं-651)-(फॉरेस्ट-भाग-2)"
+  PlantType:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      english_name:
+        type: string
+      common_name_in_english:
+        type: string
+      common_name_in_marathi:
+        type: string
+      scientific_name:
+        type: string
+      known_as:
+        type: string
+      plant_type_id:
+        type: string
+      images:
+        type: array
+        items:
+          type: string
+      tags:
+        type: array
+        items:
+          type: string
+      habit:
+        type: string
+      family:
+        type: string
+      category:
+        type: string
+      use:
+        type: string
+        description: "Comma-separated list of uses"
+      names_index:
+        type: string
+      illustration_link:
+        type: string
+        format: uri
+      illustration_s3_path:
+        type: string
+        format: uri
+      status:
+        type: string
+      combined_name:
+        type: string
+      status_message:
+        type: string
+      last_system_updated_at:
+        type: string
+        format: date-time
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
   Tree:
     type: object
     properties:
