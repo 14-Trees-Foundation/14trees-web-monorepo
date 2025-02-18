@@ -198,7 +198,14 @@ class TreeRepository {
     if (!tree) {
       throw new Error("Tree not found")
     }
-    const updatedTree = await tree.update(data);
+
+    const updateFields: any = { ...data }
+    for (const [key, value] of Object.entries(data)) {
+      if (value === "null") {
+        updateFields[key] = null;
+      }
+    }
+    const updatedTree = await tree.update(updateFields);
     return updatedTree;
   };
 
