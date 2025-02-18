@@ -40,7 +40,7 @@ interface TreeAttributes {
     event_type: string | null,
     tree_status?: string;
     status?: string;
-    status_message?: string[];
+    status_message?: string[] | null;
     last_system_updated_at?: Date;
     created_at?: Date;
     updated_at?: Date;
@@ -151,14 +151,14 @@ implements TreeAttributes {
   @Column(DataType.ARRAY(DataType.STRING))
   memory_images!: string[] | null;
 
-  @Column({type: DataType.ENUM('alive', 'dead', 'lost'), defaultValue: 'alive'})
+  @Column({type: DataType.ENUM('healthy', 'dead', 'lost'), defaultValue: 'healthy'})
   tree_status!: string;
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status!: string;
 
   @Column(DataType.ARRAY(DataType.STRING))
-  status_message!: string[];
+  status_message!: string[] | null;
 
   @Column(DataType.DATE)
   last_system_updated_at!: Date;
