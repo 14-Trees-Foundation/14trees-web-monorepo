@@ -369,15 +369,34 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
             if (card.tree_id) treeIds.push(card.tree_id);
         })
 
-        const unMapTreeRequest = {
-            mapped_to_user: null,
-            mapped_to_group: null,
-            mapped_at: null,
-            updated_at: new Date(),
-        }
-        if (treeIds.length > 0) await TreeRepository.updateTrees(unMapTreeRequest, { id: { [Op.in]: treeIds } })
+        if (treeIds.length > 0) {
+            const updateConfig = {
+                mapped_to_user: null,
+                mapped_to_group: null,
+                mapped_at: null,
+                sponsored_by_user: null,
+                sponsored_by_group: null,
+                gifted_to: null,
+                gifted_by: null,
+                gifted_by_name: null,
+                assigned_to: null,
+                assigned_at: null,
+                memory_images: null,
+                description: null,
+                planted_by: null,
+                user_tree_image: null,
+                event_type: null,
+                updated_at: new Date(),
+            }
 
-        await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId })
+            await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
+            await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
+        }
+
+        // delete gift request plots
+        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
+
+        await GiftCardsRepository.deleteGiftRequestUsers({ gift_request_id: giftCardRequestId });
 
         let resp = await GiftCardsRepository.deleteGiftCardRequest(giftCardRequestId);
         console.log(`Deleted Gift card with id: ${req.params.id}`, resp);
