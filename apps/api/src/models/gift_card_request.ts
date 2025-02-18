@@ -44,10 +44,11 @@ interface GiftCardRequestAttributes {
     sponsorship_type: SponsorshipType,
     donation_receipt_number: string | null,
     amount_received: number | null,
+    donation_date: Date | null,
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -185,6 +186,9 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
 
     @Column({ type: DataType.INTEGER })
     amount_received!: number;
+
+    @Column({ type: DataType.DATE })
+    donation_date!: Date | null;
 
     @Column({
         type: DataType.INTEGER,
