@@ -1526,6 +1526,48 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
     }
 }
 
+
+export const updateGiftCardImagesForGiftRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.params;
+    const presentationIdMap: Record<string, GiftCard[]> = {}
+    const pIdToSlideMap: Record<string, string[]> = {}
+
+    try {
+
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: parseInt(giftCardRequestId) }]);
+        if (resp.results.length === 0) {
+            res.status(status.bad).json({
+                message: 'Please provide valid input details!'
+            })
+            return;
+        }
+
+        // send the response - because generating cards may take a while. users can download card later
+        res.status(status.success).send();
+
+        const giftCardRequest = resp.results[0];
+        const giftCards = await GiftCardsRepository.getBookedTrees(giftCardRequest.id, 0, -1);
+        for (const card of giftCards.results) {
+            if (!card.presentation_id || !card.slide_id) continue;
+            if (!presentationIdMap[card.presentation_id]){
+                presentationIdMap[card.presentation_id] = [];
+                pIdToSlideMap[card.presentation_id] = [];
+            }
+
+            presentationIdMap[card.presentation_id].push(card);
+            pIdToSlideMap[card.presentation_id].push(card.slide_id);
+        }
+
+        for (const [presentationId, cards] of Object.entries(presentationIdMap)) {
+            const slideIds = pIdToSlideMap[presentationId];
+            await generateTreeCardImages(giftCardRequest.request_id, presentationId, slideIds, cards)
+        }
+
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::getGiftCardTemplatesForGiftCardRequest", error);
+    }
+}
+
 export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
     const { downloadType } = req.query;
