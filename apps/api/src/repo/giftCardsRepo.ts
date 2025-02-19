@@ -64,6 +64,12 @@ export class GiftCardsRepository {
                     ELSE 0
                 END) AS booked,
                 SUM(CASE 
+                    WHEN gru.mail_sent = true
+                    THEN 1
+                    ELSE 0
+                END) AS mailed_count,
+                COUNT(gru.id) as users_count,
+                SUM(CASE 
                     WHEN t.assigned_to is not null
                     THEN 1
                     ELSE 0
@@ -86,6 +92,7 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees".groups g ON g.id = gcr.group_id
             LEFT JOIN "14trees".gift_cards gc ON gc.gift_card_request_id = gcr.id
             left join "14trees".trees t on t.id = gc.tree_id
+            LEFT JOIN "14trees".gift_request_users gru ON gru.gift_request_id = gcr.id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY gcr.id, u.id, cu.id, g.name
             ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'gcr.id DESC'}
