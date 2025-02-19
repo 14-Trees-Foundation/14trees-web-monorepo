@@ -49,11 +49,11 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
         let paidAmount = 0;
         let validatedAmount = 0;
         const totalAmount =
-            (giftCardRequest.request_type === 'Normal Assignment'
-                ? giftCardRequest.category === 'Foundation'
-                    ? 3000
-                    : 1500
-                : 2000
+            (giftCardRequest.category === 'Public'
+                ? giftCardRequest.request_type === 'Normal Assignment'
+                    ? 1500
+                    : 2000
+                : 3000
             ) * giftCardRequest.no_of_cards;
 
         if (giftCardRequest.payment_id) {
@@ -292,11 +292,11 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         let paidAmount = 0;
         let validatedAmount = 0;
         const totalAmount =
-            (updatedGiftCardRequest.request_type === 'Normal Assignment'
-                ? updatedGiftCardRequest.category === 'Foundation'
-                    ? 3000
-                    : 1500
-                : 2000
+            (giftCardRequest.category === 'Public'
+                ? giftCardRequest.request_type === 'Normal Assignment'
+                    ? 1500
+                    : 2000
+                : 3000
             ) * updatedGiftCardRequest.no_of_cards;
 
         if (giftCardRequest.payment_id) {
@@ -1669,11 +1669,11 @@ export const generateFundRequest = async (req: Request, res: Response) => {
         }
 
         const perTreeCost =
-            giftCardRequest.request_type === 'Normal Assignment'
-                ? giftCardRequest.category === 'Foundation'
-                    ? 3000
-                    : 1500
-                : 2000
+            giftCardRequest.category === 'Public'
+                ? giftCardRequest.request_type === 'Normal Assignment'
+                    ? 1500
+                    : 2000
+                : 3000
 
         const filename = `${group.name} [Req. No: ${giftCardRequest.id}] ${new Date().toDateString()}.pdf`;
         const totalAmount = giftCardRequest.no_of_cards * (perTreeCost);
