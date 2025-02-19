@@ -280,8 +280,8 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         if (files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", giftCardRequest.request_id);
             giftCardRequest.logo_url = location;
-            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_LOGO') : null;
         }
+        if (giftCardRequest.logo_url) giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_LOGO') : null;
 
         if (files.csv_file && files.csv_file.length > 0) {
             const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", giftCardRequest.request_id);
