@@ -75,7 +75,7 @@ export class GiftCardsRepository {
                     ELSE 0
                 END) AS assigned,
                 CASE
-                    WHEN gcr.category = 'Foundation'
+                    WHEN gcr.category = 'Public'
                     THEN (
                         CASE 
                             WHEN gcr.request_type = 'Normal Assignment'
