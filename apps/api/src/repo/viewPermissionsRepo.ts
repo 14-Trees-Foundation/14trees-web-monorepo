@@ -17,9 +17,9 @@ export class ViewPermissionRepository {
     public static async getViewByPath(path: string): Promise<View | null> {
         const query = `
             SELECT v.*, json_agg(json_build_object('id', u.id, 'name', u.name, 'email', u.email)) as users
-            FROM "14trees_2".views v
-            LEFT JOIN "14trees_2".view_permissions vp on vp.view_id = v.id
-            JOIN "14trees_2".users u on vp.user_id = u.id
+            FROM "14trees".views v
+            LEFT JOIN "14trees".view_permissions vp on vp.view_id = v.id
+            JOIN "14trees".users u on vp.user_id = u.id
             WHERE v.path = :path
             GROUP BY v.id
         `
