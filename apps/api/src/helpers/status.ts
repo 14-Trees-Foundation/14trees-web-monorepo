@@ -7,6 +7,7 @@ export const status = {
     error: 500,
     notfound: 404,
     unauthorized: 401,
+    forbidden: 403,
     bad: 400,
     duplicate: 409,
 };

@@ -43,14 +43,8 @@ import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import whatsAppRoutes from "./routes/whatsAppRoutes";
-
-let swaggerFile: any;
-try {
-  const data = readFileSync('src/swagger_output.json', 'utf8');
-  swaggerFile = JSON.parse(data);
-} catch (error) {
-  console.error("Error reading swagger file:", error);
-}
+import viewRoutes from "./routes/viewRoutes";
+import swaggerJSDoc from "swagger-jsdoc";
 
 interface ResponseError extends Error {
   status?: number;
@@ -112,6 +106,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/email-templates", emailTemplateRoutes );
   app.use("/api/payments", paymentRoutes );
   app.use("/api/wa", whatsAppRoutes);
+  app.use("/api/view", viewRoutes);
 
   // swagger doc
   if (swaggerFile) {
