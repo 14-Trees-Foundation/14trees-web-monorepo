@@ -39,6 +39,7 @@ import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
 import { WAChatMessage } from "../models/wa_chat_message";
 import { MailSub } from "../models/mail_sub";
+import { View, ViewPermission } from "../models/permissions";
 
 
 class Database {
@@ -111,44 +112,12 @@ class Database {
         PaymentHistory,
         WAChatMessage,
         MailSub,
+        View,
+        ViewPermission,
       ]
     });
 
     this.sequelize
-      .authenticate()
-      .then(() => {
-        console.log(
-          "✅ PostgreSQL Connection has been established successfully."
-        );
-      })
-      .catch((err) => {
-        console.error("❌ Unable to connect to the PostgreSQL database:", err);
-      });
-  }
-
-
-  private async connectToPostgreSQL() {
-    this.sequelize = new Sequelize({
-      database: this.POSTGRES_DB,
-      username: this.POSTGRES_USER,
-      password: this.POSTGRES_PD,
-      host: this.POSTGRES_HOST,
-      port: this.POSTGRES_PORT,
-      dialect: "postgres",
-      dialectOptions: {
-        ssl: {
-          require: true, // This will help you. But you will see nwe error
-          rejectUnauthorized: false // This line will fix new error
-        }
-      },
-      define: {
-        timestamps: false,
-      },
-      repositoryMode: true,
-      // models:[Pond]
-    });
-
-    await this.sequelize
       .authenticate()
       .then(() => {
         console.log(
