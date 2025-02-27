@@ -760,7 +760,24 @@ class TreeRepository {
     return { offset: offset, total: total, results: tags };
   }
 
-  public static async getMappedGiftTrees(offset: number, limit: number, groupId: number): Promise<PaginatedResponse<Tree>> {
+  public static async getMappedGiftTrees(offset: number, limit: number, groupId: number, filters?: FilterItem[]): Promise<PaginatedResponse<Tree>> {
+
+    let whereCondition = "";
+    let replacements: any = {}
+    if (filters && filters.length > 0) {
+      filters.forEach(filter => {
+        let columnField = "t." + filter.columnField
+        let valuePlaceHolder = filter.columnField
+        if (filter.columnField === "assigned_to_name") {
+          columnField = 'au.name'
+        }
+
+        const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
+        whereCondition = whereCondition + " " + condition + " AND";
+        replacements = { ...replacements, ...replacement }
+      })
+      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+    }
 
     const query = `
       SELECT t.*, gc.id as gift_card_id, gcr.request_id, gcr.planted_by as gifted_by,
@@ -788,7 +805,7 @@ class TreeRepository {
       LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
       LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
       LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
-      WHERE t.mapped_to_group = ${groupId}
+      WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
       ${ limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
 
@@ -796,14 +813,26 @@ class TreeRepository {
       SELECT count(*)
       FROM "14trees".trees t
       JOIN "14trees".gift_cards gc on gc.tree_id = t.id
-      WHERE t.mapped_to_group = ${groupId}`;
+      JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
+      LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".sites s ON s.id = p.site_id
+      LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
+      WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"}`;
 
       const trees: any = await sequelize.query(query, {
-        type: QueryTypes.SELECT
+        type: QueryTypes.SELECT,
+        replacements
       })
   
       const resp = await sequelize.query(countQuery, {
-        type: QueryTypes.SELECT
+        type: QueryTypes.SELECT,
+        replacements
       });
 
       return { offset: offset, total: (resp[0] as any)?.count, results: trees as Tree[] };
