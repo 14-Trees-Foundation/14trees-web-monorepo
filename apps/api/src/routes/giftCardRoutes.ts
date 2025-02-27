@@ -1132,6 +1132,79 @@ routes.post('/card/redeem', giftCards.redeemGiftCard);
 
 /**
  * @swagger
+ * /gift-cards/card/redeem-multi:
+ *   post:
+ *     summary: Redeem gift multiple cards
+ *     description: Redeems gift cards and assigns it to a user.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for redeeming a gift card
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             trees_count:
+ *               type: integer
+ *               example: 1
+ *             sponsor_group:
+ *               type: integer
+ *               example: 1
+ *             event_type:
+ *               type: string
+ *               example: "Birthday"
+ *             event_name:
+ *               type: string
+ *               example: "John's Birthday"
+ *             gifted_on:
+ *               type: string
+ *               format: date-time
+ *               example: "2023-10-01T12:34:56Z"
+ *             gifted_by:
+ *               type: string
+ *               example: "Jane Doe"
+ *             user:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 name:
+ *                   type: string
+ *                   example: "John Doe"
+ *                 email:
+ *                   type: string
+ *                   example: "john.doe@example.com"
+ *             profile_image_url:
+ *               type: string
+ *               example: "https://example.com/profile.jpg"
+ *     responses:
+ *       200:
+ *         description: Gift card redeemed successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Please provide valid input details!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.post('/card/redeem-multi', giftCards.redeemMultipleGiftCard);
+
+
+/**
+ * @swagger
  * /gift-cards/assign:
  *   post:
  *     summary: Assign gift request trees
