@@ -1419,6 +1419,106 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 }
 
 
+const redeemSingleGiftCard = async (giftCard: GiftCard, userId: number, eventType?: string, eventName?: string, giftedBy?: string, giftedOn?: string, profileImageUrl?: string) => {
+    let giftRequestUser: GiftRequestUser | null = null;
+        const giftCardUsers = await GiftCardsRepository.getGiftRequestUsersByQuery({ gift_request_id: giftCard.gift_card_request_id, assignee: userId });
+        if (giftCardUsers.length > 0) {
+            giftRequestUser = giftCardUsers[0];
+        } else {
+            const resp = await GiftCardsRepository.addGiftRequestUsers([{ gift_request_id: giftCard.gift_card_request_id, gifted_trees: 1, assignee: userId, recipient: userId, profile_image_url: profileImageUrl, created_at: new Date(), updated_at: new Date() }], true);
+            if (resp && resp.length === 1) giftRequestUser = resp[0];
+        }
+
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCard.gift_card_request_id }])
+        const giftCardRequest = resp.results[0];
+
+        let memoryImageUrls: string[] | null = null;
+        if (giftCardRequest.album_id) {
+            const albums = await AlbumRepository.getAlbums({ id: giftCardRequest.album_id });
+            if (albums.length === 1) memoryImageUrls = albums[0].images;
+        }
+
+        const treeUpdateRequest = {
+            assigned_at: giftedOn ? giftedOn : giftCardRequest.gifted_on,
+            assigned_to: userId,
+            gifted_to: userId,
+            event_type: eventType?.trim() ? eventType.trim() : giftCardRequest.event_type,
+            description: eventName?.trim() ? eventName.trim() : giftCardRequest.event_name,
+            gifted_by_name: giftedBy?.trim() ? giftedBy.trim() : giftCardRequest.planted_by,
+            updated_at: new Date(),
+            planted_by: null,
+            gifted_by: giftCardRequest.user_id,
+            memory_images: memoryImageUrls,
+            user_tree_image: profileImageUrl,
+        }
+
+        const updatedCount = await TreeRepository.updateTrees(treeUpdateRequest, { id: giftCard.tree_id })
+        if (!updatedCount) {
+            return;
+        }
+
+        giftCard.assigned_to = userId;
+        giftCard.gifted_to = userId;
+        giftCard.gift_request_user_id = giftRequestUser ? giftRequestUser.id : null;
+        giftCard.updated_at = new Date();
+        await giftCard.save();
+}
+
+export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
+    const {
+        trees_count: treesCount,
+        sponsor_group: sponsorGroup,
+        event_type: eventType,
+        event_name: eventName,
+        gifted_on: giftedOn,
+        gifted_by: giftedBy,
+        user,
+        profile_image_url: profileImageUrl
+    } = req.body;
+
+    if (!user?.id && (!user?.name || !user?.email)) {
+        res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        })
+        return;
+    }
+
+    try {
+
+        let userId = user?.id;
+        if (!userId) {
+            const usr = await UserRepository.upsertUser(user);
+            userId = usr.id;
+        }
+
+        const giftRequests = await GiftCardsRepository.getGiftCardRequests(0, -1, [{ columnField: 'group_id', operatorValue: 'equals', value: sponsorGroup }]);
+        if (giftRequests.results.length === 0) {
+            return res.status(status.bad).json({
+                message: 'Tree cards request not found for the group!'
+            })
+        }
+        const requestIds = giftRequests.results.map(request => request.id);
+
+        const giftCards = await GiftCardsRepository.getGiftCards(0, treesCount, { gift_card_request_id: {[Op.in]: requestIds }});
+        if (giftCards.results.length === 0) {
+            res.status(status.bad).json({
+                message: 'Tree cards not found!'
+            })
+            return;
+        }
+
+        for (const card of giftCards.results) {
+            await redeemSingleGiftCard(card, userId, eventType, eventName, giftedBy, giftedOn, profileImageUrl);
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::redeemMultipleGiftCard", error);
+        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+};
+
+
 export const redeemGiftCard = async (req: Request, res: Response) => {
     const {
         gift_card_id: giftCardId,
@@ -1502,7 +1602,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
 
         res.status(status.success).send();
     } catch (error: any) {
-        console.log("[ERROR]", "GiftCardController::updateGiftCard", error);
+        console.log("[ERROR]", "GiftCardController::redeemGiftCard", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
     }
 };
