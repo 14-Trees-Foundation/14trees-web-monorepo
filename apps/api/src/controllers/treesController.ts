@@ -432,3 +432,20 @@ export const getMappedGiftTrees = async (req: Request, res: Response) => {
     res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
   }
 }
+
+export const getMappedGiftTreesAnalytics = async (req: Request, res: Response) => {
+
+  const { group_id } = req.body;
+  if (!group_id) {
+    res.status(status.bad).send({ message: "Invalid request! Corporate id required." });
+    return;
+  }
+
+  try {
+    const treesData = await TreeRepository.getMappedGiftTreesAnalytics(group_id);
+    res.status(status.success).send(treesData);
+  } catch (error: any) {
+    console.log("[ERROR]", "TreesController::getMappedGiftTreesAnalytics", error);
+    res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
+  }
+}

@@ -840,6 +840,24 @@ class TreeRepository {
 
       return { offset: offset, total: (resp[0] as any)?.count, results: trees as Tree[] };
   }
+
+
+  public static async getMappedGiftTreesAnalytics(groupId: number): Promise<any> {
+
+    const query = `
+      SELECT count(t.id) as total_trees, count(t.assigned_to) as gifted_trees
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
+      LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
+      WHERE t.mapped_to_group = :groupId`;
+
+      const data: any[] = await sequelize.query(query, {
+        type: QueryTypes.SELECT,
+        replacements: { groupId }
+      })
+
+      return data[0];
+  }
 }
 
 export default TreeRepository;
