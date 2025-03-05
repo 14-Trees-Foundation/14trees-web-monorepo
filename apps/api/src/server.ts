@@ -55,23 +55,29 @@ const port = process.env.SERVER_PORT ?? 8088;
 function swaggerSpecification() {
 
   const swaggerDefinition = {
+    openapi: "3.0.0", //newly added
     info: {
       title: '14 Trees Backend Service',
       version: '1.0.0', // Version (required)
       description: 'APIs for 14trees Dashboard & Mobile application', // Description (optional)
     },
-    host: `dev-api.14trees.org`,
-    basePath: '/api',
-  };
+    /*host: `dev-api.14trees.org`,
+    basePath: '/api',*/
+    servers: [
+      { url: "http://localhost:8088/api" }  ]
+  
+    };
 
   const options = {
     swaggerDefinition,
-    apis: [`${process.env.SOURCE_PATH}/routes/*.ts`, `${process.env.SOURCE_PATH}/definitions.yml`],
+    apis: [`${__dirname}/routes/*.ts`, `${__dirname}/definitions.yml`], //new added
+    //apis: [`${process.env.SOURCE_PATH}/routes/*.ts`, `${process.env.SOURCE_PATH}/definitions.yml`],
   };
 
-  const swaggerSpec = swaggerJSDoc(options);
+  //const swaggerSpec = swaggerJSDoc(options);
 
-  return swaggerUi.setup(swaggerSpec);
+  //return swaggerUi.setup(swaggerSpec);
+  return swaggerJSDoc(options);
 }
 
 const initExpressApp = (app: express.Application) => {
@@ -130,7 +136,8 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/wa", whatsAppRoutes);
   app.use("/api/view", viewRoutes);
 
-  app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
+  //app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
+  app.use('/api/doc', swaggerUi.serve, swaggerUi.setup(swaggerSpecification()));
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
