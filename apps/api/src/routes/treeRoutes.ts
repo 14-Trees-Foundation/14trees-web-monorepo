@@ -4,6 +4,11 @@ import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
+// Fix GET Route added
+routes.get("/", (req, res) => {
+    res.json({ message: "Trees API is working!" });
+  });
+  
 // @deprecated
 routes.post('/addtree', uploadFiles.array('files', 1), trees.addTree);
 

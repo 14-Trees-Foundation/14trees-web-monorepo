@@ -40,7 +40,6 @@ const routes = Router();
  */
 routes.get("/tags/get", plantTypes.getPlantTypeTags);
 
-
 /**
  * @swagger
  * /getPlantTypes:
@@ -103,7 +102,6 @@ routes.get("/tags/get", plantTypes.getPlantTypeTags);
  */
 routes.post("/get", plantTypes.getPlantTypes);
 
-
 /**
  * @swagger
  * /getPlantTypesForPlot/{plot_id}:
@@ -144,7 +142,6 @@ routes.post("/get", plantTypes.getPlantTypes);
  *               example: "Something went wrong. Please try again after some time"
  */
 routes.get('/:plot_id', plantTypes.getPlantTypesForPlot);
-
 
 /**
  * @swagger
@@ -265,7 +262,6 @@ routes.get('/:plot_id', plantTypes.getPlantTypesForPlot);
  *               example: "Something went wrong. Please try again later."
  */
 routes.post("/", uploadFiles.array("files", 4), plantTypes.addPlantType);
-
 
 /**
  * @swagger
@@ -393,7 +389,6 @@ routes.post("/", uploadFiles.array("files", 4), plantTypes.addPlantType);
  */
 routes.put('/:id', uploadFiles.array('files', 4), plantTypes.updatePlantType);
 
-
 /**
  * @swagger
  * /plant-types/{id}:
@@ -436,7 +431,6 @@ routes.put('/:id', uploadFiles.array('files', 4), plantTypes.updatePlantType);
  *               example: "Something went wrong. Please try again later."
  */
 routes.delete('/:id', plantTypes.deletePlantType);
-
 
 /**
  * @swagger
@@ -535,7 +529,6 @@ routes.delete('/:id', plantTypes.deletePlantType);
  */
 routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
 
-
 /**
  * @swagger
  * /plant-types/plot-states:
@@ -577,7 +570,8 @@ routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
  *         description: Plant type state for plots fetched successfully
  *         schema:
  *           type: object
- *           offset:
+ *           properties:
+ *             offset:
  *               type: integer
  *               example: 0
  *             total:
@@ -644,7 +638,6 @@ routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
  */
 routes.post('/plot-states', plantTypes.getPlantTypeStateForPlots);
 
-
 /**
  * @swagger
  * /plant-type/sync:
@@ -666,7 +659,6 @@ routes.post('/plot-states', plantTypes.getPlantTypeStateForPlots);
  *               example: "Something went wrong!"
  */
 routes.post('/sync', plantTypes.syncPlantTypeIllustrationsDataFromNotion);
-
 
 /**
  * @swagger
@@ -724,7 +716,6 @@ routes.post('/sync', plantTypes.syncPlantTypeIllustrationsDataFromNotion);
  */
 routes.post('/templates/', plantTypes.addPlantTypeTemplate);
 
-
 /**
  * @swagger
  * /plant-types/illustrations:
@@ -746,7 +737,6 @@ routes.post('/templates/', plantTypes.addPlantTypeTemplate);
  *               example: "Something went wrong. Please try again after some time!"
  */
 routes.post('/illustrations/', plantTypes.uploadIllustrationsToS3);
-
 
 /**
  * @swagger

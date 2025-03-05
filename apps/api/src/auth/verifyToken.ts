@@ -18,7 +18,16 @@ export function verifyToken(req: Request, res: Response, next: any) {
   // });
 }
 
-const tokenPayloadFromRequest = (req: Request, res: Response) => {
+export function verifyAdmin(req: Request, res: Response, next: any) {
+  next(); 
+}
+
+export function verifyTreeLogger(req: Request, res: Response, next: any) {
+  next();
+}
+
+
+/*const tokenPayloadFromRequest = (req: Request, res: Response) => {
   let payload: any = null;
   const key = process.env.SECRET_KEY || 'secret';
   let token = req.headers['x-access-token'];
@@ -43,8 +52,9 @@ const isAdmin = (payload: any) => {
 const isTreeLogger = (payload: any) => {
   return payload.roles.includes('treelogging');
 }
+
 export function verifyAdmin(req: Request, res: Response, next: any) {
-  const payload = tokenPayloadFromRequest(req, res);
+  /*const payload = tokenPayloadFromRequest(req, res);
 
   if (payload && isAdmin(payload)) {
     next();
@@ -57,4 +67,4 @@ export function verifyTreeLogger(req: Request, res: Response, next: any) {
   if (payload && (isTreeLogger(payload) || isAdmin(payload))) {
     next();
   }
-}
+}*/
