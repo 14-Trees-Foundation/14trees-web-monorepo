@@ -452,6 +452,26 @@ export const updateGiftCardRequestAlbum = async (req: Request, res: Response) =>
     }
 };
 
+
+export const getGiftRequestTreeAnalytics = async (req: Request, res: Response) => {
+
+    try {
+        const resp = await GiftCardsRepository.getGiftRequestAnalytics();
+        res.status(status.success).send({
+            personal_requests: parseInt(resp.personal_requests),
+            corporate_requests: parseInt(resp.corporate_requests),
+            corporate_trees: parseInt(resp.corporate_trees),
+            personal_trees: parseInt(resp.personal_trees),
+        })
+    } catch(error: any) {
+        console.log("[ERROR]", "GiftCardController::getGiftRequestTreeAnalytics", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again later.'
+        });
+    }
+}
+
 // TODO: Not required. Remove this.
 const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
     // delete plot selection
