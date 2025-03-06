@@ -196,6 +196,21 @@ export class GiftCardsRepository {
         return resp[0];
     }
 
+    // Adding new function for Distribution Chart
+    static async getGiftRequestDistribution(): Promise<any> {
+        const query = `
+    SELECT 
+        COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
+        COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
+        COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
+    FROM "14trees_2".gift_card_requests;
+`;
+        
+       const result = await sequelize.query(query, { type: QueryTypes.SELECT });
+       console.log("Query Result:", JSON.stringify(result, null, 2));  // Log the result clearly eli
+
+        return result;
+    }
     static async upsertGiftCards(giftCardsRequestId: number, users: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
         if (!giftRequest) {

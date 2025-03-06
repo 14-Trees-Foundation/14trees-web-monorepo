@@ -472,6 +472,35 @@ export const getGiftRequestTreeAnalytics = async (req: Request, res: Response) =
     }
 }
 
+// Adding new function for Distribution Chart
+export const getGiftRequestDistribution = async (req: Request, res: Response) => {
+    console.log("GET /api/gift-cards/requests/distribution - Request received");
+
+    try {
+        const respArray = await GiftCardsRepository.getGiftRequestDistribution();
+        console.log("Database Response:", respArray); 
+
+        const resp = respArray[0]; // Extract the first element
+
+        const responseData = {
+            birthday_requests: parseInt(resp?.birthday_requests, 10) || 0,
+            memorial_requests: parseInt(resp?.memorial_requests, 10) || 0,
+            general_requests: parseInt(resp?.general_requests, 10) || 0,
+        };
+
+        console.log("API Response to Client:", responseData); 
+
+        res.status(status.success).send(responseData);
+
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::getGiftRequestDistribution", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again later.',
+        });
+    }
+};
+
 // TODO: Not required. Remove this.
 const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
     // delete plot selection
