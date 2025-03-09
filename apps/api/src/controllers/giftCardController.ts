@@ -472,35 +472,58 @@ export const getGiftRequestTreeAnalytics = async (req: Request, res: Response) =
     }
 }
 
-// Adding new function for Distribution Chart
 export const getGiftRequestDistribution = async (req: Request, res: Response) => {
-    console.log("GET /api/gift-cards/requests/distribution - Request received");
+    console.log("🚀 [Controller] GET /api/gift-cards/requests/distribution - Request received");
+    console.log("📌 [Controller] Full Request Query Params:", req.query);
 
     try {
-        const respArray = await GiftCardsRepository.getGiftRequestDistribution();
-        console.log("Database Response:", respArray); 
+        const start_date = req.query.start_date as string | undefined;
+        const end_date = req.query.end_date as string | undefined;
 
-        const resp = respArray[0]; // Extract the first element
+        console.log("[Controller] Filtering - Start:", start_date, "End:", end_date);
 
-        const responseData = {
-            birthday_requests: parseInt(resp?.birthday_requests, 10) || 0,
-            memorial_requests: parseInt(resp?.memorial_requests, 10) || 0,
-            general_requests: parseInt(resp?.general_requests, 10) || 0,
-        };
+        const respArray = await GiftCardsRepository.getGiftRequestDistribution(start_date, end_date);
+        console.log("[Controller] Database Query Response:", JSON.stringify(respArray, null, 2));
 
-        console.log("API Response to Client:", responseData); 
+        const allMonths = generateMonthRange(start_date, end_date);
+        const responseData = allMonths.map((month, index) => {
+            const matchingRow = respArray.find((row: any) => row.request_month === month);
+            return {
+                month_start: month,
+                birthday_requests: matchingRow ? parseInt(matchingRow.birthday_requests, 10) || 0 : 0,
+                memorial_requests: matchingRow ? parseInt(matchingRow.memorial_requests, 10) || 0 : 0,
+                general_requests: matchingRow ? parseInt(matchingRow.general_requests, 10) || 0 : 0,
+                start_date: index === 0 ? start_date : null, // Attach start_date only to first entry
+                end_date: index === allMonths.length - 1 ? end_date : null // Attach end_date only to last entry
+            };
+        });
 
-        res.status(status.success).send(responseData);
+        console.log("[Controller] API Response to Client:", JSON.stringify(responseData, null, 2));
+        res.status(200).json(responseData);
 
     } catch (error: any) {
-        console.log("[ERROR]", "GiftCardController::getGiftRequestDistribution", error);
-        res.status(status.error).json({
-            status: status.error,
-            message: 'Something went wrong. Please try again later.',
-        });
-    }
+        console.error("[Controller] ERROR:", error);
+        res.status(500).json({
+            status: "error",
+            message: "Something went wrong. Please try again later.",
+        });
+    }
 };
 
+function generateMonthRange(startDate: string | undefined, endDate: string | undefined): string[] {
+    const start = new Date(startDate || new Date().toISOString().slice(0, 7));
+    const end = new Date(endDate || new Date().toISOString().slice(0, 7));
+
+    let months: string[] = [];
+    let current = new Date(start);
+    while (current <= end) {
+        months.push(current.toISOString().slice(0, 7)); // YYYY-MM format
+        current.setMonth(current.getMonth() + 1);
+    }
+    return months;
+}
+
+// not mine
 // TODO: Not required. Remove this.
 const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
     // delete plot selection
