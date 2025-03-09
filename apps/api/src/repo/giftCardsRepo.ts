@@ -196,21 +196,63 @@ export class GiftCardsRepository {
         return resp[0];
     }
 
-    // Adding new function for Distribution Chart
-    static async getGiftRequestDistribution(): Promise<any> {
-        const query = `
-    SELECT 
-        COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
-        COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
-        COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
-    FROM "14trees_2".gift_card_requests;
-`;
-        
-       const result = await sequelize.query(query, { type: QueryTypes.SELECT });
-       console.log("Query Result:", JSON.stringify(result, null, 2));  // Log the result clearly eli
+ //Adding new function for Distribution Chart
+ static async getGiftRequestDistribution(start_date?: string, end_date?: string, specific_date?: string): Promise<any> {
+    let query;
+    let replacements: any[] = [];
 
-        return result;
+    console.log("[Repository] Received Params ->", { start_date, end_date, specific_date, type: typeof specific_date });
+
+    if (specific_date) {
+        // Trim any unexpected newline characters
+        const trimmedDate = specific_date.trim();
+        console.log("[Repository] Trimmed Specific Date:", `"${trimmedDate}"`);  // Debug newline issues
+
+        // Ensure proper date formatting with UTC handling
+        const formattedDate = new Date(trimmedDate + "T00:00:00Z").toISOString().split("T")[0]; 
+        replacements = [formattedDate];
+
+        console.log("[Repository] Formatted Date Sent to Query:", formattedDate);
+
+        query = `
+            SELECT 
+                TO_CHAR(created_at, 'YYYY-MM-DD') AS request_date,
+                COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
+                COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
+                COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
+            FROM "14trees_2".gift_card_requests
+            WHERE DATE(created_at) = $1
+            GROUP BY request_date
+            ORDER BY request_date;
+        `;
+    } else {
+        query = `
+            SELECT 
+                TO_CHAR(created_at, 'YYYY-MM') AS request_month,
+                COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
+                COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
+                COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
+            FROM "14trees_2".gift_card_requests
+            WHERE created_at >= $1 AND created_at <= $2
+            GROUP BY request_month
+            ORDER BY request_month;
+        `;
+
+        const start = start_date || new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0];
+        const end = end_date || new Date().toISOString().split('T')[0];
+        replacements = [start, end];
     }
+
+    console.log("[Repository] Executing Query:", query);
+    console.log("[Repository] Query Replacements:", replacements);
+
+    const result = await sequelize.query(query, { bind: replacements, type: QueryTypes.SELECT });
+
+    console.log("[Repository] Query Result:", JSON.stringify(result, null, 2));
+
+    return result;
+}
+
     static async upsertGiftCards(giftCardsRequestId: number, users: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
         if (!giftRequest) {
