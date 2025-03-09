@@ -469,68 +469,39 @@ routes.get('/requests/analytics', giftCards.getGiftRequestTreeAnalytics)
 
 // NEW 
 /**
-/**
  * @swagger
  * /gift-cards/requests/distribution:
  *   get:
- *     summary: Get gift request distribution by type
- *     description: Fetches the number of gift requests aggregated by month by default. If `start_date` and `end_date` are provided in `YYYY-MM-DD` format, data is aggregated by day.
+ *     summary: Get distribution of gift requests by type
+ *     description: Fetches the number of gift requests for different event types (Birthday, Memorial, General).
  *     tags:
  *       - Gift Cards
- *     parameters:
- *       - in: query
- *         name: start_date
- *         schema:
- *           type: string
- *           format: date
- *           example: "2024-02-01"
- *         required: false
- *         description: Start date for filtering gift requests (YYYY-MM-DD)
- *       - in: query
- *         name: end_date
- *         schema:
- *           type: string
- *           format: date
- *           example: "2024-02-29"
- *         required: false
- *         description: End date for filtering gift requests (YYYY-MM-DD)
  *     responses:
  *       200:
  *         description: Gift request distribution fetched successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   month_start:
- *                     type: string
- *                     format: date
- *                     example: "2024-02-01"
- *                     description: Start of the month for aggregated data
- *                   birthday_requests:
- *                     type: integer
- *                     example: 10
- *                   memorial_requests:
- *                     type: integer
- *                     example: 5
- *                   general_requests:
- *                     type: integer
- *                     example: 20
+ *         schema:
+ *           type: object
+ *           properties:
+ *             birthday_requests:
+ *               type: integer
+ *               example: 10
+ *             memorial_requests:
+ *               type: integer
+ *               example: 5
+ *             general_requests:
+ *               type: integer
+ *               example: 20
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "error"
- *                 message:
- *                   type: string
- *                   example: "Something went wrong. Please try again later."
+ *         schema:
+ *           type: object
+*           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
  */
 routes.get('/requests/distribution', giftCards.getGiftRequestDistribution);
 
