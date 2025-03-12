@@ -113,7 +113,7 @@ async function watchInbox() {
   );
 }
 
-watchInbox()
+// watchInbox()
 
 const encodeMessage = (message: string): string => {
   return Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
