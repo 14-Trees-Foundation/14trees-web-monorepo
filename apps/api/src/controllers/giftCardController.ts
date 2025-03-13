@@ -1103,7 +1103,15 @@ export const unBookTrees = async (req: Request, res: Response) => {
         }
 
         // delete gift request plots
-        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
+        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId });
+
+        // update gift request status to pending plot selection
+        await GiftCardsRepository.updateGiftCardRequests({
+            status: GiftCardRequestStatus.pendingPlotSelection,
+            updated_at: new Date(),
+        }, {
+            id: giftCardRequestId,
+        })
 
         res.status(status.success).send();
     } catch (error: any) {
@@ -1201,10 +1209,14 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
 
         if (giftRequest.no_of_cards == Number(giftRequest.assigned)) {
             giftRequest.status = GiftCardRequestStatus.completed;
-            giftRequest.updated_at = new Date();
-            await GiftCardsRepository.updateGiftCardRequest(giftRequest);
+        } else if (giftRequest.no_of_cards == Number(giftRequest.booked)) {
+            giftRequest.status = GiftCardRequestStatus.pendingAssignment;
+        } else {
+            giftRequest.status = GiftCardRequestStatus.pendingPlotSelection;
         }
-
+        
+        giftRequest.updated_at = new Date();
+        await GiftCardsRepository.updateGiftCardRequest(giftRequest);
         res.status(status.success).json();
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::assignGiftRequestTrees", error);
