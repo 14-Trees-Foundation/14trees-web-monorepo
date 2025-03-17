@@ -5,6 +5,7 @@ import { load } from "cheerio";
 import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
 import { checkLatestIncomingMail } from "../services/genai/email_agent";
+import { processDonationRequestSheet } from "../scripts/donationRequests";
 
 const getObjectKey = (type: string, subKey: string) => {
     switch (type) {
@@ -127,4 +128,10 @@ export const test = async (req: Request, res: Response) => {
     const resp = await checkLatestIncomingMail();
 
     res.status(status.success).send();
+}
+
+export const handleDonationSheetRequests = async (req: Request, res: Response) => {
+    res.status(status.created).send("Processing your request!");
+
+    await processDonationRequestSheet();
 }
