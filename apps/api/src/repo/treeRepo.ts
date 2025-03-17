@@ -175,29 +175,44 @@ class TreeRepository {
   };
 
   public static async updateTree(data: TreeAttributes, files?: Express.Multer.File[]): Promise<Tree> {
+    console.log("Received Data in Repository:", data);
+    console.log("Received Files in Repository:", files);
 
     // Upload images to S3
     if (files && files.length !== 0) {
+      console.log("Uploading file:", files[0].filename);
       const location = await UploadFileToS3(files[0].filename, "trees");
+      console.log("S3 Upload Location:", location);
       if (location !== "") {
         data.image = location;
       }
     }
 
+    // Ensure array fields are properly formatted
+    data.tags = Array.isArray(data.tags) ? data.tags : [];
+    data.memory_images = Array.isArray(data.memory_images) ? data.memory_images : [];
+    data.status_message = Array.isArray(data.status_message) ? data.status_message : [];
+
     // user validation/invalidation update logic
     if (data.status === "system_invalidated" || data.status === "user_validated") {
+      console.log("Updating last_system_updated_at timestamp")
       data.last_system_updated_at = new Date();
     } else {
+      console.log("Clearing status-related fields");
       data.status = undefined;
       data.status_message = undefined;
       data.last_system_updated_at = undefined;
     }
     data.updated_at = new Date();
-
+    
+    console.log("Fetching Tree by ID:", data.id);
     const tree = await Tree.findByPk(data.id);
     if (!tree) {
       throw new Error("Tree not found")
     }
+
+    console.log("Original Tree Data:", tree);
+    console.log("Updated Fields Data:", data);
 
     const updateFields: any = { ...data }
     for (const [key, value] of Object.entries(data)) {
@@ -205,8 +220,16 @@ class TreeRepository {
         updateFields[key] = null;
       }
     }
-    const updatedTree = await tree.update(updateFields);
-    return updatedTree;
+
+    console.log("Final Update Fields:", updateFields);
+    try {
+      const updatedTree = await tree.update(updateFields);
+      console.log("Updated Tree Successfully:", updatedTree);
+      return updatedTree;
+    } catch (updateError) {
+      console.error("Error during tree update:", updateError);
+      throw updateError;
+    }
   };
 
   public static async updateTrees(fields: any, whereClause: WhereOptions): Promise<number> {

@@ -65,12 +65,30 @@ export const getTrees = async (req: Request, res: Response) => {
   }
 };
 
-export const updateTree = async (req: Request, res: Response) => {
+export const updateTree = async (req: Request, res: Response) => { //this is the one
   try {
+    console.log("Incoming Request Body:", req.body); // Log request body
+    console.log("Incoming Files:", req.files); // Log uploaded files
+    console.log("Params:", req.params); // Log request params
+    console.log("Query:", req.query); // Log request query
+
+    // Ensure ID is included in the request body
+    if (!req.body.id) {
+      req.body.id = req.params.id;
+    }
+
+    console.log("Updated Request Body with ID:", req.body);
+
+    if (!req.body.id) {
+      throw new Error("Tree ID is missing in the request body.");
+    }
+    
     const tree = await TreeRepository.updateTree(req.body, isArray(req.files) ? req.files : [])
+    console.log("Tree Updated Successfully:", tree); // Log successful update
     res.status(status.success).json(tree);
   } catch (error: any) {
     console.error("Tree update error:", error);
+    console.error("Tree update error:", error); // Log the error
     res.status(status.error).send({ error: error.message });
   }
 };
