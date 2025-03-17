@@ -11,6 +11,7 @@ export class PlotRepository {
         if (!plot) {
             throw new Error("Plot doesn't exist");
         }
+        plotData.label = plotData.label?.trim() || null,
         plotData.updated_at = new Date();
         const updatedPlot = await plot.update(plotData);
 
@@ -35,7 +36,7 @@ export class PlotRepository {
             gat: plotData.gat || null,
             category: plotData.category || null,
             site_id: siteId || null,
-            label: plotData.label || null,
+            label: plotData.label?.trim() || null,
             accessibility_status: plotData.accessibility_status || null,
             pit_count: plotData.pit_count || null,
             created_at: new Date(),
