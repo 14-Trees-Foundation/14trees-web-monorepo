@@ -67,7 +67,7 @@ export const getPlots = async (req: Request, res: Response) => {
 
     try {
         let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
-
+        console.log("Raw Query Result:", result); // Add this line
         result.results = result.results.map((item: any) => {
             return {
                 ...item,
@@ -84,6 +84,7 @@ export const getPlots = async (req: Request, res: Response) => {
                 tree_count: parseInt(item.tree_count),
                 shrub_count: parseInt(item.shrub_count),
                 herb_count: parseInt(item.herb_count),
+                climber_count: parseInt(item.climber_count), // Added this line
                 booked_trees: parseInt(item.booked_trees),
                 assigned_trees: parseInt(item.assigned_trees),
                 unbooked_assigned_trees: parseInt(item.unbooked_assigned_trees),

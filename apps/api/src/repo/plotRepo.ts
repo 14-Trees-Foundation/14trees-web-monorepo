@@ -160,6 +160,11 @@ export class PlotRepository {
                 ELSE 0
             END) AS herb_count,
             SUM(CASE 
+            WHEN pt.habit = 'Climber'
+            THEN 1
+            ELSE 0
+            END) AS climber_count,
+            SUM(CASE 
                 WHEN t.assigned_to IS NOT NULL 
                     AND pt.habit = 'Tree'
                 THEN 1 
