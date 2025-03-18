@@ -180,8 +180,6 @@ async function sendEmailMessage(customerPhoneNumber: string, requestId: number) 
   } catch (error) {
     logResponseError(error);
   }
-
-  await sendEditRecipientsFlow(customerPhoneNumber, requestId);
 }
 
 async function sendEmailsToGiftRecipients(customerPhoneNumber: string, requestId: number) {
@@ -281,7 +279,7 @@ async function sendEditRecipientsFlow(customerPhoneNumber: string, requestId: nu
 
   const flowMessage = { ...interactiveGiftTreesFlow };
   flowMessage.to = customerPhoneNumber;
-  flowMessage.interactive.body.text = "You can edit recipient emails from below form!";
+  flowMessage.interactive.body.text = "Edit recipient names, emails or phone number.";
   flowMessage.interactive.action.parameters.flow_cta = "Edit Recipients";
   flowMessage.interactive.action.parameters.flow_id = flowId;
   flowMessage.interactive.action.parameters.flow_token = 'edit_recipients_' + requestId;
