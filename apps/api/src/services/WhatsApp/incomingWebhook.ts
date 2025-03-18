@@ -141,9 +141,9 @@ async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: 
   for (let i = 1; i <= numberOfRecipients; i++) {
     const id = parseInt(formData[`id_${i}`]);
     const recipient = parseInt(formData[`recipient_${i}`]);
-    const name = formData[`recipient_name_${i}`].trim();
-    const email = formData[`recipient_email_${i}`]?.trim() ? formData[`recipient_email_${i}`].trim() : name.split(' ').join('.') +"@14trees" ;
-    const phone = formData[`recipient_phone_${i}`]?.trim() ? formData[`recipient_phone_${i}`].trim() : null;
+    const name = parseInt(formData[`recipient_name_${i}`]);
+    const email = parseInt(formData[`recipient_email_${i}`]);
+    const phone = parseInt(formData[`recipient_phone_${i}`]);
 
     const user = await UserRepository.upsertUser({ name, email, phone });
     if (user.id !== recipient) {
