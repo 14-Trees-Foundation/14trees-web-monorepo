@@ -6,7 +6,7 @@ import { logResponseError } from "../../WhatsApp/logResponseError";
 
 // Define Main Request Schema
 const SendImagesToUserRequestSchema = z.object({
-    image_urls: z.array(z.string()).describe("Array of image urls"),
+    image_urls: z.array(z.string()).describe("Array of image links"),
     image_caption: z.string().optional().describe("Caption text to show below image. Only applicable when there is single image url")
 });
 

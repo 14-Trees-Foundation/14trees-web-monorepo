@@ -2,9 +2,6 @@ import { z } from "zod";
 import { DynamicStructuredTool, Tool } from "langchain/tools";
 import { defaultGiftMessages, processGiftRequest } from "../../../controllers/helper/giftRequestHelper";
 import RazorpayService from "../../razorpay/razorpay";
-import { PaymentCreationAttributes } from "../../../models/payment";
-import { PaymentRepository } from "../../../repo/paymentsRepo";
-import { GiftCardsRepository } from "../../../repo/giftCardsRepo";
 
 // Define Enum for Occasion Type
 enum OccasionType {
@@ -90,25 +87,13 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
             const razorpayService = new RazorpayService();
             const qrCode = await razorpayService.generatePaymentQRCode(trees * 1 * 100);
 
-            const paymentRequest: PaymentCreationAttributes = {
-                pan_number: null,
-                consent: false,
-                order_id: null,
-                qr_id: qrCode.id,
-                amount: trees * 1 * 100,
-                created_at: new Date(),
-                updated_at: new Date()
-            }
-            const resp = await PaymentRepository.createPayment(paymentRequest);
-            await GiftCardsRepository.updateGiftCardRequests({ payment_id: resp.id }, { id: requestId });
-
             return JSON.stringify({
                 status: 'Success',
                 output: `Successfully created gift request. Request Id is ${requestId}.`,
                 next_step: {
-                    note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
                     payment_request: {
-                        rq_code_image_url: qrCode.image_url,
+                        note: 'This should be sent as seperate media image to user and not as hyper link!',
+                        rq_code_image_url: qrCode,
                         image_caption: `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${trees * 1}/-*.`
                     }
                 }

@@ -1,7 +1,7 @@
 import { giftSuccessMessage, imageMessage, interactiveGiftTreesFlow, interactiveReplyButton, textMessage } from './messages';
 import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
-import { autoAssignTrees, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
+import { autoAssignTrees, processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
 import RazorpayService from '../razorpay/razorpay';
 import { sendTemplateMail } from '../gmail/gmail';
 import { GiftCardsRepository } from '../../repo/giftCardsRepo';
@@ -10,8 +10,6 @@ import { interactWithGiftingAgent, waInteractionsWithGiftingAgent } from '../gen
 import { WAChatHistoryRepository } from '../../repo/waChatHistoryRepo';
 import { Op } from 'sequelize';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
-import { PaymentCreationAttributes } from '../../models/payment';
-import { PaymentRepository } from '../../repo/paymentsRepo';
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -115,8 +113,6 @@ async function processIncomingWAMessage(message: any) {
 async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any, sendActionButtons: boolean) {
   if (formData.flow_token.startsWith("edit_recipients")) {
     await handleRecipientEditSubmit(customerPhoneNumber, formData, sendActionButtons);
-  } else if (formData.flow_token.startsWith("edit_gift_msg")) {
-    await handleGiftMsgsEditSubmit(customerPhoneNumber, formData);
   } else {
     await handleGiftFormSubmit(customerPhoneNumber, formData);
   }
@@ -241,41 +237,6 @@ async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: 
   }
 }
 
-async function handleGiftMsgsEditSubmit(customerPhoneNumber: string, formData: any) {
-  const requestId = formData.request_id
-  const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }])
-  const giftRequest = giftRequestResp.results[0]
-
-  const updateRequest = { ...giftRequest }
-  updateRequest.event_name = formData.occasion_name;
-  updateRequest.event_type = formData.occasion_type;
-  updateRequest.planted_by = formData.gifted_by;
-  updateRequest.gifted_on = formData.gifted_on;
-  updateRequest.primary_message = formData.primary_message;
-  updateRequest.secondary_message = formData.secondary_message;
-  await GiftCardsRepository.updateGiftCardRequest(updateRequest)
-
-
-  const message = textMessage;
-  message.to = customerPhoneNumber;
-  message.text.body =
-    `Occasion details and tree card messaging have been updated for request number ${requestId}.`
-
-  try {
-    await sendWhatsAppMessage(message);
-  } catch (error) {
-    logResponseError(error);
-  }
-
-  const giftRequestResp2 = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }])
-  const giftRequest2 = giftRequestResp2.results[0]
-
-  const cardsResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
-  const recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
-  await autoAssignTrees(giftRequest2, recipients, cardsResp.results, null);
-  await generateGiftCardsForGiftRequest(giftRequest2);
-}
-
 async function sendGiftCardsToCustomer(customerPhoneNumber: string, imageUrls: string[]) {
 
   if (imageUrls.length > 0) {
@@ -393,22 +354,9 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
 
   const razorpayService = new RazorpayService();
   const qrCode = await razorpayService.generatePaymentQRCode(trees * 1 * 100);
-
-  const paymentRequest: PaymentCreationAttributes = {
-      pan_number: null,
-      consent: false,
-      order_id: null,
-      qr_id: qrCode.id,
-      amount: trees * 1 * 100,
-      created_at: new Date(),
-      updated_at: new Date()
-  }
-  const resp = await PaymentRepository.createPayment(paymentRequest);
-  await GiftCardsRepository.updateGiftCardRequests({ payment_id: resp.id }, { id: requestId });
-
   const paymentMessage = { ...imageMessage };
   paymentMessage.to = customerPhoneNumber;
-  paymentMessage.image.link = qrCode.image_url;
+  paymentMessage.image.link = qrCode;
   paymentMessage.image.caption =
     `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${trees * 1}/-*.`;
 
@@ -422,7 +370,7 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
 }
 
 export async function sendEditRecipientsFlow(customerPhoneNumber: string, requestId: number) {
-  const flowId = "1162090608824204";
+  const flowId = "615014964807600";
 
   const recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
   let data: any = { recipients_count: recipients.length }
@@ -444,34 +392,6 @@ export async function sendEditRecipientsFlow(customerPhoneNumber: string, reques
   flowMessage.interactive.action.parameters.flow_id = flowId;
   flowMessage.interactive.action.parameters.flow_token = 'edit_recipients_' + requestId;
   flowMessage.interactive.action.parameters.flow_action_payload = { screen: 'RECIPIENTS_A', data: data }
-
-  try {
-    await sendWhatsAppMessage(flowMessage);
-  } catch (error) {
-    logResponseError(error);
-  }
-
-}
-
-export async function sendEditDashboardMsgFlow(customerPhoneNumber: string, requestId: number) {
-  const flowId = "1143119087401197";
-
-  const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: 406 }])
-  const data: any = {
-    request_id: giftRequestResp.results[0].id,
-    gifted_on: giftRequestResp.results[0].gifted_on,
-    gifted_by: giftRequestResp.results[0].planted_by,
-    occasion_name: giftRequestResp.results[0].event_name || '',
-    occasion_type: giftRequestResp.results[0].event_type,
-  }
-
-  const flowMessage = { ...interactiveGiftTreesFlow };
-  flowMessage.to = customerPhoneNumber;
-  flowMessage.interactive.body.text = "You can edit gift request occasion details and card messaging using below form!";
-  flowMessage.interactive.action.parameters.flow_cta = "Edit Details";
-  flowMessage.interactive.action.parameters.flow_id = flowId;
-  flowMessage.interactive.action.parameters.flow_token = 'edit_gift_msg_' + requestId;
-  flowMessage.interactive.action.parameters.flow_action_payload = { screen: 'DASHBOARD', data: data }
 
   try {
     await sendWhatsAppMessage(flowMessage);
