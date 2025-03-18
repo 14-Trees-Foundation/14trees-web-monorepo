@@ -236,7 +236,7 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   paymentMessage.to = customerPhoneNumber;
   paymentMessage.image.link = qrCode;
   paymentMessage.image.caption =
-    `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 2000/-*, your total cost is *INR ${trees * 2000}/-*.`;
+    `You have requested *${trees} trees* for gifting. Considering *per tree cost of INR 2000/-*, your total cost is *INR ${trees * 2000}/-*.`;
 
   try {
     await sendWhatsAppMessage(paymentMessage);
