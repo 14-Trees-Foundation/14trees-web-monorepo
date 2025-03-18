@@ -293,12 +293,12 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   })
 
   const razorpayService = new RazorpayService();
-  const qrCode = await razorpayService.generatePaymentQRCode(trees * 1 * 100);
+  const qrCode = await razorpayService.generatePaymentQRCode(trees * 2000 * 100);
   const paymentMessage = { ...imageMessage };
   paymentMessage.to = customerPhoneNumber;
   paymentMessage.image.link = qrCode;
   paymentMessage.image.caption =
-    `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${trees * 1}/-*.`;
+    `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 2000/-*, your total cost is *INR ${trees * 2000}/-*.`;
 
   try {
     await sendWhatsAppMessage(paymentMessage);
