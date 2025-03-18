@@ -223,8 +223,6 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
     eventType: messageData.ocassion_type,
     giftedBy: messageData.gifted_by,
     giftedOn: messageData.gifted_on,
-    primaryMessage: messageData.primary_message,
-    secondaryMessage: messageData.secondary_message,
     recipients: recipients
   }, (images: string[], requestId: number) => {
     postServeActions(customerPhoneNumber, images, requestId);

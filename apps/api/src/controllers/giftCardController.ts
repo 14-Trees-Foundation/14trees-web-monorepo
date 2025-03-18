@@ -6,7 +6,7 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
 import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
-import { updateSlide } from "./helper/slides";
+import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
 import archiver from 'archiver';
 import axios from 'axios'
@@ -25,8 +25,9 @@ import { GroupRepository } from "../repo/groupRepo";
 import moment from "moment";
 import { formatNumber, numberToWords } from "../helpers/utils";
 import { generateFundRequestPdf } from "../services/invoice/generatePdf";
+import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { UserGroupRepository } from "../repo/userGroupRepo";
-import { autoAssignTrees, generateGiftCardsForGiftRequest, generateGiftCardTemplate, getPersonalizedMessageForMoreTrees, sendMailsToReceivers, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, generateGiftCardsForGiftRequest, getPersonalizedMessageForMoreTrees, sendMailsToReceivers, sendMailsToSponsors } from "./helper/giftRequestHelper";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -1226,6 +1227,19 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
     }
 }
 
+const generateGiftCardTemplate = async (presentationId: string, plantType: string, record: any, keepImages: boolean = false) => {
+
+    const plantTypeCardTemplate = await GiftCardsRepository.getPlantTypeTemplateId(plantType);
+    if (!plantTypeCardTemplate) {
+        return null;
+    }
+    const templateId = plantTypeCardTemplate.template_id;
+
+    const slideId = await createSlide(presentationId, templateId, record, keepImages);
+
+    return slideId;
+}
+
 
 export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
@@ -1355,6 +1369,14 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
         logo_message: logoMessage
     } = req.body;
 
+    if (!process.env.LIVE_GIFT_CARD_PRESENTATION_ID) {
+        console.log('[ERROR]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', 'Missing live gift card template presentation id in ENV variables.')
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later!'
+        })
+        return;
+    }
+
     const record = {
         name: userName ? userName : "<User's Name>",
         sapling: saplingId ? saplingId : '00000',
@@ -1365,7 +1387,11 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
     }
 
     try {
-        const { slideId, pId } = await generateGiftCardTemplate(record, plantType, true)
+        let pId: string = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
+        let slideId: string | null = null;
+        if (plantType) slideId = await generateGiftCardTemplate(pId, plantType, record, true);
+
+        if (!slideId) slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record, true);
 
         res.status(status.success).send({
             presentation_id: pId,
