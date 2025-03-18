@@ -2,35 +2,16 @@ import { giftSuccessMessage, imageMessage, interactiveGiftTreesFlow, interactive
 import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
 import { processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
-import RazorpayService from '../razorpay/razorpay';
-
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 async function sendGiftCardsToCustomer(customerPhoneNumber: string, imageUrls: string[]) {
-
-  if (imageUrls.length > 0) {
-
-    let message = textMessage;
-    message.to = customerPhoneNumber;
-    message.text.body = 'Here are your gift cards:';
-
-    try {
-      await sendWhatsAppMessage(message);
-    } catch (error) {
-      logResponseError(error);
-    }
-  }
 
   for (const imageUrl of imageUrls) {
     const message = imageMessage;
     message.to = customerPhoneNumber;
     message.image.link = imageUrl;
-    message.image.caption = "";
 
     try {
-      await sendWhatsAppMessage(message);
+      const sendSuccessMessage = await sendWhatsAppMessage(message);
     } catch (error) {
       logResponseError(error);
     }
@@ -44,16 +25,16 @@ async function sendEmailMessage(customerPhoneNumber: string, requestId: number) 
   buttonMessage.to = customerPhoneNumber;
   buttonMessage.interactive.body.text =
     'Would you like to send dashboard links and gift images to recipients via email?'
-    + "\n\n*Note:-* Email will only be sent if you have provided recipients emails earlier in form."
+    + "\n\n*Note:-* Email will only be sent if you have provided recipients emails erlier in form."
 
   buttonMessage.interactive.action.buttons = [
     { type: 'reply', reply: { id: 'no', title: 'No' } },
     { type: 'reply', reply: { id: `send_mail_${requestId}`, title: 'Yes, Send Now' } },
-    { type: 'reply', reply: { id: `schedule_mail_${requestId}`, title: 'Schedule for Later' } },
+    { type: 'reply', reply: { id: `schedule_mail_${requestId}`, title: 'Schedule for Latter' } },
   ]
 
   try {
-    await sendWhatsAppMessage(buttonMessage);
+    const sendSuccessMessage = await sendWhatsAppMessage(buttonMessage);
   } catch (error) {
     logResponseError(error);
   }
@@ -66,17 +47,16 @@ async function sendEmailsToGiftRecipients(customerPhoneNumber: string, requestId
   message.text.body = 'We will be sending dashboard links and gift cards to recipients!';
 
   try {
-    await sendWhatsAppMessage(message);
+    const sendSuccessMessage = await sendWhatsAppMessage(message);
   } catch (error) {
     logResponseError(error);
   }
-
+  
   await sendGiftRequestRecipientsMail(requestId);
 }
 
 async function postServeActions(customerPhoneNumber: string, images: string[], requestId: number) {
   await sendGiftCardsToCustomer(customerPhoneNumber, images);
-  await delay(15000);
   await sendEmailMessage(customerPhoneNumber, requestId);
 }
 
@@ -118,20 +98,6 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   }, (images: string[], requestId: number) => {
     postServeActions(customerPhoneNumber, images, requestId);
   })
-
-  const razorpayService = new RazorpayService();
-  const qrCode = await razorpayService.generatePaymentQRCode(trees * 2000 * 100);
-  const paymentMessage = { ...imageMessage };
-  paymentMessage.to = customerPhoneNumber;
-  paymentMessage.image.link = qrCode;
-  paymentMessage.image.caption = 
-    `You have requested *${trees} trees* for gifting. Considering *per tree cost of INR 2000/-*, your total cost is *INR ${trees * 2000}/-*.`;
-
-  try {
-    await sendWhatsAppMessage(paymentMessage);
-  } catch (error) {
-    logResponseError(error);
-  }
 
   return requestId;
 }
@@ -201,7 +167,7 @@ async function processIncomingWAMessage(message: any) {
         + '\n\nIf you have any query regarding the gift request you can reach out to us!'
 
       try {
-        await sendWhatsAppMessage(giftMessage);
+        const sendSuccessMessage = await sendWhatsAppMessage(giftMessage);
       } catch (error) {
         logResponseError(error);
       }

@@ -39,7 +39,7 @@ const interactiveGiftTreesFlow = {
                 "flow_message_version": "3",
                 "flow_token": "test_flow",
                 "flow_id": "",
-                "flow_cta": "Form",
+                "flow_cta": "Gift Trees",
                 "flow_action": "navigate",
                 "mode": "published",
                 "flow_action_payload": {
@@ -62,7 +62,7 @@ const giftSuccessMessage = {
         "preview_url": false,
         "body": "Thank you for your kindness in gifting trees to others!"
         + "\nYour generosity is making a positive impact on the environment and the community. 🌱💚"
-        + "\n\nWe are processing your request. You will receive an email after we have completed your request!",
+        + "\n\nWe are processing you request. You will receive an email after we have completed your request!",
     }
 }
 
