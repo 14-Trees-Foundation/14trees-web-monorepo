@@ -120,7 +120,7 @@ const getGiftCardTemplateImage = async (presentationId: string, templateId: stri
     return s3Url;
 }
 
-const getPersonalizedMessage = (primaryMessage: string, userName: string, eventType: string | null, relation?: string | null) => {
+export const getPersonalizedMessage = (primaryMessage: string, userName: string, eventType: string | null, relation?: string | null) => {
     if (eventType === "2") {
         const index = primaryMessage.indexOf('<name here>');
         if (index < 0) return primaryMessage;
@@ -140,7 +140,7 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, eventT
     }
 }
 
-const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: number) => {
+export const getPersonalizedMessageForMoreTrees = (primaryMessage: string, count: number) => {
     let message = primaryMessage;
     const index = primaryMessage.indexOf('a tree');
     if (index !== -1) {

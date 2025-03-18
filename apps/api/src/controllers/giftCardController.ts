@@ -26,7 +26,7 @@ import moment from "moment";
 import { formatNumber, numberToWords } from "../helpers/utils";
 import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 import { UserGroupRepository } from "../repo/userGroupRepo";
-import { autoAssignTrees, generateGiftCardsForGiftRequest, generateGiftCardTemplate, sendMailsToReceivers, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, generateGiftCardsForGiftRequest, generateGiftCardTemplate, getPersonalizedMessageForMoreTrees, sendMailsToReceivers, sendMailsToSponsors } from "./helper/giftRequestHelper";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -1388,13 +1388,14 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         logo,
-        logo_message: logoMessage
+        logo_message: logoMessage,
+        trees_count: treeCount,
     } = req.body;
 
     const record = {
         name: userName ? userName : "<User's Name>",
         sapling: saplingId ? saplingId : '00000',
-        content1: primaryMessage,
+        content1: treeCount ? getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage,
         content2: secondaryMessage,
         logo: logo,
         logo_message: logoMessage
@@ -1511,7 +1512,7 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
         }
         const requestIds = giftRequests.results.map(request => request.id);
 
-        const giftCards = await GiftCardsRepository.getGiftCards(0, treesCount, { gift_card_request_id: {[Op.in]: requestIds }});
+        const giftCards = await GiftCardsRepository.getGiftCards(0, treesCount, { gift_card_request_id: {[Op.in]: requestIds }, gift_request_user_id: { [Op.is]: null }});
         if (giftCards.results.length === 0) {
             res.status(status.bad).json({
                 message: 'Tree cards not found!'
