@@ -2,9 +2,8 @@ import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { DynamicTool } from "langchain/tools";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
-import { getGiftingTools } from "./gifting/gifting";
+import { getGiftingTools } from "./gifting";
 import { BaseMessage } from "@langchain/core/messages";
-import { getWhatsAppTools } from "./WhatsApp";
 
 
 const systemMessage = `
@@ -65,23 +64,6 @@ const tools = [...getGiftingTools(), dateTool];
 
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
-export const waInteractionsWithGiftingAgent = async (query: string, history: BaseMessage[], customerPhoneNumber: string) => {
-
-    const newTools = [...tools, ...getWhatsAppTools(customerPhoneNumber)]
-    const agent = await createOpenAIToolsAgent({ llm, tools: newTools, prompt });
-    const agentExecutor = new AgentExecutor({
-        agent,
-        tools: newTools,
-        verbose: true,
-    });
-
-    const result = await agentExecutor.invoke({ input: query, history: history });
-    console.log("Result:", result);
-
-    return result["output"];
-}
-
-// TODO: Remove this later
 export const interactWithGiftingAgent = async (query: string, history: BaseMessage[]) => {
 
     const agent = await createOpenAIToolsAgent({ llm, tools, prompt });

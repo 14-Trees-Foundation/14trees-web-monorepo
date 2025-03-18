@@ -6,7 +6,7 @@ import RazorpayService from '../razorpay/razorpay';
 import { sendTemplateMail } from '../gmail/gmail';
 import { GiftCardsRepository } from '../../repo/giftCardsRepo';
 import { UserRepository } from '../../repo/userRepo';
-import { interactWithGiftingAgent, waInteractionsWithGiftingAgent } from '../genai/agent';
+import { interactWithGiftingAgent } from '../genai/agent';
 import { WAChatHistoryRepository } from '../../repo/waChatHistoryRepo';
 import { Op } from 'sequelize';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
@@ -31,7 +31,7 @@ export async function processIncomingWAMessageUsingGenAi(message: any) {
       return new HumanMessage(item.message);
     })
     await WAChatHistoryRepository.addWAChatMessage(text, 'human', customerPhoneNumber);
-    const resp = await waInteractionsWithGiftingAgent(text, history, customerPhoneNumber);
+    const resp = await interactWithGiftingAgent(text, history);
     await WAChatHistoryRepository.addWAChatMessage(resp, 'ai', customerPhoneNumber);
 
     let messageUser = textMessage;
