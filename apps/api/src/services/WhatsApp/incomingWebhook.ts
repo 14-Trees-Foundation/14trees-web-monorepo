@@ -21,7 +21,7 @@ async function sendGiftCardsToCustomer(customerPhoneNumber: string, imageUrls: s
 async function sendEmailMessage(customerPhoneNumber: string, requestId: number) {
 
   // send mail action buttons
-  const buttonMessage = JSON.parse(JSON.stringify(interactiveReplyButton));
+  const buttonMessage = interactiveReplyButton;
   buttonMessage.to = customerPhoneNumber;
   buttonMessage.interactive.body.text =
     'Would you like to send dashboard links and gift images to recipients via email?'
