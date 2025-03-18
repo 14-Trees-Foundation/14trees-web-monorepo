@@ -16,7 +16,7 @@ interface GiftCardRequestAttributes {
     id: number;
     request_id: string;
     user_id: number;
-    group_id: number | null;
+    group_id: number;
     no_of_cards: number;
     is_active: boolean;
     logo_url: string | null;
