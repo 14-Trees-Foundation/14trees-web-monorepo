@@ -386,8 +386,7 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
     giftedOn: messageData.gifted_on,
     primaryMessage: messageData.primary_message,
     secondaryMessage: messageData.secondary_message,
-    recipients: recipients,
-    source: 'WhatsApp',
+    recipients: recipients
   }, (images: string[], requestId: number) => {
     postServeActions(customerPhoneNumber, images, requestId);
   })

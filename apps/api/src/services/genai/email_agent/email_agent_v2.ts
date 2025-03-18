@@ -1,6 +1,6 @@
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { DynamicTool } from 'langchain/tools';
-import { getCorporateGiftingTools } from '../gifting/gifting';
+import { getGiftingTools } from '../gifting/gifting';
 import verifyOutputFormat from './output_varification';
 import {
     StateGraph,
@@ -79,7 +79,7 @@ const dateTool = new DynamicTool({
     func: async () => getTodaysDate(),
 });
 
-const tools = [...getCorporateGiftingTools(), dateTool, verifyOutputFormat];
+const tools = [...getGiftingTools(), dateTool, verifyOutputFormat];
 const toolNodeForGraph = new ToolNode(tools)
 
 const shouldContinue = (state: typeof MessagesAnnotation.State) => {

@@ -9,15 +9,12 @@ import runWithConcurrency, { Task } from "../../helpers/consurrency";
 import { convertPdfToImage } from "../../helpers/pdfToImage";
 import PlantTypeTemplateRepository from "../../repo/plantTypeTemplateRepo";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, createSlide, deleteUnwantedSlides, getSlideThumbnail, reorderSlides } from "./slides";
-import { uploadFileToS3, uploadImageUrlToS3 } from "./uploadtos3";
+import { uploadImageUrlToS3 } from "./uploadtos3";
 import { copyFile, downloadSlide } from "../../services/google";
 import { TemplateType } from "../../models/email_template";
 import { EmailTemplateRepository } from "../../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../../services/gmail/gmail";
 import { UserGroupRepository } from "../../repo/userGroupRepo";
-import { UserRelationRepository } from "../../repo/userRelationsRepo";
-import { GroupRepository } from "../../repo/groupRepo";
-import { Group } from "../../models/group";
 
 export const defaultGiftMessages = {
     primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
@@ -31,25 +28,16 @@ interface GiftRequestPayload {
     treesCount: number,
     sponsorName: string,
     sponsorEmail: string,
-    groupName?: string,
-    groupLogo?: string,
     eventType?: string,
     eventName?: string,
     giftedBy: string,
     giftedOn: string,
     primaryMessage: string,
     secondaryMessage: string,
-    source: 'WhatsApp' | 'Email',
     recipients: {
         recipientName: string,
         recipientEmail: string,
-        recipientCommEmail?: string,
         recipientPhone?: string,
-        assigneeName?: string,
-        assigneeEmail?: string,
-        assigneeCommEmail?: string,
-        assigneePhone?: string,
-        relation?: string,
         treesCount: number,
     }[]
 }
@@ -570,32 +558,16 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
 }
 
 async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCardRequest> {
-    const requestId = getUniqueRequestId();
+
     // create sponsorUser
     const user = await UserRepository.upsertUser({ name: payload.sponsorName, email: payload.sponsorEmail });
 
-    // sponsor group
-    let group: Group | null = null;
-    if (payload.groupName) {
-        const resp = await GroupRepository.getGroups(0, 1, { name: { [Op.iLike]: `%${payload.groupName.toLowerCase()}%` } });
-        if (resp.results.length === 1) group = resp.results[0];
-        else {
-            group = await GroupRepository.addGroup({ name: payload.groupName, type: 'corporate' })
-        }
-    }
-
-    // corporate logo
-    let logoUrl: string | null = null;
-    if (payload.groupLogo) {
-        logoUrl = await uploadFileToS3('gift_cards', Buffer.from(payload.groupLogo, 'base64'), `${requestId}/logo.png`, 'image/png')
-    }
-
     const request: GiftCardRequestCreationAttributes = {
         user_id: user.id,
-        group_id: group ? group.id : null,
+        group_id: null,
         no_of_cards: payload.treesCount,
         is_active: false,
-        logo_url: logoUrl,
+        logo_url: null,
         primary_message: payload.primaryMessage,
         secondary_message: payload.secondaryMessage,
         event_name: payload.eventName,
@@ -610,39 +582,27 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
         request_type: 'Cards Request',
         created_at: new Date(),
         updated_at: new Date(),
-        request_id: requestId,
+        request_id: getUniqueRequestId(),
         payment_id: null,
         validation_errors: null,
-        tags: [payload.source]
+        tags: ['WhatsApp']
     }
 
     return await GiftCardsRepository.createGiftCardRequest(request);
 }
 
 async function addGiftRequestUsers(payload: GiftRequestPayload, giftRequestId: number): Promise<GiftRequestUser[]> {
-    
+
     // create gift request user
     const usersData: GiftRequestUserCreationAttributes[] = [];
 
-    for (const user of payload.recipients) {
-        const recipient = await UserRepository.upsertUser({ name: user.recipientName, email: user.recipientEmail, phone: user.recipientPhone, communication_email: user.recipientCommEmail });
-        let assignee = recipient;
-        if (user.assigneeName) assignee = await UserRepository.upsertUser({ name: user.assigneeName, email: user.assigneeEmail, phone: user.assigneePhone, communication_email: user.assigneeCommEmail });
-
-        if (recipient.id !== assignee.id && user.relation?.trim()) {
-            await UserRelationRepository.createUserRelation({
-                primary_user: recipient.id,
-                secondary_user: assignee.id,
-                relation: user.relation.trim(),
-                created_at: new Date(),
-                updated_at: new Date(),
-            })
-        }
+    for (const recipient of payload.recipients) {
+        const user = await UserRepository.upsertUser({ name: recipient.recipientName, email: recipient.recipientEmail, phone: recipient.recipientPhone });
 
         usersData.push({
-            recipient: recipient.id,
-            assignee: assignee.id,
-            gifted_trees: user.treesCount,
+            recipient: user.id,
+            assignee: user.id,
+            gifted_trees: recipient.treesCount,
             gift_request_id: giftRequestId,
             created_at: new Date(),
             updated_at: new Date(),

@@ -7,14 +7,14 @@ import { PaymentRepository } from "../../../repo/paymentsRepo";
 import { GiftCardsRepository } from "../../../repo/giftCardsRepo";
 
 // Define Enum for Occasion Type
-export enum OccasionType {
+enum OccasionType {
     BIRTHDAY = "1",
     MEMORIAL = "2",
     GENERAL_GIFT = "3",
 }
 
 // Define Recipient Schema
-export const RecipientSchema = z.object({
+const RecipientSchema = z.object({
     recipient_name: z.string().describe("Full name of the recipient"),
     recipient_email: z.string().optional().describe("Optional: email address of the recipient. This will be used to share tree cards and personalised dashboard links to recipient!"),
     recipient_phone: z.string().optional().describe("Optional contact number of the recipient"),
@@ -82,8 +82,7 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
                 giftedOn: data.gifted_on ? data.gifted_on : new Date().toISOString().slice(0, 10),
                 primaryMessage: data.ocassion_type === '1' ? defaultGiftMessages.birthday : data.ocassion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary,
                 secondaryMessage: defaultGiftMessages.secondary,
-                recipients: recipients,
-                source: 'WhatsApp'
+                recipients: recipients
             }, (images: string[], requestId: number) => {
                 console.log(requestId, images)
             })

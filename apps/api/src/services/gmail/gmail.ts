@@ -202,17 +202,5 @@ const sendTemplateMail = async (templateName: string, options: MailOptions, emai
   return statusText;
 }
 
-async function getAttachmentData(messageId: string, attachmentId: string): Promise<Buffer | null> {
-    const gmail = await getGmailService();
-    const response = await gmail.users.messages.attachments.get({
-        userId: 'me',
-        messageId: messageId,
-        id: attachmentId,
-    });
-
-    const data = response.data.data;
-    return data ? Buffer.from(data, 'base64') : null;
-}
-
-export { sendDashboardMail, sendTemplateMail, getGmailService, getAttachmentData };
+export { sendDashboardMail, sendTemplateMail, getGmailService };
 export default sendMail;
