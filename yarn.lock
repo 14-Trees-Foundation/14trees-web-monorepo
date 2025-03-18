@@ -2681,7 +2681,7 @@
     zod "^3.22.3"
     zod-to-json-schema "^3.22.5"
 
-"@langchain/core@^0.3.38", "@langchain/core@>=0.2.21 <0.4.0", "@langchain/core@>=0.2.31 <0.4.0", "@langchain/core@>=0.2.36 <0.3.0 || >=0.3.9 < 0.4.0", "@langchain/core@>=0.3.29 <0.4.0":
+"@langchain/core@^0.3.38", "@langchain/core@>=0.2.21 <0.4.0", "@langchain/core@>=0.3.29 <0.4.0":
   version "0.3.38"
   resolved "https://registry.npmjs.org/@langchain/core/-/core-0.3.38.tgz"
   integrity sha512-o7mowk/0oIsYsPxRAJ3TKX6OG674HqcaNRged0sxaTegLAMyZDBDRXEAt3qoe5UfkHnqXAggDLjNVDhpMwECmg==
@@ -2698,33 +2698,6 @@
     uuid "^10.0.0"
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
-
-"@langchain/langgraph-checkpoint@~0.0.15":
-  version "0.0.15"
-  resolved "https://registry.npmjs.org/@langchain/langgraph-checkpoint/-/langgraph-checkpoint-0.0.15.tgz"
-  integrity sha512-AiJkvsYHqNbCh1Tx823qs2lf2qRqeB4EAMejirOk8gkpPszAGYua5c3niKYkcKR2tU8Snhrmj7Gm9HKZSFOXyw==
-  dependencies:
-    uuid "^10.0.0"
-
-"@langchain/langgraph-sdk@~0.0.32":
-  version "0.0.38"
-  resolved "https://registry.npmjs.org/@langchain/langgraph-sdk/-/langgraph-sdk-0.0.38.tgz"
-  integrity sha512-GCBFj7ZBzACAjqtg6z0OC/79af6OMUghd8wCVrvZhlp+azcGaC6ZxJS6+eJ+pPlWuUDTi1ws7hsNa/0vA3pN7Q==
-  dependencies:
-    "@types/json-schema" "^7.0.15"
-    p-queue "^6.6.2"
-    p-retry "4"
-    uuid "^9.0.0"
-
-"@langchain/langgraph@^0.2.46":
-  version "0.2.46"
-  resolved "https://registry.npmjs.org/@langchain/langgraph/-/langgraph-0.2.46.tgz"
-  integrity sha512-dO/EKvSyYfHCmvF7JYBwSuc2czy5dOF6ScSNEmQxq/XHXkN7QkdahBkWPAU/+iw6Cafeljc/XuTxBJxMZB2pFQ==
-  dependencies:
-    "@langchain/langgraph-checkpoint" "~0.0.15"
-    "@langchain/langgraph-sdk" "~0.0.32"
-    uuid "^10.0.0"
-    zod "^3.23.8"
 
 "@langchain/openai@^0.4.2", "@langchain/openai@>=0.1.0 <0.5.0", "@langchain/openai@>=0.2.0 <0.5.0":
   version "0.4.2"
@@ -4620,7 +4593,7 @@
     jest-matcher-utils "^27.0.0"
     pretty-format "^27.0.0"
 
-"@types/json-schema@*", "@types/json-schema@^7.0.11", "@types/json-schema@^7.0.15", "@types/json-schema@^7.0.3", "@types/json-schema@^7.0.5", "@types/json-schema@^7.0.6", "@types/json-schema@^7.0.7", "@types/json-schema@^7.0.8":
+"@types/json-schema@*", "@types/json-schema@^7.0.11", "@types/json-schema@^7.0.3", "@types/json-schema@^7.0.5", "@types/json-schema@^7.0.6", "@types/json-schema@^7.0.7", "@types/json-schema@^7.0.8":
   version "7.0.15"
   resolved "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.15.tgz"
   integrity sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==
@@ -5707,10 +5680,8 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
   version "0.0.0"
   resolved "file:apps/api"
   dependencies:
-    "@google-cloud/local-auth" "^3.0.1"
     "@langchain/community" "^0.3.29"
     "@langchain/core" "^0.3.38"
-    "@langchain/langgraph" "^0.2.46"
     "@langchain/openai" "^0.4.2"
     "@sendgrid/mail" "^7.7.0"
     async "^3.2.6"
@@ -13642,10 +13613,10 @@ langchain@^0.3.15, "langchain@>=0.2.3 <0.3.0 || >=0.3.4 <0.4.0":
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-langsmith@^0.3.7, "langsmith@>=0.2.8 <0.4.0":
-  version "0.3.7"
-  resolved "https://registry.npmjs.org/langsmith/-/langsmith-0.3.7.tgz"
-  integrity sha512-wakN1hxGkm1JR2PpAV7fiT7oC99LKcgxiuUrYGZWPbuj7Y8EPF19F7VNr4B+hA219bfaeWTa4Lxy2YrtPSKnQA==
+"langsmith@>=0.2.8 <0.4.0":
+  version "0.3.6"
+  resolved "https://registry.npmjs.org/langsmith/-/langsmith-0.3.6.tgz"
+  integrity sha512-FXWbZOZPZsjNfY5DKOO0ORlPhBdysj11cHpO13qf94+R022Rkt+h5YPmiEDqrBI62X4j0mvjLrJ6VN6/HSbPig==
   dependencies:
     "@types/uuid" "^10.0.0"
     chalk "^4.1.2"

@@ -4,6 +4,9 @@ import MailComposer from 'nodemailer/lib/mail-composer';
 import fs from 'fs';
 import path from 'path';
 import handlebars from 'handlebars';
+import { interactWithGiftingAgent } from '../genai/agent';
+import { MailSubsRepository } from '../../repo/mailSubsRepo';
+import { AIMessage, HumanMessage } from '@langchain/core/messages';
 
 // Define types for credentials and tokens
 interface Credentials {
@@ -71,8 +74,6 @@ function saveCredentials(client: any) {
 const getGmailService = async (): Promise<gmail_v1.Gmail> => {
   const client = loadSavedCredentialsIfExist();
   if (client) {
-    // const authToken = await client.getAccessToken()
-    // console.log(authToken.token);
     return google.gmail({ version: 'v1', auth: client });
   }
 
@@ -127,7 +128,7 @@ interface MailOptions {
   html?: string;
   attachments?: { filename: string; path: string }[];
   inReplyTo?: string // message id
-  references?: string | string[] // message id
+  references?: string // message id
 }
 
 const getHtmlTemplate = (templateName: string, emailData: any) => {
@@ -202,5 +203,106 @@ const sendTemplateMail = async (templateName: string, options: MailOptions, emai
   return statusText;
 }
 
-export { sendDashboardMail, sendTemplateMail, getGmailService };
+function splitEmailBodies(emailText: string) {
+
+  // Use a regex to detect "On <date> wrote:" patterns
+  const separatorRegex = /On .*? wrote:/g;
+
+  // Split the email chain based on detected separators
+  let emailBodies = emailText.split(separatorRegex).map(body => body.trim());
+
+  return emailBodies.filter(body => body.length > 0); // Remove empty parts
+}
+
+function removeQuotes(text: string) {
+  return text.replace(/>/g, '');
+}
+
+
+export async function checkLatestIncomingMail() {
+  const gmail = await getGmailService();
+  const resp = await gmail.users.messages.list(
+    {
+      userId: "me",
+      labelIds: ["INBOX"],
+      maxResults: 1,
+    }
+  )
+
+  if (resp.data.messages && resp.data.messages.length > 0) {
+    const messageId = resp.data.messages[0].id;
+    const threadId = resp.data.messages[0].threadId;
+
+    if (messageId) {
+      const mails = await MailSubsRepository.getMailSubs({ message_id: messageId });
+      if (mails.length > 0) return;
+      else if (threadId) {
+        await MailSubsRepository.addMailSub(messageId, threadId);
+      }
+
+      const message = await gmail.users.messages.get({
+        userId: "me",
+        id: messageId,
+      });
+
+      const headers = message.data.payload?.headers || [];
+      const from = headers.find(header => header.name === 'From')?.value;
+      const subject = headers.find(header => header.name === 'Subject')?.value;
+      let replyTo: string | undefined = undefined;
+      if (from) {
+        const matches = from.match(/<(.*)>/);
+        if (matches) replyTo = matches[1]
+      }
+      const replySubject = subject?.startsWith('Re:') ? subject : `Re: ${subject}`;
+
+      const parts = message.data.payload?.parts || [];
+      let emailBody = '';
+      const attachments: any[] = [];
+
+      for (const part of parts) {
+        if (part.mimeType === 'text/plain' && part.body?.data) {
+
+          emailBody = Buffer.from(part.body.data, 'base64').toString('utf-8');
+
+        } else if (part.mimeType === 'multipart/alternative' && part.parts) {
+
+          part.parts.forEach(subPart => {
+            if (subPart.mimeType === 'text/plain' && subPart.body?.data) emailBody = Buffer.from(subPart.body.data, 'base64').toString('utf-8');
+          })
+
+        } else if (part.filename && part.body?.attachmentId) {
+          attachments.push({
+            filename: part.filename,
+            mimeType: part.mimeType,
+            messageId: messageId,
+            attachmentId: part.body.attachmentId,
+          });
+        }
+      }
+
+      let interactions: string[] = splitEmailBodies(emailBody);
+      interactions = interactions.map(removeQuotes);
+      const userQuery = interactions[0];
+      const pastInteractions = interactions.slice(1).reverse();
+
+      const messageResp = await interactWithGiftingAgent(userQuery, pastInteractions.map((text, index) => { return index%2 ? new HumanMessage(text) : new AIMessage(text) }));
+
+      if (replyTo) {
+        await sendMail({
+          from: 'me',
+          to: [replyTo],
+          inReplyTo: messageId,
+          references: messageId,
+          subject: replySubject,
+          text: messageResp
+        }, threadId ?? undefined)
+      }
+
+      return { emailBody, attachments }
+    }
+  }
+}
+
+
+export { sendDashboardMail, sendTemplateMail };
 export default sendMail;

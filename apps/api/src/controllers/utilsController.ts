@@ -4,7 +4,7 @@ import axios from 'axios'
 import { load } from "cheerio";
 import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
-import { checkLatestIncomingMail } from "../services/genai/email_agent";
+import { checkLatestIncomingMail } from "../services/gmail/gmail";
 import { processDonationRequestSheet } from "../scripts/donationRequests";
 
 const getObjectKey = (type: string, subKey: string) => {
