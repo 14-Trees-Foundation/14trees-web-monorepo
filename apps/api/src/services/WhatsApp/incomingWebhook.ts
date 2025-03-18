@@ -3,118 +3,9 @@ import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
 import { processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
 import RazorpayService from '../razorpay/razorpay';
-import sendMail, { sendTemplateMail } from '../gmail/gmail';
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function processIncomingWAMessage(message: any) {
-  const customerPhoneNumber = message.from;
-  const messageType = message.type;
-
-  if (messageType === "text") {
-    const textMessage = message.text.body;
-
-    try {
-      let replyButtonMessage = interactiveReplyButton;
-      replyButtonMessage.to = customerPhoneNumber;
-      await sendWhatsAppMessage(replyButtonMessage);
-    } catch (error) {
-      logResponseError(error);
-    }
-
-  } else if (messageType === "interactive") {
-    const interactiveType = message.interactive.type;
-
-    if (interactiveType === "button_reply") {
-      const buttonId: string = message.interactive.button_reply.id;
-      const buttonTitle = message.interactive.button_reply.title;
-
-      if (buttonId == '1') {
-        try {
-          let requestForm = interactiveGiftTreesFlow;
-          requestForm.to = customerPhoneNumber;
-          requestForm.interactive.action.parameters.flow_id = process.env.WA_FLOW_ID || '';
-          requestForm.interactive.action.parameters.flow_action_payload.data.gifted_on = new Date().toISOString().slice(0, 10);
-
-          const sendProductLists = await sendWhatsAppMessage(requestForm);
-        } catch (error) {
-          logResponseError(error);
-        }
-      } else if (buttonId.startsWith('send_mail')) {
-        const requestIdStr = buttonId.split('_').slice(-1)[0];
-        const requestId = parseInt(requestIdStr);
-
-        sendEmailsToGiftRecipients(customerPhoneNumber, requestId);
-      }
-    }
-    else if (interactiveType === "nfm_reply") {
-      const formDataStr = message.interactive.nfm_reply.response_json;
-      const formData = JSON.parse(formDataStr);
-
-      console.log(formData);
-      await handleFlowFormSubmit(customerPhoneNumber, formData);
-    }
-  }
-}
-
-async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any) {
-  const recipientsCount = parseInt(formData.recipients_count);
-
-  if (recipientsCount <= 5) {
-
-    let successMessage = giftSuccessMessage;
-    successMessage.to = customerPhoneNumber;
-
-    try {
-      await sendWhatsAppMessage(successMessage);
-    } catch (error) {
-      logResponseError(error);
-    }
-
-    const requestId = await serveTheGiftRequest(customerPhoneNumber, formData);
-    let giftMessage = textMessage;
-    giftMessage.to = customerPhoneNumber;
-
-    giftMessage.text.body = 'We have succesfully processed your request!'
-      + `\n\n*Here is your gift request number: ${requestId}*.`
-      + '\n\nIf you have any query regarding the gift request you can reach out to us!'
-
-    try {
-      await sendWhatsAppMessage(giftMessage);
-    } catch (error) {
-      logResponseError(error);
-    }
-  }
-  else {
-
-    const mailOptions = {
-      subject: 'Details required to complete gift trees request!',
-      to: [formData.user_email],
-      cc: ['vivayush@gmail.com'],
-      attachments: [
-        { filename: 'sample-dashboard-view-1.png', path: 'https://14treesplants.s3.ap-south-1.amazonaws.com/cards/samples/sample-dashboard-view-1.png' },
-        { filename: 'sample-recipient-email.png', path: 'https://14treesplants.s3.ap-south-1.amazonaws.com/cards/samples/sample-recipient-email.png' },
-        { filename: 'sample-gift-card-1.jpg', path: 'https://14treesplants.s3.ap-south-1.amazonaws.com/cards/samples/sample-gift-card-1.jpg' },
-        { filename: 'GiftRecipientDetails.csv', path: 'https://14treesplants.s3.ap-south-1.amazonaws.com/cards/samples/GiftRecipientDetails.csv' },
-      ]
-    }
-
-    await sendTemplateMail('gift-trees-required-details.html', mailOptions, { sponsorName: formData.user_name })
-
-    let giftMessage = textMessage;
-    giftMessage.to = customerPhoneNumber;
-
-    giftMessage.text.body = 'You will shortly receive an email regarding required details for your request!'
-
-    try {
-      await sendWhatsAppMessage(giftMessage);
-    } catch (error) {
-      logResponseError(error);
-    }
-  }
-
 }
 
 async function sendGiftCardsToCustomer(customerPhoneNumber: string, imageUrls: string[]) {
@@ -233,7 +124,7 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   const paymentMessage = { ...imageMessage };
   paymentMessage.to = customerPhoneNumber;
   paymentMessage.image.link = qrCode;
-  paymentMessage.image.caption =
+  paymentMessage.image.caption = 
     `You have requested *${trees} trees* for gifting. Considering *per tree cost of INR 2000/-*, your total cost is *INR ${trees * 2000}/-*.`;
 
   try {
@@ -243,6 +134,79 @@ async function serveTheGiftRequest(customerPhoneNumber: string, messageData: any
   }
 
   return requestId;
+}
+
+
+async function processIncomingWAMessage(message: any) {
+  const customerPhoneNumber = message.from;
+  const messageType = message.type;
+
+  if (messageType === "text") {
+    const textMessage = message.text.body;
+
+    try {
+      let replyButtonMessage = interactiveReplyButton;
+      replyButtonMessage.to = customerPhoneNumber;
+      const replyButtonSent = await sendWhatsAppMessage(replyButtonMessage);
+    } catch (error) {
+      logResponseError(error);
+    }
+
+  } else if (messageType === "interactive") {
+    const interactiveType = message.interactive.type;
+
+    if (interactiveType === "button_reply") {
+      const buttonId: string = message.interactive.button_reply.id;
+      const buttonTitle = message.interactive.button_reply.title;
+
+      if (buttonId == '1') {
+        try {
+          let requestForm = interactiveGiftTreesFlow;
+          requestForm.to = customerPhoneNumber;
+          requestForm.interactive.action.parameters.flow_id = process.env.WA_FLOW_ID || '';
+          requestForm.interactive.action.parameters.flow_action_payload.data.gifted_on = new Date().toISOString().slice(0, 10);
+
+          const sendProductLists = await sendWhatsAppMessage(requestForm);
+        } catch (error) {
+          logResponseError(error);
+        }
+      } else if (buttonId.startsWith('send_mail')) {
+        const requestIdStr = buttonId.split('_').slice(-1)[0];
+        const requestId = parseInt(requestIdStr);
+
+        sendEmailsToGiftRecipients(customerPhoneNumber, requestId);
+      }
+    }
+    else if (interactiveType === "nfm_reply") {
+      const formDataStr = message.interactive.nfm_reply.response_json;
+      const formData = JSON.parse(formDataStr);
+
+      console.log(formData);
+
+      let successMessage = giftSuccessMessage;
+      successMessage.to = customerPhoneNumber;
+
+      try {
+        const sendSuccessMessage = await sendWhatsAppMessage(successMessage);
+      } catch (error) {
+        logResponseError(error);
+      }
+
+      const requestId = await serveTheGiftRequest(customerPhoneNumber, formData);
+      let giftMessage = textMessage;
+      giftMessage.to = customerPhoneNumber;
+
+      giftMessage.text.body = 'We have succesfully processed you request!'
+        + `\n\n*Here is your gift request number: ${requestId}*.`
+        + '\n\nIf you have any query regarding the gift request you can reach out to us!'
+
+      try {
+        await sendWhatsAppMessage(giftMessage);
+      } catch (error) {
+        logResponseError(error);
+      }
+    }
+  }
 }
 
 export default processIncomingWAMessage;
