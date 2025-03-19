@@ -43,3 +43,7 @@ db/mongodb
 
 content/**/*
 !content/*.d.ts
+
+#gmail related
+credentials.json
+token.json
