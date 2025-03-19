@@ -348,7 +348,27 @@ export class GiftCardsRepository {
         return giftCardPlots;
     }
 
-    static async getBookedTrees(giftCardRequestId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCard>> {
+    static async getBookedTrees(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<GiftCard>> {
+
+        let whereConditions: string = "";
+        let replacements: any = {}
+
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "gc." + filter.columnField
+                if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name"
+                } else if (filter.columnField === "assignee_name") {
+                    columnField = "au.name"
+                } else if (filter.columnField === "sapling_id") {
+                    columnField = "t.sapling_id"
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereConditions = whereConditions + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+        }
 
         const getQuery = `
             SELECT gc.*,
@@ -362,22 +382,27 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
-            WHERE gc.gift_card_request_id = ${giftCardRequestId}
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const data: any[] = await sequelize.query(getQuery, {
-            type: QueryTypes.SELECT
+            type: QueryTypes.SELECT,
+            replacements
         })
 
         const countQuery = `
             SELECT count(gc.id)
             FROM "14trees".gift_cards gc
-            WHERE gc.gift_card_request_id = ${giftCardRequestId};
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = t.assigned_to
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
         const countData: any[] = await sequelize.query(countQuery, {
-            type: QueryTypes.SELECT
+            type: QueryTypes.SELECT,
+            replacements
         })
 
         return {
