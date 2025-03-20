@@ -122,7 +122,12 @@ export const getImageUrlsForKeyPrefix = async (req: Request, res: Response) => {
 }
 
 export const handleDonationSheetRequests = async (req: Request, res: Response) => {
+    const { spreadsheetId } = req.body;
+    if (!spreadsheetId) {
+        res.status(status.bad).send({ message: "Invalid spreadsheetId." });
+        return;
+    }
     res.status(status.created).send("Processing your request!");
 
-    await processDonationRequestSheet();
+    await processDonationRequestSheet(spreadsheetId);
 }
