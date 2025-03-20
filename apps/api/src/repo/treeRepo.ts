@@ -13,12 +13,33 @@ import { getSqlQueryExpression } from "../controllers/helper/filters";
 class TreeRepository {
   public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Tree>> {
 
-    let whereCondition = "";
+    let whereCondition = "t.mapped_at IS NOT NULL";
     let replacements: any = {}
     if (filters && filters.length > 0) {
       filters.forEach(filter => {
         let columnField = "t." + filter.columnField
         let valuePlaceHolder = filter.columnField
+        if (filter.columnField === "reserved_after") {
+          columnField = 't.mapped_at';
+          const dateValue = Array.isArray(filter.value) ? filter.value[0] : filter.value;
+          whereCondition += ` AND ${columnField} >= :${valuePlaceHolder}`;
+          replacements[valuePlaceHolder] = new Date(dateValue).toISOString(); // Ensure date format
+      } else if (filter.columnField === "reserved_before") {
+          columnField = 't.mapped_at';
+          const dateValue = Array.isArray(filter.value) ? filter.value[0] : filter.value;
+          whereCondition += ` AND ${columnField} <= :${valuePlaceHolder}`;
+          replacements[valuePlaceHolder] = new Date(dateValue).toISOString(); // Ensure date format
+      }   else if (filter.columnField === "assigned_after") {
+          columnField = 't.assigned_at';
+          const dateValue = Array.isArray(filter.value) ? filter.value[0] : filter.value;
+          whereCondition += ` AND ${columnField} >= :${valuePlaceHolder}`;
+          replacements[valuePlaceHolder] = new Date(dateValue).toISOString(); // Ensure date format
+        } else if (filter.columnField === "assigned_before") {
+          columnField = 't.assigned_at';
+          const dateValue = Array.isArray(filter.value) ? filter.value[0] : filter.value;
+          whereCondition += ` AND ${columnField} <= :${valuePlaceHolder}`;
+          replacements[valuePlaceHolder] = new Date(dateValue).toISOString(); // Ensure date format
+        } else {
         if (filter.columnField === "assigned_to_name") {
           columnField = 'au."name"'
         } else if (filter.columnField === "mapped_user_name") {
@@ -41,14 +62,14 @@ class TreeRepository {
           columnField = 't.tree_status'
         }
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
-        whereCondition = whereCondition + " " + condition + " AND";
+        whereCondition += ` AND ${condition}`; 
         replacements = { ...replacements, ...replacement }
-      })
-      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
-    }
+      }
+    })
+  }
 
     let query = `
-    SELECT t.*, 
+    SELECT t.mapped_at, t.*, 
       pt."name" as plant_type, 
       pt.habit as habit, 
       pt.illustration_s3_path as illustration_s3_path, 
@@ -100,11 +121,11 @@ class TreeRepository {
   };
 
   public static async getTreeBySaplingId(saplingId: string): Promise<Tree | null> {
-    return await Tree.findOne({ where: { sapling_id: saplingId } });
+    return await Tree.findOne({ where: { sapling_id: saplingId }, attributes: ['mapped_at', ...Object.keys(Tree.getAttributes())] });
   };
 
   public static async getTreeByTreeId(treeId: number): Promise<Tree | null> {
-    return await Tree.findByPk(treeId);
+    return await Tree.findByPk(treeId, { attributes: ['mapped_at', ...Object.keys(Tree.getAttributes())]});
   };
 
   public static async addTree(data: any): Promise<Tree> {
@@ -238,7 +259,7 @@ class TreeRepository {
     }
 
     const query = `
-      SELECT t.sapling_id, t."location", t.event_id, t.image,
+      SELECT t.mapped_at, t.sapling_id, t."location", t.event_id, t.image,
         pt."name" AS plant_type, p."name" AS plot, 
         u."name" AS assigned_to
       FROM "14trees_2".trees AS t
@@ -275,7 +296,7 @@ class TreeRepository {
   public static async getMappedTreesForGroup(groupId: number, offset: number, limit: number) {
 
     const query = `
-      SELECT t.sapling_id, t."location", t.event_id, t.image,
+      SELECT t.mapped_at, t.sapling_id, t."location", t.event_id, t.image,
         pt."name" AS plant_type, p."name" AS plot, 
         u."name" AS assigned_to
       FROM "14trees_2".trees AS t
@@ -557,7 +578,7 @@ class TreeRepository {
   public static async getUserProfilesForUserId(userId: number): Promise<any[]> {
     const query = `
       SELECT 
-        t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
+        t.mapped_at, t.sapling_id, t.image, t."location", t.mapped_to_user, t.description, 
         t.user_tree_image, t.sponsored_by_user, du."name" AS sponsored_by_user_name, 
         t.gifted_by, t.gifted_by_name, t.planted_by, t.memory_images, t.created_at, t.assigned_at, t.event_type,
         pt."name" AS plant_type, pt.scientific_name, pt.images AS plant_type_images, 
@@ -783,7 +804,7 @@ class TreeRepository {
     }
 
     const query = `
-      SELECT t.*, gc.id as gift_card_id, gcr.request_id, gcr.planted_by as gifted_by, gcr.logo_url,
+      SELECT t.mapped_at, t.*, gc.id as gift_card_id, gcr.request_id, gcr.planted_by as gifted_by, gcr.logo_url,
         pt."name" as plant_type, 
         pt.habit as habit, 
         pt.illustration_s3_path as illustration_s3_path, 

@@ -51,8 +51,14 @@ export const getTree = async (req: Request, res: Response) => {
 
 export const getTrees = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
-  const filters: FilterItem[] = req.body?.filters;
+  const filters: FilterItem[] = req.body?.filters || [];
   const orderBy: SortOrder[] = req.body?.order_by;
+  
+  const { reserved_after, reserved_before, assigned_after, assigned_before  } = req.query;
+  if (reserved_after) {filters.push({columnField: "reserved_after", operatorValue: ">=", value: reserved_after as string,});}
+  if (reserved_before) {filters.push({columnField: "reserved_before", operatorValue: "<=", value: reserved_before as string,});}
+  if (assigned_after) {filters.push({columnField: "assigned_after", operatorValue: ">=", value: assigned_after as string,});}
+  if (assigned_before) {filters.push({columnField: "assigned_before", operatorValue: "<=", value: assigned_before as string,});}
 
   try {
     let result = await TreeRepository.getTrees(offset, limit, filters, orderBy);

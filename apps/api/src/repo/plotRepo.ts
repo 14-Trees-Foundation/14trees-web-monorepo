@@ -12,9 +12,12 @@ export class PlotRepository {
             throw new Error("Plot doesn't exist");
         }
         plotData.updated_at = new Date();
-        const updatedPlot = await plot.update(plotData);
-
-        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot.id.toString() }];
+        await plot.update({ notes: plotData.notes ?? plot.notes, updated_at: new Date() }, { returning: true });
+        const updatedPlot = await Plot.findOne({
+            where: { id: plotData.id },
+            attributes: { include: ['notes'] }
+        });
+        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot?.id?.toString() ?? '' }];
         const plotsResp = await this.getPlots(0, 1, filters);
         return plotsResp.results[0] || updatedPlot;
     }
@@ -38,6 +41,7 @@ export class PlotRepository {
             label: plotData.label || null,
             accessibility_status: plotData.accessibility_status || null,
             pit_count: plotData.pit_count || null,
+            notes: plotData.notes || null,
             created_at: new Date(),
             updated_at: new Date()
         };
@@ -79,6 +83,7 @@ export class PlotRepository {
                     then s.name_marathi
                     else s.name_english 
                 end site_name,
+            p.notes,
             COUNT(t.id) as total, 
             COUNT(t.assigned_to) as assigned,
             SUM(CASE 
@@ -284,6 +289,46 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS card_available_shrubs,
+            SUM(CASE 
+                WHEN t.assigned_to IS NOT NULL 
+                  AND pt.habit = 'Climber'
+                THEN 1 
+                ELSE 0 
+            END) as assigned_climbers,
+            SUM(CASE 
+                WHEN (t.mapped_to_user IS NOT NULL 
+                  OR t.mapped_to_group IS NOT NULL) AND pt.habit = 'Climber'
+                THEN 1 
+                ELSE 0 
+            END) AS booked_climbers,
+            SUM(CASE 
+                WHEN (t.mapped_to_user IS NULL 
+                  AND t.mapped_to_group IS NULL
+                  AND t.assigned_to IS NOT NULL) AND pt.habit = 'Climber'
+               THEN 1 
+               ELSE 0 
+            END) AS unbooked_assigned_climbers,
+            SUM(CASE 
+                WHEN (t.mapped_to_user IS NULL 
+                  AND t.mapped_to_group IS NULL 
+                  AND t.assigned_to IS NULL 
+                  AND t.id IS NOT NULL) AND pt.habit = 'Climber'
+                  AND ppt.sustainable = true
+                THEN 1 
+                ELSE 0 
+            END) AS available_climbers,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                  AND t.mapped_to_group IS NULL 
+                  AND t.assigned_to IS NULL 
+                  AND t.id IS NOT NULL
+                  AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                  AND pt.habit = 'Climber'
+                  AND ptct.plant_type IS NOT NULL
+                  AND ppt.sustainable = true
+                THEN 1 
+                ELSE 0 
+            END) AS card_available_climbers,
             array_agg(distinct CASE 
                 WHEN t.mapped_to_user IS NULL 
                     AND t.mapped_to_group IS NULL 
