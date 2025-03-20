@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as giftCards from '../controllers/giftCardController';
+import * as transactions from '../controllers/transactionsController';
 import uploadFiles from "../helpers/multer";
 
 const routes = Router();
@@ -1554,7 +1555,7 @@ routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
  *     description: Fetches a list of gift request tags.
  *     tags:
  *       - Gift Cards
- *     responses:
+ *     responses:transactions
  *       200:
  *         description: Gift request tags fetched successfully
  *         schema:
@@ -1616,6 +1617,8 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  *               example: "Something went wrong. Please try again later."
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
+
+routes.get('/transactions/:group_id', transactions.getTransactions);
 
 export default routes;
 
