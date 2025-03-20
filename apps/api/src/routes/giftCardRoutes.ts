@@ -1555,7 +1555,7 @@ routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
  *     description: Fetches a list of gift request tags.
  *     tags:
  *       - Gift Cards
- *     responses:transactions
+ *     responses:
  *       200:
  *         description: Gift request tags fetched successfully
  *         schema:
