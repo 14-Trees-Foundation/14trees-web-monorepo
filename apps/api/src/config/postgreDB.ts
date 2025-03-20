@@ -39,6 +39,7 @@ import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
 import { PlotPlantType } from "../models/plot_plant_type";
 import { View, ViewPermission } from "../models/permissions";
+import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transaction";
 
 
 class Database {
@@ -111,6 +112,8 @@ class Database {
         PlotPlantType,
         View,
         ViewPermission,
+        GiftRedeemTransaction,
+        GRTCard,
       ]
     });
 
