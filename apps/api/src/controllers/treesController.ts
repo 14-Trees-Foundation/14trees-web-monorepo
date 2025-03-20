@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import { status } from "../helpers/status";
 import TreeRepository from "../repo/treeRepo";
@@ -9,6 +8,7 @@ import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
 import { Tree } from "../models/tree";
 import { SortOrder } from "../models/common";
+import { TreesSnapshot } from '../models/trees_snapshots';
 
 /*
   Model - Tree
@@ -449,3 +449,28 @@ export const getMappedGiftTreesAnalytics = async (req: Request, res: Response) =
     res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
   }
 }
+
+export const getTreeAuditDetails = async (req: Request, res: Response) => {
+  try {
+      const { sapling_id } = req.params;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const snapshots = await TreesSnapshot.findAndCountAll({
+          where: { sapling_id },
+          order: [['created_at', 'DESC']],
+          offset,
+          limit
+      });
+
+      res.json({
+          results: snapshots.rows,
+          total: snapshots.count
+      });
+  } catch (error) {
+      console.error('Error fetching tree audit details:', error);
+      res.status(500).json({ 
+          message: 'Failed to fetch tree audit details'
+      });
+  }
+};

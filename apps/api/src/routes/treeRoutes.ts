@@ -553,6 +553,24 @@ routes.get("/assigned/:user_id", trees.getAssignedTrees);
  *               example: "Something went wrong. Please try again after some time."
  */
 routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
+
+
+/**
+ * @swagger
+ * /trees/{sapling_id}/audit:
+ *   get:
+ *     summary: Get tree audit details
+ *     description: Fetches audit history for a specific tree
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - name: sapling_id
+ *         in: path
+ *         required: true
+ *         type: string
+ */
+routes.get('/:sapling_id/audit', trees.getTreeAuditDetails);
+
 // routes.get("/plot/count", trees.countByPlot);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
