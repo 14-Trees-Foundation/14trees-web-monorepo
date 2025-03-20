@@ -119,3 +119,14 @@ export const getImageUrlsForKeyPrefix = async (req: Request, res: Response) => {
 
     res.status(status.success).send({ urls: keys.filter(key => !key.endsWith('.csv')).map(key => `https://${bucket}.s3.amazonaws.com/` + key) })
 }
+
+export const handleDonationSheetRequests = async (req: Request, res: Response) => {
+    const { spreadsheetId } = req.body;
+    if (!spreadsheetId) {
+        res.status(status.bad).send({ message: "Invalid spreadsheetId." });
+        return;
+    }
+    res.status(status.created).send("Processing your request!");
+
+    await processDonationRequestSheet(spreadsheetId);
+}
