@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError } from "../models/gift_card_request";
+import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, createSlide, deleteUnwantedSlides, getSlideThumbnail, reorderSlides, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3, uploadFileToS3, uploadImageUrlToS3 } from "./helper/uploadtos3";
@@ -29,6 +29,8 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { convertPdfToImage } from "../helpers/pdfToImage";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 import { UserGroupRepository } from "../repo/userGroupRepo";
+import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
+import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -1419,7 +1421,7 @@ const generateTreeCardImages = async (requestId: string, presentationId: string,
 }
 
 
-const generateGiftCardTemplates = async (giftCardRequest: GiftCardRequest, giftCards: GiftCard[]) => {
+const generateGiftCardTemplates = async (giftCardRequest: GiftCardRequest, giftCards: GiftCard[], messages?: GiftMessages) => {
     const startTime = new Date().getTime();
     if (!process.env.GIFT_CARD_PRESENTATION_ID) {
         throw new Error("Missing gift card template presentation id in ENV variables.");
@@ -1490,10 +1492,11 @@ const generateGiftCardTemplates = async (giftCardRequest: GiftCardRequest, giftC
             const giftCard = idToCardMap.get(cardId);
             if (giftCard) {
                 batchGiftCards.push(giftCard);
-                let primaryMessage = giftCardRequest.primary_message;
+                let primaryMessage = messages ? messages.primary_message : giftCardRequest.primary_message;
+                let eventType = messages ? messages.event_type : giftCardRequest.event_type;
                 if (giftCard.gifted_to && giftCard.assigned_to) {
                     const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
-                    if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assignee_name, giftCardRequest.event_type, (giftCard as any).relation);
+                    if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = getPersonalizedMessage(primaryMessage, (giftCard as any).assignee_name, eventType, (giftCard as any).relation);
                     if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
                 }
 
@@ -1502,8 +1505,8 @@ const generateGiftCardTemplates = async (giftCardRequest: GiftCardRequest, giftC
                     name: (giftCard as any).recipient_name || "",
                     sapling: (giftCard as any).sapling_id,
                     content1: primaryMessage,
-                    content2: giftCardRequest.secondary_message,
-                    logo: giftCardRequest.logo_url,
+                    content2: messages ? messages.secondary_message : giftCardRequest.secondary_message,
+                    logo: messages ? messages.logo_message : giftCardRequest.logo_url,
                     logo_message: giftCardRequest.logo_message
                 }
 
@@ -1796,8 +1799,12 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
         event_name: eventName,
         gifted_on: giftedOn,
         gifted_by: giftedBy,
+        primaryMessage,
+        secondaryMessage,
+        logoMessage,
         user,
-        profile_image_url: profileImageUrl
+        profile_image_url: profileImageUrl,
+        requesting_user: requestingUser,
     } = req.body;
 
     if (!user?.id && (!user?.name || !user?.email)) {
@@ -1835,11 +1842,37 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
             await redeemSingleGiftCard(card, userId, eventType, eventName, giftedBy, giftedOn, profileImageUrl);
         }
 
-        res.status(status.success).send();
+        const trnData: GiftRedeemTransactionCreationAttributes = {
+            group_id: sponsorGroup,
+            created_by: requestingUser,
+            modified_by: requestingUser,
+            recipient: userId,
+            occasion_name: eventName,
+            occasion_type: eventType,
+            gifted_by: giftedBy,
+            gifted_on: giftedOn,
+            primary_message: primaryMessage,
+            secondary_message: secondaryMessage,
+            logo_message: logoMessage,
+            created_at: new Date(),
+            updated_at: new Date(),
+        }
 
         const cardIds = giftCards.results.map(card => card.id);
+        if (sponsorGroup) {
+            const trn = await GRTransactionsRepository.createTransaction(trnData);
+            await GRTransactionsRepository.addCardsToTransaction(trn.id, cardIds);
+        }
+
+        res.status(status.success).send();
+
         const giftCardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: cardIds }])
-        await generateGiftCardTemplates(giftRequests.results[0], giftCardsResp.results);
+        await generateGiftCardTemplates(giftRequests.results[0], giftCardsResp.results, {
+            primary_message: primaryMessage,
+            secondary_message: secondaryMessage,
+            logo_message: logoMessage,
+            event_type: eventType,
+        });
         
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::redeemMultipleGiftCard", error);

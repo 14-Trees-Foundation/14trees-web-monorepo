@@ -5,6 +5,7 @@ import { getUniqueRequestId } from '../helpers/utils';
 import { UserRepository } from '../repo/userRepo';
 import { GiftCardRequestCreationAttributes, GiftCardRequestStatus } from '../models/gift_card_request';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
+import { User } from '../models/user';
 
 export const defaultGiftMessages = {
     primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
@@ -109,8 +110,7 @@ export async function processAndUpdateSheet(options: ProcessOptions): Promise<vo
     console.log('Sheet updated successfully.');
 }
 
-async function processDonationData(data: any): Promise<number | string> {
-
+async function processDonationData(data: any, createdBy: number): Promise<number | string> {
 
     const requestId = getUniqueRequestId();
 
@@ -123,8 +123,8 @@ async function processDonationData(data: any): Promise<number | string> {
     // create sponsorUser
     const user = await UserRepository.upsertUser({ name: sponsorName, email: sponsorEmail, phone: sponsorPhone });
 
-    const treesCountStr = data["Number of trees I would like to support."];
-    if (!treesCountStr || isNaN(parseInt(treesCountStr))) {
+    const treesCountStr = data["Vivek Trees to Assign"];
+    if (!treesCountStr || isNaN(parseInt(treesCountStr)) || parseInt(treesCountStr) <= 0) {
         return 'Invalid number of sponsored trees.'
     }
 
@@ -149,7 +149,7 @@ async function processDonationData(data: any): Promise<number | string> {
         category: 'Foundation',
         grove: null,
         gifted_on: new Date(),
-        created_by: 16791,  // Automation
+        created_by: createdBy,
         request_type: 'Normal Assignment',
         created_at: new Date(),
         updated_at: new Date(),
@@ -168,7 +168,20 @@ async function processDonationData(data: any): Promise<number | string> {
 export async function processDonationRequestSheet(): Promise<void> {
     const spreadsheetId = '1swIXOGQJM1jOuOXAr-yz6Xq3bB2ad5UtjE2s1XvkK9c';
     const sheetName = 'All Donations';
-    const extraColumns = ['System ReqId', 'System Status', 'System Message']
+    const extraColumns = ['System ReqId', 'System Status', 'System Message'];
+
+    const systemUserEmail = 'automation@14trees';
+    let user: User | null = null;
+    const userResp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', operatorValue: 'equals', value: systemUserEmail }]);
+    if (userResp.results.length === 1) {
+        user = userResp.results[0];
+    } else {
+        user = await UserRepository.addUser({
+            name: 'Automation',
+            email: systemUserEmail,
+        })
+    }
+
 
     processAndUpdateSheet({
         spreadsheetId: spreadsheetId,
@@ -178,7 +191,7 @@ export async function processDonationRequestSheet(): Promise<void> {
 
             const update: any = {};
             if (row["Vivek To process"] === "Y" && !row["System ReqId"]) {
-                const resp = await processDonationData(row);
+                const resp = await processDonationData(row, user.id);
                 update["System ReqId"] = typeof resp === 'string' ? '' : resp;
                 update["System Status"] = typeof resp === 'string' ? 'Failed' : 'Success';
                 update["System Message"] = typeof resp === 'string' ? resp : '';
