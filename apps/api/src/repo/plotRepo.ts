@@ -11,13 +11,11 @@ export class PlotRepository {
         if (!plot) {
             throw new Error("Plot doesn't exist");
         }
+        plotData.label = plotData.label?.trim() || null,
         plotData.updated_at = new Date();
-        await plot.update({ notes: plotData.notes ?? plot.notes, updated_at: new Date() }, { returning: true });
-        const updatedPlot = await Plot.findOne({
-            where: { id: plotData.id },
-            attributes: { include: ['notes'] }
-        });
-        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot?.id?.toString() ?? '' }];
+        const updatedPlot = await plot.update(plotData);
+
+        const filters: FilterItem[] = [{ columnField: 'id', operatorValue: 'equals', value: updatedPlot.id.toString() }];
         const plotsResp = await this.getPlots(0, 1, filters);
         return plotsResp.results[0] || updatedPlot;
     }
