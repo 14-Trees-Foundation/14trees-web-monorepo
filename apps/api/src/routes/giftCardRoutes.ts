@@ -1617,5 +1617,37 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
 
+/**
+ * @swagger
+ * /gift-cards/{gift_card_request_id}/trees:
+ *   get:
+ *     summary: Get booked trees with filters
+ *     description: Fetches booked trees for a gift card request with filtering options.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - name: gift_card_request_id
+ *         in: path
+ *         required: true
+ *         type: string
+ *       - name: offset
+ *         in: query
+ *         required: false
+ *         type: number
+ *       - name: limit
+ *         in: query
+ *         required: false
+ *         type: number
+ *       - name: filters
+ *         in: query
+ *         required: false
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved booked trees
+ */
+routes.get('/:gift_card_request_id/trees', giftCards.getBookedTrees);
+
+
 export default routes;
 
