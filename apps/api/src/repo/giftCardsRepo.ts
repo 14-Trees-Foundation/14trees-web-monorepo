@@ -197,19 +197,43 @@ export class GiftCardsRepository {
     }
 
     // Adding new function for Distribution Chart
-    static async getGiftRequestDistribution(): Promise<any> {
-        const query = `
-    SELECT 
-        COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
-        COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
-        COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
-    FROM "14trees_2".gift_card_requests;
-`;
-        
-       const result = await sequelize.query(query, { type: QueryTypes.SELECT });
-       console.log("Query Result:", JSON.stringify(result, null, 2));  // Log the result clearly eli
-
-        return result;
+    static async getGiftRequestDistribution(start_date?: Date, end_date?: Date, specific_date?: Date): Promise<any> {
+        let query;
+        let replacements: any[] = [];
+    
+        if (specific_date) {
+            replacements = [specific_date];
+            query = `
+                SELECT 
+                    TO_CHAR(created_at, 'YYYY-MM-DD') AS request_date,
+                    COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
+                    COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
+                    COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
+                FROM "14trees_2".gift_card_requests
+                WHERE DATE(created_at) = $1
+                GROUP BY request_date
+                ORDER BY request_date;
+            `;
+        } else {
+            const start = start_date || new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+            const end = end_date || new Date();
+            replacements = [start, end];
+    
+            query = `
+                SELECT 
+                    TO_CHAR(created_at, 'YYYY-MM') AS request_month,
+                    COUNT(CASE WHEN event_type = '1' THEN id ELSE NULL END) AS birthday_requests,
+                    COUNT(CASE WHEN event_type = '2' THEN id ELSE NULL END) AS memorial_requests,
+                    COUNT(CASE WHEN event_type = '3' THEN id ELSE NULL END) AS general_requests
+                FROM "14trees_2".gift_card_requests
+                WHERE created_at >= $1 AND created_at <= $2
+                GROUP BY request_month
+                ORDER BY request_month;
+            `;
+        }
+    
+        const result = await sequelize.query(query, { bind: replacements, type: QueryTypes.SELECT });
+        return result;
     }
     static async upsertGiftCards(giftCardsRequestId: number, users: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
