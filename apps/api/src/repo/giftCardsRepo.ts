@@ -348,7 +348,70 @@ export class GiftCardsRepository {
         return giftCardPlots;
     }
 
-    static async getBookedTrees(giftCardRequestId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCard>> {
+    static async getBookedTrees(giftCardRequestId: number, offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<GiftCard>> {
+        let whereConditions: string = `gc.gift_card_request_id = ${giftCardRequestId}`;
+    
+        if (filters && filters.length > 0) {
+            filters.forEach((filter) => {
+                let columnField = `gc.${filter.columnField}`; // Default to gift_cards table
+    
+                // Handle specific column fields that belong to other tables
+                if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name";
+                } else if (filter.columnField === "assignee_name") {
+                    columnField = "au.name";
+                } else if (filter.columnField === "plant_type") {
+                    columnField = "pt.name";
+                } else if (filter.columnField === "sapling_id") {
+                    columnField = "t.sapling_id";
+                }
+    
+                // Convert filter.value to a string or array of strings
+                let value = filter.value;
+                if (typeof value === 'number') {
+                    value = value.toString(); // Convert number to string
+                } else if (Array.isArray(value)) {
+                    value = value.map(v => (typeof v === 'number' ? v.toString() : v)).join(","); // Convert array elements to strings and join them
+                }
+    
+                // Generate the SQL condition
+                let condition: string;
+    
+                switch (filter.operatorValue) {
+                    case 'contains':
+                        condition = `${columnField} LIKE '%${value}%'`;
+                        break;
+                    case 'equals':
+                        condition = `${columnField} = '${value}'`;
+                        break;
+                    case 'startsWith':
+                        condition = `${columnField} LIKE '${value}%'`;
+                        break;
+                    case 'endsWith':
+                        condition = `${columnField} LIKE '%${value}'`;
+                        break;
+                    case 'isEmpty':
+                        condition = `${columnField} IS NULL OR ${columnField} = ''`;
+                        break;
+                    case 'isNotEmpty':
+                        condition = `${columnField} IS NOT NULL AND ${columnField} != ''`;
+                        break;
+                    case 'isAnyOf':
+                        condition = `${columnField} IN (${value.split(",").map(v => `'${v}'`).join(",")})`;
+                        break;
+                    default:
+                        condition = "1=1";
+                        break;
+                }
+    
+                whereConditions += ` AND ${condition}`;
+            });
+        }
+    
+        // Add ordering logic
+        const orderByClause = orderBy && orderBy.length > 0
+            ? `ORDER BY ${orderBy.map(o => `${o.column} ${o.order}`).join(", ")}`
+            : "ORDER BY gc.id DESC";
 
         const getQuery = `
             SELECT gc.*,
@@ -362,23 +425,26 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
             LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            WHERE gc.gift_card_request_id = ${giftCardRequestId}
-            ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
-        `
-
+            WHERE ${whereConditions}
+            ${orderByClause}
+            ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+        `;
+    
         const data: any[] = await sequelize.query(getQuery, {
             type: QueryTypes.SELECT
-        })
+        });
 
         const countQuery = `
             SELECT count(gc.id)
             FROM "14trees_2".gift_cards gc
-            WHERE gc.gift_card_request_id = ${giftCardRequestId};
-        `
+            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            WHERE ${whereConditions};
+        `;
 
         const countData: any[] = await sequelize.query(countQuery, {
             type: QueryTypes.SELECT
-        })
+        });
 
         return {
             offset: offset,
