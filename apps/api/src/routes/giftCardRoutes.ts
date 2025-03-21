@@ -467,7 +467,6 @@ routes.delete('/requests/:id', giftCards.deleteGiftCardRequest);
  */
 routes.get('/requests/analytics', giftCards.getGiftRequestTreeAnalytics)
 
-// NEW 
 /**
  * @swagger
  * /gift-cards/requests/distribution:
