@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import * as giftCards from '../controllers/giftCardController';
 import uploadFiles from "../helpers/multer";
-
 const routes = Router();
 
 /**
@@ -468,6 +467,42 @@ routes.delete('/requests/:id', giftCards.deleteGiftCardRequest);
  */
 routes.get('/requests/analytics', giftCards.getGiftRequestTreeAnalytics)
 
+/**
+ * @swagger
+ * /gift-cards/requests/distribution:
+ *   get:
+ *     summary: Get distribution of gift requests by type
+ *     description: Fetches the number of gift requests for different event types (Birthday, Memorial, General).
+ *     tags:
+ *       - Gift Cards
+ *     responses:
+ *       200:
+ *         description: Gift request distribution fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             birthday_requests:
+ *               type: integer
+ *               example: 10
+ *             memorial_requests:
+ *               type: integer
+ *               example: 5
+ *             general_requests:
+ *               type: integer
+ *               example: 20
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+*           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.get('/requests/distribution', giftCards.getGiftRequestDistribution);
 
 /**
  * @swagger

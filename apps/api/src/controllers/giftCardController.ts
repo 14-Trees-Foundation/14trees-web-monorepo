@@ -472,6 +472,65 @@ export const getGiftRequestTreeAnalytics = async (req: Request, res: Response) =
     }
 }
 
+export const getGiftRequestDistribution = async (req: Request, res: Response) => {
+    try {
+        const start_date = req.query.start_date ? new Date(req.query.start_date as string) : undefined;
+        const end_date = req.query.end_date ? new Date(req.query.end_date as string) : undefined;
+        const specific_date = req.query.specific_date ? new Date(req.query.specific_date as string) : undefined;
+
+        // Validate dates
+        if (start_date && isNaN(start_date.getTime())) {
+            return res.status(400).json({ status: "error", message: "Invalid start_date" });
+        }
+        if (end_date && isNaN(end_date.getTime())) {
+            return res.status(400).json({ status: "error", message: "Invalid end_date" });
+        }
+        if (specific_date && isNaN(specific_date.getTime())) {
+            return res.status(400).json({ status: "error", message: "Invalid specific_date" });
+        }
+
+        const respArray = await GiftCardsRepository.getGiftRequestDistribution(start_date, end_date, specific_date);
+
+        // Convert Date objects to strings in 'YYYY-MM' format for generateMonthRange
+        const startDateStr = start_date ? start_date.toISOString().split('T')[0] : undefined;
+        const endDateStr = end_date ? end_date.toISOString().split('T')[0] : undefined;
+
+        const allMonths = generateMonthRange(startDateStr, endDateStr);
+        const responseData = allMonths.map((month, index) => {
+            const matchingRow = respArray.find((row: any) => row.request_month === month);
+            return {
+                month_start: month,
+                birthday_requests: matchingRow ? parseInt(matchingRow.birthday_requests, 10) || 0 : 0,
+                memorial_requests: matchingRow ? parseInt(matchingRow.memorial_requests, 10) || 0 : 0,
+                general_requests: matchingRow ? parseInt(matchingRow.general_requests, 10) || 0 : 0,
+                start_date: index === 0 ? startDateStr : null,
+                end_date: index === allMonths.length - 1 ? endDateStr : null
+            };
+        });
+        res.status(200).json(responseData);
+
+    } catch (error: any) {
+        console.error("[Controller] ERROR:", error);
+        res.status(500).json({
+            status: "error",
+            message: "Something went wrong. Please try again later.",
+        });
+    }
+};
+
+function generateMonthRange(startDate: string | undefined, endDate: string | undefined): string[] {
+    const start = new Date(startDate || new Date().toISOString().slice(0, 7));
+    const end = new Date(endDate || new Date().toISOString().slice(0, 7));
+
+    let months: string[] = [];
+    let current = new Date(start);
+    while (current <= end) {
+        months.push(current.toISOString().slice(0, 7)); // YYYY-MM format
+        current.setMonth(current.getMonth() + 1);
+    }
+    return months;
+}
+
 // TODO: Not required. Remove this.
 const resetGiftCardUsersForRequest = async (giftCardRequestId: number) => {
     // delete plot selection
