@@ -1045,8 +1045,7 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 export const getBookedTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const { gift_card_request_id: giftCardRequestId } = req.params;
-    const filters: FilterItem[] = req.query.filters ? JSON.parse(decodeURIComponent(req.query.filters as string)) : undefined;
-    const orderBy: any[] = req.query.orderBy ? JSON.parse(decodeURIComponent(req.query.orderBy as string)) : undefined;
+    const { filters, orderBy } = req.body;
 
     if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
         res.status(status.bad).json({

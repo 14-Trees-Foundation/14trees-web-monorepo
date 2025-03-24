@@ -350,6 +350,7 @@ export class GiftCardsRepository {
 
     static async getBookedTrees(giftCardRequestId: number, offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<GiftCard>> {
         let whereConditions: string = `gc.gift_card_request_id = ${giftCardRequestId}`;
+        let replacements: any = {};
     
         if (filters && filters.length > 0) {
             filters.forEach((filter) => {
@@ -365,46 +366,9 @@ export class GiftCardsRepository {
                 } else if (filter.columnField === "sapling_id") {
                     columnField = "t.sapling_id";
                 }
-    
-                // Convert filter.value to a string or array of strings
-                let value = filter.value;
-                if (typeof value === 'number') {
-                    value = value.toString(); // Convert number to string
-                } else if (Array.isArray(value)) {
-                    value = value.map(v => (typeof v === 'number' ? v.toString() : v)).join(","); // Convert array elements to strings and join them
-                }
-    
-                // Generate the SQL condition
-                let condition: string;
-    
-                switch (filter.operatorValue) {
-                    case 'contains':
-                        condition = `${columnField} LIKE '%${value}%'`;
-                        break;
-                    case 'equals':
-                        condition = `${columnField} = '${value}'`;
-                        break;
-                    case 'startsWith':
-                        condition = `${columnField} LIKE '${value}%'`;
-                        break;
-                    case 'endsWith':
-                        condition = `${columnField} LIKE '%${value}'`;
-                        break;
-                    case 'isEmpty':
-                        condition = `${columnField} IS NULL OR ${columnField} = ''`;
-                        break;
-                    case 'isNotEmpty':
-                        condition = `${columnField} IS NOT NULL AND ${columnField} != ''`;
-                        break;
-                    case 'isAnyOf':
-                        condition = `${columnField} IN (${value.split(",").map(v => `'${v}'`).join(",")})`;
-                        break;
-                    default:
-                        condition = "1=1";
-                        break;
-                }
-    
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions += ` AND ${condition}`;
+                replacements = { ...replacements, ...replacement };
             });
         }
     
@@ -431,9 +395,10 @@ export class GiftCardsRepository {
         `;
     
         const data: any[] = await sequelize.query(getQuery, {
+            replacements: replacements,
             type: QueryTypes.SELECT
         });
-
+    
         const countQuery = `
             SELECT count(gc.id)
             FROM "14trees_2".gift_cards gc
@@ -443,6 +408,7 @@ export class GiftCardsRepository {
         `;
 
         const countData: any[] = await sequelize.query(countQuery, {
+            replacements: replacements,
             type: QueryTypes.SELECT
         });
 

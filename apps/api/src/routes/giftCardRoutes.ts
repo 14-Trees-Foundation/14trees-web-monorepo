@@ -873,7 +873,7 @@ routes.post('/unbook', giftCards.unBookTrees);
 /**
  * @swagger
  * /gift-cards/trees/{gift_card_request_id}:
- *   get:
+ *   post:
  *     summary: Get booked trees
  *     description: Fetches trees booked for a gift card request.
  *     tags:
@@ -903,7 +903,7 @@ routes.post('/unbook', giftCards.unBookTrees);
  *         schema:
  *           type: object
  *           properties:
- *             offser:
+ *             offset:
  *               type: number
  *               example: 0
  *             total:
@@ -930,7 +930,7 @@ routes.post('/unbook', giftCards.unBookTrees);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.get('/trees/:gift_card_request_id', giftCards.getBookedTrees);
+routes.post('/trees/:gift_card_request_id', giftCards.getBookedTrees);
 
 
 /**
