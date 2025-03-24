@@ -128,7 +128,6 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/email-templates", emailTemplateRoutes );
   app.use("/api/payments", paymentRoutes );
   app.use("/api/view", viewRoutes);
-  app.use("/api/gift-cards", giftCardRoutes);
   
   app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
 

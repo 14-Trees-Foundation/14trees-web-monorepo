@@ -1047,45 +1047,58 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 
 export const getBookedTrees = async (req: Request, res: Response) => {
     try {
-        const { offset, limit } = req.query;
+        const { offset, limit } = getOffsetAndLimitFromRequest(req);
         const { gift_card_request_id } = req.params;
         
-        // Convert filters to FilterItem[] format
         let filters: FilterItem[] = [];
+        
+        // Parse filters from query params
         if (req.query.filters) {
-            const parsedFilters = JSON.parse(req.query.filters as string);
-            
-            if (parsedFilters.recipient_name) {
-                filters.push({
-                    columnField: 'recipient_name',
-                    operatorValue: parsedFilters.recipient_name.operatorValue,
-                    value: parsedFilters.recipient_name.value
-                });
-            }
-            
-            if (parsedFilters.assignee_name) {
-                filters.push({
-                    columnField: 'assignee_name',
-                    operatorValue: parsedFilters.assignee_name.operatorValue,
-                    value: parsedFilters.assignee_name.value
+            try {
+                const parsedFilters = JSON.parse(req.query.filters as string);
+                if (typeof parsedFilters === 'object' && !Array.isArray(parsedFilters)) {
+                    Object.entries(parsedFilters).forEach(([key, value]: [string, any]) => {
+                        if (value && value.operatorValue && value.value) {
+                            filters.push({
+                                columnField: key,
+                                operatorValue: value.operatorValue,
+                                value: value.value
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.log("[ERROR]", "GiftCardController::getBookedTrees", "Filter parsing error:", error);
+                return res.status(status.bad).json({ 
+                    message: "Invalid filter format"
                 });
             }
         }
 
-        // Use existing getBookedTrees method
+        // Always add gift_card_request_id filter
+        filters.push({
+            columnField: 'gift_card_request_id',
+            operatorValue: 'equals',
+            value: Number(gift_card_request_id)
+        });
+
         const result = await GiftCardsRepository.getBookedTrees(
-            Number(offset) || 0,
-            Number(limit) || 10,
+            Number(offset),
+            Number(limit),
             filters
         );
 
-        res.json({
+        return res.status(status.success).json({
             results: result.results,
-            total: result.total
+            total: result.total,
+            offset: Number(offset)
         });
-    } catch (error) {
-        console.error('Error fetching booked trees:', error);
-        res.status(500).json({ message: 'Failed to fetch gift trees' });
+
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::getBookedTrees", error);
+        return res.status(status.error).json({
+            message: "Something went wrong. Please try again after some time"
+        });
     }
 };
 
