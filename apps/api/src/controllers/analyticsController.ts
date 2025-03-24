@@ -85,58 +85,6 @@ export const getUniqueUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getPersonalGiftRequests = async (req: Request, res: Response) => {
-  try {
-    const counts = await GiftCardsRepository.getGiftCardSummaryCounts();
-    res.status(status.success).send({
-      count: counts.personal_gift_requests
-    });
-  } catch (error) {
-    res.status(status.error).send({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-export const getCorporateGiftRequests = async (req: Request, res: Response) => {
-  try {
-    const counts = await GiftCardsRepository.getGiftCardSummaryCounts();
-    res.status(status.success).send({
-      count: counts.corporate_gift_requests
-    });
-  } catch (error) {
-    res.status(status.error).send({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-export const getPersonalGiftedTrees = async (req: Request, res: Response) => {
-  try {
-    const counts = await GiftCardsRepository.getGiftCardSummaryCounts();
-    res.status(status.success).send({
-      count: counts.personal_gifted_trees
-    });
-  } catch (error) {
-    res.status(status.error).send({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
-export const getCorporateGiftedTrees = async (req: Request, res: Response) => {
-  try {
-    const counts = await GiftCardsRepository.getGiftCardSummaryCounts();
-    res.status(status.success).send({
-      count: counts.corporate_gifted_trees
-    });
-  } catch (error) {
-    res.status(status.error).send({
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-};
-
 export const getTotalPlots = async (req: Request, res: Response) => {
   try {
     const count = await PlotRepository.plotsCount();
