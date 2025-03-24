@@ -130,6 +130,23 @@ export class GiftCardsRepository {
             })
         };
     }
+    static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number}> {
+        const query = `
+          SELECT 
+            COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_gift_requests,
+            COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_gift_requests,
+            SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_gifted_trees,
+            SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_gifted_trees
+          FROM "14trees_2".gift_card_requests
+        `;
+        const result = await sequelize.query(query, { type: QueryTypes.SELECT });
+        return result[0] as {
+          personal_gift_requests: number,
+          corporate_gift_requests: number,
+          personal_gifted_trees: number,
+          corporate_gifted_trees: number
+        };
+      }
 
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
         return await GiftCardRequest.create(data);
