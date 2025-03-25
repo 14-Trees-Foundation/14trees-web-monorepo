@@ -873,7 +873,7 @@ routes.post('/unbook', giftCards.unBookTrees);
 /**
  * @swagger
  * /gift-cards/trees/{gift_card_request_id}:
- *   get:
+ *   post:
  *     summary: Get booked trees
  *     description: Fetches trees booked for a gift card request.
  *     tags:
@@ -939,7 +939,7 @@ routes.post('/unbook', giftCards.unBookTrees);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-//routes.get('/trees/:gift_card_request_id', giftCards.getBookedTrees);
+routes.post('/trees/get', giftCards.getBookedTrees);
 
 
 /**
@@ -1626,65 +1626,6 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
 
-/**
- * @swagger
- * /gift-cards/trees/get:
- *   post:
- *     summary: Get booked trees
- *     description: Fetches booked trees with pagination and filters
- *     tags:
- *       - Gift Cards
- *     parameters:
- *       - in: body
- *         name: body
- *         required: true
- *         schema:
- *           type: object
- *           properties:
- *             offset:
- *               type: integer
- *               example: 0
- *             limit:
- *               type: integer
- *               example: 10
- *             filters:
- *               type: array
- *               items:
- *                 $ref: '#/definitions/Filter'
- *  responses:
- *       200:
- *         description: Booked trees fetched successfully
- *         schema:
- *           type: object
- *           properties:
- *             offser:
- *               type: number
- *               example: 0
- *             total:
- *               type: number
- *               example: 20
- *             results:
- *               type: array
- *               items:
- *                 $ref: '#/definitions/GiftRequestTree'
- *       400:
- *         description: Bad request
- *         schema:
- *           type: object
- *           properties:
- *             message:
- *               type: string
- *               example: "Please provide valid input details!"
- *       500:
- *         description: Internal server error
- *         schema:
- *           type: object
- *           properties:
- *             message:
- *               type: string
- *               example: "Something went wrong. Please try again later." 
- */
-routes.post('/trees/get', giftCards.getBookedTrees);
 
 
 export default routes;
