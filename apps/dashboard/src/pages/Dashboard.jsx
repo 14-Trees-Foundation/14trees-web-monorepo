@@ -180,7 +180,7 @@ const useStyles = makeStyles((theme) =>
     feed: {
       marginLeft: "4%",
       marginRight: "4%",
-      "&::WebkitScrollbar": {
+      "&::-webkit-scrollbar": {
         width: "0.6em",
       },
       [theme.breakpoints.down("1025")]: {
