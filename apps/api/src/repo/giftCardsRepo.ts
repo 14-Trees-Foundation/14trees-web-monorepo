@@ -138,6 +138,7 @@ export class GiftCardsRepository {
             SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_gifted_trees,
             SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_gifted_trees
           FROM "14trees_2".gift_card_requests
+          WHERE request_type = 'Cards Request'
         `;
         const result = await sequelize.query(query, { type: QueryTypes.SELECT });
         return result[0] as {
