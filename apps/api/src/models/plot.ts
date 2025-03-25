@@ -23,6 +23,7 @@ interface PlotAttributes {
   label: string | null;
   accessibility_status: string | null;
   acres_area: number | null;
+  notes?: string;
 }
 
 interface PlotCreationAttributes
@@ -93,6 +94,9 @@ implements PlotAttributes {
 
     @Column({ type: DataType.INTEGER })
     pit_count!: number | null;
+
+    @Column({ type: DataType.TEXT, allowNull: true }) 
+    notes?: string;
 }
 
 export { Plot }

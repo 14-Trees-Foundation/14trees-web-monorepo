@@ -18,14 +18,14 @@ import { SortOrder } from "../models/common";
 
 export const updatePlot = async (req: Request, res: Response) => {
     try {
-        let result = await PlotRepository.updatePlot(req.body)
+        const updatedPlot = await PlotRepository.updatePlot(req.body)
 
         const tags = req.body.tags;
         if (tags && tags.length > 0) {
             await TagRepository.createTags(tags.map((tag: string) => ({ tag, type: 'USER_DEFINED' })))
         }
         
-        res.status(status.created).json(result);
+        res.status(status.success).json(updatedPlot);
     } catch (error) {
         console.log(error)
         res.status(status.error).json({ error: error });
@@ -67,7 +67,6 @@ export const getPlots = async (req: Request, res: Response) => {
 
     try {
         let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
-
         result.results = result.results.map((item: any) => {
             return {
                 ...item,
@@ -84,6 +83,7 @@ export const getPlots = async (req: Request, res: Response) => {
                 tree_count: parseInt(item.tree_count),
                 shrub_count: parseInt(item.shrub_count),
                 herb_count: parseInt(item.herb_count),
+                climber_count: parseInt(item.climber_count),
                 booked_trees: parseInt(item.booked_trees),
                 assigned_trees: parseInt(item.assigned_trees),
                 unbooked_assigned_trees: parseInt(item.unbooked_assigned_trees),
@@ -99,6 +99,11 @@ export const getPlots = async (req: Request, res: Response) => {
                 unbooked_assigned_herbs: parseInt(item.unbooked_assigned_herbs),
                 available_herbs: parseInt(item.available_herbs),
                 card_available_herbs: parseInt(item.card_available_herbs),
+                booked_climber: parseInt(item.booked_climber),
+                assigned_climber: parseInt(item.assigned_climber),
+                unbooked_assigned_climber: parseInt(item.unbooked_assigned_climber),
+                available_climber: parseInt(item.available_climber),
+                card_available_climber: parseInt(item.card_available_climber),
                 distinct_plants: item.distinct_plants ? item.distinct_plants.filter((item: any) => item !== null) : [],
             }
         })
