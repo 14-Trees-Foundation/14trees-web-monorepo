@@ -5,7 +5,6 @@ const morgan = require("morgan");
 import cors from "cors";
 import swaggerUi from "swagger-ui-express"
 import { readFileSync } from "fs"
-import 'reflect-metadata';
 
 // Routes
 import appV2Routes from "./routes/appv2Routes";

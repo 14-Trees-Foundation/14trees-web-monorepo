@@ -1048,52 +1048,19 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 export const getBookedTrees = async (req: Request, res: Response) => {
     try {
         const { offset, limit } = getOffsetAndLimitFromRequest(req);
-        const { gift_card_request_id } = req.params;
-        
-        let filters: FilterItem[] = [];
-        
-        // Parse filters from query params
-        if (req.query.filters) {
-            try {
-                const parsedFilters = JSON.parse(req.query.filters as string);
-                if (typeof parsedFilters === 'object' && !Array.isArray(parsedFilters)) {
-                    Object.entries(parsedFilters).forEach(([key, value]: [string, any]) => {
-                        if (value && value.operatorValue && value.value) {
-                            filters.push({
-                                columnField: key,
-                                operatorValue: value.operatorValue,
-                                value: value.value
-                            });
-                        }
-                    });
-                }
-            } catch (error) {
-                console.log("[ERROR]", "GiftCardController::getBookedTrees", "Filter parsing error:", error);
-                return res.status(status.bad).json({ 
-                    message: "Invalid filter format"
-                });
-            }
-        }
-
-        // Always add gift_card_request_id filter
-        filters.push({
-            columnField: 'gift_card_request_id',
-            operatorValue: 'equals',
-            value: Number(gift_card_request_id)
-        });
+        const filters: FilterItem[] = req.body?.filters || [];
 
         const result = await GiftCardsRepository.getBookedTrees(
-            Number(offset),
-            Number(limit),
+            offset,
+            limit,
             filters
         );
 
         return res.status(status.success).json({
             results: result.results,
             total: result.total,
-            offset: Number(offset)
+            offset
         });
-
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::getBookedTrees", error);
         return res.status(status.error).json({

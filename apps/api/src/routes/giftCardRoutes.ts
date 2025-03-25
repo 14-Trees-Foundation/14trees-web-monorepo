@@ -878,13 +878,22 @@ routes.post('/unbook', giftCards.unBookTrees);
  *     description: Fetches trees booked for a gift card request.
  *     tags:
  *       - Gift Cards
- *     parameters:
- *       - name: gift_card_request_id
- *         in: path
- *         description: ID of the gift card request
- *         required: true
- *         type: integer
- *         example: 1
+*     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for fetching gift card requests
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             filters:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Filter'
+ *             order_by:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/OrderBy'
  *       - name: offset
  *         in: query
  *         description: Offset for pagination
@@ -930,7 +939,7 @@ routes.post('/unbook', giftCards.unBookTrees);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.get('/trees/:gift_card_request_id', giftCards.getBookedTrees);
+//routes.get('/trees/:gift_card_request_id', giftCards.getBookedTrees);
 
 
 /**
@@ -1619,34 +1628,63 @@ routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFun
 
 /**
  * @swagger
- * /gift-cards/{gift_card_request_id}/trees:
- *   get:
- *     summary: Get booked trees with filters
- *     description: Fetches booked trees for a gift card request with filtering options.
+ * /gift-cards/trees/get:
+ *   post:
+ *     summary: Get booked trees
+ *     description: Fetches booked trees with pagination and filters
  *     tags:
  *       - Gift Cards
  *     parameters:
- *       - name: gift_card_request_id
- *         in: path
+ *       - in: body
+ *         name: body
  *         required: true
- *         type: string
- *       - name: offset
- *         in: query
- *         required: false
- *         type: number
- *       - name: limit
- *         in: query
- *         required: false
- *         type: number
- *       - name: filters
- *         in: query
- *         required: false
- *         type: string
- *     responses:
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             limit:
+ *               type: integer
+ *               example: 10
+ *             filters:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Filter'
+ *  responses:
  *       200:
- *         description: Successfully retrieved booked trees
+ *         description: Booked trees fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offser:
+ *               type: number
+ *               example: 0
+ *             total:
+ *               type: number
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/GiftRequestTree'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Please provide valid input details!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later." 
  */
-routes.get('/:gift_card_request_id/trees', giftCards.getBookedTrees);
+routes.post('/trees/get', giftCards.getBookedTrees);
 
 
 export default routes;
