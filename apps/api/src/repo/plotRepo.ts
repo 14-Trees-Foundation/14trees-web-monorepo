@@ -81,7 +81,6 @@ export class PlotRepository {
                     then s.name_marathi
                     else s.name_english 
                 end site_name,
-            p.notes,
             COUNT(t.id) as total, 
             COUNT(t.assigned_to) as assigned,
             SUM(CASE 
