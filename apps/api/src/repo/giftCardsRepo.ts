@@ -348,7 +348,34 @@ export class GiftCardsRepository {
         return giftCardPlots;
     }
 
-    static async getBookedTrees(giftCardRequestId: number, offset: number, limit: number): Promise<PaginatedResponse<GiftCard>> {
+    static async getBookedTrees(giftCardRequestId: number, offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<GiftCard>> {
+        let whereConditions: string = `gc.gift_card_request_id = ${giftCardRequestId}`;
+        let replacements: any = {};
+    
+        if (filters && filters.length > 0) {
+            filters.forEach((filter) => {
+                let columnField = `gc.${filter.columnField}`; // Default to gift_cards table
+    
+                // Handle specific column fields that belong to other tables
+                if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name";
+                } else if (filter.columnField === "assignee_name") {
+                    columnField = "au.name";
+                } else if (filter.columnField === "plant_type") {
+                    columnField = "pt.name";
+                } else if (filter.columnField === "sapling_id") {
+                    columnField = "t.sapling_id";
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereConditions += ` AND ${condition}`;
+                replacements = { ...replacements, ...replacement };
+            });
+        }
+    
+        // Add ordering logic
+        const orderByClause = orderBy && orderBy.length > 0
+            ? `ORDER BY ${orderBy.map(o => `${o.column} ${o.order}`).join(", ")}`
+            : "ORDER BY gc.id DESC";
 
         const getQuery = `
             SELECT gc.*,
@@ -362,23 +389,28 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
             LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            WHERE gc.gift_card_request_id = ${giftCardRequestId}
-            ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
-        `
-
+            WHERE ${whereConditions}
+            ${orderByClause}
+            ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+        `;
+    
         const data: any[] = await sequelize.query(getQuery, {
+            replacements: replacements,
             type: QueryTypes.SELECT
-        })
-
+        });
+    
         const countQuery = `
             SELECT count(gc.id)
             FROM "14trees_2".gift_cards gc
-            WHERE gc.gift_card_request_id = ${giftCardRequestId};
-        `
+            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            WHERE ${whereConditions};
+        `;
 
         const countData: any[] = await sequelize.query(countQuery, {
+            replacements: replacements,
             type: QueryTypes.SELECT
-        })
+        });
 
         return {
             offset: offset,

@@ -1045,22 +1045,25 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 export const getBookedTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const { gift_card_request_id: giftCardRequestId } = req.params;
+    const { filters, orderBy } = req.body;
+
     if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
-        })
+        });
+        return; 
     }
 
     try {
-        const resp = await GiftCardsRepository.getBookedTrees(parseInt(giftCardRequestId), offset, limit);
+        const resp = await GiftCardsRepository.getBookedTrees(parseInt(giftCardRequestId), offset, limit, filters, orderBy);
         res.status(status.success).json(resp);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::getBookedTrees", error);
         res.status(status.error).json({
             message: 'Something went wrong. Please try again later.'
-        })
+        });
     }
-}
+};
 
 export const unBookTrees = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId, tree_ids, unmap_all: unmapAll } = req.body;
