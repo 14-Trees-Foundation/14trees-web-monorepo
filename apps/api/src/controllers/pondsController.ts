@@ -2,7 +2,6 @@ import { status } from "../helpers/status";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { PondRepository } from "../repo/pondsRepo";
-import { isArray } from "lodash";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 
@@ -32,7 +31,7 @@ export const addPond = async (req: Request, res: Response) => {
   }
   
   try {
-    const pond = await PondRepository.addPond(req.body, isArray(req.files) ? req.files: [])
+    const pond = await PondRepository.addPond(req.body, Array.isArray(req.files) ? req.files: [])
     res.status(status.created).json(pond);
   } catch (error) {
     res.status(status.error).json({ error });
@@ -47,7 +46,7 @@ export const updatePond = async (req: Request, res: Response) => {
   }
 
   try {
-    const pond = await PondRepository.updatePond(req.body, isArray(req.files) ? req.files: []);
+    const pond = await PondRepository.updatePond(req.body, Array.isArray(req.files) ? req.files: []);
     res.status(status.success).send(pond);
   } catch (error) {
     console.log(error);
