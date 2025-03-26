@@ -7,7 +7,6 @@ import { Request, Response } from "express";
 import PlantTypeRepository from "../repo/plantTypeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { status } from "../helpers/status";
-import { isArray } from "lodash";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 import { syncNotionPlantTypeIllustrations } from "../services/notion/plant_type_illustrations";
@@ -50,7 +49,7 @@ export const addPlantType = async (req: Request, res: Response) => {
 
   // Save the info into the sheet
   try {
-    const plantType = await PlantTypeRepository.addPlantType(req.body, isArray(req.files) ? req.files : [])
+    const plantType = await PlantTypeRepository.addPlantType(req.body, Array.isArray(req.files) ? req.files : [])
     res.status(status.created).json(plantType);
   } catch (error: any) {
     res.status(status.error).send({ error: error.message });
@@ -60,7 +59,7 @@ export const addPlantType = async (req: Request, res: Response) => {
 
 export const updatePlantType = async (req: Request, res: Response) => {
   try {
-    const plantType = await PlantTypeRepository.updatePlantType(req.body, isArray(req.files) ? req.files : [])
+    const plantType = await PlantTypeRepository.updatePlantType(req.body, Array.isArray(req.files) ? req.files : [])
     res.status(status.success).json(plantType);
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
