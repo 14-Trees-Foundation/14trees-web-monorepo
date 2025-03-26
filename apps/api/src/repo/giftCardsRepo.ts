@@ -558,4 +558,36 @@ export class GiftCardsRepository {
     static async deleteGiftRequestUsers(whereClause: WhereOptions<GiftRequestUserAttributes>): Promise<void> {
         await GiftRequestUser.destroy({ where: whereClause });
     }
+
+    static async getGiftRequestsAnalytics(startDate: string, endDate: string): Promise<{
+        newPersonalRequests: number;
+        newCorporateRequests: number;
+        totalTreesServed: number;
+    }> {
+        const query = `
+            SELECT 
+                COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_requests,
+                COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_requests,
+                SUM(no_of_cards) as total_trees_served
+            FROM "14trees_2".gift_card_requests
+            WHERE created_at BETWEEN :startDate AND :endDate
+            AND request_type = 'Cards Request'
+        `;
+
+        try {
+            const result = await sequelize.query(query, {
+                replacements: { startDate, endDate },
+                type: QueryTypes.SELECT
+            });
+
+            return {
+                newPersonalRequests: parseInt((result[0] as any).personal_requests) || 0,
+                newCorporateRequests: parseInt((result[0] as any).corporate_requests) || 0,
+                totalTreesServed: parseInt((result[0] as any).total_trees_served) || 0
+            };
+        } catch (error) {
+            console.error('[ERROR] GiftCardsRepository::getGiftRequestsAnalytics:', error);
+            throw new Error('Failed to fetch gift requests analytics');
+        }
+    }
 }

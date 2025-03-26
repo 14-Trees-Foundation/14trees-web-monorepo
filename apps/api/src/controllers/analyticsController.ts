@@ -125,3 +125,59 @@ export const getTotalEmployees = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const getTimeRangeAnalytics = async (req: Request, res: Response) => {
+  try {
+      const { startDate, endDate } = req.query;
+
+      if (!startDate || !endDate) {
+          return res.status(status.error).send({
+              error: "Start date and end date are required"
+          });
+      }
+
+      // Fetch all analytics in parallel
+      const [
+          plantTypeAnalytics,
+          treeAnalytics,
+          siteAnalytics,
+          plotAnalytics,
+          giftRequestAnalytics
+      ] = await Promise.all([
+          PlantTypeRepository.getPlantTypeAnalytics(startDate.toString(), endDate.toString()),
+          TreeRepository.getTreesAnalytics(startDate.toString(), endDate.toString()),
+          SiteRepository.getSitesAnalytics(startDate.toString(), endDate.toString()),
+          PlotRepository.getPlotAnalytics(startDate.toString(), endDate.toString()),
+          GiftCardsRepository.getGiftRequestsAnalytics(startDate.toString(), endDate.toString())
+      ]);
+
+      res.status(status.success).send({
+          plantTypes: {
+              newCount: plantTypeAnalytics.newPlantTypesCount,
+              topPlanted: plantTypeAnalytics.topPlantedTrees
+          },
+          trees: {
+              newCount: treeAnalytics.newTreesCount,
+              assignedCount: treeAnalytics.assignedTreesCount
+          },
+          sites: {
+              newCount: siteAnalytics.newSitesCount,
+              topSites: siteAnalytics.topSitesByTrees
+          },
+          plots: {
+              newCount: plotAnalytics.newPlotsCount,
+              topPlots: plotAnalytics.topPlotsByTrees
+          },
+          giftRequests: {
+              newPersonalRequests: giftRequestAnalytics.newPersonalRequests,
+              newCorporateRequests: giftRequestAnalytics.newCorporateRequests,
+              totalTreesServed: giftRequestAnalytics.totalTreesServed
+          }
+      });
+  } catch (error) {
+      console.error('[ERROR] analyticsController::getTimeRangeAnalytics:', error);
+      res.status(status.error).send({
+          error: error instanceof Error ? error.message : 'Failed to fetch time range analytics'
+      });
+  }
+};

@@ -858,6 +858,40 @@ class TreeRepository {
 
       return data[0];
   }
+
+  public static async getTreesAnalytics(startDate: string, endDate: string): Promise<{
+    newTreesCount: number;
+    assignedTreesCount: number;
+}> {
+    try {
+        // Count new trees planted in date range
+        const newTreesCount = await Tree.count({
+            where: {
+                created_at: {
+                    [Op.between]: [startDate, endDate]
+                }
+            }
+        });
+
+        // Count assigned/sponsored trees in date range
+        const assignedTreesCount = await Tree.count({
+            where: {
+                assigned_to: { [Op.not]: null },
+                assigned_at: {
+                    [Op.between]: [startDate, endDate]
+                }
+            }
+        });
+
+        return {
+            newTreesCount,
+            assignedTreesCount
+        };
+    } catch (error) {
+        console.error('[ERROR] TreeRepository::getTreesAnalytics:', error);
+        throw new Error('Failed to fetch tree analytics');
+    }
+}
 }
 
 export default TreeRepository;

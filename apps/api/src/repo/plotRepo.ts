@@ -141,7 +141,7 @@ export class PlotRepository {
             END) AS card_available,
             SUM(CASE 
                 WHEN t.mapped_to_user IS NULL 
-                    AND t.mapped_to_group IS NULL
+                    AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NOT NULL
                 THEN 1 
                 ELSE 0 
@@ -666,5 +666,51 @@ export class PlotRepository {
             ...resp[0],
             ...resp2[0]
         };
+    }
+
+    public static async getPlotAnalytics(startDate: string, endDate: string): Promise<{
+        newPlotsCount: number;
+        topPlotsByTrees: Array<{ plot_name: string; tree_count: number }>;
+    }> {
+        try {
+            // Query for new plots count
+            const newPlotsQuery = `
+                SELECT COUNT(*) as count
+                FROM "14trees_2".plots
+                WHERE created_at BETWEEN :startDate AND :endDate;
+            `;
+
+            // Query for top plots by tree count using existing join structure
+            const topPlotsQuery = `
+                SELECT 
+                    p.name as plot_name,
+                    COUNT(t.id) as tree_count
+                FROM "14trees_2".plots p
+                LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
+                WHERE t.created_at BETWEEN :startDate AND :endDate
+                GROUP BY p.id, p.name
+                ORDER BY tree_count DESC
+                LIMIT 10;
+            `;
+
+            const [newPlots, topPlots] = await Promise.all([
+                sequelize.query(newPlotsQuery, {
+                    replacements: { startDate, endDate },
+                    type: QueryTypes.SELECT
+                }),
+                sequelize.query(topPlotsQuery, {
+                    replacements: { startDate, endDate },
+                    type: QueryTypes.SELECT
+                })
+            ]);
+
+            return {
+                newPlotsCount: parseInt((newPlots[0] as any).count) || 0,
+                topPlotsByTrees: topPlots as Array<{ plot_name: string; tree_count: number }>
+            };
+        } catch (error) {
+            console.error('[ERROR] PlotRepository::getPlotAnalytics:', error);
+            throw new Error('Failed to fetch plot analytics');
+        }
     }
 }
