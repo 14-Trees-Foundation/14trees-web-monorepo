@@ -10,6 +10,7 @@ import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { VisitRepository } from "../repo/visitsRepo";
 import { OrderRepository } from "../repo/ordersRepo";
+import { SortOrder } from "../models/common";
 
 
 /*
@@ -19,16 +20,11 @@ import { OrderRepository } from "../repo/ordersRepo";
 
 export const getGroups = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const filters: FilterItem[] = req.body?.filters;
-    let whereClause = {};
-    if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-        })
-    }
+    const filters: FilterItem[] = req.body?.filters || []; // Explicit FilterItem[] type
+    const orderBy: SortOrder[] = req.body?.order_by || [];
 
     try {
-        let result = await GroupRepository.getGroups(offset, limit, whereClause);
+        let result = await GroupRepository.getGroups(offset, limit, filters, orderBy);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -100,11 +96,11 @@ export const deleteGroup = async (req: Request, res: Response) => {
 
 export const searchGroups = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const searchStr = req.params.search;
-    let whereClause = getWhereOptions("name", "contains", searchStr);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: SortOrder[] = req.body?.order_by;
 
     try {
-        let result = await GroupRepository.getGroups(offset, limit, whereClause);
+        let result = await GroupRepository.getGroups(offset, limit, filters, orderBy);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

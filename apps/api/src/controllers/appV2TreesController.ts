@@ -315,9 +315,13 @@ export const login = async (req: Request, res: Response) => {
         roles: user.roles,
         token: ""
     }
-    const groupCheck = await GroupRepository.getGroups(0, 1, {
-        type: "onsite_staff"
-    });
+    const groupCheck = await GroupRepository.getGroups(0, 1, [
+        { 
+            columnField: "type", 
+            operatorValue: "=",
+            value: "onsite_staff" 
+        }
+    ], []);
     let isAuthorized = false;
     if (groupCheck.results.length !== 0) {
         const userGroup = await UserGroupRepository.getUserGroup(user.id, groupCheck.results[0].id);
