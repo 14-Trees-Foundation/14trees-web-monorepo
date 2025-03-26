@@ -1,4 +1,5 @@
-import { Op, WhereOptions } from 'sequelize';
+import { QueryTypes, WhereOptions} from 'sequelize';
+import { sequelize } from '../config/postgreDB';
 import { Group, GroupAttributes, GroupCreationAttributes, GroupType} from '../models/group';
 import { PaginatedResponse } from '../models/pagination';
 
@@ -27,17 +28,39 @@ export class GroupRepository {
         return updatedGroup;
     }
 
-    public static async getGroups(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Group>> {
-        return {
-            offset: offset,
-            total: await Group.count({ where: whereClause }),
-            results: await Group.findAll({
-                where: whereClause,
-                order: [['id', 'DESC']],
-                offset,
-                limit
+    public static async getGroups(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Group & { sponsored_trees: number }>> {
+        
+        const query = `
+            SELECT 
+                g.*,
+                COUNT(t.id) as sponsored_trees
+            FROM 
+                "14trees_2".groups g
+            LEFT JOIN 
+                "14trees_2".trees t ON t.mapped_to_group = g.id
+            GROUP BY 
+                g.id
+            ORDER BY 
+                g.id DESC
+            LIMIT ${limit}
+            OFFSET ${offset}
+        `;
+
+        const countQuery = `
+        SELECT COUNT(*) as count
+        FROM "14trees_2".groups
+        `;
+
+        const [groups, resp] = await Promise.all([
+            sequelize.query<Group & { sponsored_trees: number }>(query, {
+                type: QueryTypes.SELECT
+            }),
+            sequelize.query<{ count: string }>(countQuery, {
+                type: QueryTypes.SELECT
             })
-        };
+        ]);
+
+        return {offset: offset, total: parseInt(resp[0]?.count ?? '0', 10), results: groups};
     }
 
     public static async getGroup(id: number): Promise<Group | null> {
