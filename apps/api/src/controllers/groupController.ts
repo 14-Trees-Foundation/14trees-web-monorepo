@@ -20,7 +20,7 @@ import { SortOrder } from "../models/common";
 
 export const getGroups = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const filters: FilterItem[] = req.body?.filters || []; // Explicit FilterItem[] type
+    const filters: FilterItem[] = req.body?.filters || [];
     const orderBy: SortOrder[] = req.body?.order_by || [];
 
     try {
@@ -96,11 +96,15 @@ export const deleteGroup = async (req: Request, res: Response) => {
 
 export const searchGroups = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const filters: FilterItem[] = req.body?.filters;
-    const orderBy: SortOrder[] = req.body?.order_by;
+    const searchStr = req.params.search;
+    const filters: FilterItem[] = searchStr ? [{
+        columnField: "name",       
+        operatorValue: "contains",
+        value: searchStr
+    }] : [];
 
     try {
-        let result = await GroupRepository.getGroups(offset, limit, filters, orderBy);
+        let result = await GroupRepository.getGroups(offset, limit, filters, []);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

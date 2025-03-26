@@ -318,7 +318,7 @@ export const login = async (req: Request, res: Response) => {
     const groupCheck = await GroupRepository.getGroups(0, 1, [
         { 
             columnField: "type", 
-            operatorValue: "=",
+            operatorValue: "equals",
             value: "onsite_staff" 
         }
     ], []);
