@@ -37,7 +37,9 @@ export const summary = async (req: Request, res: Response) => {
       personalGiftRequestsCount: giftCardCounts.personal_gift_requests,
       corporateGiftRequestsCount: giftCardCounts.corporate_gift_requests,
       personalGiftedTreesCount: giftCardCounts.personal_gifted_trees,
-      corporateGiftedTreesCount: giftCardCounts.corporate_gifted_trees
+      corporateGiftedTreesCount: giftCardCounts.corporate_gifted_trees,
+      totalGiftRequests: giftCardCounts.total_gift_requests,
+      totalGiftedTrees: giftCardCounts.total_gifted_trees
     });
   } catch (error) {
     res.status(status.error).send({
