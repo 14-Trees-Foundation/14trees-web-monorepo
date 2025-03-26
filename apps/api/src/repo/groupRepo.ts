@@ -1,7 +1,7 @@
 import { QueryTypes, WhereOptions} from 'sequelize';
 import { sequelize } from '../config/postgreDB';
 import { Group, GroupAttributes, GroupCreationAttributes, GroupType} from '../models/group';
-import { PaginatedResponse }from '../models/pagination';
+import { PaginatedResponse, FilterItem }from '../models/pagination';
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 import { SortOrder } from "../models/common"; 
 
@@ -30,7 +30,7 @@ export class GroupRepository {
         return updatedGroup;
     }
 
-    public static async getGroups(offset: number, limit: number, filters: any[], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Group & { sponsored_trees: number }>> {
+    public static async getGroups(offset: number, limit: number,  filters: FilterItem[], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Group & { sponsored_trees: number }>> {
         let whereCondition = "";
         let replacements: any = {};
         
@@ -49,7 +49,7 @@ export class GroupRepository {
         }
     
         const orderByClause = orderBy && orderBy.length > 0 
-            ? `ORDER BY ${orderBy.map(o => `g.${o.column} ${o.order}`).join(', ')}` 
+        ? `ORDER BY ${orderBy.map(o => `${o.column} ${o.order}`).join(', ')}` 
             : 'ORDER BY g.id DESC';
     
         const query = `
