@@ -107,7 +107,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/gift-cards", giftCardRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/organizations", orgRoutes);
-  app.use('/api/analytics', analyticsRoutes);
+  app.use("/api/analytics", analyticsRoutes);
   // // app.use("/api/activity", activityRoutes);
   app.use("/api/search", searchRoutes);
   // app.use("/api/login", loginRoutes);
