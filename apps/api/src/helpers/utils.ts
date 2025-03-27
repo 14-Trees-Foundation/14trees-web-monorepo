@@ -25,3 +25,7 @@ export const formatNumber = function (number: number) {
 export const numberToWords = function (number: number) {
     return toWords(number);
 }
+
+export const getUniqueRequestId = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
