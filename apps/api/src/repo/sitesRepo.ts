@@ -820,4 +820,54 @@ export class SiteRepository {
 
         return { offset: offset, total: totalResults, results: sites as any[] };
     }
+
+    public static async getSitesAnalytics(startDate: string, endDate: string): Promise<{
+        newSitesCount: number;
+        topSitesByTrees: Array<{ site_name: string; tree_count: number }>;
+    }> {
+        try {
+            // Count new sites in date range
+            const newSitesQuery = `
+                SELECT COUNT(*) as count
+                FROM "14trees_2".sites
+                WHERE created_at BETWEEN :startDate AND :endDate;
+            `;
+
+            // Get top sites by tree count
+            const topSitesQuery = `
+                SELECT 
+                    CASE
+                        WHEN s.name_english IS NULL THEN s.name_marathi
+                        ELSE s.name_english 
+                    END as site_name,
+                    COUNT(t.id) as tree_count
+                FROM "14trees_2".sites s
+                LEFT JOIN "14trees_2".plots p ON s.id = p.site_id
+                LEFT JOIN "14trees_2".trees t ON p.id = t.plot_id
+                WHERE t.created_at BETWEEN :startDate AND :endDate
+                GROUP BY s.id, s.name_english, s.name_marathi
+                ORDER BY tree_count DESC
+                LIMIT 10;
+            `;
+
+            const [newSites, topSites] = await Promise.all([
+                sequelize.query(newSitesQuery, {
+                    replacements: { startDate, endDate },
+                    type: QueryTypes.SELECT
+                }),
+                sequelize.query(topSitesQuery, {
+                    replacements: { startDate, endDate },
+                    type: QueryTypes.SELECT
+                })
+            ]);
+
+            return {
+                newSitesCount: parseInt((newSites[0] as any).count) || 0,
+                topSitesByTrees: topSites as Array<{ site_name: string; tree_count: number }>
+            };
+        } catch (error) {
+            console.error('[ERROR] SiteRepository::getSitesAnalytics:', error);
+            throw new Error('Failed to fetch site analytics');
+        }
+    }
 }
