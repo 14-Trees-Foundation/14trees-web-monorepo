@@ -4,7 +4,8 @@ import axios from 'axios'
 import { load } from "cheerio";
 import { status } from "../helpers/status";
 import { getObjectKeysForPrefix, uploadImageUrlToS3 } from "./helper/uploadtos3";
-import { processDonationRequestSheet } from "../scripts/donationRequests";
+import { processDonationRequestSheet, revertDonationRequestSheet } from "../scripts/donationRequests";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
 
 const getObjectKey = (type: string, subKey: string) => {
     switch (type) {
@@ -130,4 +131,15 @@ export const handleDonationSheetRequests = async (req: Request, res: Response) =
     res.status(status.created).send("Processing your request!");
 
     await processDonationRequestSheet(spreadsheetId);
+}
+
+export const handleRevertDonationSheetRequests = async (req: Request, res: Response) => {
+    const { spreadsheetId } = req.body;
+    if (!spreadsheetId) {
+        res.status(status.bad).send({ message: "Invalid spreadsheetId." });
+        return;
+    }
+    res.status(status.created).send("Processing your request!");
+
+    await revertDonationRequestSheet(spreadsheetId);
 }
