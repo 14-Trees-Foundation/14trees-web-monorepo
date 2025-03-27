@@ -94,7 +94,6 @@ const initExpressApp = (app: express.Application) => {
 
   // app.use("/api/templates", templateRoutes);
   app.use("/api/appv2", appV2Routes);
-  app.use('/api/analytics', analyticsRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/groups", groupRoutes);
   app.use("/api/user-groups", userGroupRoutes);
@@ -108,6 +107,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/gift-cards", giftCardRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/organizations", orgRoutes);
+  app.use('/api/analytics', analyticsRoutes);
   // // app.use("/api/activity", activityRoutes);
   app.use("/api/search", searchRoutes);
   // app.use("/api/login", loginRoutes);
