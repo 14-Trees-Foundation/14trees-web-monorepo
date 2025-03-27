@@ -783,6 +783,9 @@ class TreeRepository {
         if (filter.columnField === "assigned_to_name") {
           columnField = 'au.name'
         }
+        if (filter.columnField === "transaction_id") {
+          columnField = 'grtc.grt_id'
+        }
 
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
         whereCondition = whereCondition + " " + condition + " AND";
@@ -808,6 +811,7 @@ class TreeRepository {
       FROM "14trees".trees t
       JOIN "14trees".gift_cards gc on gc.tree_id = t.id
       JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
       LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
       LEFT JOIN "14trees".plots p ON p.id = t.plot_id
@@ -826,6 +830,7 @@ class TreeRepository {
       FROM "14trees".trees t
       JOIN "14trees".gift_cards gc on gc.tree_id = t.id
       JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
       LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
       LEFT JOIN "14trees".plots p ON p.id = t.plot_id
