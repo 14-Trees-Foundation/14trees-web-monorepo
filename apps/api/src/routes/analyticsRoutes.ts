@@ -38,6 +38,69 @@ routes.get('/summary', verifyToken, analytics.summary);
  *     responses:
  *       200:
  *         description: Successfully retrieved analytics data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 plantTypes:
+ *                   type: object
+ *                   properties:
+ *                     newCount:
+ *                       type: integer
+ *                     topPlanted:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           plant_type:
+ *                             type: string
+ *                           count:
+ *                             type: string
+ *                 trees:
+ *                   type: object
+ *                   properties:
+ *                     newCount:
+ *                       type: integer
+ *                     assignedCount:
+ *                       type: integer
+ *                 sites:
+ *                   type: object
+ *                   properties:
+ *                     newCount:
+ *                       type: integer
+ *                     topSites:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           site_name:
+ *                             type: string
+ *                           tree_count:
+ *                             type: string
+ *                 plots:
+ *                   type: object
+ *                   properties:
+ *                     newCount:
+ *                       type: integer
+ *                     topPlots:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           plot_name:
+ *                             type: string
+ *                           tree_count:
+ *                             type: string
+ *                 giftRequests:
+ *                   type: object
+ *                   properties:
+ *                     newPersonalRequests:
+ *                       type: integer
+ *                     newCorporateRequests:
+ *                       type: integer
+ *                     totalTreesServed:
+ *                       type: integer
  *       400:
  *         description: Invalid parameters
  *       500:

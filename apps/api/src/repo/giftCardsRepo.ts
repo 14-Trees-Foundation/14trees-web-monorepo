@@ -130,28 +130,54 @@ export class GiftCardsRepository {
             })
         };
     }
-    static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number,total_gift_requests: number, total_gifted_trees: number}>{
-        const query = `
-          SELECT 
-              COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_gift_requests,
-              COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_gift_requests,
-              SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_gifted_trees,
-              SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_gifted_trees,
-              COUNT(id) as total_gift_requests,
-              SUM(no_of_cards) as total_gifted_trees
-            FROM "14trees_2".gift_card_requests
-            WHERE request_type = 'Cards Request'
-        `;
-        const result = await sequelize.query(query, { type: QueryTypes.SELECT });
-        return result[0] as {
-          personal_gift_requests: number,
-          corporate_gift_requests: number,
-          personal_gifted_trees: number,
-          corporate_gifted_trees: number,
-          total_gift_requests: number,
-          total_gifted_trees: number
-        };
-      }
+    static async getGiftCardSummaryCounts(startDate?: string, endDate?: string): Promise<{
+        personal_gift_requests: number;
+        corporate_gift_requests: number;
+        personal_gifted_trees: number;
+        corporate_gifted_trees: number;
+        total_gift_requests: number;
+        total_gifted_trees: number;
+    }> {
+        try {
+            let query = `
+                SELECT 
+                    COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_gift_requests,
+                    COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_gift_requests,
+                    SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_gifted_trees,
+                    SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_gifted_trees,
+                    COUNT(id) as total_gift_requests,
+                    SUM(no_of_cards) as total_gifted_trees
+                FROM "14trees_2".gift_card_requests
+                WHERE request_type = 'Cards Request'
+            `;
+    
+            const replacements: { [key: string]: any } = {};
+    
+            if (startDate && endDate) {
+                query += ` AND created_at BETWEEN :startDate AND :endDate`;
+                replacements.startDate = startDate;
+                replacements.endDate = endDate;
+            }
+    
+            const result = await sequelize.query(query, {
+                replacements,
+                type: QueryTypes.SELECT
+            });
+    
+            return result[0] as {
+                personal_gift_requests: number;
+                corporate_gift_requests: number;
+                personal_gifted_trees: number;
+                corporate_gifted_trees: number;
+                total_gift_requests: number;
+                total_gifted_trees: number;
+            };
+        } catch (error) {
+            console.error('[ERROR] GiftCardsRepository::getGiftCardSummaryCounts:', error);
+            throw new Error('Failed to fetch gift card summary counts');
+        }
+    }
+    
 
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
         return await GiftCardRequest.create(data);
@@ -557,37 +583,5 @@ export class GiftCardsRepository {
 
     static async deleteGiftRequestUsers(whereClause: WhereOptions<GiftRequestUserAttributes>): Promise<void> {
         await GiftRequestUser.destroy({ where: whereClause });
-    }
-
-    static async getGiftRequestsAnalytics(startDate: string, endDate: string): Promise<{
-        newPersonalRequests: number;
-        newCorporateRequests: number;
-        totalTreesServed: number;
-    }> {
-        const query = `
-            SELECT 
-                COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_requests,
-                COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_requests,
-                SUM(no_of_cards) as total_trees_served
-            FROM "14trees_2".gift_card_requests
-            WHERE created_at BETWEEN :startDate AND :endDate
-            AND request_type = 'Cards Request'
-        `;
-
-        try {
-            const result = await sequelize.query(query, {
-                replacements: { startDate, endDate },
-                type: QueryTypes.SELECT
-            });
-
-            return {
-                newPersonalRequests: parseInt((result[0] as any).personal_requests) || 0,
-                newCorporateRequests: parseInt((result[0] as any).corporate_requests) || 0,
-                totalTreesServed: parseInt((result[0] as any).total_trees_served) || 0
-            };
-        } catch (error) {
-            console.error('[ERROR] GiftCardsRepository::getGiftRequestsAnalytics:', error);
-            throw new Error('Failed to fetch gift requests analytics');
-        }
     }
 }

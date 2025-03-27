@@ -219,16 +219,50 @@ class TreeRepository {
     return resp;
   };
 
-  public static async treesCount(whereClause?: WhereOptions): Promise<number> {
-    return await Tree.count({ where: whereClause });
+  public static async treesCount(
+    whereClause?: WhereOptions,
+    startDate?: string,
+    endDate?: string
+): Promise<number> {
+    let where: WhereOptions = {};
+
+    if (whereClause) {
+        where = { ...whereClause };
+    }
+
+    if (startDate && endDate) {
+        where = {
+            ...where,
+            created_at: { [Op.between]: [startDate, endDate] }
+        };
+    }
+
+    return await Tree.count({ where });
+}
+
+public static async assignedAndBookedTreesCount(
+  startDate?: string,
+  endDate?: string
+) {
+  let assignedWhere: WhereOptions = { assigned_to: { [Op.not]: null } };
+  let bookedWhere: WhereOptions = { mapped_to_user: { [Op.not]: null } };
+
+  if (startDate && endDate) {
+      assignedWhere = {
+          ...assignedWhere,
+          assigned_at: { [Op.between]: [startDate, endDate] }
+      };
+      bookedWhere = {
+          ...bookedWhere,
+          created_at: { [Op.between]: [startDate, endDate] }
+      };
   }
 
-  public static async assignedAndBookedTreesCount() {
-    return {
-      assigned: await Tree.count({ where: { assigned_to: { [Op.not]: null } } }),
-      booked: await Tree.count({ where: { mapped_to_user: { [Op.not]: null } } })
-    };
-  }
+  return {
+      assigned: await Tree.count({ where: assignedWhere }),
+      booked: await Tree.count({ where: bookedWhere })
+  };
+}
 
   public static async getMappedTrees(email: string, offset: number, limit: number) {
 
@@ -858,40 +892,6 @@ class TreeRepository {
 
       return data[0];
   }
-
-  public static async getTreesAnalytics(startDate: string, endDate: string): Promise<{
-    newTreesCount: number;
-    assignedTreesCount: number;
-}> {
-    try {
-        // Count new trees planted in date range
-        const newTreesCount = await Tree.count({
-            where: {
-                created_at: {
-                    [Op.between]: [startDate, endDate]
-                }
-            }
-        });
-
-        // Count assigned/sponsored trees in date range
-        const assignedTreesCount = await Tree.count({
-            where: {
-                assigned_to: { [Op.not]: null },
-                assigned_at: {
-                    [Op.between]: [startDate, endDate]
-                }
-            }
-        });
-
-        return {
-            newTreesCount,
-            assignedTreesCount
-        };
-    } catch (error) {
-        console.error('[ERROR] TreeRepository::getTreesAnalytics:', error);
-        throw new Error('Failed to fetch tree analytics');
-    }
-}
 }
 
 export default TreeRepository;

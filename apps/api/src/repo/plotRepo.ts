@@ -1,9 +1,10 @@
-import { QueryTypes, WhereOptions } from 'sequelize';
+import { Op,QueryTypes, WhereOptions } from 'sequelize';
 import { Plot, PlotAttributes, PlotCreationAttributes } from '../models/plot'
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { SortOrder } from '../models/common';
+
 
 export class PlotRepository {
     public static async updatePlot(plotData: PlotAttributes): Promise<Plot> {
@@ -376,10 +377,49 @@ export class PlotRepository {
         return resp;
     }
 
-    public static async plotsCount(): Promise<number> {
-        return await Plot.count()
+    public static async plotsCount(startDate?: string, endDate?: string): Promise<number> {
+        let where: WhereOptions = {};
+    
+        if (startDate && endDate) {
+            where = {
+                ...where,
+                created_at: { [Op.between]: [startDate, endDate] }
+            };
+        }
+    
+        return await Plot.count({ where });
     }
+    
 
+    public static async topPlotsByTreesInDateRange(
+        startDate: string,
+        endDate: string
+    ): Promise<Array<{ plot_name: string; tree_count: number }>> {
+        try {
+            const topPlotsQuery = `
+                SELECT 
+                    p.name as plot_name,
+                    COUNT(t.id) as tree_count
+                FROM "14trees_2".plots p
+                LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
+                WHERE t.created_at BETWEEN :startDate AND :endDate
+                GROUP BY p.id, p.name
+                ORDER BY tree_count DESC
+                LIMIT 10;
+            `;
+    
+            const topPlots = await sequelize.query(topPlotsQuery, {
+                replacements: { startDate, endDate },
+                type: QueryTypes.SELECT
+            });
+    
+            return topPlots as Array<{ plot_name: string; tree_count: number }>;
+        } catch (error) {
+            console.error('[ERROR] PlotRepository::topPlotsByTreesInDateRange:', error);
+            throw new Error('Failed to fetch top plots by trees');
+        }
+    }
+    
     public static async getPlotTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
         const tags: string[] = [];
 
@@ -668,49 +708,4 @@ export class PlotRepository {
         };
     }
 
-    public static async getPlotAnalytics(startDate: string, endDate: string): Promise<{
-        newPlotsCount: number;
-        topPlotsByTrees: Array<{ plot_name: string; tree_count: number }>;
-    }> {
-        try {
-            // Query for new plots count
-            const newPlotsQuery = `
-                SELECT COUNT(*) as count
-                FROM "14trees_2".plots
-                WHERE created_at BETWEEN :startDate AND :endDate;
-            `;
-
-            // Query for top plots by tree count using existing join structure
-            const topPlotsQuery = `
-                SELECT 
-                    p.name as plot_name,
-                    COUNT(t.id) as tree_count
-                FROM "14trees_2".plots p
-                LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
-                WHERE t.created_at BETWEEN :startDate AND :endDate
-                GROUP BY p.id, p.name
-                ORDER BY tree_count DESC
-                LIMIT 10;
-            `;
-
-            const [newPlots, topPlots] = await Promise.all([
-                sequelize.query(newPlotsQuery, {
-                    replacements: { startDate, endDate },
-                    type: QueryTypes.SELECT
-                }),
-                sequelize.query(topPlotsQuery, {
-                    replacements: { startDate, endDate },
-                    type: QueryTypes.SELECT
-                })
-            ]);
-
-            return {
-                newPlotsCount: parseInt((newPlots[0] as any).count) || 0,
-                topPlotsByTrees: topPlots as Array<{ plot_name: string; tree_count: number }>
-            };
-        } catch (error) {
-            console.error('[ERROR] PlotRepository::getPlotAnalytics:', error);
-            throw new Error('Failed to fetch plot analytics');
-        }
-    }
 }

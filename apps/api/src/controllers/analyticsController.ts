@@ -139,39 +139,43 @@ export const getTimeRangeAnalytics = async (req: Request, res: Response) => {
       // Fetch all analytics in parallel
       const [
           plantTypeAnalytics,
-          treeAnalytics,
+          newTreesCount,
+          assignedAndBookedTrees,
           siteAnalytics,
-          plotAnalytics,
+          newPlotsCount,
+          topPlotsByTrees,
           giftRequestAnalytics
       ] = await Promise.all([
-          PlantTypeRepository.getPlantTypeAnalytics(startDate.toString(), endDate.toString()),
-          TreeRepository.getTreesAnalytics(startDate.toString(), endDate.toString()),
+          PlantTypeRepository.plantTypesCount(startDate.toString(), endDate.toString()),
+          TreeRepository.treesCount({}, startDate.toString(), endDate.toString()),
+          TreeRepository.assignedAndBookedTreesCount(startDate.toString(), endDate.toString()),
           SiteRepository.getSitesAnalytics(startDate.toString(), endDate.toString()),
-          PlotRepository.getPlotAnalytics(startDate.toString(), endDate.toString()),
-          GiftCardsRepository.getGiftRequestsAnalytics(startDate.toString(), endDate.toString())
+          PlotRepository.plotsCount(startDate.toString(), endDate.toString()), // 👈 you need to create this if not done yet
+          PlotRepository.topPlotsByTreesInDateRange(startDate.toString(), endDate.toString()),
+          GiftCardsRepository.getGiftCardSummaryCounts(startDate.toString(), endDate.toString())
       ]);
 
       res.status(status.success).send({
           plantTypes: {
-              newCount: plantTypeAnalytics.newPlantTypesCount,
-              topPlanted: plantTypeAnalytics.topPlantedTrees
+              newCount: plantTypeAnalytics.newPlantTypesCount || 0,
+              topPlanted: plantTypeAnalytics.topPlantedTrees || []
           },
           trees: {
-              newCount: treeAnalytics.newTreesCount,
-              assignedCount: treeAnalytics.assignedTreesCount
+              newCount: newTreesCount,
+              assignedCount: assignedAndBookedTrees.assigned
           },
           sites: {
               newCount: siteAnalytics.newSitesCount,
               topSites: siteAnalytics.topSitesByTrees
           },
           plots: {
-              newCount: plotAnalytics.newPlotsCount,
-              topPlots: plotAnalytics.topPlotsByTrees
+              newCount: newPlotsCount,
+              topPlots: topPlotsByTrees
           },
           giftRequests: {
-              newPersonalRequests: giftRequestAnalytics.newPersonalRequests,
-              newCorporateRequests: giftRequestAnalytics.newCorporateRequests,
-              totalTreesServed: giftRequestAnalytics.totalTreesServed
+              newPersonalRequests: giftRequestAnalytics.personal_gift_requests,
+              newCorporateRequests: giftRequestAnalytics.corporate_gift_requests,
+              totalTreesServed: giftRequestAnalytics.total_gifted_trees
           }
       });
   } catch (error) {

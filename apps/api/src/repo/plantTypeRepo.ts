@@ -86,53 +86,55 @@ class PlantTypeRepository {
         return resp;
     };
 
-    public static async plantTypesCount(): Promise<number> {
-        return await PlantType.count();
-    }
-
-    public static async getPlantTypeAnalytics(startDate: string, endDate: string): Promise<{
-        newPlantTypesCount: number;
-        topPlantedTrees: Array<{ plant_type: string; count: number }>;
+    public static async plantTypesCount(startDate?: string, endDate?: string): Promise<{
+        totalCount?: number;
+        newPlantTypesCount?: number;
+        topPlantedTrees?: Array<{ plant_type: string; count: number }>;
     }> {
         try {
-            // Count new plant types added in date range
-            const newPlantTypesQuery = `
-                SELECT COUNT(id) as count
-                FROM "14trees_2".plant_types
-                WHERE created_at >= :startDate AND created_at <= :endDate
-            `;
+            if (startDate && endDate) {
+                // Date range logic (earlier in getPlantTypeAnalytics)
+                const newPlantTypesQuery = `
+                    SELECT COUNT(id) as count
+                    FROM "14trees_2".plant_types
+                    WHERE created_at >= :startDate AND created_at <= :endDate
+                `;
     
-            // Get top plant types by new trees planted
-            const topPlantedTreesQuery = `
-                SELECT pt.name as plant_type, COUNT(t.id) as count
-                FROM "14trees_2".trees t
-                JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-                WHERE t.created_at >= :startDate AND t.created_at <= :endDate
-                GROUP BY pt.name
-                ORDER BY count DESC
-                LIMIT 10
-            `;
+                const topPlantedTreesQuery = `
+                    SELECT pt.name as plant_type, COUNT(t.id) as count
+                    FROM "14trees_2".trees t
+                    JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+                    WHERE t.created_at >= :startDate AND t.created_at <= :endDate
+                    GROUP BY pt.name
+                    ORDER BY count DESC
+                    LIMIT 10
+                `;
     
-            const [newPlantTypes, topPlantedTrees] = await Promise.all([
-                sequelize.query(newPlantTypesQuery, {
-                    replacements: { startDate, endDate },
-                    type: QueryTypes.SELECT
-                }),
-                sequelize.query(topPlantedTreesQuery, {
-                    replacements: { startDate, endDate },
-                    type: QueryTypes.SELECT
-                })
-            ]);
+                const [newPlantTypes, topPlantedTrees] = await Promise.all([
+                    sequelize.query(newPlantTypesQuery, {
+                        replacements: { startDate, endDate },
+                        type: QueryTypes.SELECT
+                    }),
+                    sequelize.query(topPlantedTreesQuery, {
+                        replacements: { startDate, endDate },
+                        type: QueryTypes.SELECT
+                    })
+                ]);
     
-            return {
-                newPlantTypesCount: parseInt((newPlantTypes[0] as any).count) || 0,
-                topPlantedTrees: topPlantedTrees as Array<{ plant_type: string; count: number }>
-            };
+                return {
+                    newPlantTypesCount: parseInt((newPlantTypes[0] as any).count) || 0,
+                    topPlantedTrees: topPlantedTrees as Array<{ plant_type: string; count: number }>
+                };
+            } else {
+                // Old functionality (total count)
+                const count = await PlantType.count();
+                return { totalCount: count };
+            }
         } catch (error) {
-            console.error('[ERROR] PlantTypeRepository::getPlantTypeAnalytics:', error);
-            throw new Error('Failed to fetch plant type analytics');
+            console.error('[ERROR] PlantTypeRepository::plantTypesCount:', error);
+            throw new Error('Failed to fetch plant type count analytics');
         }
-    }
+    }    
 
     public static async plantTypesPresentInPlot(plotId: number) {
         const query = `
