@@ -7,9 +7,9 @@ import { GiftCardRequestCreationAttributes, GiftCardRequestStatus } from '../mod
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
 import { User } from '../models/user';
 import { PlotRepository } from '../repo/plotRepo';
-import TreeRepository from '../repo/treeRepo';
 import GiftRequestHelper from '../helpers/giftRequests';
 import { AlbumRepository } from '../repo/albumRepo';
+import { GiftRequestUserCreationAttributes } from '../models/gift_request_user';
 
 export const defaultGiftMessages = {
     primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
@@ -253,7 +253,33 @@ async function reserverTreesForDonationRequest(requestId: number, plotIds: numbe
     return await GiftRequestHelper.autoBookTreesForGiftRequest(requestId, true, true, false);
 }
 
-async function assignTreesForDonationRequest(requestId: number) {
+async function addRecipients(assigneesStr: string, requestId: number) {
+
+    let requests: GiftRequestUserCreationAttributes[] = []
+    const userNames = assigneesStr.split(",")
+    for (const userName of userNames) {
+        const parts = userName.split("-");
+        const name = parts[0].trim();
+        let trees = 1;
+        if (parts.length === 2) {
+            trees = parseInt(parts[1].trim())
+        }
+
+        const user = await UserRepository.upsertUser({ name: name, email: name.toLowerCase().split(" ").join(".") + ".donor@14trees" })
+
+        requests.push({
+            recipient: user.id,
+            assignee: user.id,
+            gift_request_id: requestId,
+            gifted_trees: trees,
+            created_at: new Date(),
+            updated_at: new Date(),
+        })
+    }
+    return await GiftCardsRepository.addGiftRequestUsers(requests, true) || []
+}
+
+async function assignTreesForDonationRequest(data: any, requestId: number) {
     const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }]);
     if (resp.results.length === 0) {
         return;
@@ -267,19 +293,24 @@ async function assignTreesForDonationRequest(requestId: number) {
     }
 
     let users = await GiftCardsRepository.getGiftRequestUsers(requestId);
-    const existingTreesResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: requestId }]);
+    const existingTreesResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
     if (users.length === 0) {
-        users = await GiftCardsRepository.addGiftRequestUsers([{
-            recipient: giftCardRequest.user_id,
-            assignee: giftCardRequest.user_id,
-            gift_request_id: giftCardRequest.id,
-            gifted_trees: giftCardRequest.no_of_cards,
-            created_at: new Date(),
-            updated_at: new Date(),
-        }], true) || []
+
+        if (data["Assignees"]) {
+            users = await addRecipients(data["Assignees"], requestId)
+        } else {
+            users = await GiftCardsRepository.addGiftRequestUsers([{
+                recipient: giftCardRequest.user_id,
+                assignee: giftCardRequest.user_id,
+                gift_request_id: giftCardRequest.id,
+                gifted_trees: giftCardRequest.no_of_cards,
+                created_at: new Date(),
+                updated_at: new Date(),
+            }], true) || []
+        }
     }
 
-    if (users.length !== 1) return;
+    if (users.length < 1) return;
 
     await GiftRequestHelper.autoAssignTrees(giftCardRequest, users, existingTreesResp.results, memoryImageUrls);
 
@@ -359,7 +390,6 @@ export async function processDonationRequestSheet(spreadsheetId: string): Promis
     })
 
 
-    const assignNamesColumn = "I'd like my trees to be planted in the following names (by default all trees you sponsor will be planted in your name).";
     await processAndUpdateSheet({
         spreadsheetId: spreadsheetId,
         sheetName: sheetName,
@@ -369,10 +399,37 @@ export async function processDonationRequestSheet(spreadsheetId: string): Promis
             const update: any = {};
             if (row["Vivek To process"] === "Y" && row["System ReqId"]) {
                 const requestId = parseInt(row["System ReqId"]);
-                if (row[assignNamesColumn]?.trim() === "") {
-                    await assignTreesForDonationRequest(requestId);
-                }
+                if (row["Assignees"] !== "Later") await assignTreesForDonationRequest(row, requestId);
                 update["System ReqId"] = requestId;
+            }
+            return update;
+        },
+    })
+}
+
+
+export async function revertDonationRequestSheet(spreadsheetId: string): Promise<void> {
+    const sheetName = 'All Donations';
+    const extraColumns = ['System ReqId', 'System Status', 'System Message'];
+
+    await processAndUpdateSheet({
+        spreadsheetId: spreadsheetId,
+        sheetName: sheetName,
+        extraColumns,
+        processRow: async (row): Promise<Record<string, any>> => {
+
+            const update: any = {};
+            if (row["Vivek To process"] === "Y" && row["System ReqId"]) {
+                const requestId = parseInt(row["System ReqId"]);
+                let message = ''
+                try {
+                    await GiftRequestHelper.deleteGiftCardRequest(requestId);
+                } catch(error: any) {
+                    message = error.message
+                }
+                update["System Status"] = message ? 'Failed' : 'Success';
+                update["System Message"] = message ? message : 'Deleted gift request';
+                update["System ReqId"] = message ? requestId : '';
             }
             return update;
         },

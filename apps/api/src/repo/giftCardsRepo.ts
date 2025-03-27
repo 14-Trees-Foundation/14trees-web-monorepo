@@ -68,7 +68,7 @@ export class GiftCardsRepository {
                     THEN 1
                     ELSE 0
                 END) AS mailed_count,
-                COUNT(gru.id) as users_count,
+                COUNT(distinct gru.id) as users_count,
                 SUM(CASE 
                     WHEN t.assigned_to is not null
                     THEN 1
