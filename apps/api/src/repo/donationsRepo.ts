@@ -69,10 +69,34 @@ export class DonationRepository {
     }
 
     public static async createdDonation(donationData: DonationCreationAttributes): Promise<Donation> {
-        const new_donation = Donation.create(donationData);
-        return new_donation;
+        try {
+            // Validate required fields
+            if (!donationData.user_id || 
+                !donationData.preference_option || 
+                !donationData.tree_count || 
+                !donationData.contribution_options) {
+                throw new Error('Missing required fields');
+            }
+    
+            // Create donation with explicit field mapping
+            const new_donation = await Donation.create({
+                user_id: donationData.user_id,
+                payment_id: donationData.payment_id || null,
+                preference_option: donationData.preference_option,
+                grove_type: donationData.grove_type,
+                grove_type_other: donationData.grove_type_other,
+                tree_count: donationData.tree_count,
+                contribution_options: donationData.contribution_options,
+                names_for_plantation: donationData.names_for_plantation || null,
+                comments: donationData.comments || null
+            });
+    
+            return new_donation;
+        } catch (error: any) {
+            console.error('[ERROR] DonationRepository::createdDonation:', error);
+            throw new Error(`Failed to create donation: ${error.message}`);
+        }
     }
-
     public static async deleteDonation(donationId: number): Promise<number> {
         const result = await Donation.destroy({ where: { id: donationId } });
         return result;
