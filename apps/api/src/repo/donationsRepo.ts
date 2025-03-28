@@ -5,62 +5,60 @@ import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes } from 'sequelize';
 
 export class DonationRepository {
-
+   
     public static async getDonations(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<Donation>> {
-        let whereConditions: string = "";
-        let replacements: any = {}
-    
-        if (filters && filters.length > 0) {
-            filters.forEach(filter => {
-                let columnField = "d." + filter.columnField
-                if (filter.columnField === "user_name") {
-                    columnField = "u.name"
-                }
-                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
-                whereConditions = whereConditions + " " + condition + " AND";
-                replacements = { ...replacements, ...replacement }
-            })
-            whereConditions = whereConditions.substring(0, whereConditions.length - 3);
-        }
-    
-        const getQuery = `
-            SELECT 
-                d.*,
-                u.name as user_name,
-                u.email as user_email,
-                u.phone as user_phone,
-                p.status as payment_status
-            FROM "14trees_2".donations d
-            LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-            LEFT JOIN "14trees_2".payments p ON p.id = d.payment_id
-            WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            ORDER BY d.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
-        `
-    
-        const countQuery = `
-            SELECT COUNT(*) 
-            FROM "14trees_2".donations d
-            LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-            WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
-        `
-    
         try {
-            const donations: any[] = await sequelize.query(getQuery, {
-                replacements: replacements,
-                type: QueryTypes.SELECT
-            });
+            let whereConditions: string = "";
+            let replacements: any = {};
     
-            const donationsCount: any = await sequelize.query(countQuery, {
-                replacements: replacements,
-                type: QueryTypes.SELECT
-            });
+            if (filters && filters.length > 0) {
+                filters.forEach(filter => {
+                    let columnField = "d." + filter.columnField;
+                    if (filter.columnField === "user_name") {
+                        columnField = "u.name";
+                    }
+                    const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                    whereConditions = whereConditions + " " + condition + " AND";
+                    replacements = { ...replacements, ...replacement };
+                });
+                whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+            }
     
-            const totalResults = parseInt(donationsCount[0].count);
+            const getQuery = `
+                SELECT 
+                    d.*,
+                    u.name as user_name,
+                    u.email as user_email,
+                    u.phone as user_phone
+                FROM "14trees_2".donations d
+                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+                ORDER BY d.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            `;
+    
+            const countQuery = `
+                SELECT COUNT(*) 
+                FROM "14trees_2".donations d
+                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+            `;
+    
+            const [donations, donationsCount] = await Promise.all([
+                sequelize.query(getQuery, {
+                    replacements: replacements,
+                    type: QueryTypes.SELECT,
+                    model: Donation // Add this line
+                }),
+                sequelize.query(countQuery, {
+                    replacements: replacements,
+                    type: QueryTypes.SELECT
+                })
+            ]);
     
             return {
                 offset: offset,
-                total: totalResults,
-                results: donations
+                total: parseInt((donationsCount[0] as any).count),
+                results: donations as Donation[]
             };
         } catch (error) {
             console.error('[ERROR] DonationRepository::getDonations:', error);
@@ -98,8 +96,23 @@ export class DonationRepository {
         }
     }
     public static async deleteDonation(donationId: number): Promise<number> {
-        const result = await Donation.destroy({ where: { id: donationId } });
-        return result;
+        try {
+            // First check if donation exists
+            const donation = await Donation.findByPk(donationId);
+            if (!donation) {
+                throw new Error('Donation not found');
+            }
+    
+            // Delete the donation
+            const result = await Donation.destroy({
+                where: { id: donationId }
+            });
+    
+            return result;
+        } catch (error) {
+            console.error('[ERROR] DonationRepository::deleteDonation:', error);
+            throw new Error(`Failed to delete donation:`);
+        }
     }
 
     public static async updateDonation(DonationData: DonationAttributes): Promise<Donation> {

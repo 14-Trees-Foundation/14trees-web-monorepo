@@ -5,7 +5,7 @@ const routes = express.Router();
 
 routes.post('/get', donations.getDonations);
 routes.post('/' , donations.createDonation);
-routes.delete('/:donation_id' , donations.deleteDonation);
+routes.delete('/:id' , donations.deleteDonation);
 routes.put('/:id' , donations.updateDonation);
 // routes.post('/work-order/:donation_id' , donations.createWorkOrder);
 // routes.post('/update-feedback' , donations.updateFeedback);

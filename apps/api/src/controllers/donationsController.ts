@@ -140,35 +140,32 @@ comments
 };
 
 export const deleteDonation = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const donationId = parseInt(id);
-    if (isNaN(donationId)) {
-        res.status(status.bad).json({ message: 'Invalid request' });
-        return;
-    }
-
     try {
+        const donationId = parseInt(req.params.id);
 
-        // Delete donation users
-        await DonationUserRepository.deleteDonationUsers({ donation_id: donationId });
+        if (isNaN(donationId)) {
+            console.log('Invalid ID received:', req.params.id);
+            return res.status(status.bad).json({
+                message: 'Invalid donation ID'
+            });
+        }
 
-        // delete donation
-        let response = await DonationRepository.deleteDonation(donationId);
-
-        res.status(status.success).json({
-            message: "Donation deleted successfully",
+        await DonationRepository.deleteDonation(donationId);
+        return res.status(status.success).json({
+            message: 'Donation deleted successfully'
         });
-
     } catch (error: any) {
-        console.log("[ERROR]", "DonationsController::deleteDonation", error)
-        res.status(status.error).json({
-            status: status.error,
-            message: 'Something went wrong. Please try again after some time!',
+        console.error("[ERROR] DonationsController::deleteDonation:", error);
+        if (error.message.includes('not found')) {
+            return res.status(status.notfound).json({
+                message: 'Donation not found'
+            });
+        }
+        return res.status(status.error).json({
+            message: 'Failed to delete donation'
         });
-        return;
     }
-}
-
+};
 
 export const updateDonation = async (req: Request, res: Response) => {
     const { id } = req.params;
