@@ -4,15 +4,7 @@ import { DonationRepository } from "../repo/donationsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
-import { Donation, DonationCreationAttributes } from "../models/donation";
-import { DonationUser, DonationUserCreationAttributes } from "../models/donation_user";
-import { UserRepository } from "../repo/userRepo";
-import { DonationUserRepository } from "../repo/donationUsersRepo";
-import { createWorkOrderInCSV } from "./helper/uploadtocsv";
-import TreeRepository from "../repo/treeRepo";
-import { sendDashboardMail } from "../services/gmail/gmail";
-import { UserRelationRepository } from "../repo/userRelationsRepo";
-import { UserGroupRepository } from "../repo/userGroupRepo";
+import { DonationService } from "../facade/donationService";
 
 /*
     Model - Donation
@@ -28,11 +20,10 @@ export const getDonations = async (req: Request, res: Response) => {
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonations", error)
-        res.status(status.error).json({
+        return res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again after some time!',
         });
-        return;
     }
 }
 
@@ -94,49 +85,58 @@ export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
     const {
-        user_id,payment_id,preference_option,grove_type,
-grove_type_other,tree_count,contribution_options,names_for_plantation,
-comments
+        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove,
+        grove_type_other, trees_count, contribution_options, names_for_plantation,
+        comments, users
     } = data;
 
-    if (!user_id || !preference_option || !grove_type || !tree_count || !contribution_options) {
-        res.status(status.bad).json({
-            message: 'Please provide valid input details!'
+    // Validate sponsor details
+    if (!sponsor_name || !sponsor_email)
+        return res.status(status.bad).json({
+            message: 'Invalid sponsor name or email. Please provide valid details!'
         });
-        return;
-    }
-    try {
-        // Verify user exists using getUsers with filter
-        const userResult = await UserRepository.getUsers(0, 1, [
-            { columnField: 'id', operatorValue: 'equals', value: user_id }
-        ]);
 
-        if (userResult.total === 0) {
-            return res.status(status.bad).json({
-                message: 'Invalid user ID'
-            });
-        }
+    // Validate tree plantaion details
+    if (!trees_count || !category || !grove)
+        return res.status(status.bad).json({
+            message: 'Land and tree plantation details are invalid. Please provide valid details!'
+        });
 
-        const donationData: DonationCreationAttributes = {
-            user_id,
-            payment_id: payment_id || null,
-            preference_option,
-            grove_type,
-            grove_type_other: grove_type_other?.trim() || null,
-            tree_count,
-            contribution_options,
-            names_for_plantation: names_for_plantation?.trim() || null,
-            comments: comments?.trim() || null
-        };
 
-        const donation = await DonationRepository.createdDonation(donationData);
-        res.status(status.created).json(donation);
-    } catch (error) {
+    const donation = await DonationService.createDonation({
+        sponsor_name,
+        sponsor_email,
+        sponsor_phone,
+        trees_count,
+        payment_id,
+        category,
+        grove,
+        continution_options: contribution_options,
+    }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
             message: 'Failed to create donation'
         });
+    })
+
+    let usersCreated = false;
+    if (!donation) return;
+    if (users && users.length > 0) {
+        await DonationService.createDonationUsers(
+            donation.id,
+            users
+        ).catch((error) => {
+            console.error("[ERROR] DonationsController::createDonation:", error);
+            usersCreated = false;
+        })
     }
+    
+    if (!usersCreated)
+        return res.status(status.error).send({
+            message: "Failed to save recipient details."
+        })
+    
+    return res.status(status.created).send(donation);
 };
 
 export const deleteDonation = async (req: Request, res: Response) => {
@@ -169,45 +169,29 @@ export const deleteDonation = async (req: Request, res: Response) => {
 
 export const updateDonation = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const {
-        user_id,
-        payment_id,
-        preference_option,
-        grove_type,
-        grove_type_other,
-        tree_count,
-        contribution_options,
-        names_for_plantation,
-        comments
-    } = req.body;
+    const updateFields: string[] = req.body.updateFields; // Fields to update (mask)
+    const updateData = req.body.data; // New data
 
     const donationId = parseInt(id);
-    if (isNaN(donationId)) {
+    if (isNaN(donationId))
         return res.status(status.bad).json({
             message: 'Invalid donation ID'
         });
+    
+    if (!updateFields || !updateData) {
+      return res.status(400).json({ message: "Invalid request format" });
     }
 
-    // Validate required fields
-    if (!user_id || !preference_option || !grove_type || !tree_count || !contribution_options) {
-        return res.status(status.bad).json({
-            message: 'Missing required fields'
-        });
-    }
+    // Build dynamic update object
+    let updateObject: Record<string, any> = {};
+    updateFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        updateObject[field] = updateData[field];
+      }
+    });
 
     try {
-        const updatedDonation = await DonationRepository.updateDonation({
-            id: donationId,
-            user_id,
-            payment_id,
-            preference_option,
-            grove_type,
-            grove_type_other: grove_type_other?.trim() || null,
-            tree_count,
-            contribution_options,
-            names_for_plantation: names_for_plantation?.trim() || null,
-            comments: comments?.trim() || null
-        });
+        const updatedDonation = await DonationRepository.updateDonation(donationId, updateFields);
 
         // Get full donation details with joins
         const result = await DonationRepository.getDonations(0, 1, [

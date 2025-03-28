@@ -26,6 +26,10 @@ export class DonationUserRepository {
   }
 
   static async createDonationUsers(data: DonationUserCreationAttributes[]) {
+    data.forEach(item => {
+      item.created_at = new Date();
+      item.updated_at = new Date();
+    })
     await DonationUser.bulkCreate(data, { returning: false });
   }
 

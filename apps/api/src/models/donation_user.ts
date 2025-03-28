@@ -6,7 +6,7 @@ interface DonationUserAttributes {
 	recipient: number;
 	assignee: number;
 	donation_id: number;
-  gifted_trees: number;
+  trees_count: number;
   mail_sent: boolean | null;
   mail_error: string | null;
   profile_image_url: string | null;
@@ -15,7 +15,7 @@ interface DonationUserAttributes {
 }
 
 interface DonationUserCreationAttributes
-	extends Optional<DonationUserAttributes, 'id' | 'mail_sent' | 'mail_error'> {}
+	extends Optional<DonationUserAttributes, 'id' | 'mail_sent' | 'mail_error' | 'profile_image_url' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'donation_users' })
 class DonationUser extends Model<DonationUserAttributes, DonationUserCreationAttributes>
@@ -51,7 +51,7 @@ implements DonationUserAttributes {
     type: DataType.NUMBER,
     allowNull: false,
   })
-  gifted_trees!: number;
+  trees_count!: number;
 
   @Column({ type: DataType.BOOLEAN })
   mail_sent!: boolean | null;
