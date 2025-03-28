@@ -97,7 +97,7 @@ routes.post('/requests/get', donations.getDonations);
  *               type: string
  *               example: "PAY12345"
  *             category:
- *               $ref: '#/components/schemas/LandCategory'
+ *               $ref: '#/definitions/LandCategory'
  *             grove:
  *               type: string
  *               example: "Green Grove"
@@ -108,7 +108,7 @@ routes.post('/requests/get', donations.getDonations);
  *               type: integer
  *               example: 10
  *             contribution_options:
- *               $ref: '#/components/schemas/ContributionOption'
+ *               $ref: '#/definitions/ContributionOption'
  *             comments:
  *               type: string
  *               example: "This is a comment."

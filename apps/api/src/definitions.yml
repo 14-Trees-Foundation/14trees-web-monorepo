@@ -1188,6 +1188,12 @@ definitions:
         type: integer
       card_available_herbs:
         type: integer
+  LandCategory:
+    type: string
+    enum: [Foundation, Public]
+  ContributionOption:
+    type: string
+    enum: [Planning visit, CSR, Volunteer, Share]
   Donation:
       type: object
       properties:
@@ -1202,7 +1208,7 @@ definitions:
           format: int64
           nullable: true
         category:
-          $ref: '#/components/schemas/LandCategory'
+          $ref: '#/definitions/LandCategory'
         grove:
           type: string
         grove_type_other:
@@ -1211,7 +1217,7 @@ definitions:
         trees_count:
           type: integer
         contribution_options:
-          $ref: '#/components/schemas/ContributionOption'
+          $ref: '#/definitions/ContributionOption'
           nullable: true
         names_for_plantation:
           type: string
@@ -1228,11 +1234,3 @@ definitions:
         updated_at:
           type: string
           format: date-time
-components:
-  schemas:
-    LandCategory:
-      type: string
-      enum: [Foundation, Public]
-    ContributionOption:
-      type: string
-      enum: [Planning visit, CSR, Volunteer, Share]
