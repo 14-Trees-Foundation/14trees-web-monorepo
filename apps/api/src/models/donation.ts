@@ -1,26 +1,36 @@
 //Model in postgresql db
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 import { Optional } from 'sequelize';
+import { LandCategory } from './common';
+
+export type ContributionOption = 'Planning visit' | 'CSR' | 'Volunteer' | 'Share';
+export const ContributionOption_VISIT: ContributionOption = 'Planning visit';
+export const ContributionOption_CSR: ContributionOption = 'CSR';
+export const ContributionOption_VOLUNTEER: ContributionOption = 'Volunteer';
+export const ContributionOption_SHARE: ContributionOption = 'Share';
+
 
 interface DonationAttributes {
   id: number;
   user_id: number;
   payment_id: number | null;
-  preference_option: 'Foundation' | 'Public';
-  grove_type: 'Visitor\'s grove' | 'Family grove' | 'Memorial grove' | 'Social/professional group grove' | 'School/College alumni grove' | 'Corporate grove' | 'Conference grove' | 'Other';
+  category: LandCategory;
+  grove: string;
   grove_type_other: string | null;
-  tree_count: number;
-  contribution_options: 'Planning visit' | 'CSR' | 'Volunteer' | 'Share';
+  trees_count: number;
+  contribution_options: ContributionOption | null;
   names_for_plantation: string | null;
   comments: string | null;
+  created_by: number;
+  created_at: Date;
+  updated_at: Date;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at'> { }
 
 @Table({ 
     tableName: 'donations',
-    timestamps: false, // Add this line to disable timestamps
-    schema: '14trees_2' // Add schema
+    timestamps: false,
 })
 class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   implements DonationAttributes {
@@ -48,13 +58,13 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     type: DataType.TEXT,
     allowNull: false
   })
-  preference_option!: 'Foundation' | 'Public';
+  category!: LandCategory;
 
   @Column({ 
     type: DataType.TEXT,
     allowNull: true
   })
-  grove_type!: 'Visitor\'s grove' | 'Family grove' | 'Memorial grove' | 'Social/professional group grove' | 'School/College alumni grove' | 'Corporate grove' | 'Conference grove' | 'Other';
+  grove!: string;
 
   @Column({ 
     type: DataType.STRING,
@@ -66,13 +76,13 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     type: DataType.INTEGER,
     allowNull: false
   })
-  tree_count!: number;
+  trees_count!: number;
 
   @Column({ 
     type: DataType.TEXT,
     allowNull: false
   })
-  contribution_options!: 'Planning visit' | 'CSR' | 'Volunteer' | 'Share';
+  contribution_options!: ContributionOption | null;
 
   @Column({ 
     type: DataType.STRING,
@@ -85,6 +95,24 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: true
   })
   comments!: string | null;
+
+  @Column({ 
+    type: DataType.INTEGER,
+    allowNull: false
+  })
+  created_by!: number;
+
+  @Column({ 
+    type: DataType.DATE,
+    allowNull: false
+  })
+  created_at!: Date;
+
+  @Column({ 
+    type: DataType.DATE,
+    allowNull: false
+  })
+  updated_at!: Date;
 }
 
 export { Donation }
