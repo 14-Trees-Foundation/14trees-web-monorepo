@@ -5,6 +5,7 @@ import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUserCreationAttributes } from "../models/donation_user";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { User } from "../models/user";
+import { sendDashboardMail } from '../services/gmail/gmail';
 
 interface DonationUserRequest {
     name: string
@@ -76,5 +77,52 @@ export class DonationService {
         }
 
         await DonationUserRepository.createDonationUsers(userRequests);
+    }
+    public static async sendDonationAcknowledgement(
+        donation: Donation,
+        sponsorUser: User,
+        testMails?: string[],
+        ccMails?: string[]
+    ): Promise<void> {
+        try {
+            const emailData = {
+                user_name: sponsorUser.name,
+                user_email: sponsorUser.email,
+                donation_id: donation.id,
+                category: donation.category,
+                grove: donation.grove,
+                grove_type_other: donation.grove_type_other,
+                trees_count: donation.trees_count,
+                contribution_options: donation.contribution_options,
+                names_for_plantation: donation.names_for_plantation,
+                comments: donation.comments,
+                created_at: new Date(donation.created_at).toLocaleDateString(),
+            };
+    
+            const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+            const mailIds = (testMails && testMails.length !== 0) ? 
+                testMails : 
+                [sponsorUser.email];
+    
+            // Use template directly instead of querying from repository
+            const templateName = 'donor-sum.html';
+            
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                ccMailIds,
+                [], // no attachments
+                'Donation Request Received'
+            );
+    
+            if (statusMessage) {
+                console.error("[ERROR] DonationService::sendDonationAcknowledgement", statusMessage);
+            }
+    
+        } catch (error) {
+            console.error("[ERROR] DonationService::sendDonationAcknowledgement", error);
+            throw new Error("Failed to send acknowledgement email");
+        }
     }
 }
