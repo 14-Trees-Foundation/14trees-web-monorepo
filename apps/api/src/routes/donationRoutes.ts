@@ -157,4 +157,231 @@ routes.put('/:id' , donations.updateDonation);
 // routes.get('/users/:donation_id' , donations.getDonationUsers);
 // routes.post('/emails/ack' , donations.sendAckMail);
 
+
+/**
+ * @swagger
+ * /donations/trees/reserve:
+ *   post:
+ *     summary: Reserve trees for a donation
+ *     description: Reserves trees for a donation either automatically or based on selected tree IDs.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for reserving trees for a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             tree_ids:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [1, 2, 3]
+ *             auto_reserve:
+ *               type: boolean
+ *               example: true
+ *             plots:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [101, 102]
+ *             diversify:
+ *               type: boolean
+ *               example: true
+ *             book_all_habits:
+ *               type: boolean
+ *               example: false
+ *     responses:
+ *       200:
+ *         description: Trees reserved successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/trees/reserve', donations.reserveTreesForDonation)
+
+
+
+/**
+ * @swagger
+ * /donations/trees/unreserve:
+ *   post:
+ *     summary: Unreserve trees for a donation
+ *     description: Unreserves trees for a donation either by unreserving all trees or specific tree IDs.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for unreserving trees for a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             tree_ids:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [1, 2, 3]
+ *             unreserve_all:
+ *               type: boolean
+ *               example: true
+ *     responses:
+ *       200:
+ *         description: Trees unreserved successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/trees/unreserve', donations.reserveTreesForDonation)
+
+
+
+/**
+ * @swagger
+ * /donations/trees/assign:
+ *   post:
+ *     summary: Assign trees for a donation
+ *     description: Assigns trees to users for a specific donation. Trees can be assigned automatically or based on user input.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for assigning trees for a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             auto_assign:
+ *               type: boolean
+ *               example: true
+ *             user_trees:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   user_id:
+ *                     type: integer
+ *                     example: 1
+ *                   tree_ids:
+ *                     type: array
+ *                     items:
+ *                       type: integer
+ *                     example: [101, 102, 103]
+ *     responses:
+ *       200:
+ *         description: Trees assigned successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later!"
+ */
+routes.post('/trees/assign', donations.assignTrees)
+
+
+
+/**
+ * @swagger
+ * /donations/trees/unassign:
+ *   post:
+ *     summary: Unassign trees for a donation
+ *     description: Unassigns all trees or specific trees for a given donation.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for unassigning trees for a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *     responses:
+ *       200:
+ *         description: Trees unassigned successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Donation Id required to unassign trees."
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.post('/trees/unassign', donations.assignTrees)
+
+
 export default routes;

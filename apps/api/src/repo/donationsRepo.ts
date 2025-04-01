@@ -66,6 +66,14 @@ export class DonationRepository {
         }
     }
 
+    public static async getDonation(donationId: number): Promise<Donation> {
+        const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
+        if (donationsResp.results.length !== 1)
+            throw new Error("Donation request for given id not found.")
+        
+        return donationsResp.results[0];
+    }
+
     public static async createdDonation(donationData: DonationCreationAttributes): Promise<Donation> {
         try {
             donationData.created_at = new Date();

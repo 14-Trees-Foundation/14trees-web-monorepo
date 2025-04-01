@@ -70,7 +70,7 @@ class TreeRepository {
     LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-    ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => 't.' + o.column + " " + o.order).join(", ") : 't.sapling_id'}
+    ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => 't.' + o.column + " " + o.order).join(", ") : 't.sapling_id'}
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
@@ -219,7 +219,7 @@ class TreeRepository {
     return resp;
   };
 
-  public static async treesCount(whereClause?: WhereOptions): Promise<number> {
+  public static async treesCount(whereClause?: WhereOptions<Tree>): Promise<number> {
     return await Tree.count({ where: whereClause });
   }
 
@@ -389,7 +389,7 @@ class TreeRepository {
     }
 
 
-    await Tree.update( updateConfig, {
+    await Tree.update(updateConfig, {
       where: {
         id: { [Op.in]: treeIds },
       },
@@ -456,7 +456,7 @@ class TreeRepository {
       if (noMoreTrees) break;
     }
 
-    await Tree.update( updateConfig, {
+    await Tree.update(updateConfig, {
       where: {
         id: { [Op.in]: finalTreeIds },
       },
@@ -465,8 +465,41 @@ class TreeRepository {
     return finalTreeIds;
   }
 
+  /**
+   * Fetches trees for a given plot based on constraints.
+   */
+  public static async fetchTreesForPlot(
+    plotId: number,
+    treesCount: number,
+    bookNonGiftable: boolean,
+    booAllHabitats: boolean,
+    diversify: boolean
+  ): Promise<{ tree_id: number; plant_type: string }[]> {
+
+    let query = `
+      SELECT t.id AS tree_id, pt."name" AS plant_type
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${booAllHabitats ? '' : "AND pt.habit = 'Tree'"}
+      JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
+      ${bookNonGiftable ? '' : 'JOIN "14trees_2".plant_type_card_templates ptct ON ptct.plant_type = pt."name"'}
+      WHERE t.mapped_to_user IS NULL 
+        AND t.mapped_to_group IS NULL 
+        AND t.assigned_to IS NULL 
+        AND t.plot_id = :plotId
+    `;
+
+    if (!diversify) {
+      query += ` LIMIT ${treesCount}`;
+    }
+
+    return sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements: { plotId },
+    });
+  }
+
   public static async unMapTrees(saplingIds: string[]) {
-    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null, sponsored_by_group: null, sponsored_by_user: null,  updated_at: new Date(), }, { where: { sapling_id: { [Op.in]: saplingIds } } });
+    const resp = await Tree.update({ mapped_to_user: null, mapped_at: null, mapped_to_group: null, sponsored_by_group: null, sponsored_by_user: null, updated_at: new Date(), }, { where: { sapling_id: { [Op.in]: saplingIds } } });
     console.log("un mapped trees response: %s", resp);
   }
 
@@ -690,7 +723,7 @@ class TreeRepository {
       SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot
       FROM "14trees_2".trees t
       JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${ include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
       JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
     if (!include_no_giftable) {
@@ -716,7 +749,7 @@ class TreeRepository {
       SELECT count(t.id)
       FROM "14trees_2".trees t
       JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${ include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
+      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
       JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
     if (!include_no_giftable) '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
@@ -743,22 +776,22 @@ class TreeRepository {
   public static async getTreeTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
     const tags: string[] = [];
 
-    const getUniqueTagsQuery = 
-        `SELECT DISTINCT tag
+    const getUniqueTagsQuery =
+      `SELECT DISTINCT tag
             FROM "14trees_2".trees t,
             unnest(t.tags) AS tag
             ORDER BY tag
             OFFSET ${offset} LIMIT ${limit};`;
 
-    const countUniqueTagsQuery = 
-        `SELECT count(DISTINCT tag)
+    const countUniqueTagsQuery =
+      `SELECT count(DISTINCT tag)
             FROM "14trees_2".trees t,
             unnest(t.tags) AS tag;`;
 
-    const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
+    const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
     tagsResp.forEach(r => tags.push(r.tag));
 
-    const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
+    const countResp: any[] = await sequelize.query(countUniqueTagsQuery, { type: QueryTypes.SELECT });
     const total = parseInt(countResp[0].count);
     return { offset: offset, total: total, results: tags };
   }
@@ -810,7 +843,7 @@ class TreeRepository {
       LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
       WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
-      ${ limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
+      ${limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
 
     const countQuery = `
       SELECT count(*)
@@ -828,17 +861,17 @@ class TreeRepository {
       LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
       WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"}`;
 
-      const trees: any = await sequelize.query(query, {
-        type: QueryTypes.SELECT,
-        replacements
-      })
-  
-      const resp = await sequelize.query(countQuery, {
-        type: QueryTypes.SELECT,
-        replacements
-      });
+    const trees: any = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements
+    })
 
-      return { offset: offset, total: (resp[0] as any)?.count, results: trees as Tree[] };
+    const resp = await sequelize.query(countQuery, {
+      type: QueryTypes.SELECT,
+      replacements
+    });
+
+    return { offset: offset, total: (resp[0] as any)?.count, results: trees as Tree[] };
   }
 
 
@@ -851,12 +884,12 @@ class TreeRepository {
       LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
       WHERE t.mapped_to_group = :groupId`;
 
-      const data: any[] = await sequelize.query(query, {
-        type: QueryTypes.SELECT,
-        replacements: { groupId }
-      })
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements: { groupId }
+    })
 
-      return data[0];
+    return data[0];
   }
 }
 
