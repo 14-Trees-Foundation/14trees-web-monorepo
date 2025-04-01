@@ -6,9 +6,10 @@ import { motion } from "framer-motion";
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Script from 'next/script';
 import Image from 'next/image';
+import Papa from 'papaparse';
 
 declare global {
   interface Window {
@@ -20,10 +21,18 @@ interface DedicatedName {
   name: string;
   email: string;
   phone: string;
+  tree_count?: number;
+}
+
+interface CSVRecipient {
+  name: string;
+  email?: string;
+  phone?: string;
+  tree_count?: string;
 }
 
 export default function DonatePage() {
-  // Form state
+  // Form state (existing state remains unchanged)
   const [treeLocation, setTreeLocation] = useState("");
   const [groveType, setGroveType] = useState("");
   const [otherGroveType, setOtherGroveType] = useState("other");
@@ -46,8 +55,20 @@ export default function DonatePage() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvPreview, setCsvPreview] = useState<CSVRecipient[]>([]);
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate total amount
+  const itemsPerPage = 10;
+  const paginatedData = csvPreview.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
+  // Calculate total amount (existing unchanged)
   useEffect(() => {
     const perTreeAmount = calculateDonationAmount();
     const total = perTreeAmount * Number(formData.numberOfTrees || 0);
@@ -59,7 +80,7 @@ export default function DonatePage() {
     }
   }, [treeLocation, formData.numberOfTrees]);
 
-  // Animation variants
+  // Animation variants (existing unchanged)
   const containerVariants = {
     hidden: { opacity: 0, y: 10, scale: 1.05 },
     visible: {
@@ -70,7 +91,7 @@ export default function DonatePage() {
     },
   };
 
-  // Validation patterns
+  // Validation patterns (existing unchanged)
   const validationPatterns = {
     name: /^[A-Za-z\s.'-]+$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -78,7 +99,7 @@ export default function DonatePage() {
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/
   };
 
-  // Validate field
+  // Validate field (existing unchanged)
   const validateField = (name: string, value: string) => {
     let error = "";
     
@@ -113,7 +134,7 @@ export default function DonatePage() {
     return error;
   };
 
-  // Handle input changes
+  // Handle input changes (existing unchanged)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const error = validateField(name, value);
@@ -121,7 +142,7 @@ export default function DonatePage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Validate dedicated names
+  // Validate dedicated names (existing unchanged)
   const validateDedicatedNames = () => {
     let isValid = true;
     const newErrors: Record<string, string> = {};
@@ -150,12 +171,92 @@ export default function DonatePage() {
     return isValid;
   };
 
-  // Form submission
+  // Updated CSV handling functions
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCsvFile(file);
+    setCsvErrors([]);
+    setCsvPreview([]);
+    setCurrentPage(0);
+
+    Papa.parse(file, {
+      header: true,
+      complete: (results) => {
+        const data = results.data as CSVRecipient[];
+        const errors: string[] = [];
+        const validRecipients: CSVRecipient[] = [];
+
+        data.forEach((row, index) => {
+          if (!row.name) {
+            errors.push(`Row ${index + 1}: Name is required`);
+            return;
+          }
+          if (row.email && !validationPatterns.email.test(row.email)) {
+            errors.push(`Row ${index + 1}: Invalid email format`);
+          }
+          if (row.phone && !validationPatterns.phone.test(row.phone)) {
+            errors.push(`Row ${index + 1}: Invalid phone number (10-15 digits required)`);
+          }
+          if (row.tree_count && isNaN(parseInt(row.tree_count))) {
+            errors.push(`Row ${index + 1}: Tree count must be a number`);
+          }
+
+          validRecipients.push({
+            name: row.name,
+            email: row.email || '',
+            phone: row.phone || '',
+            tree_count: row.tree_count || '1'
+          });
+        });
+
+        setCsvErrors(errors);
+        setCsvPreview(validRecipients);
+      },
+      error: (error) => {
+        setCsvErrors([`Error parsing CSV: ${error.message}`]);
+      }
+    });
+  };
+
+  const downloadSampleCsv = () => {
+    const csvContent = "name,email,phone,tree_count\n" +
+      "John Doe,john@example.com,9876543210,1\n" +
+      "Jane Smith,jane@example.com,,2\n" +
+      "Test User,,9876543210,";
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'recipients_sample.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const applyCsvData = () => {
+    if (csvErrors.length > 0) {
+      alert("Please fix CSV errors before applying");
+      return;
+    }
+
+    setDedicatedNames(csvPreview.map(recipient => ({
+      name: recipient.name,
+      email: recipient.email || '',
+      phone: recipient.phone || '',
+      tree_count: parseInt(recipient.tree_count || '1')
+    })));
+
+    setNameEntryMethod("manual");
+    setMultipleNames(true);
+  };
+
+  // Existing form submission (unchanged)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Validate form
     const mainFormValid = Object.keys(formData).every(key => {
       if (key === "phone" || key === "panNumber" || key === "comments") return true;
       if (!formData[key as keyof typeof formData].trim()) {
@@ -189,12 +290,12 @@ export default function DonatePage() {
           recipient_email: name.email || "",
           recipient_phone: name.phone || "",
           assignee: formData.fullName,
-          count: Math.floor(parseInt(formData.numberOfTrees) / dedicatedNames.length),
+          count: name.tree_count || Math.floor(parseInt(formData.numberOfTrees) / dedicatedNames.length),
           relation: "donation"
         }))
       };
   
-      const response =  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +317,7 @@ export default function DonatePage() {
     }
   };
 
-  // Dedication name management
+  // Rest of your existing functions (unchanged)
   const handleAddName = () => {
     setDedicatedNames([...dedicatedNames, { name: "", email: "", phone: "" }]);
   };
@@ -256,7 +357,6 @@ export default function DonatePage() {
     }
   };
 
-  // Calculate donation amount
   const calculateDonationAmount = (): number => {
     if (treeLocation === "foundation") return 3000;
     if (treeLocation === "public") return 1500;
@@ -264,14 +364,12 @@ export default function DonatePage() {
     return 0;
   };
 
-  // Handle Razorpay payment
   const handleRazorpayPayment = async () => {
     if (isAboveLimit) {
       alert("Please use Bank Transfer for donations above ₹1,00,000");
       return;
     }
 
-    // Validate form before payment
     if (!formData.fullName || !formData.email || !formData.numberOfTrees || !taxStatus) {
       alert("Please fill in all required fields before payment");
       return;
@@ -303,23 +401,19 @@ export default function DonatePage() {
 
       const { orderId, razorpayKey } = await response.json();
 
-      // Initialize Razorpay
       const options = {
-        key:  process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: amount * 100,
         currency: 'INR',
         name: "14 Trees Foundation",
         description: `Donation for ${formData.numberOfTrees} trees`,
         order_id: orderId,
         handler: async (response: any) => {
-          console.log('Razorpay Response:', response);
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
-            console.error('Incomplete Razorpay response:', response);
             alert('Payment verification failed - incomplete response');
             return;
           }
           try {
-            // Verify payment (keep for backend record)
             const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -360,7 +454,7 @@ export default function DonatePage() {
 
   return (
     <div className="overflow-hidden bg-white">
-      {/* Header Section */}
+      {/* Header Section (unchanged) */}
       <header className="bg-green-800 text-white p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold">14 Trees Foundation</Link>
@@ -371,7 +465,7 @@ export default function DonatePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section (unchanged) */}
       <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
         <MotionDiv
           className="container z-0 mx-auto my-10 overflow-hidden text-gray-800"
@@ -398,7 +492,7 @@ export default function DonatePage() {
           <div className="mx-auto w-full md:w-2/3">
             <ScrollReveal>
               <form className="space-y-8" onSubmit={handleSubmit}>
-                {/* 1. Personal Information */}
+                {/* 1. Personal Information (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Your Information</h2>
                   <div className="space-y-4">
@@ -460,7 +554,7 @@ export default function DonatePage() {
                   </div>
                 </div>
 
-                {/* 2. Tree Planting Options */}
+                {/* 2. Tree Planting Options (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Tree Planting Options</h2>
                   <p className="font-medium">
@@ -532,7 +626,7 @@ export default function DonatePage() {
                   )}
                 </div>
 
-                {/* 3. Number of Trees */}
+                {/* 3. Number of Trees (unchanged) */}
                 <div>
                   <label className="mb-2 block text-lg font-light">
                     Number of trees you would like to sponsor *
@@ -554,7 +648,7 @@ export default function DonatePage() {
                   )}
                 </div>
 
-                {/* 4. Tree Dedication Names */}
+                {/* 4. Tree Dedication Names - Updated with CSV functionality */}
                 <div className="space-y-4">
                   <label className="mb-2 block text-lg font-light">
                     I'd like my trees to be planted in the following names
@@ -572,8 +666,35 @@ export default function DonatePage() {
                       Dedicate to multiple people
                     </label>
                   </div>
-                  
-                  {multipleNames ? (
+
+                  {multipleNames && (
+                    <div className="flex space-x-4 mb-4">
+                      <button
+                        type="button"
+                        className={`px-4 py-2 rounded-md ${
+                          nameEntryMethod === "manual" 
+                            ? "bg-green-600 text-white" 
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                        onClick={() => setNameEntryMethod("manual")}
+                      >
+                        Add Manually
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-4 py-2 rounded-md ${
+                          nameEntryMethod === "csv" 
+                            ? "bg-green-600 text-white" 
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                        onClick={() => setNameEntryMethod("csv")}
+                      >
+                        Bulk Upload CSV
+                      </button>
+                    </div>
+                  )}
+
+                  {multipleNames && nameEntryMethod === "manual" ? (
                     <div className="space-y-4">
                       {dedicatedNames.map((name, index) => (
                         <div key={index} className="border border-gray-200 rounded-md p-4 relative">
@@ -638,6 +759,16 @@ export default function DonatePage() {
                                 <p className="mt-1 text-sm text-red-600">{errors[`dedicatedPhone-${index}`]}</p>
                               )}
                             </div>
+                            {name.tree_count && (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Trees
+                                </label>
+                                <div className="px-3 py-2 text-sm">
+                                  {name.tree_count}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -651,6 +782,108 @@ export default function DonatePage() {
                         </svg>
                         Add another name
                       </button>
+                    </div>
+                  ) : multipleNames && nameEntryMethod === "csv" ? (
+                    <div className="space-y-4 border border-gray-200 rounded-md p-4">
+                      <div className="space-y-2">
+                        <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
+                        <p className="text-sm text-gray-600">
+                          <button 
+                            type="button" 
+                            onClick={downloadSampleCsv}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Download sample CSV
+                          </button>
+                        </p>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          accept=".csv"
+                          onChange={handleCsvUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                        >
+                          Select CSV File
+                        </button>
+                        {csvFile && (
+                          <p className="text-sm text-gray-600">Selected file: {csvFile.name}</p>
+                        )}
+                      </div>
+
+                      {csvErrors.length > 0 && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                          <h4 className="font-medium text-red-700">CSV Errors:</h4>
+                          <ul className="list-disc pl-5 text-red-600">
+                            {csvErrors.map((error, i) => (
+                              <li key={i} className="text-sm">{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {csvPreview.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
+                          </h4>
+                          <div className="max-h-96 overflow-y-auto border rounded-md">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {paginatedData.map((recipient, i) => (
+                                  <tr key={i}>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.name}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.email || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.phone || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.tree_count || '1'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="flex justify-between items-center mt-2">
+                            <button
+                              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                              disabled={currentPage === 0}
+                              className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                            >
+                              Previous
+                            </button>
+                            <span className="text-sm text-gray-600">
+                              Showing {currentPage * itemsPerPage + 1}-{Math.min((currentPage + 1) * itemsPerPage, csvPreview.length)} of {csvPreview.length}
+                            </span>
+                            <button
+                              onClick={() => setCurrentPage(p => 
+                                Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
+                              )}
+                              disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
+                              className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                            >
+                              Next
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={applyCsvData}
+                            className="mt-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md w-full"
+                            disabled={csvErrors.length > 0}
+                          >
+                            Apply {csvPreview.length} Recipients to Form
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -699,7 +932,7 @@ export default function DonatePage() {
                   )}
                 </div>
 
-                {/* 5. Additional Involvement */}
+                {/* 5. Additional Involvement (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Additional Involvement</h2>
                   <p className="font-medium">Besides making a monetary contribution, I'd also like to</p>
@@ -719,7 +952,7 @@ export default function DonatePage() {
                   </div>
                 </div>
 
-                {/* 6. Tax Information */}
+                {/* 6. Tax Information (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Tax Information</h2>
                   <div className="grid gap-6 md:grid-cols-2">
@@ -771,7 +1004,7 @@ export default function DonatePage() {
                   </div>
                 </div>
 
-                {/* 7. Payment Information */}
+                {/* 7. Payment Information (unchanged) */}
                 <div className="space-y-6">
                   <Script 
                     src="https://checkout.razorpay.com/v1/checkout.js" 
@@ -869,7 +1102,7 @@ export default function DonatePage() {
                   )}
                 </div>
 
-                {/* 8. Additional Comments */}
+                {/* 8. Additional Comments (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Additional Information</h2>
                   <div>
