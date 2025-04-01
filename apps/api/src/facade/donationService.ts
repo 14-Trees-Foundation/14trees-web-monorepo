@@ -9,6 +9,7 @@ import { Op } from "sequelize";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { sendDashboardMail } from '../services/gmail/gmail';
+import { User } from "../models/user";
 
 interface DonationUserRequest {
     name: string
@@ -348,12 +349,7 @@ export class DonationService {
         await this.assignTreesConcurrently(donationUsers, userTreesMap);
     }
 
-
-    public static async unassignTrees(donationId: number) {
-        
-        const trees = await this.getDonationTrees(donationId);
-        const treeIds = trees.map(tree => tree.tree_id);
-
+    private static async unassignTreesForTreeIds(treeIds: number[]) {
         const updateRequest = {
             assigned_at: null,
             assigned_to: null,
@@ -371,11 +367,20 @@ export class DonationService {
         await TreeRepository.updateTrees(updateRequest, { id: {[Op.in]: treeIds }});
     }
 
+
+    public static async unassignTrees(donationId: number) {
+        
+        const trees = await this.getDonationTrees(donationId);
+        const treeIds = trees.map(tree => tree.tree_id);
+
+        await this.unassignTreesForTreeIds(treeIds);
+    }
+
     /**
      * Donation Users
      */
 
-    private static async upsertGiftRequestUsersAndRelations(donationId: number, users: any[]) {
+    private static async upsertDonationUsersAndRelations(donationId: number, users: any[]) {
         const addUsersData: DonationUserCreationAttributes[] = []
         const updateUsersData: DonationUserAttributes[] = []
         
@@ -438,6 +443,41 @@ export class DonationService {
         }
     
         return { addUsersData, updateUsersData, count };
+    }
+
+    private static async deleteDonationUsers(donationId: number, donationUsers: DonationUser[]) {
+
+        // unassign trees
+        const trees = await this.getDonationTrees(donationId)
+        const unassignTrees = trees.filter(tree => donationUsers.some(user => user.assignee === tree.assigned_to && user.recipient === tree.gifted_to));
+        const treeIds = unassignTrees.map(tree => tree.tree_id);
+        if (treeIds.length > 0) await this.unassignTreesForTreeIds(treeIds);
+
+
+        // delete donation users
+        await DonationUserRepository.deleteDonationUsers({
+            id: { [Op.in]: donationUsers.map(user => user.id)},
+            donation_id: donationId,
+        })
+    }
+
+
+    public static async upsertDonationUsers(donationId: number, users: any[]) {
+    
+    
+        const { addUsersData, updateUsersData, count } = await this.upsertDonationUsersAndRelations(donationId, users);
+        const donation = await DonationRepository.getDonation(donationId);
+
+        if (donation.trees_count < count)
+            throw new Error("You cannot assign more trees to users than originally requested.");
+
+        const existingUsers = await DonationUserRepository.getDonationUsers(donationId);
+
+        // delete extra users
+        const deleteUsers = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1)
+        if (deleteUsers.length > 0) {
+            await this.deleteDonationUsers(donationId, deleteUsers)
+        }  
     }
     public static async sendDonationAcknowledgement(
         donation: Donation,
