@@ -1,10 +1,11 @@
-
 import { status } from "../helpers/status";
 import { DonationRepository } from "../repo/donationsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
 import { DonationService } from "../facade/donationService";
+import { User } from "../models/user";
+import { UserRepository } from "../repo/userRepo";
 
 /*
     Model - Donation
@@ -119,7 +120,7 @@ export const createDonation = async (req: Request, res: Response) => {
         });
     })
 
-    let usersCreated = false;
+    let usersCreated = true; // Default to true, only set to false if users array exists but creation fails
     if (!donation) return;
     if (users && users.length > 0) {
         await DonationService.createDonationUsers(
@@ -129,6 +130,26 @@ export const createDonation = async (req: Request, res: Response) => {
             console.error("[ERROR] DonationsController::createDonation:", error);
             usersCreated = false;
         })
+    }
+    
+    // Send acknowledgement email after donation is created
+    try {
+        // Fetch the user directly by using UserRepository
+        const sponsorUser = await UserRepository.upsertUser({
+            name: sponsor_name,
+            email: sponsor_email,
+            phone: sponsor_phone
+        });
+        
+        // Update donation with additional fields if they were provided in the request
+        if (grove_type_other) donation.grove_type_other = grove_type_other;
+        if (names_for_plantation) donation.names_for_plantation = names_for_plantation;
+        if (comments) donation.comments = comments;
+        
+        await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+    } catch (error) {
+        console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
+        // Don't fail the request if email sending fails
     }
     
     if (!usersCreated)
