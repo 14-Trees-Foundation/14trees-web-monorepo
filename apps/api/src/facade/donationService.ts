@@ -88,7 +88,7 @@ export class DonationService {
             const emailData = {
                 user_name: sponsorUser.name,
                 user_email: sponsorUser.email,
-                donation_id: donation.id,
+                id: donation.id,
                 category: donation.category,
                 grove: donation.grove,
                 grove_type_other: donation.grove_type_other,
