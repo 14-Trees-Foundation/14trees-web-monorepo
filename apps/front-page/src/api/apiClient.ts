@@ -5,7 +5,6 @@ class ApiClient {
   private token: string | null;
 
   constructor() {
-    // Use Next.js public env variable
     const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
 
     this.api = axios.create({
@@ -15,7 +14,6 @@ class ApiClient {
       },
     });
 
-    // Token handling (adjust based on your Next.js auth strategy)
     this.token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (this.token) {
       this.api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
@@ -50,17 +48,14 @@ class ApiClient {
    */
   async uploadUserImage(file: File, folder: string = 'user-uploads'): Promise<string> {
     try {
-      // Generate unique key with timestamp and sanitized filename
       const key = `${folder}/${Date.now()}-${file.name.replace(/\s+/g, '-').toLowerCase()}`;
       
-      // Get presigned URL
       const presignedUrl = await this.getSignedPutUrl('user-avatars', key);
       
-      // Upload file directly to S3
       await axios.put(presignedUrl, file, {
         headers: { 
           'Content-Type': file.type,
-          'x-amz-acl': 'public-read' // Ensure the file is publicly accessible
+          'x-amz-acl': 'public-read' 
         },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -70,7 +65,6 @@ class ApiClient {
         }
       });
 
-      // Return public URL
       return `https://14treesplants.s3.amazonaws.com/${key}`;
     } catch (error: any) {
       console.error('Image upload failed:', error);
@@ -98,5 +92,4 @@ class ApiClient {
   }
 }
 
-// Singleton instance (recommended for client-side usage)
 export const apiClient = new ApiClient();

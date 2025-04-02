@@ -25,7 +25,7 @@ interface DedicatedName {
   email: string;
   phone: string;
   tree_count?: number;
-  image?: string; // Only store URLs here
+  image?: string;
   image_url?: string; 
 }
 
@@ -276,7 +276,7 @@ export default function DonatePage() {
   };
 
   const applyCsvData = () => {
-    if (csvPreview.length > 50) { // Set reasonable limit
+    if (csvPreview.length > 50) {
       if (!confirm(`This will add ${csvPreview.length} recipients. Continue?`)) {
         return;
       }
@@ -316,7 +316,6 @@ export default function DonatePage() {
     }
   
     try {
-      // Upload images first if any
       const recipientsWithImages = await Promise.all(
         dedicatedNames.map(async (recipient) => {
           const image = recipient.image;
@@ -326,7 +325,7 @@ export default function DonatePage() {
                 return { ...recipient, image_url: imageUrl };
               } catch (error) {
                 console.error("Failed to upload image:", error);
-                return recipient; // Continue without image if upload fails
+                return recipient;
               }
             }
           return recipient;
@@ -347,10 +346,10 @@ export default function DonatePage() {
           recipient_name: recipient.name,
           recipient_email: recipient.email || "",
           recipient_phone: recipient.phone || "",
-          image_url: recipient.image_url || "", // Include image URL
+          image_url: recipient.image_url || "",
           assignee: formData.fullName,
-          count: recipient.tree_count || Math.floor(parseInt(formData.numberOfTrees) / recipientsWithImages.length),
-          relation: "donation"
+          trees_count: recipient.tree_count || Math.floor(parseInt(formData.numberOfTrees) / recipientsWithImages.length),
+          relation: "other"
         }))
       };
   
@@ -515,7 +514,6 @@ export default function DonatePage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
   
-    // Create object URLs for immediate preview
     const previewUrls: Record<string, string> = {};
     
     Array.from(files).forEach(file => {
@@ -523,7 +521,6 @@ export default function DonatePage() {
       previewUrls[key] = URL.createObjectURL(file);
     });
   
-    // Update preview with temporary URLs
     setCsvPreview(prev => prev.map(recipient => {
       const imageKey = recipient.name.toLowerCase().replace(/\s+/g, '_');
       return previewUrls[imageKey] 
