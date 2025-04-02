@@ -3,6 +3,7 @@ import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { Donation, DonationAttributes, DonationCreationAttributes } from '../models/donation'
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes } from 'sequelize';
+import { Tree } from '../models/tree';
 
 export class DonationRepository {
    
@@ -131,5 +132,67 @@ export class DonationRepository {
         } catch (error: any) {
             throw new Error(`Error updating donation: ${error.message}`);
         }
+    }
+
+
+    public static async getDonationTrees(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<Tree>> {
+
+        let whereConditions: string = "";
+        let replacements: any = {}
+
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                let columnField = "gc." + filter.columnField
+                if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name"
+                } else if (filter.columnField === "assignee_name") {
+                    columnField = "au.name"
+                } else if (filter.columnField === "sapling_id") {
+                    columnField = "t.sapling_id"
+                }
+                const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                whereConditions = whereConditions + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement }
+            })
+            whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+        }
+
+        const getQuery = `
+            SELECT t.id, t.sapling_id, t.assigned_to as assignee, t.gifted_to as recipient, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
+            ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
+            au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
+            ur.relation
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+            ORDER BY t.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+        `
+
+        const data: any[] = await sequelize.query(getQuery, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        const countQuery = `
+            SELECT count(t.id)
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+        `
+
+        const countData: any[] = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
+        return {
+            offset: offset,
+            total: parseInt(countData[0].count),
+            results: data
+        };
     }
 }

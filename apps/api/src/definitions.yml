@@ -1234,3 +1234,47 @@ definitions:
         updated_at:
           type: string
           format: date-time
+  DonationTree:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      recipient:
+        type: integer
+        example: 1
+      assignee:
+        type: integer
+        example: 1
+      recipient_name:
+        type: string
+        example: "Recipient Name"
+      recipient_email:
+        type: string
+        format: email
+        example: "recipient@gmail.com"
+      recipient_phone:
+        type: string
+        example: "9876543210"
+      assignee_name:
+        type: string
+        example: "Assignee Name"
+      assignee_email:
+        type: string
+        format: email
+        example: "assignee@gmail.com"
+      assignee_phone:
+        type: string
+        example: "9876543210"
+      sapling_id:
+        type: string
+        example: "126783"
+      assigned:
+        type: integer
+        example: 1
+      plant_type:
+        type: string
+        example: "Kadulimb (कडुलिंब)"
+      scientific_name:
+        type: string
+        example: "Azadirachta indica"

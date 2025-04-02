@@ -479,6 +479,8 @@ export class DonationService {
             await this.deleteDonationUsers(donationId, deleteUsers)
         }  
     }
+
+
     public static async sendDonationAcknowledgement(
         donation: Donation,
         sponsorUser: User,
