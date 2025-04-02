@@ -213,7 +213,7 @@ export const updateDonation = async (req: Request, res: Response) => {
     });
 
     try {
-        const updatedDonation = await DonationRepository.updateDonation(donationId, updateFields);
+        const updatedDonation = await DonationRepository.updateDonation(donationId, updateObject);
 
         // Get full donation details with joins
         const result = await DonationRepository.getDonations(0, 1, [
