@@ -10,6 +10,9 @@ import { useState, useEffect, useRef } from "react";
 import Script from 'next/script';
 import Image from 'next/image';
 import Papa from 'papaparse';
+import { apiClient } from "~/api/apiClient";
+import CsvUpload from "components/CsvUpload";
+import { UploadIcon } from "lucide-react";
 
 declare global {
   interface Window {
@@ -22,6 +25,8 @@ interface DedicatedName {
   email: string;
   phone: string;
   tree_count?: number;
+  image?: string; // Only store URLs here
+  image_url?: string; 
 }
 
 interface CSVRecipient {
@@ -29,6 +34,7 @@ interface CSVRecipient {
   email?: string;
   phone?: string;
   tree_count?: string;
+  image?: string;
 }
 
 export default function DonatePage() {
@@ -59,6 +65,8 @@ export default function DonatePage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<CSVRecipient[]>([]);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<Record<string, File>>({}); 
+  const [imageUploadProgress, setImageUploadProgress] = useState<Record<string, number>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +87,18 @@ export default function DonatePage() {
       setPaymentOption("bank-transfer");
     }
   }, [treeLocation, formData.numberOfTrees]);
+
+  useEffect(() => {
+    if (nameEntryMethod === "csv" && csvPreview.length > 0 && csvErrors.length === 0) {
+      setDedicatedNames(csvPreview.map(recipient => ({
+        name: recipient.name,
+        email: recipient.email || '',
+        phone: recipient.phone || '',
+        tree_count: parseInt(recipient.tree_count || '1')
+      })));
+      setMultipleNames(true);
+    }
+  }, [csvPreview, nameEntryMethod, csvErrors]);
 
   // Animation variants (existing unchanged)
   const containerVariants = {
@@ -172,22 +192,24 @@ export default function DonatePage() {
   };
 
   // Updated CSV handling functions
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setCsvFile(file);
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+  
+    setCsvFile(files[0]);
     setCsvErrors([]);
     setCsvPreview([]);
     setCurrentPage(0);
-
-    Papa.parse(file, {
+  
+    // Handle CSV file
+    Papa.parse(files[0], {
       header: true,
+      transformHeader: (header) => header.toLowerCase().replace(/\s+/g, '_').replace(/-/g, ''),
       complete: (results) => {
         const data = results.data as CSVRecipient[];
         const errors: string[] = [];
         const validRecipients: CSVRecipient[] = [];
-
+  
         data.forEach((row, index) => {
           if (!row.name) {
             errors.push(`Row ${index + 1}: Name is required`);
@@ -202,15 +224,16 @@ export default function DonatePage() {
           if (row.tree_count && isNaN(parseInt(row.tree_count))) {
             errors.push(`Row ${index + 1}: Tree count must be a number`);
           }
-
+  
           validRecipients.push({
             name: row.name,
             email: row.email || '',
             phone: row.phone || '',
-            tree_count: row.tree_count || '1'
+            tree_count: row.tree_count || '1',
+            image: row.image || undefined
           });
         });
-
+  
         setCsvErrors(errors);
         setCsvPreview(validRecipients);
       },
@@ -218,6 +241,23 @@ export default function DonatePage() {
         setCsvErrors([`Error parsing CSV: ${error.message}`]);
       }
     });
+ 
+    // Handle image files if any
+    if (files.length > 1) {
+      const imageFiles = Array.from(files).slice(1);
+      // Match images to CSV rows (example: by filename convention)
+      const updatedPreview = [...csvPreview];
+      imageFiles.forEach((file) => {
+        const match = file.name.match(/(\d+)/); // Look for numbers in filename
+        if (match) {
+          const rowIndex = parseInt(match[0]) - 1;
+          if (rowIndex >= 0 && rowIndex < updatedPreview.length) {
+            updatedPreview[rowIndex].image = URL.createObjectURL(file);
+          }
+        }
+      });
+      setCsvPreview(updatedPreview);
+    }
   };
 
   const downloadSampleCsv = () => {
@@ -236,9 +276,10 @@ export default function DonatePage() {
   };
 
   const applyCsvData = () => {
-    if (csvErrors.length > 0) {
-      alert("Please fix CSV errors before applying");
-      return;
+    if (csvPreview.length > 50) { // Set reasonable limit
+      if (!confirm(`This will add ${csvPreview.length} recipients. Continue?`)) {
+        return;
+      }
     }
 
     setDedicatedNames(csvPreview.map(recipient => ({
@@ -275,6 +316,23 @@ export default function DonatePage() {
     }
   
     try {
+      // Upload images first if any
+      const recipientsWithImages = await Promise.all(
+        dedicatedNames.map(async (recipient) => {
+          const image = recipient.image;
+             if (image && typeof image !== 'string') {
+              try {
+                const imageUrl = await apiClient.uploadUserImage(image);
+                return { ...recipient, image_url: imageUrl };
+              } catch (error) {
+                console.error("Failed to upload image:", error);
+                return recipient; // Continue without image if upload fails
+              }
+            }
+          return recipient;
+        })
+      );
+  
       const donationRequest = {
         sponsor_name: formData.fullName,
         sponsor_email: formData.email,
@@ -285,12 +343,13 @@ export default function DonatePage() {
         payment_id: razorpayPaymentId,
         contribution_options: "CSR",
         comments: formData.comments,
-        users: dedicatedNames.map(name => ({
-          recipient_name: name.name,
-          recipient_email: name.email || "",
-          recipient_phone: name.phone || "",
+        users: recipientsWithImages.map(recipient => ({
+          recipient_name: recipient.name,
+          recipient_email: recipient.email || "",
+          recipient_phone: recipient.phone || "",
+          image_url: recipient.image_url || "", // Include image URL
           assignee: formData.fullName,
-          count: name.tree_count || Math.floor(parseInt(formData.numberOfTrees) / dedicatedNames.length),
+          count: recipient.tree_count || Math.floor(parseInt(formData.numberOfTrees) / recipientsWithImages.length),
           relation: "donation"
         }))
       };
@@ -450,6 +509,27 @@ export default function DonatePage() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+  
+    // Create object URLs for immediate preview
+    const previewUrls: Record<string, string> = {};
+    
+    Array.from(files).forEach(file => {
+      const key = file.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/\s+/g, '_');
+      previewUrls[key] = URL.createObjectURL(file);
+    });
+  
+    // Update preview with temporary URLs
+    setCsvPreview(prev => prev.map(recipient => {
+      const imageKey = recipient.name.toLowerCase().replace(/\s+/g, '_');
+      return previewUrls[imageKey] 
+        ? { ...recipient, image: previewUrls[imageKey] }
+        : recipient;
+    }));
   };
 
   return (
@@ -785,35 +865,66 @@ export default function DonatePage() {
                     </div>
                   ) : multipleNames && nameEntryMethod === "csv" ? (
                     <div className="space-y-4 border border-gray-200 rounded-md p-4">
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
                         <p className="text-sm text-gray-600">
-                          <button 
-                            type="button" 
-                            onClick={downloadSampleCsv}
-                            className="text-blue-600 hover:underline"
-                          >
-                            Download sample CSV
-                          </button>
-                        </p>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          accept=".csv"
-                          onChange={handleCsvUpload}
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                        <button 
+                          type="button" 
+                          onClick={downloadSampleCsv}
+                          className="text-blue-600 hover:underline"
                         >
-                          Select CSV File
+                          Download sample CSV
                         </button>
-                        {csvFile && (
-                          <p className="text-sm text-gray-600">Selected file: {csvFile.name}</p>
-                        )}
-                      </div>
+                        </p>
+  
+                               {/* CSV Upload */}
+                                <div className="flex gap-2">
+                                     <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        accept=".csv"
+                                        onChange={handleCsvUpload}
+                                        className="hidden"
+                                      />
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                            >
+                                 Select CSV File
+                            </button>
+                               {csvFile && (
+                                  <span className="self-center text-sm">
+                                    {csvFile.name}
+                                  </span>
+                              )}
+                              </div>
+
+                                   {/* NEW: Image Upload Section */}
+                                      <div className="pt-2">
+                                        <label className="block text-sm font-medium mb-1">
+                                            Upload Recipient Images
+                                        </label>
+                                      <input
+                                       type="file"
+                                       id="recipient-images"
+                                       multiple
+                                       accept="image/*"
+                                       onChange={handleImageUpload}
+                                       className="hidden"
+                                      />
+                                    <label 
+                                      htmlFor="recipient-images"
+                                      className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
+                                         >
+                                            <UploadIcon className="w-4 h-4" />
+                                                  Select Images
+                                    </label>
+                                          <p className="mt-1 text-xs text-gray-500">
+                                              Upload images matching CSV names (e.g. "john_doe.jpg")
+                                           </p>
+                                        </div>
+                                    </div>
 
                       {csvErrors.length > 0 && (
                         <div className="bg-red-50 border-l-4 border-red-500 p-4">
@@ -832,26 +943,50 @@ export default function DonatePage() {
                             Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
                           </h4>
                           <div className="max-h-96 overflow-y-auto border rounded-md">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {paginatedData.map((recipient, i) => (
-                                  <tr key={i}>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.name}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.email || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.phone || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.tree_count || '1'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                             <tr>
+                               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
+                               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                            </tr>
+                           </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {paginatedData.map((recipient, i) => (
+                          <tr key={i}>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.name}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.email || '-'}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.phone || '-'}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.tree_count || '1'}</td>
+                            <td className="px-4 py-2 whitespace-nowrap">
+                           {recipient.image && (
+                           typeof recipient.image === 'string' ? (
+                          <img 
+                           src={recipient.image} 
+                          className="h-10 w-10 rounded-full object-cover" 
+                          alt={`${recipient.name}'s profile`}
+                          />
+                        ) : (
+                            <div className="flex items-center">
+                                 <span className="text-sm text-gray-500">Ready to upload</span>
+                                 <button 
+                                   onClick={() => {
+                             // Add image upload handler here
+                               }}
+                            className="ml-2 text-sm text-blue-600 hover:underline"
+                          >
+                           Upload
+                            </button>
+                          </div>
+                        )
+                      )}
+                            </td>
+                </tr>
+              ))}
+        </tbody>
+    </table>
                           </div>
                           <div className="flex justify-between items-center mt-2">
                             <button
@@ -861,9 +996,7 @@ export default function DonatePage() {
                             >
                               Previous
                             </button>
-                            <span className="text-sm text-gray-600">
-                              Showing {currentPage * itemsPerPage + 1}-{Math.min((currentPage + 1) * itemsPerPage, csvPreview.length)} of {csvPreview.length}
-                            </span>
+
                             <button
                               onClick={() => setCurrentPage(p => 
                                 Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
@@ -874,14 +1007,14 @@ export default function DonatePage() {
                               Next
                             </button>
                           </div>
-                          <button
+                         {/* <button
                             type="button"
                             onClick={applyCsvData}
                             className="mt-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md w-full"
                             disabled={csvErrors.length > 0}
                           >
                             Apply {csvPreview.length} Recipients to Form
-                          </button>
+                          </button>*/}
                         </div>
                       )}
                     </div>

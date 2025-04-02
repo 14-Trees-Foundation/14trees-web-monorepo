@@ -43,12 +43,12 @@ module.exports = {
           "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/14trees_80g.pdf",
         permanent: true,
       },
-      {
-        source: "/donate",
-        destination:
-          "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform",
-        permanent: true,
-      },
+//      {
+//        source: "/donate",
+//        destination:
+//          "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform",
+//        permanent: true,
+//      },
       {
         source: "/volunteer",
         destination:
