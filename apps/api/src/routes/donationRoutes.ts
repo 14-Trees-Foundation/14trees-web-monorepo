@@ -148,9 +148,9 @@ routes.post('/requests/get', donations.getDonations);
  *               type: string
  *               example: "Failed to create donation"
  */
-routes.post('/' , donations.createDonation);
-routes.delete('/:id' , donations.deleteDonation);
-routes.put('/:id' , donations.updateDonation);
+routes.post('/requests' , donations.createDonation);
+routes.delete('/requests/:id' , donations.deleteDonation);
+routes.put('/requests/:id' , donations.updateDonation);
 // routes.post('/work-order/:donation_id' , donations.createWorkOrder);
 // routes.post('/update-feedback' , donations.updateFeedback);
 // routes.post('/book-trees' , donations.bookTreesForDonation);
@@ -382,6 +382,63 @@ routes.post('/trees/assign', donations.assignTrees)
  *               example: "Something went wrong. Please try again later."
  */
 routes.post('/trees/unassign', donations.assignTrees)
+
+
+/**
+ * @swagger
+ * /gift-cards/trees/get:
+ *   post:
+ *     summary: Get reserved trees for donation
+ *     description: Fetches trees booked for a gift card request.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: Reserved trees fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offser:
+ *               type: number
+ *               example: 0
+ *             total:
+ *               type: number
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/DonationTree'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Please provide valid input details!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.post('/trees/get', donations.getDonationTrees)
 
 
 export default routes;

@@ -435,7 +435,7 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
-            messgae: "Something went wrong. Please try again later."
+            messgae: error.message
         })
     }
 
@@ -465,7 +465,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
         return res.status(status.error).send({
-            messgae: "Something went wrong. Please try again later."
+            messgae: error.message
         })
     }
 }
@@ -501,7 +501,7 @@ export const assignTrees = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
-            messgae: "Something went wrong. Please try again later."
+            messgae: error.message
         })
     }
 }
@@ -522,8 +522,29 @@ export const unassignTrees = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
         return res.status(status.error).send({
-            messgae: "Something went wrong. Please try again later."
+            messgae: error.message
         })
     }
+}
 
+
+/**
+ * Donation Trees
+*/
+
+export const getDonationTrees = async (req: Request, res: Response) => {
+
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+
+    try {
+        let result = await DonationRepository.getDonationTrees(offset, limit, filters);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationTrees", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+    }
 }
