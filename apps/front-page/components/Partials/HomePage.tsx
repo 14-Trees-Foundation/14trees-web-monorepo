@@ -240,3 +240,4 @@ function ScrollRevealEach({ children }: React.PropsWithChildren<{}>) {
     </motion.div>
   );
 }
+export { ScrollReveal, ScrollRevealEach };
