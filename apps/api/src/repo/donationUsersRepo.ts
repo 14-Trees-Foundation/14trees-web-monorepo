@@ -3,7 +3,7 @@ import { sequelize } from "../config/postgreDB";
 import { DonationUser, DonationUserCreationAttributes } from "../models/donation_user";
 
 export class DonationUserRepository {
-  static async getDonationUsers(donationId: number) {
+  static async getDonationUsers(donationId: number): Promise<DonationUser[]> {
     const getQuery = `
             SELECT du.*, 
             ru."name" as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,

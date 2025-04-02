@@ -2,15 +2,20 @@ import { LandCategory } from "../models/common";
 import { ContributionOption, Donation, DonationCreationAttributes } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
-import { DonationUserCreationAttributes } from "../models/donation_user";
+import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
-import { User } from "../models/user";
+import TreeRepository from "../repo/treeRepo";
+import { Op } from "sequelize";
+import runWithConcurrency, { Task } from "../helpers/consurrency";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { sendDashboardMail } from '../services/gmail/gmail';
+import { User } from "../models/user";
 
 interface DonationUserRequest {
-    name: string
-    email: string | null,
-    phone: string | null,
+    recipient_name: string
+    recipient_email: string | null,
+    recipient_phone: string | null,
+    image_url: string | null,
     trees_count: number
 }
 
@@ -58,7 +63,7 @@ export class DonationService {
             console.error("DonationService::createDonation", error)
             throw new Error("Failed to save your donation request!")
         })
-        
+
         return donation;
     }
 
@@ -67,17 +72,421 @@ export class DonationService {
         const userRequests: DonationUserCreationAttributes[] = [];
 
         for (const userData of usersData) {
-            const user = await UserRepository.upsertUser(userData)
+            const user = await UserRepository.upsertUser({
+                name: userData.recipient_name,
+                email: userData.recipient_email,
+                phone: userData.recipient_phone,
+            })
             userRequests.push({
                 recipient: user.id,
                 assignee: user.id,
                 trees_count: userData.trees_count,
+                profile_image_url: userData.image_url || null,
                 donation_id: donationId
             })
         }
 
         await DonationUserRepository.createDonationUsers(userRequests);
     }
+
+    /**
+     * Tree Reservation 
+     */
+
+    public static async reserveSelectedTrees(donationId: number, treeIds: number[]) {
+        // validate tree ids
+        const validTrees = await TreeRepository.treesCount({
+            mapped_to_user: { [Op.is]: null },
+            mapped_to_group: { [Op.is]: null },
+            assigned_to: { [Op.is]: null },
+            donation_id: { [Op.is]: null },
+            id: { [Op.in]: treeIds },
+        })
+
+        if (validTrees !== treeIds.length)
+            throw new Error("Some tree ids are already reserved/assigned to someone else or are invalid!");
+
+
+        const donation = await DonationRepository.getDonation(donationId);
+
+        // reserved trees count
+        const alreadyReserved = await TreeRepository.treesCount({
+            donation_id: donationId,
+        })
+
+        if (alreadyReserved + treeIds.length > donation.trees_count)
+            throw new Error("Can not reserve more trees than originally requested.")
+
+        await TreeRepository.mapTreesToUserAndGroup(donation.user_id, null, treeIds, donationId);
+    }
+
+
+    private static async reserveTreesInPlots(
+        userId: number,
+        groupId: number | null,
+        plotTreeLimits: { plot_id: number, trees_count: number }[],
+        bookNonGiftable: boolean = false,
+        diversify: boolean = false,
+        booAllHabitats: boolean = false,
+        donation_id?: number | null
+    ): Promise<number[]> {
+
+        const updateConfig = {
+            mapped_to_user: userId,
+            mapped_to_group: groupId,
+            sponsored_by_user: userId,
+            sponsored_by_group: groupId,
+            donation_id,
+            mapped_at: new Date(),
+            updated_at: new Date(),
+        };
+
+        const finalTreeIds: number[] = [];
+
+        for (const plot of plotTreeLimits) {
+            const trees = await TreeRepository.fetchTreesForPlot(plot.plot_id, plot.trees_count, bookNonGiftable, booAllHabitats, diversify);
+            const selectedTrees = this.distributeTreesByPlantType(trees, plot.trees_count);
+
+            finalTreeIds.push(...selectedTrees);
+        }
+
+        if (finalTreeIds.length > 0) {
+            await TreeRepository.updateTrees(updateConfig, { where: { id: { [Op.in]: finalTreeIds } } });
+        }
+
+        return finalTreeIds;
+    }
+
+    /**
+   * Distributes trees by plant type, ensuring diverse selection.
+   */
+    private static distributeTreesByPlantType(
+        trees: { tree_id: number; plant_type: string }[],
+        maxCount: number
+    ): number[] {
+
+        const plantTypeTreesMap = new Map<string, number[]>();
+
+        for (const { tree_id, plant_type } of trees) {
+            if (!plantTypeTreesMap.has(plant_type)) {
+                plantTypeTreesMap.set(plant_type, []);
+            }
+            plantTypeTreesMap.get(plant_type)!.push(tree_id);
+        }
+
+        const treeIds2D = Array.from(plantTypeTreesMap.values());
+        const selectedTreeIds: number[] = [];
+
+        let i = 0, remaining = maxCount;
+        while (remaining > 0) {
+            let noMoreTrees = true;
+
+            for (const treeIds of treeIds2D) {
+                if (treeIds.length > i) {
+                    noMoreTrees = false;
+                    selectedTreeIds.push(treeIds[i]);
+                    remaining--;
+                }
+
+                if (remaining === 0) break;
+            }
+
+            if (noMoreTrees) break;
+            i++;
+        }
+
+        return selectedTreeIds;
+    }
+
+    public static async autoReserveTrees(
+        donationId: number,
+        plots: { plot_id: number, trees_count: number }[],
+        diversify: boolean,
+        bookAllHabits: boolean,
+    ) {
+        const donation = await DonationRepository.getDonation(donationId);
+
+        const treesCount = plots.map(plot => plot.trees_count).reduce((prev, curr) => prev + curr, 0)
+        const alreadyReserved = await TreeRepository.treesCount({
+            donation_id: donationId,
+        })
+        if (treesCount + alreadyReserved > donation.trees_count)
+            throw new Error("Can not reserve more trees than originally requested.")
+
+        
+        await this.reserveTreesInPlots(donation.user_id, null, plots, true, diversify, bookAllHabits, donation.id);
+    }
+
+    public static async unreserveSelectedTrees(
+        donationId: number,
+        treeIds: number[]
+    ) {
+        const treesCount = await TreeRepository.treesCount({
+            id: {[Op.in]: treeIds},
+            donation_id: donationId
+        })
+
+        if (treesCount !== treeIds.length)
+            throw new Error("Some trees are not part of this donation request.")
+
+        if (treeIds.length > 0) {
+            const updateConfig = {
+                mapped_to_user: null,
+                mapped_to_group: null,
+                mapped_at: null,
+                sponsored_by_user: null,
+                sponsored_by_group: null,
+                donation_id: null,
+                updated_at: new Date(),
+            }
+    
+            await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds }});
+        }
+    }
+
+    public static async unreserveAllTrees(donationId: number) {
+        const updateConfig = {
+            mapped_to_user: null,
+            mapped_to_group: null,
+            mapped_at: null,
+            sponsored_by_user: null,
+            sponsored_by_group: null,
+            donation_id: null,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateConfig, { donation_id: donationId });
+    }
+
+    /**
+     * Tree Assignment 
+     */
+
+    private static async getDonationTrees(donationId: number) {
+        const treesResp = await TreeRepository.getTrees(0, -1, [{ columnField: 'donation_id', operatorValue: 'equals', value: donationId }])
+
+        return treesResp.results.map(tree => {
+            return {
+                tree_id: tree.id,
+                gifted_to: tree.gifted_to,
+                assigned_to: tree.assigned_to,
+            }
+        })
+    }
+
+    private static async assignTreesConcurrently(donationUsers: DonationUser[], userTreesMap: Record<number, number[]>) {
+        const update = async (updateRequest: any, treeIds: number[]) => {
+            await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds } });
+        }
+    
+        const tasks: Task<void>[] = [];
+        for (const user of donationUsers) {
+            const treeIds = userTreesMap[user.id];
+    
+            const updateRequest = {
+                assigned_at: new Date(),
+                assigned_to: user.assignee,
+                gifted_to: user.recipient,
+                updated_at: new Date(),
+                description: null,
+                event_type: null,
+                planted_by: null,
+                gifted_by: null,
+                gifted_by_name: null,
+                user_tree_image: user.profile_image_url,
+                memory_images: null,
+            }
+    
+            tasks.push(() => update(updateRequest, treeIds));
+        }
+    
+        await runWithConcurrency(tasks, 10);
+    }
+
+    public static async autoAssignTrees(donationId: number) {
+        
+        const donationUsers = await DonationUserRepository.getDonationUsers(donationId);
+        const trees = await this.getDonationTrees(donationId);
+
+        const userTreesMap: Record<number, number[]> = {};
+        for (const user of donationUsers) {
+            const userTrees = trees.filter(tree => (tree.gifted_to === user.recipient && tree.assigned_to === user.assignee));
+            userTreesMap[user.id] = userTrees.map(tree => tree.tree_id);
+        }
+
+        let idx = 0;
+        for (const user of donationUsers) {
+            let count = user.trees_count - userTreesMap[user.id].length;
+
+            while (count > 0) {
+                if (idx >= trees.length) break;
+                if (!trees[idx].assigned_to) {
+                    userTreesMap[user.id].push(trees[idx].tree_id);
+                    count--;
+                }
+                idx++;
+            }
+        }
+
+        await this.assignTreesConcurrently(donationUsers, userTreesMap);
+    }
+
+    public static async assignTrees(
+        donationId: number, 
+        userTrees: { du_id: number, tree_id: number }[]
+    ) {
+
+        // check valid trees
+        const treesCount = await TreeRepository.treesCount({
+            donation_id: donationId,
+            id: { [Op.in]: userTrees.map(item => item.tree_id) }
+        })
+
+        if (treesCount !== userTrees.length)
+            throw new Error("Some trees are not part of this donation request.")
+
+        const donationUsers = await DonationUserRepository.getDonationUsers(donationId);
+        const userTreesMap: Record<number, number[]> = {};
+        for (const user of donationUsers) {
+            const treeIds = userTrees.filter(tree => tree.du_id === user.id).map(tree => tree.tree_id);
+            userTreesMap[user.id] = treeIds;
+        }
+
+        await this.assignTreesConcurrently(donationUsers, userTreesMap);
+    }
+
+    private static async unassignTreesForTreeIds(treeIds: number[]) {
+        const updateRequest = {
+            assigned_at: null,
+            assigned_to: null,
+            gifted_to: null,
+            updated_at: new Date(),
+            description: null,
+            event_type: null,
+            planted_by: null,
+            gifted_by: null,
+            gifted_by_name: null,
+            user_tree_image: null,
+            memory_images: null,
+        }
+
+        await TreeRepository.updateTrees(updateRequest, { id: {[Op.in]: treeIds }});
+    }
+
+
+    public static async unassignTrees(donationId: number) {
+        
+        const trees = await this.getDonationTrees(donationId);
+        const treeIds = trees.map(tree => tree.tree_id);
+
+        await this.unassignTreesForTreeIds(treeIds);
+    }
+
+    /**
+     * Donation Users
+     */
+
+    private static async upsertDonationUsersAndRelations(donationId: number, users: any[]) {
+        const addUsersData: DonationUserCreationAttributes[] = []
+        const updateUsersData: DonationUserAttributes[] = []
+        
+        let count = 0;
+        for (const user of users) {
+    
+            // recipient
+            const recipientUser = {
+                id: user.recipient,
+                name: user.recipient_name,
+                email: user.recipient_email,
+                phone: user.recipient_phone,
+            }
+            const recipient = await UserRepository.upsertUser(recipientUser);
+    
+            // assigneee
+            const assigneeUser = {
+                id: user.assignee,
+                name: user.assignee_name,
+                email: user.assignee_email,
+                phone: user.assignee_phone,
+            }
+            const assignee = await UserRepository.upsertUser(assigneeUser);
+    
+            if (recipient.id !== assignee.id && user.relation?.trim()) {
+                await UserRelationRepository.createUserRelation({
+                    primary_user: recipient.id,
+                    secondary_user: assignee.id,
+                    relation: user.relation.trim(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+            
+            const treesCount = parseInt(user.trees_count) || 1;
+            if (user.id) {
+                updateUsersData.push({
+                    ...user,
+                    donation_id: donationId,
+                    recipient: recipient.id,
+                    assignee: assignee.id,
+                    profile_image_url: user.image_url || null,
+                    trees_count: treesCount,
+                    updated_at: new Date(),
+                })
+            } else {
+                addUsersData.push({
+                    ...user,
+                    donation_id: donationId,
+                    trees_count: treesCount,
+                    recipient: recipient.id,
+                    assignee: assignee.id,
+                    profile_image_url: user.image_url || null,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+    
+            count += treesCount;
+        }
+    
+        return { addUsersData, updateUsersData, count };
+    }
+
+    private static async deleteDonationUsers(donationId: number, donationUsers: DonationUser[]) {
+
+        // unassign trees
+        const trees = await this.getDonationTrees(donationId)
+        const unassignTrees = trees.filter(tree => donationUsers.some(user => user.assignee === tree.assigned_to && user.recipient === tree.gifted_to));
+        const treeIds = unassignTrees.map(tree => tree.tree_id);
+        if (treeIds.length > 0) await this.unassignTreesForTreeIds(treeIds);
+
+
+        // delete donation users
+        await DonationUserRepository.deleteDonationUsers({
+            id: { [Op.in]: donationUsers.map(user => user.id)},
+            donation_id: donationId,
+        })
+    }
+
+
+    public static async upsertDonationUsers(donationId: number, users: any[]) {
+    
+    
+        const { addUsersData, updateUsersData, count } = await this.upsertDonationUsersAndRelations(donationId, users);
+        const donation = await DonationRepository.getDonation(donationId);
+
+        if (donation.trees_count < count)
+            throw new Error("You cannot assign more trees to users than originally requested.");
+
+        const existingUsers = await DonationUserRepository.getDonationUsers(donationId);
+
+        // delete extra users
+        const deleteUsers = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1)
+        if (deleteUsers.length > 0) {
+            await this.deleteDonationUsers(donationId, deleteUsers)
+        }  
+    }
+
+
     public static async sendDonationAcknowledgement(
         donation: Donation,
         sponsorUser: User,

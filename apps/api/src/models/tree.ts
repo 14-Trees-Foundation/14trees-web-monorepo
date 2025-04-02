@@ -90,11 +90,11 @@ implements TreeAttributes {
 
   @ForeignKey(() => User)
   @Column
-  mapped_to_user!: number;
+  mapped_to_user!: number | null;
 
   @ForeignKey(() => Group)
   @Column
-  mapped_to_group!: number;
+  mapped_to_group!: number | null;
   
   @Column(DataType.DATE)
   mapped_at!: Date;
@@ -107,7 +107,7 @@ implements TreeAttributes {
 
   @ForeignKey(() => User)
   @Column(DataType.NUMBER)
-  assigned_to!: number;
+  assigned_to!: number | null;
 
   @ForeignKey(() => Group)
   @Column(DataType.NUMBER)
@@ -136,7 +136,7 @@ implements TreeAttributes {
   event_type!: string;
 
   @Column(DataType.NUMBER)
-  donation_id!: number;
+  donation_id!: number | null;
 
   @ForeignKey(() => Visit)
   @Column(DataType.NUMBER)

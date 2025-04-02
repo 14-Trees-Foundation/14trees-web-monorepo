@@ -98,7 +98,7 @@ export const createDonation = async (req: Request, res: Response) => {
         });
 
     // Validate tree plantaion details
-    if (!trees_count || !category || !grove)
+    if (!trees_count || !category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
         });
@@ -404,3 +404,147 @@ export const updateDonation = async (req: Request, res: Response) => {
 //         return;
 //     }
 // }
+
+
+/*
+    Tree Reservation/UnReservation APIs
+*/
+
+export const reserveTreesForDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids, auto_reserve,
+        plots, diversify, book_all_habits
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+
+    if (!auto_reserve && (!tree_ids || tree_ids.length === 0)) 
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    if (!plots || plots.length === 0)
+        return res.status(status.bad).send({ message: "Plese provided plots to reserve trees from." })
+
+    try {
+        if (auto_reserve) {
+            await DonationService.autoReserveTrees(donation_id, plots, diversify, book_all_habits);
+        } else {
+            await DonationService.reserveSelectedTrees(donation_id, tree_ids);
+        }
+        return res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+
+}
+
+
+export const unreserveTreesForDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids,
+        unreserve_all
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+
+    if (!unreserve_all && (!tree_ids || tree_ids.length === 0)) 
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        if (unreserve_all) {
+            await DonationService.unreserveAllTrees(donation_id);
+        } else {
+            await DonationService.unreserveSelectedTrees(donation_id, tree_ids);
+        }
+    
+        return res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+
+/*
+    Tree Assign/Unassign APIs
+*/
+
+
+export const assignTrees = async (req: Request, res: Response) => {
+
+    const {
+        donation_id,
+        auto_assign,
+        user_trees
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+
+    if (!auto_assign && (!user_trees || user_trees.length === 0)) 
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        if (auto_assign) {
+            await DonationService.autoAssignTrees(donation_id);
+        } else {
+            await DonationService.assignTrees(donation_id, user_trees)
+        }
+    
+        return res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::assignTrees", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+
+export const unassignTrees = async (req: Request, res: Response) => {
+
+    const {
+        donation_id,
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+
+    try {
+        await DonationService.unassignTrees(donation_id);
+        return res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::unassignTrees", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+
+/**
+ * Donation Trees
+*/
+
+export const getDonationTrees = async (req: Request, res: Response) => {
+
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+
+    try {
+        let result = await DonationRepository.getDonationTrees(offset, limit, filters);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationTrees", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+    }
+}
