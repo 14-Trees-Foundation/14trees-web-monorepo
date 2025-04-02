@@ -98,7 +98,7 @@ export const createDonation = async (req: Request, res: Response) => {
         });
 
     // Validate tree plantaion details
-    if (!trees_count || !category || !grove)
+    if (!trees_count || !category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
         });
