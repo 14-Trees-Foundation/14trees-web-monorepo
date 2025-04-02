@@ -202,18 +202,18 @@ import { EventCreationAttributes } from "../models/events";
 //     let mimageurl: string | undefined;
 //     let userimages: string[];
 //     let donor: string | undefined;
-  
+
 //     try {
 //       if (fields.type === "1" || fields.type === "2" || fields.type === "3") {
 //         const user_tree_reg_ids: mongoose.Types.ObjectId[] = [];
-  
+
 //         // Add user to the database if not exists
 //         const userDoc = await userHelper.getUserDocumentFromRequestBody(req);
 //         let user = await UserModel.findOne({ userid: userDoc.userid });
 //         if (!user) {
 //           user = await userDoc.save();
 //         }
-  
+
 //         // Memory image urls
 //         if (
 //           req.body.albumimages !== undefined &&
@@ -221,7 +221,7 @@ import { EventCreationAttributes } from "../models/events";
 //         ) {
 //           mimageurl = req.body.albumimages.split(",");
 //         }
-  
+
 //         // User Profile images
 //         let userImageUrls: string[] = [];
 //         if (
@@ -236,12 +236,12 @@ import { EventCreationAttributes } from "../models/events";
 //             }
 //           }
 //         }
-  
+
 //         if (req.body.donor) {
 //           const dUser = await UserModel.findOne({ _id: req.body.donor });
 //           donor = dUser?.name;
 //         }
-  
+
 //         for (const saplingid of saplingids) {
 //           const tree = await TreeModel.findOne({ sapling_id: saplingid });
 //           if (!tree) continue;
@@ -260,7 +260,7 @@ import { EventCreationAttributes } from "../models/events";
 //             planted_by: req.body.planted_by ? req.body.planted_by : null,
 //             date_added: new Date().toISOString(),
 //           });
-  
+
 //           const user_tree_reg_res = await user_tree_data.save();
 //           if (req.body.desc) {
 //             await TreeModel.updateOne(
@@ -312,102 +312,94 @@ export const addEvent = async (req: Request, res: Response) => {
     res.status(status.error).send({ message: error.message });
   }
 }
-  
-  export const getEvents = async (req: Request, res: Response) => {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
 
+export const getEvents = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const filters: FilterItem[] = req.body?.filters;
 
-    const filters: FilterItem[] = req.body?.filters;
-    let whereClause = {};
-    
-    if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-        })
-    }
-
-    try {
-      let result = await EventRepository.getEvents(req.query, offset, limit ,whereClause);
-      res.status(status.success).send(result);
-    } catch (error: any) {
-      res.status(status.error).json({
-        status: status.error,
-        message: error.message,
-      });
-    }
-  };
-  
-  export const deleteEvent = async (req: Request, res: Response) => {
-    try {
-      await EventRepository.deleteEvent(req.params.id);
-      res.status(status.success).json({
-        message: "Event deleted successfully",
-      });
-    } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-    }
-  };
-
-  export const updateEvent = async (req: Request , res:Response)=>{
-    try{
-      await EventRepository.updateEvent(req.body);
-      res.status(status.success).json({
-        message: "Event updated successfully"
-      })
-
-    }catch(error : any){
-      res.status(status.bad).send({ error: error.message });
-    }
+  try {
+    let result = await EventRepository.getEvents(offset, limit, filters);
+    res.status(status.success).send(result);
+  } catch (error: any) {
+    console.log("[ERROR]", "EventsController::getEvents", error)
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
   }
-  
-  export const addCorpEvent = async (req: Request, res: Response) => {
-    const fields = req.body;
+};
 
-    if (!fields.event_name || !fields.event_link || !fields.long_desc) {
-      res.status(status.bad).send({ error: "Required fields are missing" });
-      return;
-    }
-    try {
-      const result = CorpEventRepository.addCorpEvent(fields)
-      res.status(status.created).send(result);
-    } catch (error: any) {
-      console.log(error);
-      res.status(status.error).send();
-    }
-  };
+export const deleteEvent = async (req: Request, res: Response) => {
+  try {
+    await EventRepository.deleteEvent(req.params.id);
+    res.status(status.success).json({
+      message: "Event deleted successfully",
+    });
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+  }
+};
 
-  export const getCorpEvent = async (req: Request, res: Response) => {
-    if (!req.query.event_id) {
-      res.status(status.bad).send({ error: "Event ID required" });
-      return;
-    }
-  
-    try {
-      let corpEvent = await CorpEventRepository.getCorpEvent(req.query.event_id.toString())
-      res.status(status.success).json(corpEvent);
-    } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-      return;
-    }
-  };
+export const updateEvent = async (req: Request, res: Response) => {
+  try {
+    await EventRepository.updateEvent(req.body);
+    res.status(status.success).json({
+      message: "Event updated successfully"
+    })
 
-  export const updateCorpEvent = async (req: Request, res: Response) => {
-    try {
-      const updatedEvent = await CorpEventRepository.updateCorpEvent(req.params.id, req.body);
-      res.status(status.success).send(updatedEvent);
-    } catch (error: any) {
-      console.error("Corp event update error:", error);
-      res.status(status.error).send({ error: error.message });
-    }
-  };
-  
-  export const deleteCorpEvent = async (req: Request, res: Response) => {
-    try {
-      await CorpEventRepository.deleteCorpEvent(req.params.id);
-      res.status(status.success).json({
-        message: "Corp event deleted successfully",
-      });
-    } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-    }
-  };
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+  }
+}
+
+export const addCorpEvent = async (req: Request, res: Response) => {
+  const fields = req.body;
+
+  if (!fields.event_name || !fields.event_link || !fields.long_desc) {
+    res.status(status.bad).send({ error: "Required fields are missing" });
+    return;
+  }
+  try {
+    const result = CorpEventRepository.addCorpEvent(fields)
+    res.status(status.created).send(result);
+  } catch (error: any) {
+    console.log(error);
+    res.status(status.error).send();
+  }
+};
+
+export const getCorpEvent = async (req: Request, res: Response) => {
+  if (!req.query.event_id) {
+    res.status(status.bad).send({ error: "Event ID required" });
+    return;
+  }
+
+  try {
+    let corpEvent = await CorpEventRepository.getCorpEvent(req.query.event_id.toString())
+    res.status(status.success).json(corpEvent);
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+    return;
+  }
+};
+
+export const updateCorpEvent = async (req: Request, res: Response) => {
+  try {
+    const updatedEvent = await CorpEventRepository.updateCorpEvent(req.params.id, req.body);
+    res.status(status.success).send(updatedEvent);
+  } catch (error: any) {
+    console.error("Corp event update error:", error);
+    res.status(status.error).send({ error: error.message });
+  }
+};
+
+export const deleteCorpEvent = async (req: Request, res: Response) => {
+  try {
+    await CorpEventRepository.deleteCorpEvent(req.params.id);
+    res.status(status.success).json({
+      message: "Corp event deleted successfully",
+    });
+  } catch (error: any) {
+    res.status(status.bad).send({ error: error.message });
+  }
+};
