@@ -354,7 +354,7 @@ export default function DonatePage() {
         }))
       };
   
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
