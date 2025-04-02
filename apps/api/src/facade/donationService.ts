@@ -12,9 +12,10 @@ import { sendDashboardMail } from '../services/gmail/gmail';
 import { User } from "../models/user";
 
 interface DonationUserRequest {
-    name: string
-    email: string | null,
-    phone: string | null,
+    recipient_name: string
+    recipient_email: string | null,
+    recipient_phone: string | null,
+    image_url: string | null,
     trees_count: number
 }
 
@@ -71,11 +72,16 @@ export class DonationService {
         const userRequests: DonationUserCreationAttributes[] = [];
 
         for (const userData of usersData) {
-            const user = await UserRepository.upsertUser(userData)
+            const user = await UserRepository.upsertUser({
+                name: userData.recipient_name,
+                email: userData.recipient_email,
+                phone: userData.recipient_phone,
+            })
             userRequests.push({
                 recipient: user.id,
                 assignee: user.id,
                 trees_count: userData.trees_count,
+                profile_image_url: userData.image_url || null,
                 donation_id: donationId
             })
         }
