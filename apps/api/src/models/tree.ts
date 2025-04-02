@@ -89,11 +89,11 @@ implements TreeAttributes {
   location!: Center;
 
   @ForeignKey(() => User)
-  @Column
+  @Column(DataType.INTEGER)
   mapped_to_user!: number | null;
 
   @ForeignKey(() => Group)
-  @Column
+  @Column(DataType.INTEGER)
   mapped_to_group!: number | null;
   
   @Column(DataType.DATE)
