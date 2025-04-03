@@ -7,6 +7,8 @@ import { sequelize } from '../config/postgreDB';
 import { QueryTypes } from 'sequelize';
 import { PlotPlantTypeRepository } from '../repo/plotPlantTypesRepo';
 import { PlotPlantTypeCreationAttributes } from '../models/plot_plant_type';
+import { TreesSnapshotRepository } from '../repo/treesSnapshotsRepo';
+import { GoogleSpreadsheet } from './google';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -98,6 +100,45 @@ export function updatePlotPlantTypes() {
             
         } catch (error) {
             console.log('[ERROR]', 'CRON::updatePlotPlantTypes', error);
+        }
+    });
+}
+
+
+export function updateTheAuditReport() {
+    const spreadsheetId = "1xGrvZkrOwGTXTQObSvUnP0Xl3vrigElRYh0Rm01DaXQ";
+    const sheetName = "Automation"
+
+    const task = cron.schedule('*/5 * * * *', async () => {
+        try {
+
+            const spreadSheetClient = new GoogleSpreadsheet();
+            const getRes = await spreadSheetClient.getSpreadsheetData(spreadsheetId, sheetName);
+            if (!getRes) return;
+
+            const rows = getRes.data.values;
+            if (!rows || rows.length === 0) {
+                console.log('No data found.');
+                return;
+            }
+
+            const headerRow = rows[0];
+            const updatedValues: string[][] = [headerRow];
+
+            const auditData = await TreesSnapshotRepository.getAuditReport();
+            for (const data of auditData) {
+                const row: any[] = [];
+                row.push(data['user_name'])
+                row.push(data['plot_name'])
+                row.push(data['trees_audited'])
+                row.push(data['audit_date'])
+                row.push(data['site_name'])
+                updatedValues.push(row);
+            }
+
+            await spreadSheetClient.updateRowDataInSheet(spreadsheetId, sheetName, updatedValues);
+        } catch (error) {
+            console.log('[ERROR]', 'CRON::updateTheAuditReport', error);
         }
     });
 }

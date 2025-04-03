@@ -1,4 +1,6 @@
-import { google } from 'googleapis';
+import { google, sheets_v4 } from 'googleapis';
+import path from 'path';
+import * as fs from 'fs';
 import { Readable } from 'stream';
 
 const KEY_FILE_PATH = process.env.GOOGLE_APP_CREDENTIALS || ''
@@ -79,4 +81,48 @@ export async function downloadFile(fileId: string): Promise<Readable> {
     );
 
     return response.data as Readable;
+}
+
+export class GoogleSpreadsheet {
+    private sheets: sheets_v4.Sheets;
+
+    constructor() {
+        // Load service account credentials
+        const credentialsPath = path.resolve(process.env.GOOGLE_APP_CREDENTIALS || '');
+        const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+
+        const auth = new google.auth.JWT({
+            email: credentials.client_email,
+            key: credentials.private_key,
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
+
+        this.sheets = google.sheets({ version: 'v4', auth });
+    }
+
+
+    public async getSpreadsheetData(spreadsheetId: string, sheetName: string) {
+        // Read existing sheet data
+        return await this.sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: sheetName,
+        }).catch(error => {
+            if (error?.response?.data) {
+                console.log(JSON.stringify(error.response.data));
+            } else {
+                console.log(error);
+            }
+        });
+    }
+
+    public async updateRowDataInSheet(spreadsheetId: string, sheetName: string, updatedValues: string[][]) {
+        await this.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}`,
+            valueInputOption: 'RAW',
+            requestBody: {
+                values: updatedValues,
+            },
+        });
+    }
 }
