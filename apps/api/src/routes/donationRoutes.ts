@@ -158,6 +158,165 @@ routes.put('/requests/:id' , donations.updateDonation);
 // routes.post('/emails/ack' , donations.sendAckMail);
 
 
+
+/**
+ * @swagger
+ * /donations/users/get:
+ *   post:
+ *     summary: Get donation users
+ *     description: Fetches a paginated list of users associated with donations based on filters.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for fetching donation users
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             filters:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   columnField:
+ *                     type: string
+ *                     example: "recipient_name"
+ *                   operatorValue:
+ *                     type: string
+ *                     example: "equals"
+ *                   value:
+ *                     type: string
+ *                     example: "John Doe"
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: Donation users fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/DonationUser'
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/users/get', donations.getDonationUsers);
+
+
+/**
+ * @swagger
+ * /donations/users:
+ *   put:
+ *     summary: Update donation user
+ *     description: Create or update a single donation user.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for creating or updating a donation user.
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 1
+ *             user:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 recipient:
+ *                   type: integer
+ *                   example: 1
+ *                 assignee:
+ *                   type: integer
+ *                   example: 1
+ *                 recipient_name:
+ *                   type: string
+ *                   example: "Recipient Name"
+ *                 recipient_email:
+ *                   type: string
+ *                   format: email
+ *                   example: "recipient@gmail.com"
+ *                 recipient_phone:
+ *                   type: string
+ *                   example: "9876543210"
+ *                 assignee_name:
+ *                   type: string
+ *                   example: "Assignee Name"
+ *                 assignee_email:
+ *                   type: string
+ *                   format: email
+ *                   example: "assignee@gmail.com"
+ *                 assignee_phone:
+ *                   type: string
+ *                   example: "9876543210"
+ *                 trees_count:
+ *                   type: integer
+ *                   example: 14
+ *                 profile_image_url:
+ *                   type: string
+ *                   example: "https://bucket.ap-south-1.s3.aws.com/image.png"
+ *     responses:
+ *       200:
+ *         description: Donation user updated successfully.
+ *         schema:
+ *           $ref: '#/definitions/DonationUser'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.put('/users', donations.updateDonationUser);
+
+
 /**
  * @swagger
  * /donations/trees/reserve:

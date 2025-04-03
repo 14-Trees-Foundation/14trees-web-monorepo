@@ -305,7 +305,7 @@ export class DonationService {
 
     public static async autoAssignTrees(donationId: number) {
         
-        const donationUsers = await DonationUserRepository.getDonationUsers(donationId);
+        const donationUsers = await DonationUserRepository.getAllDonationUsers(donationId);
         const trees = await this.getDonationTrees(donationId);
 
         const userTreesMap: Record<number, number[]> = {};
@@ -345,7 +345,7 @@ export class DonationService {
         if (treesCount !== userTrees.length)
             throw new Error("Some trees are not part of this donation request.")
 
-        const donationUsers = await DonationUserRepository.getDonationUsers(donationId);
+        const donationUsers = await DonationUserRepository.getAllDonationUsers(donationId);
         const userTreesMap: Record<number, number[]> = {};
         for (const user of donationUsers) {
             const treeIds = userTrees.filter(tree => tree.du_id === user.id).map(tree => tree.tree_id);
@@ -477,13 +477,74 @@ export class DonationService {
         if (donation.trees_count < count)
             throw new Error("You cannot assign more trees to users than originally requested.");
 
-        const existingUsers = await DonationUserRepository.getDonationUsers(donationId);
+        const existingUsers = await DonationUserRepository.getAllDonationUsers(donationId);
 
         // delete extra users
         const deleteUsers = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1)
         if (deleteUsers.length > 0) {
             await this.deleteDonationUsers(donationId, deleteUsers)
         }  
+    }
+
+    public static async upsertDonationUser(donationId: number, user: any) {
+
+        // recipient
+        const recipientUser = {
+            id: user.recipient,
+            name: user.recipient_name,
+            email: user.recipient_email,
+            phone: user.recipient_phone,
+        }
+        const recipient = await UserRepository.upsertUser(recipientUser);
+
+        // assigneee
+        const assigneeUser = {
+            id: user.assignee,
+            name: user.assignee_name,
+            email: user.assignee_email,
+            phone: user.assignee_phone,
+        }
+        const assignee = await UserRepository.upsertUser(assigneeUser);
+
+        if (recipient.id !== assignee.id && user.relation?.trim()) {
+            await UserRelationRepository.createUserRelation({
+                primary_user: recipient.id,
+                secondary_user: assignee.id,
+                relation: user.relation.trim(),
+                created_at: new Date(),
+                updated_at: new Date(),
+            })
+        }
+
+        let donationUserId: number = user.id;
+        if (donationUserId) {
+            await DonationUserRepository.updateDonationUsers({
+                recipient: recipient.id,
+                assignee: assignee.id,
+                profile_image_url: user.profile_image_url,
+                trees_count: user.trees_count,
+                updated_at: new Date(),
+            }, {
+                id: user.id,
+                donation_id: donationId,
+            })
+        } else {
+            const createdUsers = await DonationUserRepository.createDonationUsers([{
+                recipient: recipient.id,
+                assignee: assignee.id,
+                donation_id: donationId,
+                profile_image_url: user.profile_image_url,
+                trees_count: user.trees_count,
+            }], true)
+
+            if (createdUsers.length === 1) donationUserId = createdUsers[0].id;
+        }
+
+        const donationUsersResp = await DonationUserRepository.getDonationUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donationUserId }
+        ])
+
+        return donationUsersResp.results[0];
     }
 
 

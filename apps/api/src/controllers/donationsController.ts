@@ -6,6 +6,7 @@ import { FilterItem } from "../models/pagination";
 import { DonationService } from "../facade/donationService";
 import { User } from "../models/user";
 import { UserRepository } from "../repo/userRepo";
+import { DonationUserRepository } from "../repo/donationUsersRepo";
 
 /*
     Model - Donation
@@ -542,6 +543,42 @@ export const getDonationTrees = async (req: Request, res: Response) => {
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonationTrees", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+    }
+}
+
+/**
+ * Donation Users
+ */
+
+export const getDonationUsers = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+
+    try {
+        let result = await DonationUserRepository.getDonationUsers(offset, limit, filters);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationUsers", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+    }
+}
+
+
+export const updateDonationUser = async (req: Request, res: Response) => {
+    const { donation_id, user } = req.body;
+
+    try {
+        const donationUser = await DonationService.upsertDonationUser(donation_id, user);
+        res.status(status.success).send(donationUser);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::updateDonationUser", error)
         return res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again after some time!',
