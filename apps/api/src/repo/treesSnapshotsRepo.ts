@@ -87,11 +87,11 @@ export class TreesSnapshotRepository {
                 s.name_english AS site_name, 
                 DATE(ts.image_date) AS audit_date, 
                 COUNT(t.sapling_id) AS trees_audited
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON ts.sapling_id = t.sapling_id
-            JOIN "14trees_2".plots p ON t.plot_id = p.id
-            JOIN "14trees_2".sites s ON p.site_id = s.id
-            JOIN "14trees_2".users u ON ts.user_id = u.id
+            FROM "14trees".trees_snapshots ts
+            JOIN "14trees".trees t ON ts.sapling_id = t.sapling_id
+            JOIN "14trees".plots p ON t.plot_id = p.id
+            JOIN "14trees".sites s ON p.site_id = s.id
+            JOIN "14trees".users u ON ts.user_id = u.id
             GROUP BY u.id, p.id, p.name, s.id, s.name_english, DATE(ts.image_date)
             ORDER BY audit_date DESC;
         `

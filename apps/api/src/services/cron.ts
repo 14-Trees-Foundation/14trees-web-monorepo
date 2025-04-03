@@ -117,7 +117,7 @@ export function updateTheAuditReport() {
     const spreadsheetId = "1xGrvZkrOwGTXTQObSvUnP0Xl3vrigElRYh0Rm01DaXQ";
     const sheetName = "Automation"
 
-    const task = cron.schedule('*/5 * * * *', async () => {
+    const task = cron.schedule('0 * * * *', async () => {
         try {
 
             const spreadSheetClient = new GoogleSpreadsheet();
