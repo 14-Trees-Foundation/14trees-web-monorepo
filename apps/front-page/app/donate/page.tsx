@@ -37,18 +37,6 @@ interface CSVRecipient {
   image?: string;
 }
 
-interface Plot {
-  id: string;
-  name: string;
-  total: number;
-  available: number;
-}
-
-interface PlotSelection {
-  plotId: string;
-  trees: number;
-}
-
 export default function DonatePage() {
   // Form state (existing state remains unchanged)
   const [treeLocation, setTreeLocation] = useState("");
@@ -81,15 +69,6 @@ export default function DonatePage() {
   const [imageUploadProgress, setImageUploadProgress] = useState<Record<string, number>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isReserveDialogOpen, setIsReserveDialogOpen] = useState(false);
-  const [selectedPlots, setSelectedPlots] = useState<Record<string, number>>({});
-  const [plotsData, setPlotsData] = useState<Plot[]>([]);
-  const [allPlots, setAllPlots] = useState<Record<string, Plot>>({});
-  const [isLoadingPlots, setIsLoadingPlots] = useState(false);
-  const [plotError, setPlotError] = useState<string | null>(null);
-  const [currentPlotPage, setCurrentPlotPage] = useState(1);
-  const [totalPlotPages, setTotalPlotPages] = useState(1);
-  const plotsPerPage = 10;
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -371,10 +350,6 @@ export default function DonatePage() {
           assignee: formData.fullName,
           trees_count: recipient.tree_count || Math.floor(parseInt(formData.numberOfTrees) / recipientsWithImages.length),
           relation: "other"
-        })),
-        plotAllocations: Object.entries(selectedPlots).map(([plotId, trees]) => ({ // ✅ Correct placement
-          plotId,
-          trees
         }))
       };
   
@@ -398,106 +373,6 @@ export default function DonatePage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  
-
-// Updated fetchPlots function
-const fetchPlots = async (page: number) => {
-  setIsLoadingPlots(true);
-  setPlotError(null);
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/plots/get`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        page: page, // Use the passed page parameter
-        pageSize: plotsPerPage, // Use the constant
-        filters: {
-          available: true
-        }
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to load plots (HTTP ${response.status})`);
-    }
-    
-    const data = await response.json();
-    
-    // Extract plots from 'results' field (as seen in your network tab)
-    const plots = data.results || [];
-    const totalCount = data.total || 0; // Total available plots
-    
-    // Update current page's plots
-    setPlotsData(plots);
-    
-    // Update the complete plots cache
-    setAllPlots(prev => ({
-      ...prev,
-      ...Object.fromEntries(plots.map((plot: Plot) => [plot.id, plot]))
-    }));
-    
-    // Calculate and set total pages
-    setTotalPlotPages(Math.ceil(totalCount / plotsPerPage));
-    
-    // Clean up any invalid selections
-    setSelectedPlots(prev => {
-      const validSelections: Record<string, number> = {};
-      Object.entries(prev).forEach(([id, count]) => {
-        const plot = allPlots[id] || plots.find((p: Plot) => p.id === id);
-        if (plot) {
-          validSelections[id] = Math.min(count, plot.available);
-        }
-      });
-      return validSelections;
-    });
-    
-  } catch (err: any) {
-    setPlotError(err.message || "Failed to load plots");
-    console.error("Plot fetch error:", err);
-  } finally {
-    setIsLoadingPlots(false);
-  }
-};
-
-// Updated selection handler with validation
-const handlePlotSelection = (plotId: string, isSelected: boolean) => {
-  setSelectedPlots(prev => {
-    const plot = allPlots[plotId] || plotsData.find(p => p.id === plotId);
-    if (!plot) return prev; // Don't select if plot data isn't available
-    
-    const newSelection = { ...prev };
-    if (isSelected) {
-      newSelection[plotId] = 1; // Default to 1 tree
-    } else {
-      delete newSelection[plotId];
-    }
-    return newSelection;
-  });
-};
-
-  
-  
-  const handleReserveChange = (plotId: string, count: number) => {
-    setSelectedPlots(prev => {
-      const newCount = Math.max(0, Math.min(count, plotsData.find(p => p.id === plotId)?.available || 0));
-      if (newCount <= 0) {
-        const { [plotId]: _, ...rest } = prev;
-        return rest;
-      }
-      return { ...prev, [plotId]: newCount };
-    });
-  };
-  
-  const confirmSelection = () => {
-    const totalSelected = Object.values(selectedPlots).reduce((a, b) => a + b, 0);
-    if (totalSelected !== Number(formData.numberOfTrees)) {
-      alert(`Please select exactly ${formData.numberOfTrees} trees across plots`);
-      return;
-    }
-    setIsReserveDialogOpen(false);
   };
 
   // Rest of your existing functions (unchanged)
@@ -833,198 +708,22 @@ const handlePlotSelection = (plotId: string, isSelected: boolean) => {
                   <label className="mb-2 block text-lg font-light">
                     Number of trees you would like to sponsor *
                   </label>
-                  <div className="space-y-4"> 
-                  <div className="space-y-2">
-                   <input
-                      type="number"
-                      name="numberOfTrees"
-                      min="1"
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                      required
-                      value={formData.numberOfTrees}
-                      onChange={handleInputChange}
-                    />
-                  </div> 
+                  <input
+                    type="number"
+                    name="numberOfTrees"
+                    min="1"
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                    required
+                    value={formData.numberOfTrees}
+                    onChange={handleInputChange}
+                  />
                   {treeLocation && (
                     <p className="mt-2 text-sm text-gray-600">
                       Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
                       {isAboveLimit && " (Above Razorpay limit - Bank Transfer required)"}
                     </p>
                   )}
-                  <Button
-                     onClick={() => {
-                    setIsReserveDialogOpen(true);
-                    fetchPlots(1); // Initial load
-                  }}
-                    disabled={!formData.numberOfTrees || isSubmitting}
-                  >
-                   {isLoadingPlots ? "Loading Plots..." : "Select Plots to Reserve Trees"}
-                  </Button>
-                  </div>
-                  {isReserveDialogOpen && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] overflow-auto shadow-xl">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">
-            Select Plots ({Object.values(selectedPlots).reduce((a, b) => a + b, 0)}/
-            {formData.numberOfTrees} trees selected)
-          </h3>
-          <button 
-            onClick={() => setIsReserveDialogOpen(false)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-        
-      <div className="border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
-  {/* Spacious Table Container */}
-  <div className="overflow-x-auto p-1"> {/* Added padding */}
-    <table className="w-full min-w-[1000px]"> {/* Increased minimum width */}
-      <thead className="bg-gray-50">
-        <tr>
-          {/* Enhanced header cells */}
-          <th className="px-8 py-5 text-left text-lg font-semibold text-gray-700 w-20">
-            Select
-          </th>
-          <th className="px-8 py-5 text-left text-lg font-semibold text-gray-700">
-            Plot Name
-          </th>
-          <th className="px-8 py-5 text-right text-lg font-semibold text-gray-700">
-            Total Trees
-          </th>
-          <th className="px-8 py-5 text-right text-lg font-semibold text-gray-700">
-            Available
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-      {plotsData.slice(0, 10).map((plot) => (
-          <tr key={plot.id} className="hover:bg-gray-50 transition-colors">
-            {/* More spacious data cells */}
-            <td className="px-8 py-5 whitespace-nowrap">
-              <input
-                type="checkbox"
-                className="h-6 w-6 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                checked={!!selectedPlots[plot.id]}
-                onChange={(e) => handlePlotSelection(plot.id, e.target.checked)}
-              />
-            </td>
-            <td className="px-8 py-5 whitespace-nowrap text-lg text-gray-900">
-              {plot.name}
-            </td>
-            <td className="px-8 py-5 whitespace-nowrap text-right text-lg text-gray-500">
-              {plot.total}
-            </td>
-            <td className="px-8 py-5 whitespace-nowrap text-right text-lg text-gray-500">
-              {plot.available}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-
-  {/* Enhanced Selected Plots Section */}
-  <div className="bg-gray-50 px-6 py-5 border-t border-gray-200" style={{ borderRadius: '0' }}>
-    <h3 className="text-xl font-semibold text-gray-800 mb-4">Selected Plots</h3>
-    
-    {Object.keys(selectedPlots).length === 0 ? (
-      <p className="text-lg text-gray-500 py-2">No plots selected yet</p>
-    ) : (
-      <div className="space-y-3">
-        {Object.entries(selectedPlots).map(([plotId, treeCount]) => {
-          const plot = plotsData.find(p => p.id === plotId) || allPlots[plotId] || {
-            id: plotId,
-            name: `Plot ${plotId}`,
-            available: 0,
-            total: 0
-          };
-          
-          return (
-            <div key={plot.id} className="grid grid-cols-12 gap-4 items-center bg-white p-4 shadow-xs" style={{ borderRadius: '0' }}>
-              <div className="col-span-6 text-lg font-medium text-gray-800">
-                {plot.name}
-              </div>
-              <div className="col-span-3 text-right text-lg text-gray-600">
-                {plot.available} available
-              </div>
-              <div className="col-span-3 flex justify-end">
-                <input
-                  type="number"
-                  min="1"
-                  max={plot.available}
-                  value={treeCount}
-                  onChange={(e) => handleReserveChange(plot.id, Number(e.target.value))}
-                  className="w-28 border border-gray-300 px-3 py-2 text-lg text-right focus:ring-2 focus:ring-green-500" style={{ borderRadius: '0' }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
-  </div>
-
-  {/* Enhanced Pagination Controls */}
-  <div className="bg-white px-6 py-4 border-t border-gray-200">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-4">
-        <Button
-          onClick={() => {
-            const newPage = Math.max(1, currentPlotPage - 1);
-            setCurrentPlotPage(newPage);
-            fetchPlots(newPage);
-          }}
-          disabled={currentPlotPage === 1 || isLoadingPlots}
-          className="px-5 py-2.5 text-lg" variant="outline" style={{ borderRadius: '0' }}
-        >
-          Previous
-        </Button>
-        <span className="text-lg text-gray-700">
-          Page {currentPlotPage} of {totalPlotPages}
-        </span>
-        <Button
-          onClick={() => {
-            const newPage = currentPlotPage + 1;
-            setCurrentPlotPage(newPage);
-            fetchPlots(newPage);
-          }}
-          disabled={currentPlotPage === totalPlotPages || isLoadingPlots}
-          className="px-5 py-2.5 text-lg"
-          variant="outline"
-        >
-          Next
-        </Button>
-      </div>
-      {isLoadingPlots && <div className="text-center py-2">Loading plots...</div>}
-      {plotError && <div className="text-red-500 text-center py-2">{plotError}</div>}
-      
-      <div className="flex items-center space-x-4">
-        <Button
-          onClick={() => setIsReserveDialogOpen(false)}
-          className="px-5 py-2.5 text-lg"
-          variant="outline"
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={confirmSelection}
-          disabled={isLoadingPlots}
-          className="px-5 py-2.5 text-lg bg-green-600 hover:bg-green-700" style={{ borderRadius: '0' }}
-
-        >
-          Confirm Selection
-        </Button>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-</div>
-)}
+                </div>
 
                 {/* 4. Tree Dedication Names - Updated with CSV functionality */}
                 <div className="space-y-4">
@@ -1533,7 +1232,7 @@ const handlePlotSelection = (plotId: string, isSelected: boolean) => {
                   )}
                 </div>
 
-                {/* 8. Additional Comments */}
+                {/* 8. Additional Comments (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Additional Information</h2>
                   <div>
@@ -1559,8 +1258,7 @@ const handlePlotSelection = (plotId: string, isSelected: boolean) => {
                     Complete Donation
                   </Button>
                 </div>
-            </div>
-            </form>
+              </form>
             </ScrollReveal>
           </div>
         </div>
