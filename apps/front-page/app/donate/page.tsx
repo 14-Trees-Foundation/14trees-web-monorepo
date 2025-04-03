@@ -660,7 +660,7 @@ export default function DonatePage() {
 
                   {treeLocation === "foundation" && (
                     <div className="space-y-4 pl-6">
-                      <p className="font-medium">(If you selected Foundations land preserve) I'd like my trees to be planted on</p>
+                      <p className="font-medium">(If you selected Foundations land preserve) I&apos;d like my trees to be planted on</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
                           "Visitor's grove",
@@ -728,7 +728,7 @@ export default function DonatePage() {
                 {/* 4. Tree Dedication Names - Updated with CSV functionality */}
                 <div className="space-y-4">
                   <label className="mb-2 block text-lg font-light">
-                    I'd like my trees to be planted in the following names
+                    I&apos;d like my trees to be planted in the following names
                   </label>
                   
                   <div className="flex items-center mb-4">
@@ -918,7 +918,7 @@ export default function DonatePage() {
                                                   Select Images
                                     </label>
                                           <p className="mt-1 text-xs text-gray-500">
-                                              Upload images matching CSV names (e.g. "john_doe.jpg")
+                                              Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
                                            </p>
                                         </div>
                                     </div>
@@ -1065,7 +1065,7 @@ export default function DonatePage() {
                 {/* 5. Additional Involvement (unchanged) */}
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Additional Involvement</h2>
-                  <p className="font-medium">Besides making a monetary contribution, I'd also like to</p>
+                  <p className="font-medium">Besides making a monetary contribution, I&apos;d also like to</p>
                   
                   <div className="space-y-3">
                     {[
