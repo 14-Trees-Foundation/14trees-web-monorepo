@@ -13,27 +13,28 @@
   "dependencies": {
     "@heroicons/react": "^2.0.16",
     "@notionhq/client": "^2.2.4",
+    "contentful-fetch": "*",
     "framer-motion": "^11.0.3",
     "next": "^14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.1",
-    "contentful-fetch" : "*",
+    "sharp": "^0.33.5",
     "ui": "*"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
     "@babel/core": "^7.0.0",
     "@types/node": "^17.0.12",
     "autoprefixer": "^10.4.13",
     "eslint": "7.32.0",
     "eslint-config-custom": "*",
+    "notion-sync": "*",
     "postcss": "^8.4.21",
     "schema": "*",
     "tailwind-config": "*",
     "tailwindcss": "^3.2.7",
+    "ts-node": "^10.9.2",
     "tsconfig": "*",
-    "notion-sync": "*"
+    "typescript": "^5.3.3"
   }
 }
