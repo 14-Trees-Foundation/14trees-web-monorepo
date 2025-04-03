@@ -213,7 +213,7 @@ export class DonationService {
         if (treesCount + alreadyReserved > donation.trees_count)
             throw new Error("Can not reserve more trees than originally requested.")
 
-        
+
         await this.reserveTreesInPlots(donation.user_id, null, plots, true, diversify, bookAllHabits, donation.id);
     }
 
@@ -222,7 +222,7 @@ export class DonationService {
         treeIds: number[]
     ) {
         const treesCount = await TreeRepository.treesCount({
-            id: {[Op.in]: treeIds},
+            id: { [Op.in]: treeIds },
             donation_id: donationId
         })
 
@@ -239,8 +239,8 @@ export class DonationService {
                 donation_id: null,
                 updated_at: new Date(),
             }
-    
-            await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds }});
+
+            await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
         }
     }
 
@@ -263,7 +263,15 @@ export class DonationService {
      */
 
     private static async getDonationTrees(donationId: number) {
-        const treesResp = await TreeRepository.getTrees(0, -1, [{ columnField: 'donation_id', operatorValue: 'equals', value: donationId }])
+        const treesResp =
+            await TreeRepository.getTrees(
+                0,
+                -1,
+                [{ columnField: 'donation_id', operatorValue: 'equals', value: donationId }]
+            ).catch(error => {
+                console.log("[ERROR]", "DonationService::getDonationTrees", error);
+                throw new Error("Failed to fetch donation trees!");
+            })
 
         return treesResp.results.map(tree => {
             return {
@@ -278,11 +286,11 @@ export class DonationService {
         const update = async (updateRequest: any, treeIds: number[]) => {
             await TreeRepository.updateTrees(updateRequest, { id: { [Op.in]: treeIds } });
         }
-    
+
         const tasks: Task<void>[] = [];
         for (const user of donationUsers) {
             const treeIds = userTreesMap[user.id];
-    
+
             const updateRequest = {
                 assigned_at: new Date(),
                 assigned_to: user.assignee,
@@ -296,15 +304,15 @@ export class DonationService {
                 user_tree_image: user.profile_image_url,
                 memory_images: null,
             }
-    
+
             tasks.push(() => update(updateRequest, treeIds));
         }
-    
+
         await runWithConcurrency(tasks, 10);
     }
 
     public static async autoAssignTrees(donationId: number) {
-        
+
         const donationUsers = await DonationUserRepository.getAllDonationUsers(donationId);
         const trees = await this.getDonationTrees(donationId);
 
@@ -332,7 +340,7 @@ export class DonationService {
     }
 
     public static async assignTrees(
-        donationId: number, 
+        donationId: number,
         userTrees: { du_id: number, tree_id: number }[]
     ) {
 
@@ -370,12 +378,18 @@ export class DonationService {
             memory_images: null,
         }
 
-        await TreeRepository.updateTrees(updateRequest, { id: {[Op.in]: treeIds }});
+        await TreeRepository.updateTrees(
+            updateRequest, 
+            { id: { [Op.in]: treeIds } }
+        ).catch(error => {
+            console.log("[ERROR]", "DonationService::unassignTreesForTreeIds", error);
+            throw new Error("Failed to unassign trees for users!");
+        });
     }
 
 
     public static async unassignTrees(donationId: number) {
-        
+
         const trees = await this.getDonationTrees(donationId);
         const treeIds = trees.map(tree => tree.tree_id);
 
@@ -389,10 +403,10 @@ export class DonationService {
     private static async upsertDonationUsersAndRelations(donationId: number, users: any[]) {
         const addUsersData: DonationUserCreationAttributes[] = []
         const updateUsersData: DonationUserAttributes[] = []
-        
+
         let count = 0;
         for (const user of users) {
-    
+
             // recipient
             const recipientUser = {
                 id: user.recipient,
@@ -401,7 +415,7 @@ export class DonationService {
                 phone: user.recipient_phone,
             }
             const recipient = await UserRepository.upsertUser(recipientUser);
-    
+
             // assigneee
             const assigneeUser = {
                 id: user.assignee,
@@ -410,7 +424,7 @@ export class DonationService {
                 phone: user.assignee_phone,
             }
             const assignee = await UserRepository.upsertUser(assigneeUser);
-    
+
             if (recipient.id !== assignee.id && user.relation?.trim()) {
                 await UserRelationRepository.createUserRelation({
                     primary_user: recipient.id,
@@ -420,7 +434,7 @@ export class DonationService {
                     updated_at: new Date(),
                 })
             }
-            
+
             const treesCount = parseInt(user.trees_count) || 1;
             if (user.id) {
                 updateUsersData.push({
@@ -444,10 +458,10 @@ export class DonationService {
                     updated_at: new Date(),
                 })
             }
-    
+
             count += treesCount;
         }
-    
+
         return { addUsersData, updateUsersData, count };
     }
 
@@ -462,15 +476,18 @@ export class DonationService {
 
         // delete donation users
         await DonationUserRepository.deleteDonationUsers({
-            id: { [Op.in]: donationUsers.map(user => user.id)},
+            id: { [Op.in]: donationUsers.map(user => user.id) },
             donation_id: donationId,
+        }).catch(error => {
+            console.log("[ERROR]", "DonationService::deleteDonationUsers", error);
+            throw new Error("Failed to delete donation users!");
         })
     }
 
 
     public static async upsertDonationUsers(donationId: number, users: any[]) {
-    
-    
+
+
         const { addUsersData, updateUsersData, count } = await this.upsertDonationUsersAndRelations(donationId, users);
         const donation = await DonationRepository.getDonation(donationId);
 
@@ -483,7 +500,7 @@ export class DonationService {
         const deleteUsers = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1)
         if (deleteUsers.length > 0) {
             await this.deleteDonationUsers(donationId, deleteUsers)
-        }  
+        }
     }
 
     public static async upsertDonationUser(donationId: number, user: any) {
@@ -548,6 +565,24 @@ export class DonationService {
     }
 
 
+    public static async deleteDonationUser(donationUserId: number) {
+        const resp = await DonationUserRepository.getDonationUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donationUserId },
+        ]).catch(error => {
+            console.log("[ERROR]", "DonationService::deleteDonationUser", error);
+            throw new Error("Failed fetch donation user for deletion!");
+        })
+
+        if (resp.results.length !== 1)
+            throw new Error("Donation user not for given id")
+
+        const donationId = resp.results[0].donation_id;
+        const users = resp.results;
+
+        await this.deleteDonationUsers(donationId, users);
+    }
+
+
     public static async sendDonationAcknowledgement(
         donation: Donation,
         sponsorUser: User,
@@ -568,15 +603,15 @@ export class DonationService {
                 comments: donation.comments,
                 created_at: new Date(donation.created_at).toLocaleDateString(),
             };
-    
+
             const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
-            const mailIds = (testMails && testMails.length !== 0) ? 
-                testMails : 
+            const mailIds = (testMails && testMails.length !== 0) ?
+                testMails :
                 [sponsorUser.email];
-    
+
             // Use template directly instead of querying from repository
             const templateName = 'donor-sum.html';
-            
+
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
@@ -585,11 +620,11 @@ export class DonationService {
                 [], // no attachments
                 'Donation Request Received'
             );
-    
+
             if (statusMessage) {
                 console.error("[ERROR] DonationService::sendDonationAcknowledgement", statusMessage);
             }
-    
+
         } catch (error) {
             console.error("[ERROR] DonationService::sendDonationAcknowledgement", error);
             throw new Error("Failed to send acknowledgement email");

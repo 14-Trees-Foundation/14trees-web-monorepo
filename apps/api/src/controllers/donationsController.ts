@@ -585,3 +585,24 @@ export const updateDonationUser = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const deleteDonationUser = async (req: Request, res: Response) => {
+    const { donation_user_id } = req.params;
+    const donationUserId = parseInt(donation_user_id);
+    if (isNaN(donationUserId)) {
+        return res.status(status.bad).send({
+            message: "Invalid donation user id"
+        })
+    }
+
+    try {
+        await DonationService.deleteDonationUser(donationUserId);
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::deleteDonationUser", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}

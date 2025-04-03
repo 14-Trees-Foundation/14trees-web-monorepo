@@ -317,6 +317,48 @@ routes.post('/users/get', donations.getDonationUsers);
 routes.put('/users', donations.updateDonationUser);
 
 
+
+/**
+ * @swagger
+ * /donations/users/{donation_user_id}:
+ *   delete:
+ *     summary: Delete a donation user
+ *     description: Deletes a specific donation user by their ID.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - name: donation_user_id
+ *         in: path
+ *         description: ID of the donation user to delete
+ *         required: true
+ *         type: integer
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: Donation user deleted successfully.
+ *       400:
+ *         description: Invalid donation user ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid donation user id"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.delete('/users/:donation_user_id', donations.deleteDonationUser);
+
+
 /**
  * @swagger
  * /donations/trees/reserve:
