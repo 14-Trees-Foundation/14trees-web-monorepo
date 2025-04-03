@@ -4,6 +4,7 @@
   "globalEnv": [
     "NODE_ENV",
     "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_BASE_URL",
     "SERVER_PORT",
     "NEXT_PUBLIC_RAZORPAY_KEY",
     "NOTION_API_KEY", 
