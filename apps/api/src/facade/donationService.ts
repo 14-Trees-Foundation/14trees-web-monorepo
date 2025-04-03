@@ -151,7 +151,7 @@ export class DonationService {
         }
 
         if (finalTreeIds.length > 0) {
-            await TreeRepository.updateTrees(updateConfig, { where: { id: { [Op.in]: finalTreeIds } } });
+            await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: finalTreeIds } });
         }
 
         return finalTreeIds;
