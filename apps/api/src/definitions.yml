@@ -1234,6 +1234,59 @@ definitions:
         updated_at:
           type: string
           format: date-time
+  DonationUser:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      recipient:
+        type: integer
+        example: 1
+      assignee:
+        type: integer
+        example: 1
+      recipient_name:
+        type: string
+        example: "Recipient Name"
+      recipient_email:
+        type: string
+        format: email
+        example: "recipient@gmail.com"
+      recipient_phone:
+        type: string
+        example: "9876543210"
+      assignee_name:
+        type: string
+        example: "Assignee Name"
+      assignee_email:
+        type: string
+        format: email
+        example: "assignee@gmail.com"
+      assignee_phone:
+        type: string
+        example: "9876543210"
+      donation_id:
+        type: integer
+        example: 1
+      trees_count:
+        type: integer
+        example: 14
+      profile_image_url:
+        type: string
+        example: "https://bucket.ap-south-1.s3.aws.com/image.png"
+      mail_sent:
+        type: boolean
+        example: false
+      mail_error:
+        type: string
+        example: ""
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time 
   DonationTree:
     type: object
     properties:
