@@ -833,7 +833,7 @@ export const treesCount = async (req: Request, res: Response) => {
             total_trees_planted: await TreeRepository.treesCount(),
             trees_planted_this_year: await TreeRepository.treesCount({ created_at: { [Op.gte]:  year} }),
             trees_planted_this_month: await TreeRepository.treesCount({ created_at: { [Op.gte]:  month} }),
-            trees_planted_by_you: name ? await TreeRepository.treesCount({ planted_by: name }) : 0,
+            trees_planted_by_you: name ? await TreeRepository.treesCount({ planted_by: name as string }) : 0,
         };
         res.status(status.success).json(result);
     } catch(err: any) {
