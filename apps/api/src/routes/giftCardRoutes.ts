@@ -1618,6 +1618,61 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
 
+/**
+ * @swagger
+ * /gift-cards/transactions/{group_id}:
+ *   get:
+ *     summary: Get transactions for a group
+ *     description: Retrieves all gift card transactions for a specific group.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - name: group_id
+ *         in: path
+ *         description: ID of the group to get transactions for
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Transactions fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             transactions:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   amount:
+ *                     type: number
+ *                     example: 100.00
+ *                   status:
+ *                     type: string
+ *                     example: "completed"
+ *                   created_at:
+ *                     type: string
+ *                     format: date-time
+ *       400:
+ *         description: Invalid group ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid group ID provided"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Failed to fetch transactions"
+ */
 routes.get('/transactions/:group_id', transactions.getTransactions);
 
 export default routes;

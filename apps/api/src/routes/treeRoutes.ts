@@ -582,7 +582,92 @@ routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
 
 routes.post("/get-trees-plantation-info", trees.getTreePlantationsInfo);
+/**
+ * @swagger
+ * /trees/count/user/{user_id}:
+ *   get:
+ *     summary: Get tree count for user
+ *     description: Returns the total number of trees associated with a specific user
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - name: user_id
+ *         in: path
+ *         description: ID of the user
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Tree count fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             count:
+ *               type: integer
+ *               example: 42
+ *       400:
+ *         description: Invalid User ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "bad"
+ *             message:
+ *               type: string
+ *               example: "Invalid User ID!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
+ */
 routes.get("/count/user/:user_id", trees.getTreesCountForUser);
+/**
+ * @swagger
+ * /trees/corporate-stats/tree-logged:
+ *   get:
+ *     summary: Get corporate tree planting statistics
+ *     description: Returns statistics about trees planted by corporate entities
+ *     tags:
+ *       - Trees
+ *     responses:
+ *       200:
+ *         description: Corporate tree statistics fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             total:
+ *               type: integer
+ *               example: 1000
+ *             stats:
+ *               type: object
+ *               properties:
+ *                 monthly:
+ *                   type: integer
+ *                   example: 100
+ *                 yearly:
+ *                   type: integer 
+ *                   example: 1200
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Failed to fetch corporate tree statistics"
+ */
 routes.get("/corporate-stats/tree-logged", trees.treePlantedByCorporate);
 routes.post("/mapped-gift/get", trees.getMappedGiftTrees);
 routes.post("/mapped-gift/analytics", trees.getMappedGiftTreesAnalytics);
