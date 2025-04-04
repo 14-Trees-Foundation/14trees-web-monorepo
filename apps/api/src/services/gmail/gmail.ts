@@ -4,13 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import handlebars from 'handlebars';
 
-// Load JSON files using fs
-const credentialsPath = path.join(process.env.GMAIL_CREDENTIALS || '', '/credentials.json');
-const tokensPath = path.join(process.env.GMAIL_CREDENTIALS || '', '/token.json');
-
-const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
-const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
-
 // Define types for credentials and tokens
 interface Credentials {
   installed: {
@@ -28,14 +21,31 @@ interface Tokens {
   expiry_date: number;
 }
 
-// Load the credentials and tokens with types
-const creds: Credentials = credentials;
-const token: Tokens = tokens;
+let credentials: Credentials | null = null;
+let tokens: Tokens | null = null;
+
+// Try to load credentials and tokens if they exist
+try {
+  if (process.env.GMAIL_CREDENTIALS) {
+    const credentialsPath = path.join(process.env.GMAIL_CREDENTIALS, '/credentials.json');
+    const tokensPath = path.join(process.env.GMAIL_CREDENTIALS, '/token.json');
+    
+    if (fs.existsSync(credentialsPath)) {
+      credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+    }
+    
+    if (fs.existsSync(tokensPath)) {
+      tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+    }
+  }
+} catch (error) {
+  console.warn('Gmail credentials not found or invalid. Email functionality will be disabled.');
+}
 
 const getGmailService = (): gmail_v1.Gmail => {
-  const { client_secret, client_id, redirect_uris } = creds.installed;
+  const { client_secret, client_id, redirect_uris } = credentials!.installed;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-  oAuth2Client.setCredentials(token);
+  oAuth2Client.setCredentials(tokens!);
   const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
   return gmail;
 };

@@ -44,33 +44,43 @@ import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transactio
 class Database {
   public sequelize: Sequelize;
 
-
-  private POSTGRES_DB =  'defaultdb';
-  private POSTGRES_HOST = 'vivek-tree-vivek-tree.e.aivencloud.com';
-  private POSTGRES_PORT = 15050;
-  private POSTGRES_USER = 'avnadmin';
-  private POSTGRES_PD = process.env.POSTGRES_PD;
-
   constructor() {
     this.sequelize = new Sequelize({
-      database: this.POSTGRES_DB,
-      username: this.POSTGRES_USER,
-      password: this.POSTGRES_PD,
-      host: this.POSTGRES_HOST,
+      database: process.env.POSTGRES_DB || 'defaultdb',
+      username: process.env.POSTGRES_USER || 'avnadmin',
+      password: process.env.POSTGRES_PD,
+      host: process.env.POSTGRES_HOST || 'vivek-tree-vivek-tree.e.aivencloud.com',
+      port: parseInt(process.env.POSTGRES_PORT || '15050'),
       schema: "14trees_2",
-      port: this.POSTGRES_PORT,
-      attributeBehavior: 'escape',
       dialect: "postgres",
       dialectOptions: {
         ssl: {
-          require: true, // This will help you. But you will see nwe error
-          rejectUnauthorized: false // This line will fix new error
+          require: true,
+          rejectUnauthorized: false
         },
       },
       define: {
         timestamps: false,
       },
-      logging: false,
+      logging: console.log,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      retry: {
+        max: 3,
+        match: [
+          /SequelizeConnectionError/,
+          /SequelizeConnectionRefusedError/,
+          /SequelizeHostNotFoundError/,
+          /SequelizeHostNotReachableError/,
+          /SequelizeInvalidConnectionError/,
+          /SequelizeConnectionTimedOutError/,
+          /TimeoutError/,
+        ],
+      },
       models:[
         Pond,
         Plot,
@@ -119,12 +129,17 @@ class Database {
     this.sequelize
       .authenticate()
       .then(() => {
-        console.log(
-          "✅ PostgreSQL Connection has been established successfully."
-        );
+        console.log("✅ PostgreSQL Connection has been established successfully.");
       })
       .catch((err) => {
         console.error("❌ Unable to connect to the PostgreSQL database:", err);
+        console.error("Connection details:", {
+          host: process.env.POSTGRES_HOST || 'vivek-tree-vivek-tree.e.aivencloud.com',
+          port: process.env.POSTGRES_PORT || '15050',
+          database: process.env.POSTGRES_DB || 'defaultdb',
+          user: process.env.POSTGRES_USER || 'avnadmin',
+          schema: "14trees_2"
+        });
       });
   }
 }

@@ -1,10 +1,7 @@
-# 14trees-mern
-Node-React-Mongo App for visualizing and combining all data
+# 14trees-web
+Node-React-PostgreSQL App for visualizing and combining all data
 
 ## How to run on local
-
-Backend application requires MongoDB atlas server. Create an atlas account and create a mongo db cluster using that account. 
-- Migrate data to your atlas instance. (Please check `DB_CLONE.md` file)
 
 Make sure to update (or create) `.env` file. Take reference from `.env.prod` file.
 
