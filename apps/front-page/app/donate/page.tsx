@@ -69,6 +69,9 @@ export default function DonatePage() {
   const [imageUploadProgress, setImageUploadProgress] = useState<Record<string, number>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [donationId, setDonationId] = useState<string | null>(null);
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -296,6 +299,7 @@ export default function DonatePage() {
   // Existing form submission (unchanged)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setIsSubmitting(true);
     
     const mainFormValid = Object.keys(formData).every(key => {
@@ -311,6 +315,7 @@ export default function DonatePage() {
   
     if (!mainFormValid || !dedicatedNamesValid) {
       alert("Please fix the errors in the form before submitting");
+      setIsLoading(false);
       setIsSubmitting(false);
       return;
     }
@@ -366,11 +371,34 @@ export default function DonatePage() {
         throw new Error(error.message || "Donation submission failed");
       }
   
-      alert("Donation created successfully!");
+      const responseData = await response.json();
+      setDonationId(responseData.id);
+      setShowSuccessDialog(true);
+  
+      // Reset form
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        numberOfTrees: "",
+        panNumber: "",
+        comments: ""
+      });
+      setDedicatedNames([{ name: "", email: "", phone: "" }]);
+      setTreeLocation("");
+      setGroveType("");
+      setTaxStatus("");
+      setMultipleNames(false);
+      setPaymentOption("razorpay");
+      setCsvFile(null);
+      setCsvPreview([]);
+      setCsvErrors([]);
+  
     } catch (err: any) {
       console.error("Donation error:", err);
       alert(err.message || "Failed to create donation");
     } finally {
+      setIsLoading(false);
       setIsSubmitting(false);
     }
   };
@@ -528,6 +556,28 @@ export default function DonatePage() {
         : recipient;
     }));
   };
+
+  // Add this new component before your return statement
+const SuccessDialog = () => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg max-w-md w-full">
+      <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
+      <p className="mb-2">Your donation request has been processed successfully.</p>
+      {donationId && (
+        <p className="mb-2">
+          <strong>Donation ID:</strong> {donationId}
+        </p>
+      )}
+      <p className="mb-4">You will receive an acknowledgment email shortly.</p>
+      <button
+        onClick={() => setShowSuccessDialog(false)}
+        className="bg-green-600 text-white px-4 py-2 rounded-md w-full"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+);
 
   return (
     <div className="overflow-hidden bg-white">
@@ -1250,19 +1300,31 @@ export default function DonatePage() {
                 </div>
 
                 <div className="pt-6">
-                  <Button
-                    type="submit"
-                    className="bg-green-800 text-white hover:bg-green-900 w-full py-6 text-lg"
-                    size="xl"
-                  >
-                    Complete Donation
-                  </Button>
+                <Button
+                     type="submit"
+                     className="bg-green-800 text-white hover:bg-green-900 w-full py-6 text-lg"
+                     size="xl"
+                     disabled={isLoading}
+                >
+                  {isLoading ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                           Processing...
+                        </div>
+                   ) : (
+                        "Complete Donation"
+                        )}
+                </Button>
                 </div>
               </form>
             </ScrollReveal>
           </div>
         </div>
       </div>
+        {showSuccessDialog && <SuccessDialog />}
     </div>
   );
 }
