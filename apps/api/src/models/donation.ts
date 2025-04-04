@@ -24,9 +24,10 @@ interface DonationAttributes {
   created_by: number;
   created_at: Date;
   updated_at: Date;
+  tags: string[] | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags'> { }
 
 @Table({ 
     tableName: 'donations',
@@ -113,6 +114,12 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: false
   })
   updated_at!: Date;
+
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: true
+  })
+  tags!: string[] | null;
 }
 
 export { Donation }
