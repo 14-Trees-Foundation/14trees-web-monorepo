@@ -63,14 +63,26 @@ class Database {
       dialect: "postgres",
       dialectOptions: {
         ssl: {
-          require: true, // This will help you. But you will see nwe error
-          rejectUnauthorized: false // This line will fix new error
+          require: true,
+          rejectUnauthorized: false
         },
       },
       define: {
         timestamps: false,
       },
-      logging: false,
+      logging: console.log,
+      retry: {
+        max: 3,
+        match: [
+          /SequelizeConnectionError/,
+          /SequelizeConnectionRefusedError/,
+          /SequelizeHostNotFoundError/,
+          /SequelizeHostNotReachableError/,
+          /SequelizeInvalidConnectionError/,
+          /SequelizeConnectionTimedOutError/,
+          /TimeoutError/,
+        ],
+      },
       models:[
         Pond,
         Plot,
@@ -119,12 +131,17 @@ class Database {
     this.sequelize
       .authenticate()
       .then(() => {
-        console.log(
-          "✅ PostgreSQL Connection has been established successfully."
-        );
+        console.log("✅ PostgreSQL Connection has been established successfully.");
       })
       .catch((err) => {
         console.error("❌ Unable to connect to the PostgreSQL database:", err);
+        console.error("Connection details:", {
+          host: this.POSTGRES_HOST,
+          port: this.POSTGRES_PORT,
+          database: this.POSTGRES_DB,
+          user: this.POSTGRES_USER,
+          schema: "14trees_2"
+        });
       });
   }
 }
