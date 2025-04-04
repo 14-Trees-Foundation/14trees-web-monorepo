@@ -195,4 +195,32 @@ export class DonationRepository {
             results: data
         };
     }
+
+    public static async getDonationTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
+        try {
+            const tags: string[] = [];
+
+            const getUniqueTagsQuery = 
+                `SELECT DISTINCT tag
+                    FROM "14trees_2".donations d,
+                    unnest(d.tags) AS tag
+                    ORDER BY tag
+                    OFFSET ${offset} LIMIT ${limit};`;
+
+            const countUniqueTagsQuery = 
+                `SELECT count(DISTINCT tag)
+                    FROM "14trees_2".donations d,
+                    unnest(d.tags) AS tag;`;
+
+            const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
+            tagsResp.forEach(r => tags.push(r.tag));
+
+            const countResp: any[] = await sequelize.query(countUniqueTagsQuery, { type: QueryTypes.SELECT });
+            const total = parseInt(countResp[0].count);
+            return { offset: offset, total: total, results: tags };
+        } catch (error) {
+            console.error('[ERROR] DonationRepository::getDonationTags:', error);
+            throw new Error('Failed to fetch donation tags');
+        }
+    }
 }

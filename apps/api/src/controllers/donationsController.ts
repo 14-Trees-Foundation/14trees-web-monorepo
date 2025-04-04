@@ -585,3 +585,18 @@ export const updateDonationUser = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const getDonationTags = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+
+    try {
+        let result = await DonationRepository.getDonationTags(offset, limit);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationTags", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+    }
+}
