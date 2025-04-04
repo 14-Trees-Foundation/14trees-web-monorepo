@@ -10,13 +10,48 @@ import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getUserDocumentFromRequestBody } from "./userRepo";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 
+// Whitelist of allowed columns for sorting and filtering
+const ALLOWED_COLUMNS = new Set([
+  'sapling_id',
+  'plant_type_id',
+  'plot_id',
+  'tree_status',
+  'created_at',
+  'updated_at',
+  'assigned_to_name',
+  'mapped_user_name',
+  'mapped_group_name',
+  'sponsor_user_name',
+  'sponsor_group_name',
+  'plot',
+  'site_name',
+  'plant_type',
+  'habit',
+  'tree_health'
+]);
+
+// Validation function for input parameters
+function validateInput(input: string): boolean {
+  // Only allow alphanumeric characters, underscores, and hyphens
+  return /^[a-zA-Z0-9_-]+$/.test(input);
+}
+
 class TreeRepository {
   public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Tree>> {
+    // Validate offset and limit
+    if (offset < 0 || limit < 0) {
+      throw new Error('Invalid pagination parameters');
+    }
 
     let whereCondition = "";
     let replacements: any = {}
     if (filters && filters.length > 0) {
       filters.forEach(filter => {
+        // Validate column name
+        if (!ALLOWED_COLUMNS.has(filter.columnField)) {
+          throw new Error(`Invalid column name: ${filter.columnField}`);
+        }
+
         let columnField = "t." + filter.columnField
         let valuePlaceHolder = filter.columnField
         if (filter.columnField === "assigned_to_name") {
@@ -49,6 +84,13 @@ class TreeRepository {
 
     const sortOrder = orderBy && orderBy.length !== 0
       ? orderBy.map(o => {
+          // Validate sort column
+          if (!ALLOWED_COLUMNS.has(o.column)) {
+            throw new Error(`Invalid sort column: ${o.column}`);
+          }
+          if (o.order !== 'ASC' && o.order !== 'DESC') {
+            throw new Error('Invalid sort order');
+          }
           if (o.column === 'assigned_to_name')
             return 'au."name"' + " " + o.order
           return 't.' + o.column + " " + o.order
@@ -81,7 +123,11 @@ class TreeRepository {
     ORDER BY ${sortOrder ? sortOrder : 't.sapling_id'}
     `
 
-    if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
+    if (limit > 0) { 
+      query += `OFFSET :offset LIMIT :limit;` 
+      replacements.offset = offset;
+      replacements.limit = limit;
+    }
 
     const trees: any = await sequelize.query(query, {
       replacements: replacements,
@@ -108,14 +154,32 @@ class TreeRepository {
   };
 
   public static async getTreeBySaplingId(saplingId: string): Promise<Tree | null> {
+    // Validate sapling ID
+    if (!validateInput(saplingId)) {
+      throw new Error('Invalid sapling ID format');
+    }
     return await Tree.findOne({ where: { sapling_id: saplingId } });
   };
 
   public static async getTreeByTreeId(treeId: number): Promise<Tree | null> {
+    // Validate tree ID
+    if (treeId <= 0) {
+      throw new Error('Invalid tree ID');
+    }
     return await Tree.findByPk(treeId);
   };
 
   public static async addTree(data: any): Promise<Tree> {
+    // Validate required fields
+    if (!data.sapling_id || !validateInput(data.sapling_id)) {
+      throw new Error('Invalid sapling ID format');
+    }
+    if (!data.plant_type_id || typeof data.plant_type_id !== 'number') {
+      throw new Error('Invalid plant type ID');
+    }
+    if (!data.plot_id || typeof data.plot_id !== 'number') {
+      throw new Error('Invalid plot ID');
+    }
 
     // Check if tree type exists
     let plantType = await PlantType.findOne({ where: { id: data.plant_type_id } });
@@ -137,6 +201,9 @@ class TreeRepository {
 
     let mapped_to: User | null = null;
     if (data.mapped_to) {
+      if (typeof data.mapped_to !== 'number') {
+        throw new Error('Invalid mapped user ID');
+      }
       mapped_to = await User.findOne({ where: { id: data.mapped_to } });
     }
 
@@ -153,6 +220,9 @@ class TreeRepository {
     let loc: Center | undefined;
     // Tree object to be saved in database
     if (data.lat) {
+      if (typeof data.lat !== 'number' || typeof data.lng !== 'number') {
+        throw new Error('Invalid coordinates');
+      }
       loc = {
         type: "Point",
         coordinates: [data.lat, data.lng],
@@ -781,27 +851,39 @@ class TreeRepository {
     };
   }
 
-  public static async getTreeTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
-    const tags: string[] = [];
+  public static async getTreeTags(offset: number = 0, limit: number = 20): Promise<PaginatedResponse<string>> {
+    // Validate input parameters
+    if (offset < 0 || limit < 0) {
+      throw new Error('Invalid pagination parameters');
+    }
 
-    const getUniqueTagsQuery =
-      `SELECT DISTINCT tag
-            FROM "14trees_2".trees t,
-            unnest(t.tags) AS tag
-            ORDER BY tag
-            OFFSET ${offset} LIMIT ${limit};`;
+    const getUniqueTagsQuery = `
+      SELECT DISTINCT tag
+      FROM "14trees_2".trees t,
+      unnest(t.tags) AS tag
+      ORDER BY tag
+      OFFSET :offset LIMIT :limit;
+    `;
 
-    const countUniqueTagsQuery =
-      `SELECT count(DISTINCT tag)
-            FROM "14trees_2".trees t,
-            unnest(t.tags) AS tag;`;
+    const countUniqueTagsQuery = `
+      SELECT COUNT(DISTINCT tag)
+      FROM "14trees_2".trees t,
+      unnest(t.tags) AS tag;
+    `;
 
-    const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
-    tagsResp.forEach(r => tags.push(r.tag));
+    const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, {
+      replacements: { offset, limit },
+      type: QueryTypes.SELECT
+    });
 
-    const countResp: any[] = await sequelize.query(countUniqueTagsQuery, { type: QueryTypes.SELECT });
+    const countResp: any[] = await sequelize.query(countUniqueTagsQuery, {
+      type: QueryTypes.SELECT
+    });
+
+    const tags = tagsResp.map(r => r.tag);
     const total = parseInt(countResp[0].count);
-    return { offset: offset, total: total, results: tags };
+
+    return { offset, total, results: tags };
   }
 
   public static async getMappedGiftTrees(offset: number, limit: number, groupId: number, filters?: FilterItem[]): Promise<PaginatedResponse<Tree>> {
