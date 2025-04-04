@@ -47,6 +47,14 @@ class TreeRepository {
       whereCondition = whereCondition.substring(0, whereCondition.length - 3);
     }
 
+    const sortOrder = orderBy && orderBy.length !== 0
+      ? orderBy.map(o => {
+          if (o.column === 'assigned_to_name')
+            return 'au."name"' + " " + o.order
+          return 't.' + o.column + " " + o.order
+        }).join(", ")
+      : null;
+
     let query = `
     SELECT t.*, 
       pt."name" as plant_type, 
@@ -70,7 +78,7 @@ class TreeRepository {
     LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
-    ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => 't.' + o.column + " " + o.order).join(", ") : 't.sapling_id'}
+    ORDER BY ${sortOrder ? sortOrder : 't.sapling_id'}
     `
 
     if (limit > 0) { query += `OFFSET ${offset} LIMIT ${limit};` }
