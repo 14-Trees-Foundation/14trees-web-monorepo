@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as trees from "../controllers/treesController";
 import uploadFiles from "../helpers/multer";
+import { validateTreeCreation, validateTreeUpdate } from "../middleware/treeValidation";
 
 const routes = Router();
 
@@ -118,6 +119,25 @@ routes.post('/get', trees.getTrees);
  *         description: Tree created successfully
  *         schema:
  *           $ref: '#/definitions/Tree'
+ *       400:
+ *         description: Validation error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: number
+ *               example: 400
+ *             errors:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   field:
+ *                     type: string
+ *                     example: "sapling_id"
+ *                   message:
+ *                     type: string
+ *                     example: "Sapling ID is required"
  *       500:
  *         description: Internal server error
  *         schema:
@@ -127,7 +147,7 @@ routes.post('/get', trees.getTrees);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.post('/', uploadFiles.array('files', 1), trees.addTree);
+routes.post('/', validateTreeCreation, uploadFiles.array('files', 1), trees.addTree);
 
 
 /**
@@ -186,6 +206,25 @@ routes.post('/', uploadFiles.array('files', 1), trees.addTree);
  *         description: Tree updated successfully
  *         schema:
  *           $ref: '#/definitions/Tree'
+ *       400:
+ *         description: Validation error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: number
+ *               example: 400
+ *             errors:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   field:
+ *                     type: string
+ *                     example: "tree_status"
+ *                   message:
+ *                     type: string
+ *                     example: "Tree status must be one of: healthy, dead, lost"
  *       404:
  *         description: Tree not found
  *         schema:
@@ -194,19 +233,8 @@ routes.post('/', uploadFiles.array('files', 1), trees.addTree);
  *             message:
  *               type: string
  *               example: "Tree not found"
- *       500:
- *         description: Internal server error
- *         schema:
- *           type: object
- *           properties:
- *             status:
- *               type: string
- *               example: "error"
- *             message:
- *               type: string
- *               example: "Something went wrong. Please try again later."
  */
-routes.put('/:id', uploadFiles.array('files', 1), trees.updateTree);
+routes.put('/:id', validateTreeUpdate, uploadFiles.array('files', 1), trees.updateTree);
 
 
 /**
