@@ -55,7 +55,7 @@ const validateTags = (tags: any): TreeValidationError | null => {
         return { field: 'tags', message: 'Tags must be an array' };
     }
     
-    if (tags && tags.some(tag => typeof tag !== 'string')) {
+    if (tags && tags.some((tag: string) => typeof tag !== 'string')) {
         return { field: 'tags', message: 'All tags must be strings' };
     }
     

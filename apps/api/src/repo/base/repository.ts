@@ -1,38 +1,35 @@
-import { Model, ModelStatic } from "sequelize";
+import { Model, ModelStatic, WhereOptions } from "sequelize";
 
 export abstract class Repository<T extends Model> {
-  protected model: ModelStatic<T>;
+  constructor(protected model: ModelStatic<T>) {}
 
-  constructor(model: ModelStatic<T>) {
-    this.model = model;
-  }
-
-  async findAll(options: any = {}): Promise<T[]> {
-    return this.model.findAll(options);
+  async findAll(): Promise<T[]> {
+    return this.model.findAll();
   }
 
   async findOne(options: any = {}): Promise<T | null> {
     return this.model.findOne(options);
   }
 
-  async findById(id: string | number): Promise<T | null> {
+  async findById(id: number): Promise<T | null> {
     return this.model.findByPk(id);
   }
 
-  async create(data: any): Promise<T> {
-    return this.model.create(data);
+  async create(data: Partial<T>): Promise<T> {
+    return this.model.create(data as any);
   }
 
-  async update(id: string | number, data: any): Promise<[number, T[]]> {
-    return this.model.update(data, {
-      where: { id },
+  async update(id: number, data: Partial<T>): Promise<T> {
+    const [_, [updated]] = await this.model.update(data, {
+      where: { id: id } as unknown as WhereOptions<T>,
       returning: true,
     });
+    return updated;
   }
 
-  async delete(id: string | number): Promise<number> {
-    return this.model.destroy({
-      where: { id },
+  async delete(id: number): Promise<void> {
+    await this.model.destroy({
+      where: { id: id } as unknown as WhereOptions<T>,
     });
   }
 } 
