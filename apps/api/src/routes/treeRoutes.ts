@@ -4,10 +4,6 @@ import uploadFiles from "../helpers/multer";
 
 const routes = Router();
 
-// @deprecated
-routes.post('/addtree', uploadFiles.array('files', 1), trees.addTree);
-
-
 /**
  * @swagger
  * /trees/get:
