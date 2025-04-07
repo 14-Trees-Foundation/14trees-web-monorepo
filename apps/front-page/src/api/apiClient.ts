@@ -90,6 +90,42 @@ class ApiClient {
       throw new Error('Failed to upload one or more images');
     }
   }
+ 
+    /**
+     * Submit a donation request to the backend
+     * @param data - Donation data including required fields
+     * @returns Processed donation response
+     * @throws Error with backend message or default failure message
+     */
+    async submitDonation(data: {
+      request_id: string;
+      user_id: string;
+      category: string;
+      created_by: string;
+      trees_count?: number;
+      pledged_area_acres?: number;
+      [key: string]: any; // For additional fields
+    }): Promise<any> {
+      try {
+        // Validate required fields (client-side)
+        const requiredFields = ['request_id', 'user_id', 'category', 'created_by'];
+        const missingFields = requiredFields.filter(field => !data[field]);
+        
+        if (missingFields.length > 0) {
+          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+  
+        const response = await this.api.post('/donations/requests', data);
+        return response.data;
+  
+      } catch (error: any) {
+        console.error('[Donation Submission Error]', error);
+        if (error.response?.data?.message) {
+          throw new Error(error.response.data.message);
+        }
+        throw new Error(error.message || 'Donation submission failed');
+      }
+    }
 }
 
 export const apiClient = new ApiClient();
