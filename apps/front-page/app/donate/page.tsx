@@ -581,16 +581,6 @@ const SuccessDialog = () => (
 
   return (
     <div className="overflow-hidden bg-white">
-      {/* Header Section (unchanged) */}
-      <header className="bg-green-800 text-white p-4 shadow-md">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold">14 Trees Foundation</Link>
-          <nav>
-            <Link href="/volunteer" className="mr-4 hover:underline">Volunteer</Link>
-            <Link href="/donate" className="bg-white text-green-800 px-4 py-2 rounded-md">Donate</Link>
-          </nav>
-        </div>
-      </header>
 
       {/* Hero Section (unchanged) */}
       <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
