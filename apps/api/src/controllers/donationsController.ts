@@ -213,7 +213,7 @@ export const updateDonation = async (req: Request, res: Response) => {
     });
 
     try {
-        const updatedDonation = await DonationRepository.updateDonation(donationId, updateFields);
+        const updatedDonation = await DonationRepository.updateDonation(donationId, updateObject);
 
         // Get full donation details with joins
         const result = await DonationRepository.getDonations(0, 1, [
@@ -579,6 +579,21 @@ export const updateDonationUser = async (req: Request, res: Response) => {
         res.status(status.success).send(donationUser);
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::updateDonationUser", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: 'Something went wrong. Please try again after some time!',
+        });
+    }
+}
+
+export const getDonationTags = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+
+    try {
+        let result = await DonationRepository.getDonationTags(offset, limit);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationTags", error)
         return res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again after some time!',
