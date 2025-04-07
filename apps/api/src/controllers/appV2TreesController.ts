@@ -591,6 +591,7 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
     if (tree_ids && tree_ids.length > 0) treeIds = tree_ids;
     const filters: FilterItem[] = [
         { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
+        { columnField: "deleted_at", operatorValue: "isEmpty", value: '' },
     ]
     
     try {
