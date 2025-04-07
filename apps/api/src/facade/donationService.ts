@@ -15,6 +15,10 @@ interface DonationUserRequest {
     recipient_name: string
     recipient_email: string | null,
     recipient_phone: string | null,
+    assignee_name: string
+    assignee_email: string | null,
+    assignee_phone: string | null,
+    relation: string | null,
     image_url: string | null,
     trees_count: number
 }
@@ -69,24 +73,11 @@ export class DonationService {
 
     public static async createDonationUsers(donationId: number, usersData: DonationUserRequest[]) {
 
-        const userRequests: DonationUserCreationAttributes[] = [];
-
-        for (const userData of usersData) {
-            const user = await UserRepository.upsertUser({
-                name: userData.recipient_name,
-                email: userData.recipient_email,
-                phone: userData.recipient_phone,
-            })
-            userRequests.push({
-                recipient: user.id,
-                assignee: user.id,
-                trees_count: userData.trees_count,
-                profile_image_url: userData.image_url || null,
-                donation_id: donationId
-            })
-        }
-
-        await DonationUserRepository.createDonationUsers(userRequests);
+        const { addUsersData } = await this.upsertDonationUsersAndRelations(donationId, usersData);
+        await DonationUserRepository.createDonationUsers(addUsersData).catch((error: any) => {
+            console.error("DonationService::createDonationUsers", error)
+            throw new Error("Failed to save donation users!")
+        })
     }
 
     /**
