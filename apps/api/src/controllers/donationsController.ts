@@ -83,66 +83,123 @@ export const getDonations = async (req: Request, res: Response) => {
 //     if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers);
 // }
 
-export const createDonation = async (req: Request, res: Response) => {
 
+
+export const createDonation = async (req: Request, res: Response) => {
     const data = req.body;
     const {
         sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove,
-        grove_type_other, trees_count, contribution_options, names_for_plantation,
-        comments, users
+        grove_type_other, trees_count, pledged_area_acres, contribution_options, 
+        names_for_plantation, comments, users
     } = data;
 
     // Validate sponsor details
-    if (!sponsor_name || !sponsor_email)
+    if (!sponsor_name || !sponsor_email) {
         return res.status(status.bad).json({
             message: 'Invalid sponsor name or email. Please provide valid details!'
         });
+    }
 
-    // Validate tree plantaion details
-    if (!trees_count || !category)
+    // Validate users array structure
+    if (users && users.length > 0) {
+        const invalidUsers = users.some((user: { recipient_name: any; trees_count: any; relation: any; }) => 
+            !user.recipient_name || 
+            !user.trees_count || 
+            !user.relation
+        );
+        
+        if (invalidUsers) {
+            return res.status(status.bad).json({
+                message: 'Each recipient must have name, tree count, and relation'
+            });
+        }
+
+        // Validate tree count sum
+        const totalAssignedTrees = users.reduce((sum: number, user: { trees_count: string | number; }) => 
+            sum + Number(user.trees_count), 0);
+        
+        if (trees_count && totalAssignedTrees > Number(trees_count)) {
+            return res.status(status.bad).json({
+                message: `Total assigned trees (${totalAssignedTrees}) exceeds pledged count (${trees_count})`
+            });
+        }
+    }
+
+    // Validate donation type - must have either trees or acres
+    if (trees_count && trees_count > 0 && pledged_area_acres && pledged_area_acres > 0) {
         return res.status(status.bad).json({
-            message: 'Land and tree plantation details are invalid. Please provide valid details!'
+            message: 'Cannot specify both tree count and pledged acres. Choose one.'
         });
+    }
 
+    if ((!trees_count || trees_count <= 0) && (!pledged_area_acres || pledged_area_acres <= 0)) {
+        return res.status(status.bad).json({
+            message: 'Please provide either a valid tree count or pledged acres.'
+        });
+    }
+
+    // Validate land details
+    if (!category) {
+        return res.status(status.bad).json({
+            message: 'Land category is required. Please provide valid details!'
+        });
+    }
+
+    // Convert and validate pledged_acres to match DECIMAL(10,2) type
+    const pledgedAreaAcres = pledged_area_acres ? parseFloat(pledged_area_acres.toString()) : null;
+    if (pledgedAreaAcres !== null && isNaN(pledgedAreaAcres)) {
+        return res.status(status.bad).json({
+            message: 'Pledged acres must be a valid number'
+        });
+    }
 
     const donation = await DonationService.createDonation({
         sponsor_name,
         sponsor_email,
         sponsor_phone,
-        trees_count,
+        trees_count: pledged_area_acres ? 0 : Number(trees_count),
+        pledged_area_acres: pledgedAreaAcres,
         payment_id,
         category,
         grove,
         continution_options: contribution_options,
-    }).catch((error) => {
+        assignee_mode: users?.some((u: { assignee: any; }) => u.assignee) ? 'split' : 'standard'
+    }).catch((error: Error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
-        res.status(status.error).json({
+        return null;
+    });
+
+    if (!donation) {
+        return res.status(status.error).json({
             message: 'Failed to create donation'
         });
-    })
+    }
 
-    let usersCreated = true; // Default to true, only set to false if users array exists but creation fails
-    if (!donation) return;
+    let usersCreated = true;
     if (users && users.length > 0) {
+        const processedUsers = users.map((user: { assignee: any; relation: string; }) => ({
+            ...user,
+            assignee: user.assignee || (user.relation === 'self' ? null : sponsor_name)
+        }));
+
         await DonationService.createDonationUsers(
             donation.id,
-            users
-        ).catch((error) => {
+            processedUsers,
+            donation.trees_count
+        ).catch((error: Error) => {
             console.error("[ERROR] DonationsController::createDonation:", error);
             usersCreated = false;
-        })
+        });
     }
-    
+
     // Send acknowledgement email after donation is created
     try {
-        // Fetch the user directly by using UserRepository
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
             phone: sponsor_phone
         });
         
-        // Update donation with additional fields if they were provided in the request
         if (grove_type_other) donation.grove_type_other = grove_type_other;
         if (names_for_plantation) donation.names_for_plantation = names_for_plantation;
         if (comments) donation.comments = comments;
@@ -153,12 +210,22 @@ export const createDonation = async (req: Request, res: Response) => {
         // Don't fail the request if email sending fails
     }
     
-    if (!usersCreated)
+    if (!usersCreated) {
         return res.status(status.error).send({
-            message: "Failed to save recipient details."
-        })
+            message: "Failed to save recipient details.",
+            expected_trees: trees_count,
+            assigned_trees: users?.reduce((sum: number, u: { trees_count: number; }) => sum + u.trees_count, 0)
+        });
+    }
     
-    return res.status(status.created).send(donation);
+    return res.status(status.created).send({
+        ...donation.toJSON(),
+        assignment_summary: {
+            total_recipients: users?.length || 0,
+            self_assigned: users?.filter((u: { relation: string; }) => u.relation === 'self').length || 0,
+            others_assigned: users?.filter((u: { relation: string; }) => u.relation !== 'self').length || 0
+        }
+    });
 };
 
 export const deleteDonation = async (req: Request, res: Response) => {

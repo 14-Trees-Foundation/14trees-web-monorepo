@@ -18,6 +18,7 @@ interface DonationAttributes {
   grove: string;
   grove_type_other: string | null;
   trees_count: number;
+  pledged_area_acres: number | null; 
   contribution_options: ContributionOption | null;
   names_for_plantation: string | null;
   comments: string | null;
@@ -74,7 +75,8 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
 
   @Column({
     type: DataType.INTEGER,
-    allowNull: false
+    allowNull: false,
+    defaultValue: 0
   })
   trees_count!: number;
 
@@ -113,6 +115,20 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: false
   })
   updated_at!: Date;
+
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: null,
+    set(value: number | null) {
+  
+      if (value !== null && this.getDataValue('trees_count') === undefined) {
+        this.setDataValue('trees_count', 0);
+      }
+      this.setDataValue('pledged_area_acres', value);
+    }
+  })
+  pledged_area_acres!: number | null;
 }
 
 export { Donation }

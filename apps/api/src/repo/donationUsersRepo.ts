@@ -80,6 +80,7 @@ export class DonationUserRepository {
     data.forEach(item => {
       item.created_at = new Date();
       item.updated_at = new Date();
+      item.trees_count = item.trees_count ?? 0;
     })
     return await DonationUser.bulkCreate(data, { returning: returning });
   }

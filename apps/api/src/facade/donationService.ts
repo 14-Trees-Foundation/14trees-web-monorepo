@@ -16,7 +16,9 @@ interface DonationUserRequest {
     recipient_email: string | null,
     recipient_phone: string | null,
     image_url: string | null,
-    trees_count: number
+    trees_count: number,
+    relation: string; // Added
+    assignee?: string | null; // Added
 }
 
 interface CreateDonationRequest {
@@ -27,7 +29,9 @@ interface CreateDonationRequest {
     category: LandCategory;
     grove: string;
     trees_count: number,
+    pledged_area_acres?: number | null;
     continution_options: ContributionOption,
+    assignee_mode?: 'split' | 'standard';
 }
 
 export class DonationService {
@@ -35,7 +39,7 @@ export class DonationService {
     public static async createDonation(data: CreateDonationRequest): Promise<Donation> {
         const {
             sponsor_name, sponsor_email, sponsor_phone, grove,
-            trees_count, category, payment_id, continution_options,
+            trees_count, pledged_area_acres, category, payment_id, continution_options,
         } = data;
 
         const sponsorUser = await UserRepository.upsertUser({
@@ -49,7 +53,9 @@ export class DonationService {
 
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
-            trees_count: trees_count,
+            trees_count: pledged_area_acres ? 0 : (trees_count || 0),
+            pledged_area_acres: pledged_area_acres,
+
             category: category,
             grove: grove,
             payment_id: payment_id,
@@ -67,7 +73,7 @@ export class DonationService {
         return donation;
     }
 
-    public static async createDonationUsers(donationId: number, usersData: DonationUserRequest[]) {
+    public static async createDonationUsers(donationId: number, usersData: DonationUserRequest[], treesCount: number) {
 
         const userRequests: DonationUserCreationAttributes[] = [];
 
