@@ -77,7 +77,7 @@ class TreeRepository {
     LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
-    WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
+    WHERE t.deleted_at IS NULL AND ${whereCondition !== "" ? whereCondition : "1=1"}
     ORDER BY ${ sortOrder ? sortOrder : 't.sapling_id'}
     `
 
@@ -99,7 +99,7 @@ class TreeRepository {
     LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
-    WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
+    WHERE t.deleted_at IS NULL AND ${whereCondition !== "" ? whereCondition : "1=1"};
     `
     const resp = await sequelize.query(countQuery, {
       replacements: replacements,
@@ -223,8 +223,8 @@ class TreeRepository {
   }
 
   public static async deleteTree(treeId: string): Promise<number> {
-    const resp = await Tree.destroy({ where: { id: treeId } });
-    return resp;
+    const resp = await Tree.update({ deleted_at: new Date() }, { where: { id: treeId }});
+    return resp[0];
   };
 
   public static async treesCount(whereClause?: WhereOptions): Promise<number> {
@@ -597,7 +597,7 @@ class TreeRepository {
     FROM unnest(array[:tree_ids]::int[]) AS num
     LEFT JOIN "14trees".trees AS t
     ON num = t.id
-    WHERE t.id IS NULL;`
+    WHERE t.id IS NULL OR t.deleted_at IS NOT NULL;`
 
     const result = await sequelize.query(query, {
       replacements: { tree_ids: treeIds },
@@ -706,7 +706,8 @@ class TreeRepository {
 
     query += `
       WHERE
-        t.mapped_to_user IS NULL
+        t.deleted_at IS NULL
+        AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
@@ -729,7 +730,8 @@ class TreeRepository {
     if (!include_no_giftable) '\nJOIN "14trees".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
 
     countQuery += `
-        WHERE t.mapped_to_user IS NULL
+        WHERE t.deleted_at IS NULL
+        AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
