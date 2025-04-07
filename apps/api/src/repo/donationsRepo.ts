@@ -4,10 +4,10 @@ import { Donation, DonationAttributes, DonationCreationAttributes } from '../mod
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes } from 'sequelize';
 import { Tree } from '../models/tree';
-
+import { SortOrder } from '../models/common';
 export class DonationRepository {
    
-    public static async getDonations(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<Donation>> {
+    public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
         try {
             let whereConditions: string = "";
             let replacements: any = {};
@@ -24,6 +24,8 @@ export class DonationRepository {
                 });
                 whereConditions = whereConditions.substring(0, whereConditions.length - 3);
             }
+
+            const sortOrderQuery = orderBy && orderBy.length > 0 ? orderBy.map(order => `d.${order.column} ${order.order}`).join(', ') : 'd.id DESC';
     
             const getQuery = `
                 SELECT 
@@ -34,7 +36,7 @@ export class DonationRepository {
                 FROM "14trees_2".donations d
                 LEFT JOIN "14trees_2".users u ON u.id = d.user_id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-                ORDER BY d.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+                ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
             const countQuery = `

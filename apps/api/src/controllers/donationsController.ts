@@ -4,9 +4,9 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
 import { DonationService } from "../facade/donationService";
-import { User } from "../models/user";
 import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
+import { SortOrder } from "../models/common";
 
 /*
     Model - Donation
@@ -16,9 +16,10 @@ import { DonationUserRepository } from "../repo/donationUsersRepo";
 export const getDonations = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
+    const orderBy: SortOrder[] = req.body?.order_by;
 
     try {
-        let result = await DonationRepository.getDonations(offset, limit, filters);
+        let result = await DonationRepository.getDonations(offset, limit, filters, orderBy);
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonations", error)
