@@ -599,5 +599,47 @@ routes.post('/trees/unassign', donations.assignTrees)
  */
 routes.post('/trees/get', donations.getDonationTrees)
 
+/**
+ * @swagger
+ * /donations/tags:
+ *   get:
+ *     summary: Get donation tags
+ *     description: Fetches all unique tags used in donations
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: Tags fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 type: string
+ *       500:
+ *         description: Internal server error
+ */
+routes.get('/tags', donations.getDonationTags);
+
 
 export default routes;
