@@ -1,11 +1,13 @@
 [build]
-  base = "apps/front-page"
-  command = "npm run build"
-  publish = ".next"
+  base = "/"
+  command = "npm install && npx turbo build --filter=front-page..."
+  publish = "apps/front-page/.next"
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_VERSION = "18"
+  TURBO_REMOTE_ONLY = "true"
+  TURBO_FORCE = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -27,3 +29,14 @@
 
 [build.processing.images]
   compress = false
+
+# Handle static assets and CSS
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/_next/*"
+  to = "/_next/:splat"
+  status = 200
