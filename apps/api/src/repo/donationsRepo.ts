@@ -144,14 +144,12 @@ export class DonationRepository {
 
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
-                let columnField = "gc." + filter.columnField
+                let columnField = "t." + filter.columnField
                 if (filter.columnField === "recipient_name") {
                     columnField = "ru.name"
                 } else if (filter.columnField === "assignee_name") {
                     columnField = "au.name"
-                } else if (filter.columnField === "sapling_id") {
-                    columnField = "t.sapling_id"
-                }
+                } 
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }

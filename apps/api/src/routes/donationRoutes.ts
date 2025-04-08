@@ -683,5 +683,66 @@ routes.post('/trees/get', donations.getDonationTrees)
  */
 routes.get('/tags', donations.getDonationTags);
 
+/**
+ * @swagger
+ * /donations/emails/send:
+ *   post:
+ *     summary: Send email for a donation
+ *     description: Sends email notifications for a donation with optional test emails and CC recipients.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for sending donation email
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             test_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["test@example.com"]
+ *             sponsor_cc_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["cc@example.com"]
+ *             event_type:
+ *               type: string
+ *               example: "default"
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Donation ID is required"
+ *       404:
+ *         description: Not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Donation not found"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Internal server error"
+ */
+routes.post('/emails/send', donations.sendEmailForDonation);
 
 export default routes;
