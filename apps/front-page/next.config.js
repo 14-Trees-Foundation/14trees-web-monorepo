@@ -37,7 +37,6 @@ module.exports = {
   },
   // Disable CSS optimization and hashing
   optimizeFonts: false,
-  optimizeImages: false,
   swcMinify: false,
   experimental: {
     optimizeCss: false,
