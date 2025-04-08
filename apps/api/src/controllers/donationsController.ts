@@ -4,9 +4,9 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
 import { DonationService } from "../facade/donationService";
-import { User } from "../models/user";
 import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
+import { SortOrder } from "../models/common";
 
 /*
     Model - Donation
@@ -16,9 +16,10 @@ import { DonationUserRepository } from "../repo/donationUsersRepo";
 export const getDonations = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const filters: FilterItem[] = req.body?.filters;
+    const orderBy: SortOrder[] = req.body?.order_by;
 
     try {
-        let result = await DonationRepository.getDonations(offset, limit, filters);
+        let result = await DonationRepository.getDonations(offset, limit, filters, orderBy);
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonations", error)
@@ -582,6 +583,27 @@ export const updateDonationUser = async (req: Request, res: Response) => {
         return res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again after some time!',
+        });
+    }
+}
+
+export const deleteDonationUser = async (req: Request, res: Response) => {
+    const { donation_user_id } = req.params;
+    const donationUserId = parseInt(donation_user_id);
+    if (isNaN(donationUserId)) {
+        return res.status(status.bad).send({
+            message: "Invalid donation user id"
+        })
+    }
+
+    try {
+        await DonationService.deleteDonationUser(donationUserId);
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::deleteDonationUser", error)
+        return res.status(status.error).json({
+            status: status.error,
+            message: error.message,
         });
     }
 }
