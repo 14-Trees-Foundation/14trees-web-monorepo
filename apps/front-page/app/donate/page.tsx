@@ -55,7 +55,7 @@ export default function DonatePage() {
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [razorpayPaymentId, setRazorpayPaymentId] = useState<string | null>(null);
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     fullName: "",
@@ -406,11 +406,10 @@ export default function DonatePage() {
 
       return true;
     });
-    const dedicatedNamesValid = validateDedicatedNames();
+    const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
+    const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
 
     if (!mainFormValid || !dedicatedNamesValid) {
-      console.group("Validation Breakdown");
-      console.groupEnd();
       alert("Please fix the errors in the form before submitting");
       setIsLoading(false);
       setIsSubmitting(false);
@@ -443,15 +442,14 @@ export default function DonatePage() {
         trees_count: pledgeType === "trees" ? parseInt(formData.numberOfTrees) : null,
         pledged_area_acres: pledgeType === "acres" ? parseFloat(formData.pledgedArea) : null,
         payment_id: razorpayPaymentId,
-        contribution_options: "CSR",
+        contribution_options: [],
         comments: formData.comments,
-        users: dedicatedNames.map(user => ({
+        users: users.map(user => ({
           ...user,
           recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
           assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
         })),
       };
-      console.log("Final Payload:", JSON.stringify(donationRequest, null, 2));
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
         method: 'POST',
@@ -512,6 +510,10 @@ export default function DonatePage() {
 
   // Rest of your existing functions (unchanged)
   const handleAddName = () => {
+    // check if the last name is empty
+    if (dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "") {
+      return;
+    }
     setDedicatedNames([...dedicatedNames, { recipient_name: "", recipient_email: "", recipient_phone: "", assignee_name: "", assignee_email: "", assignee_phone: "", relation: "", tree_count: 1 }]);
   };
 
@@ -617,7 +619,8 @@ export default function DonatePage() {
         throw new Error(errorData.error || "Payment failed");
       }
 
-      const { orderId } = await response.json();
+      const { order_id, id } = await response.json();
+      setRazorpayPaymentId(id);
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -625,8 +628,9 @@ export default function DonatePage() {
         currency: 'INR',
         name: "14 Trees Foundation",
         description: `Donation for ${formData.numberOfTrees} trees`,
-        order_id: orderId,
+        order_id: order_id,
         handler: async (response: any) => {
+          console.log("Razorpay response:", response);
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
             return;
@@ -646,7 +650,6 @@ export default function DonatePage() {
             alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
-            alert("Payment verification failed");
           }
         },
         prefill: {
@@ -690,26 +693,146 @@ export default function DonatePage() {
   };
 
   // Add this new component before your return statement
-  const SuccessDialog = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full">
-        <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
-        <p className="mb-2">Your donation request has been processed successfully.</p>
-        {donationId && (
-          <p className="mb-2">
-            <strong>Donation ID:</strong> {donationId}
-          </p>
-        )}
-        <p className="mb-4">You will receive an acknowledgment email shortly.</p>
-        <button
-          onClick={() => setShowSuccessDialog(false)}
-          className="bg-green-600 text-white px-4 py-2 rounded-md w-full"
-        >
-          Close
-        </button>
+  const SuccessDialog = () => {
+    const [additionalInvolvement, setAdditionalInvolvement] = useState<string[]>([]);
+    const [comments, setComments] = useState("");
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateSuccess, setUpdateSuccess] = useState(false);
+    const [updateError, setUpdateError] = useState<string | null>(null);
+
+    const involvementOptions = [
+      { display: "Plan a visit to the project site and plant trees by my own hands", value: "Planning visit" },
+      { display: "Explore possibility of CSR contribution through my company or my employer", value: "CSR" },
+      { display: "Volunteer my time, energy and expertise to grow this initiative further", value: "Volunteer" },
+      { display: "Share the mission of 'Project 14 trees' with my friends and family", value: "Share" }
+    ];
+
+    const handleInvolvementChange = (value: string) => {
+      setAdditionalInvolvement(prev => 
+        prev.includes(value) 
+          ? prev.filter(item => item !== value)
+          : [...prev, value]
+      );
+    };
+
+    const handleUpdate = async () => {
+      if (!donationId) return;
+      
+      setIsUpdating(true);
+      setUpdateError(null);
+      
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/${donationId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            donation_id: donationId,
+            updateFields: ['contribution_options', 'comments'],
+            data: {
+              contribution_options: additionalInvolvement,
+              comments: comments
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update donation details');
+        }
+
+        setUpdateSuccess(true);
+      } catch (err: any) {
+        setUpdateError(err.message);
+      } finally {
+        setIsUpdating(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
+          <p className="mb-2">Your donation request has been processed successfully.</p>
+          {donationId && (
+            <p className="mb-2">
+              <strong>Donation ID:</strong> {donationId}
+            </p>
+          )}
+          <p className="mb-4">You will receive an acknowledgment email shortly.</p>
+
+          {!updateSuccess ? (
+            <div className="space-y-6">
+              {/* Additional Involvement Section */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold">Additional Involvement</h4>
+                <p className="text-sm text-gray-600">Besides making a monetary contribution, I'd also like to:</p>
+                <div className="space-y-2">
+                  {involvementOptions.map((option) => (
+                    <label key={option.value} className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={additionalInvolvement.includes(option.value)}
+                        onChange={() => handleInvolvementChange(option.value)}
+                        className="h-5 w-5"
+                      />
+                      <span className="text-sm">{option.display}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Additional Comments Section */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold">Additional Information</h4>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Comments, feedback, ideas for improvement
+                  </label>
+                  <textarea
+                    value={comments}
+                    onChange={(e) => setComments(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                    rows={4}
+                  />
+                </div>
+              </div>
+
+              {updateError && (
+                <p className="text-red-600 text-sm">{updateError}</p>
+              )}
+
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowSuccessDialog(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={handleUpdate}
+                  disabled={isUpdating}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                >
+                  {isUpdating ? 'Updating...' : 'Submit Additional Information'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-green-600 mb-4">Thank you for providing additional information!</p>
+              <button
+                onClick={() => setShowSuccessDialog(false)}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              >
+                Close
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="overflow-hidden bg-white">
@@ -1007,6 +1130,7 @@ export default function DonatePage() {
                           type="button"
                           onClick={handleAddName}
                           className="flex items-center text-green-700 hover:text-green-900 mt-2"
+                          disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === ""}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -1182,7 +1306,6 @@ export default function DonatePage() {
                               handleNameChange(0, "assignee_name", e.target.value);
                             }
                           }}
-                          required
                         />
                         {errors['dedicatedName-0'] && (
                           <p className="mt-1 text-sm text-red-600">{errors['dedicatedName-0']}</p>
@@ -1296,29 +1419,9 @@ export default function DonatePage() {
                   </div>
                 )}
 
-                {/* 5. Additional Involvement */}
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Additional Involvement</h2>
-                  <p className="font-medium">Besides making a monetary contribution, I&apos;d also like to</p>
-
-                  <div className="space-y-3">
-                    {[
-                      "Plan a visit to the project site and plant trees by my own hands",
-                      "Explore possibility of CSR contribution through my company or my employer",
-                      "Volunteer my time, energy and expertise to grow this initiative further",
-                      "Share the mission of 'Project 14 trees' with my friends and family"
-                    ].map((option) => (
-                      <label key={option} className="flex items-center space-x-3">
-                        <input type="checkbox" className="h-5 w-5" />
-                        <span>{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
                 {/* 6. Tax Information */}
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Tax Benifits</h2>
+                  <h2 className="text-2xl font-semibold">Tax Benefits</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     {taxStatus === "indian" && (
                       <div>
@@ -1471,23 +1574,6 @@ export default function DonatePage() {
                       />
                     </div>
                   )}
-                </div>
-
-                {/* 8. Additional Comments */}
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Additional Information</h2>
-                  <div>
-                    <label className="mb-2 block text-lg font-light">
-                      Comments, feedback, ideas for improvement
-                    </label>
-                    <textarea
-                      name="comments"
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                      rows={4}
-                      value={formData.comments}
-                      onChange={handleInputChange}
-                    />
-                  </div>
                 </div>
 
                 <div className="pt-6">
