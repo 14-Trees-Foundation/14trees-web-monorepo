@@ -1,54 +1,22 @@
-[build]
-  base = "/"
-  command = "npm install && npx turbo build --filter=front-page..."
-  publish = "apps/front-page/.next"
-
-[build.environment]
-  NEXT_TELEMETRY_DISABLED = "1"
-  NODE_VERSION = "18"
-  TURBO_REMOTE_ONLY = "true"
-  TURBO_FORCE = "true"
-
 [[plugins]]
-  package = "@netlify/plugin-nextjs"
+package = "@netlify/plugin-nextjs"
 
-# Add cache control headers for HTML files
+# Force immediate cache revalidation for all routes
 [[headers]]
   for = "/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
-# Add cache control headers for Next.js static assets
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
-# Add cache control headers for Next.js data
-[[headers]]
-  for = "/_next/data/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-
-# Disable asset optimization and caching
-[build.processing]
-  skip_processing = true
-
-[build.processing.html]
-  pretty_urls = false
-
-[build.processing.css]
-  bundle = false
-  minify = false
-
-[build.processing.js]
-  bundle = false
-  minify = false
-
-[build.processing.images]
-  compress = false
-
-# Handle Next.js static assets
+# Essential Next.js routes
 [[redirects]]
   from = "/_next/static/*"
   to = "/_next/static/:splat"
@@ -64,17 +32,7 @@
   to = "/_next/data/:splat"
   status = 200
 
-[[redirects]]
-  from = "/_next/media/*"
-  to = "/_next/media/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/_next/*"
-  to = "/_next/:splat"
-  status = 200
-
-# Handle fallback for all other routes
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
