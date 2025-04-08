@@ -31,7 +31,8 @@ interface CreateDonationRequest {
     category: LandCategory;
     grove: string;
     trees_count: number,
-    continution_options: ContributionOption,
+    continution_options: ContributionOption[],
+    comments: string | null,
 }
 
 export class DonationService {
@@ -39,7 +40,7 @@ export class DonationService {
     public static async createDonation(data: CreateDonationRequest): Promise<Donation> {
         const {
             sponsor_name, sponsor_email, sponsor_phone, grove,
-            trees_count, category, payment_id, continution_options,
+            trees_count, category, payment_id, continution_options, comments
         } = data;
 
         const sponsorUser = await UserRepository.upsertUser({
@@ -59,6 +60,7 @@ export class DonationService {
             payment_id: payment_id,
             created_by: sponsorUser.id, // For now setting created by = sponsor
             contribution_options: continution_options,
+            comments: comments,
         }
 
         const donation = await DonationRepository.createdDonation(
@@ -589,7 +591,7 @@ export class DonationService {
                 grove: donation.grove,
                 grove_type_other: donation.grove_type_other,
                 trees_count: donation.trees_count,
-                contribution_options: donation.contribution_options,
+                contribution_options: donation.contribution_options?.join(', ') || '',
                 names_for_plantation: donation.names_for_plantation,
                 comments: donation.comments,
                 created_at: new Date(donation.created_at).toLocaleDateString(),
