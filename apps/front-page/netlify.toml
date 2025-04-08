@@ -12,6 +12,12 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Add cache control headers for HTML files
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Add cache control headers for Next.js static assets
 [[headers]]
   for = "/_next/static/*"
