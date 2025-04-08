@@ -251,6 +251,12 @@ export const combineUsers = async (req: Request, res: Response) => {
     const giftCardsAssignedTo = { assigned_to: primary_user, updated_at: new Date() };
     await GiftCardsRepository.updateGiftCards(giftCardsAssignedTo, { assigned_to: secondary_user });
 
+    const giftRequesRecipients = { recipient: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftRequestUsers(giftRequesRecipients, { recipient: secondary_user });
+
+    const giftRequestsAssignee = { assignee: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftRequestUsers(giftRequestsAssignee, { assignee: secondary_user });
+
     // group users
     await UserGroupRepository.changeUser(primary_user, secondary_user);
 
