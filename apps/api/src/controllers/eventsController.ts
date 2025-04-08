@@ -314,36 +314,43 @@ export const addEvent = async (req: Request, res: Response) => {
 }
 
 export const getEvents = async (req: Request, res: Response) => {
-  try {
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const filters: FilterItem[] = req.body.filters || [];
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const filters: FilterItem[] = req.body?.filters;
 
-    const result = await EventRepository.getEvents(offset, limit, filters);
+  try {
+    let result = await EventRepository.getEvents(offset, limit, filters);
     res.status(status.success).send(result);
   } catch (error: any) {
-    res.status(status.error).send({ error: error.message });
+    console.log("[ERROR]", "EventsController::getEvents", error)
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
   }
 };
 
 export const deleteEvent = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    await EventRepository.deleteEvent(id);
-    res.status(status.success).send({ message: "Event deleted successfully" });
+    await EventRepository.deleteEvent(req.params.id);
+    res.status(status.success).json({
+      message: "Event deleted successfully",
+    });
   } catch (error: any) {
-    res.status(status.error).send({ error: error.message });
+    res.status(status.bad).send({ error: error.message });
   }
 };
 
 export const updateEvent = async (req: Request, res: Response) => {
   try {
-    const eventData = { ...req.body, id: req.params.id };
-    const event = await EventRepository.updateEvent(eventData);
-    res.status(status.success).send(event);
+    await EventRepository.updateEvent(req.body);
+    res.status(status.success).json({
+      message: "Event updated successfully"
+    })
+
   } catch (error: any) {
-    res.status(status.error).send({ error: error.message });
+    res.status(status.bad).send({ error: error.message });
   }
-};
+}
 
 export const addCorpEvent = async (req: Request, res: Response) => {
   const fields = req.body;
@@ -394,15 +401,5 @@ export const deleteCorpEvent = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
-  }
-};
-
-export const createEvent = async (req: Request, res: Response) => {
-  try {
-    const eventData: EventCreationAttributes = req.body;
-    const event = await EventRepository.addEvent(eventData);
-    res.status(status.success).send(event);
-  } catch (error: any) {
-    res.status(status.error).send({ error: error.message });
   }
 };
