@@ -18,7 +18,7 @@ interface DonationAttributes {
   grove: string;
   grove_type_other: string | null;
   trees_count: number;
-  contribution_options: ContributionOption | null;
+  contribution_options: ContributionOption[] | null;
   names_for_plantation: string | null;
   comments: string | null;
   created_by: number;
@@ -80,10 +80,10 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   trees_count!: number;
 
   @Column({ 
-    type: DataType.TEXT,
+    type: DataType.ARRAY(DataType.STRING),
     allowNull: false
   })
-  contribution_options!: ContributionOption | null;
+  contribution_options!: ContributionOption[] | null;
 
   @Column({ 
     type: DataType.STRING,
