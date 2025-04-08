@@ -1448,7 +1448,7 @@ export default function DonatePage() {
                       </div>
                     )}
                     <div className="space-y-3">
-                      <label className="block text-lg font-light mb-2">Whould you like to availe tax benifits?</label>
+                      <label className="block text-lg font-light mb-2">Whould you like to availe tax benefits?</label>
                       {[
                         { value: "indian", label: "Indian citizen (80G benefit)" },
                         { value: "foreign", label: "Foreign donor (501(c) eligible)" }
