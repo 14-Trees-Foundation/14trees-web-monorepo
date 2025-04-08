@@ -35,6 +35,13 @@ module.exports = {
   env: {
     NEXT_PUBLIC_RAZORPAY_KEY: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
   },
+  // Disable CSS optimization and hashing
+  optimizeFonts: false,
+  optimizeImages: false,
+  swcMinify: false,
+  experimental: {
+    optimizeCss: false,
+  },
   redirects: async () => {
     return [
       {
@@ -60,6 +67,16 @@ module.exports = {
   // canvas false
   webpack: (config) => {
     config.resolve.alias.canvas = false;
+    // Disable CSS hashing
+    config.module.rules.forEach((rule) => {
+      if (rule.oneOf) {
+        rule.oneOf.forEach((one) => {
+          if (one.sideEffects === false && `${one.test}`.includes('css')) {
+            one.sideEffects = true;
+          }
+        });
+      }
+    });
     return config;
   },
 };
