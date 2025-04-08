@@ -12,6 +12,18 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Add cache control headers for Next.js static assets
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Add cache control headers for Next.js data
+[[headers]]
+  for = "/_next/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Disable asset optimization and caching
 [build.processing]
   skip_processing = true
