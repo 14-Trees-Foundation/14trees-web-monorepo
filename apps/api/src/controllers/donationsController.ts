@@ -115,6 +115,7 @@ export const createDonation = async (req: Request, res: Response) => {
         category,
         grove,
         continution_options: contribution_options,
+        comments,
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
