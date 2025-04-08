@@ -766,7 +766,7 @@ export default function DonatePage() {
               {/* Additional Involvement Section */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold">Additional Involvement</h4>
-                <p className="text-sm text-gray-600">Besides making a monetary contribution, I'd also like to:</p>
+                <p className="text-sm text-gray-600">Besides making a monetary contribution, I&apos;d also like to:</p>
                 <div className="space-y-2">
                   {involvementOptions.map((option) => (
                     <label key={option.value} className="flex items-center space-x-3">
