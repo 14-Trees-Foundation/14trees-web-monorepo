@@ -30,13 +30,35 @@
 [build.processing.images]
   compress = false
 
-# Handle static assets and CSS
+# Handle Next.js static assets
 [[redirects]]
   from = "/_next/static/*"
   to = "/_next/static/:splat"
   status = 200
 
 [[redirects]]
+  from = "/_next/image*"
+  to = "/_next/image:splat"
+  status = 200
+
+[[redirects]]
+  from = "/_next/data/*"
+  to = "/_next/data/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/_next/media/*"
+  to = "/_next/media/:splat"
+  status = 200
+
+[[redirects]]
   from = "/_next/*"
   to = "/_next/:splat"
   status = 200
+
+# Handle fallback for all other routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
