@@ -149,6 +149,8 @@ export class DonationRepository {
                     columnField = "ru.name"
                 } else if (filter.columnField === "assignee_name") {
                     columnField = "au.name"
+                } else if (filter.columnField === "plant_type") {
+                    columnField = "pt.name"
                 }
                 
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
@@ -182,6 +184,7 @@ export class DonationRepository {
             FROM "14trees_2".trees t
             LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
             LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id    
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
