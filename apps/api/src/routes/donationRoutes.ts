@@ -474,7 +474,7 @@ routes.post('/trees/reserve', donations.reserveTreesForDonation)
  *               type: string
  *               example: "Something went wrong. Please try again after some time!"
  */
-routes.post('/trees/unreserve', donations.reserveTreesForDonation)
+routes.post('/trees/unreserve', donations.unreserveTreesForDonation)
 
 
 
@@ -582,7 +582,7 @@ routes.post('/trees/assign', donations.assignTrees)
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.post('/trees/unassign', donations.assignTrees)
+routes.post('/trees/unassign', donations.unassignTrees)
 
 
 /**

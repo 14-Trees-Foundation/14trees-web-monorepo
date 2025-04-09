@@ -389,6 +389,18 @@ export class DonationService {
         await this.unassignTreesForTreeIds(treeIds);
     }
 
+    public static async unassignTreesForDonationIdAndTreeIds(donation_id: number, treeIds: number[]) {
+        const treesCount = await TreeRepository.treesCount({
+            donation_id: donation_id,
+            id: { [Op.in]: treeIds }
+        })
+
+        if (treesCount !== treeIds.length)
+            throw new Error("Some trees are not part of this donation request.")
+
+        await this.unassignTreesForTreeIds(treeIds);
+    }
+
     /**
      * Donation Users
      */

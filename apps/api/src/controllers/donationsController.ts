@@ -424,8 +424,8 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
 
     if (!auto_reserve && (!tree_ids || tree_ids.length === 0)) 
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
-
-    if (!plots || plots.length === 0)
+    
+    if (auto_reserve && (!plots || plots.length === 0))
         return res.status(status.bad).send({ message: "Plese provided plots to reserve trees from." })
 
     try {
@@ -456,7 +456,6 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
 
     if (!unreserve_all && (!tree_ids || tree_ids.length === 0)) 
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
-
     try {
         if (unreserve_all) {
             await DonationService.unreserveAllTrees(donation_id);
@@ -514,13 +513,22 @@ export const unassignTrees = async (req: Request, res: Response) => {
 
     const {
         donation_id,
+        unassign_all,
+        tree_ids
     } = req.body;
 
     if (!donation_id)
         return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
 
+    if (!unassign_all && (!tree_ids || tree_ids.length === 0))
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
     try {
-        await DonationService.unassignTrees(donation_id);
+        if (!unassign_all) {
+            await DonationService.unassignTreesForDonationIdAndTreeIds(donation_id, tree_ids);
+        } else {
+            await DonationService.unassignTrees(donation_id);
+        }
         return res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);

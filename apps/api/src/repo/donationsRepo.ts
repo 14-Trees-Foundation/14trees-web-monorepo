@@ -144,14 +144,15 @@ export class DonationRepository {
 
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
-                let columnField = "gc." + filter.columnField
+                let columnField = "t." + filter.columnField
                 if (filter.columnField === "recipient_name") {
                     columnField = "ru.name"
                 } else if (filter.columnField === "assignee_name") {
                     columnField = "au.name"
-                } else if (filter.columnField === "sapling_id") {
-                    columnField = "t.sapling_id"
+                } else if (filter.columnField === "plant_type") {
+                    columnField = "pt.name"
                 }
+                
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
@@ -183,6 +184,7 @@ export class DonationRepository {
             FROM "14trees_2".trees t
             LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
             LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id    
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
