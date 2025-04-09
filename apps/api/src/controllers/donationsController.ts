@@ -115,6 +115,7 @@ export const createDonation = async (req: Request, res: Response) => {
         category,
         grove,
         continution_options: contribution_options,
+        comments,
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
@@ -512,13 +513,22 @@ export const unassignTrees = async (req: Request, res: Response) => {
 
     const {
         donation_id,
+        unassign_all,
+        tree_ids
     } = req.body;
 
     if (!donation_id)
         return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
 
+    if (!unassign_all && (!tree_ids || tree_ids.length === 0))
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
     try {
-        await DonationService.unassignTrees(donation_id);
+        if (!unassign_all) {
+            await DonationService.unassignTreesForDonationIdAndTreeIds(donation_id, tree_ids);
+        } else {
+            await DonationService.unassignTrees(donation_id);
+        }
         return res.status(status.success).send();
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);

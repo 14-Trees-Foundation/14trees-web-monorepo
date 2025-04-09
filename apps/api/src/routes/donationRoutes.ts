@@ -582,7 +582,7 @@ routes.post('/trees/assign', donations.assignTrees)
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.post('/trees/unassign', donations.assignTrees)
+routes.post('/trees/unassign', donations.unassignTrees)
 
 
 /**
