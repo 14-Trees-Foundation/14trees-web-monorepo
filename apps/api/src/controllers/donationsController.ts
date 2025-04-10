@@ -1,4 +1,4 @@
-import { status } from "../helpers/status";
+import { status } from "../helpers/status"; 
 import { DonationRepository } from "../repo/donationsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
@@ -7,6 +7,14 @@ import { DonationService } from "../facade/donationService";
 import { UserRepository } from "../repo/userRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { SortOrder } from "../models/common";
+import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
+import { sendDashboardMail } from "../services/gmail/gmail";
+import { TemplateType } from "../models/email_template";
+import { Donation } from '../models/donation';
+import { Tree } from '../models/tree';
+import { User } from '../models/user';
+import { WhereOptions } from 'sequelize';
+import { EmailTemplate } from '../models/email_template';
 
 /*
     Model - Donation
@@ -631,3 +639,238 @@ export const getDonationTags = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const sendEmailForDonation = async (req: Request, res: Response) => {
+    const { 
+        donation_id, 
+        test_mails, 
+        sponsor_cc_mails,
+        recipient_cc_mails,
+        assignee_cc_mails, 
+        event_type = 'default',  
+        email_sponsor = true, 
+        email_recipient = false,
+        email_assignee = false
+    } = req.body;
+
+    if (!donation_id) {
+        return res.status(400).json({ error: 'Donation ID is required' });
+    }
+
+    try {
+        // Get donation details
+        const donation = await DonationRepository.getDonation(donation_id);
+        if (!donation) {
+            return res.status(404).json({ error: 'Donation not found' });
+        }
+
+        // Get user details
+        const userResult = await UserRepository.getUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
+        ]);
+        
+        if (!userResult?.results?.length) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const user = userResult.results[0];
+
+        // Get trees associated with the donation
+        const trees = await DonationRepository.getDonationTrees(0, -1, [
+            { columnField: 'donation_id', operatorValue: 'equals', value: donation_id }
+        ]);
+
+        if (!trees?.results?.length) {
+            return res.status(404).json({ error: 'No trees found for this donation' });
+        }
+
+        // Prepare tree data for email
+        const treeData = trees.results.map(tree => ({
+            sapling_id: tree.sapling_id,
+            dashboard_link: `https://dashboard.14trees.org/profile/${tree.sapling_id}`,
+            planted_via: (tree as any).planted_via || '14 Trees',
+            plant_type: (tree as any).plant_type || '',
+            scientific_name: (tree as any).scientific_name || '',
+            card_image_url: (tree as any).card_image_url || '',
+            event_name: (tree as any).event_name || '',
+            assigned_to_name: (tree as any).assignee_name || 'Tree Planter', // Matches template
+            assignee_name: (tree as any).assignee_name || '', // Keep for backward compatibility
+            assignee_email: (tree as any).assignee_email || '',
+            recipient_email: (tree as any).recipient_email || '',
+            recipient_name: (tree as any).recipient_name || (tree as any).assignee_name || 'Recipient',
+        }));
+
+        // Common email data
+        const commonEmailData = {
+            trees: treeData,
+            count: treeData.length,
+            donation_id: donation.id,
+            grove: donation.grove,
+            category: donation.category,
+            contribution_options: donation.contribution_options,
+            names_for_plantation: donation.names_for_plantation,
+            comments: donation.comments,
+            event_name: (donation as any).event_name || '',
+            event_type: event_type
+        };
+
+        // Initialize tracking variables
+        let recipientsMap: Map<string, typeof treeData> | null = null;
+        let assigneesMap: Map<string, typeof treeData> | null = null;
+        let sponsorEmailSuccess = false;
+
+        // Send email to sponsor if enabled
+        if (email_sponsor) {
+            const sponsorEmailData = {
+                ...commonEmailData,
+                user_name: user.name,
+                name: user.name,
+                email: user.email
+            };
+
+            const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+            const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({ 
+                event_type, 
+                template_type: sponsorTemplateType 
+            });
+
+            if (!sponsorTemplates?.length) {
+                return res.status(404).json({ error: 'Sponsor email template not found' });
+            }
+
+            const statusMessage = await sendDashboardMail(
+                sponsorTemplates[0].template_name,
+                sponsorEmailData,
+                test_mails || [user.email],
+                sponsor_cc_mails || []
+            );
+
+            if (statusMessage) {
+                return res.status(500).json({ error: `Failed to send sponsor email: ${statusMessage}` });
+            }
+            sponsorEmailSuccess = true;
+        }
+
+        // Send email to recipient if enabled
+        if (email_recipient) {
+            recipientsMap = new Map<string, typeof treeData>();
+            
+            treeData.forEach(tree => {
+                if (tree.recipient_email) {
+                    if (!recipientsMap!.has(tree.recipient_email)) {
+                        recipientsMap!.set(tree.recipient_email, []);
+                    }
+                    recipientsMap!.get(tree.recipient_email)?.push(tree);
+                }
+            });
+
+            const recipientTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+            const recipientTemplates = await EmailTemplateRepository.getEmailTemplates({
+                event_type,
+                template_type: recipientTemplateType
+            });
+
+            if (!recipientTemplates?.length) {
+                return res.status(404).json({ error: 'Recipient email template not found' });
+            }
+
+            // Send to each recipient
+            for (const [recipientEmail, recipientTrees] of recipientsMap) {
+                const recipientEmailData = {
+                    ...commonEmailData,
+                    user_name: recipientTrees[0].recipient_name,
+                    assigned_to_name: recipientTrees[0].assignee_name,
+                    email: recipientEmail,
+                    trees: recipientTrees,
+                    count: recipientTrees.length
+                };
+
+                const statusMessage = await sendDashboardMail(
+                    recipientTemplates[0].template_name,
+                    recipientEmailData,
+                    test_mails || [recipientEmail],
+                    recipient_cc_mails || []
+                );
+
+                if (statusMessage) {
+                    return res.status(500).json({ 
+                        error: `Failed to send recipient email to ${recipientEmail}: ${statusMessage}` 
+                    });
+                }
+            }
+        }
+
+        // Send email to assignee if enabled
+        if (email_assignee) {
+            assigneesMap = new Map<string, typeof treeData>();
+            
+            treeData.forEach(tree => {
+                if (tree.assignee_email) {
+                    if (!assigneesMap!.has(tree.assignee_email)) {
+                        assigneesMap!.set(tree.assignee_email, []);
+                    }
+                    assigneesMap!.get(tree.assignee_email)?.push(tree);
+                }
+            });
+
+            const assigneeTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+            const assigneeTemplates = await EmailTemplateRepository.getEmailTemplates({
+                event_type,
+                template_type: assigneeTemplateType
+            });
+
+            if (!assigneeTemplates?.length) {
+                return res.status(404).json({ error: 'Assignee email template not found' });
+            }
+
+            // Send to each assignee
+            for (const [assigneeEmail, assigneeTrees] of assigneesMap) {
+                const assigneeEmailData = {
+                    ...commonEmailData,
+                    user_name: assigneeTrees[0].assignee_name,
+                    assigned_to_name: assigneeTrees[0].assignee_name,
+                    //assigned_to_name: assigneeTrees[0].assigned_to_name,
+                    email: assigneeEmail,
+                    trees: assigneeTrees,
+                    count: assigneeTrees.length
+                };
+
+                const statusMessage = await sendDashboardMail(
+                    assigneeTemplates[0].template_name,
+                    assigneeEmailData,
+                    test_mails || [assigneeEmail],
+                    assignee_cc_mails || []
+                );
+
+                if (statusMessage) {
+                    return res.status(500).json({ 
+                        error: `Failed to send assignee email to ${assigneeEmail}: ${statusMessage}` 
+                    });
+                }
+            }
+        }
+
+        return res.status(200).json({ 
+            message: 'Emails processed successfully',
+            details: {
+                sponsor_sent: email_sponsor && sponsorEmailSuccess,
+                recipient_sent: email_recipient && !!recipientsMap?.size,
+                assignee_sent: email_assignee && !!assigneesMap?.size,
+                recipient_count: email_recipient ? recipientsMap?.size || 0 : 0,
+                assignee_count: email_assignee ? assigneesMap?.size || 0 : 0
+            }
+        });
+    } catch (error) {
+        console.error('Error sending donation emails:', error);
+        console.error('Error stack:', (error as Error).stack);
+        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        return res.status(500).json({ 
+            error: 'Internal server error',
+            details: {
+                sponsor_sent: false,
+                recipient_sent: false,
+                assignee_sent: false
+            }
+        });
+    }
+};
