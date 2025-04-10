@@ -29,7 +29,7 @@ interface DedicatedName {
   assignee_email: string;
   assignee_phone: string;
   relation: string;
-  tree_count: number;
+  trees_count: number;
   image?: string;
   image_url?: string;
   [key: string]: string | number | undefined;
@@ -50,12 +50,13 @@ export default function DonatePage() {
     assignee_email: "",
     assignee_phone: "",
     relation: "",
-    tree_count: 1
+    trees_count: 1
   }]);
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [razorpayPaymentId, setRazorpayPaymentId] = useState<number | null>(null);
+  const [rpPaymentSuccess, setRpPaymentSuccess] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     fullName: "",
@@ -225,6 +226,15 @@ export default function DonatePage() {
     let isValid = true;
     const newErrors: Record<string, string> = {};
 
+    // Calculate total trees count
+    const totalTrees = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 1), 0);
+    
+    // Check if total trees exceed the number of trees being donated
+    if (formData.numberOfTrees && totalTrees > Number(formData.numberOfTrees)) {
+      newErrors["totalTrees"] = `Total trees (${totalTrees}) cannot exceed the number of trees you're donating (${formData.numberOfTrees})`;
+      isValid = false;
+    }
+
     dedicatedNames.forEach((name, index) => {
       if (!name.recipient_name.trim()) {
         newErrors[`dedicatedName-${index}`] = "Name is required";
@@ -276,7 +286,7 @@ export default function DonatePage() {
           'Recipient Email': 'recipient_email',
           'Recipient Communication Email (optional)': 'recipient_communication_email',
           'Recipient Phone (optional)': 'recipient_phone',
-          'Number of trees to assign': 'tree_count',
+          'Number of trees to assign': 'trees_count',
           'Assignee Name': 'assignee_name',
           'Assignee Email (optional)': 'assignee_email',
           'Assignee Communication Email (optional)': 'assignee_communication_email',
@@ -315,7 +325,7 @@ export default function DonatePage() {
           }
 
           // Validate tree count
-          if (row.tree_count && isNaN(parseInt(row.tree_count.toString()))) {
+          if (row.trees_count && isNaN(parseInt(row.trees_count.toString()))) {
             errors.push(`Row ${index + 1}: Tree count must be a number`);
           }
 
@@ -324,7 +334,7 @@ export default function DonatePage() {
             recipient_name: String(row.recipient_name),
             recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_communication_email ? String(row.recipient_communication_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
-            tree_count: row.tree_count ? parseInt(String(row.tree_count)) : 1,
+            trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
             assignee_name: row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
             assignee_email: row.assignee_email ? String(row.assignee_email) : row.assignee_communication_email ? String(row.assignee_communication_email) : row.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
@@ -487,7 +497,7 @@ export default function DonatePage() {
           assignee_email: "",
           assignee_phone: "",
           relation: "",
-          tree_count: 1
+          trees_count: 1
         }
       ]);
       setTreeLocation("");
@@ -514,7 +524,7 @@ export default function DonatePage() {
     if (dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "") {
       return;
     }
-    setDedicatedNames([...dedicatedNames, { recipient_name: "", recipient_email: "", recipient_phone: "", assignee_name: "", assignee_email: "", assignee_phone: "", relation: "", tree_count: 1 }]);
+    setDedicatedNames([...dedicatedNames, { recipient_name: "", recipient_email: "", recipient_phone: "", assignee_name: "", assignee_email: "", assignee_phone: "", relation: "", trees_count: 1 }]);
   };
 
   const handleRemoveName = (index: number) => {
@@ -551,10 +561,30 @@ export default function DonatePage() {
         ? "Please enter a valid phone number"
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedPhone-${index}`]: error }));
-    } else if (field === "tree_count" && value) {
+    } else if (field === "trees_count" && value) {
+      // Validate that the value is a valid number
       const error = isNaN(Number(value))
         ? "Please enter a valid number"
         : "";
+      
+      // Check if the sum of trees_count exceeds formData.numberOfTrees
+      if (!error && formData.numberOfTrees) {
+        const totalTrees = dedicatedNames.reduce((sum, name, i) => {
+          if (i === index) {
+            return sum + Number(value);
+          }
+          return sum + (name.trees_count || 0);
+        }, 0);
+        
+        if (totalTrees > Number(formData.numberOfTrees)) {
+          setErrors(prev => ({ 
+            ...prev, 
+            [`dedicatedTreeCount-${index}`]: `Total trees (${totalTrees}) cannot exceed the number of trees you're donating (${formData.numberOfTrees})` 
+          }));
+          return;
+        }
+      }
+      
       setErrors(prev => ({ ...prev, [`dedicatedTreeCount-${index}`]: error }));
     } else if (field === "assignee_name" && value) {
       const error = !validationPatterns.name.test(value.toString())
@@ -630,7 +660,7 @@ export default function DonatePage() {
         description: `Donation for ${formData.numberOfTrees} trees`,
         order_id: order_id,
         handler: async (response: any) => {
-          console.log("Razorpay response:", response);
+          setRpPaymentSuccess(true);
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
             return;
@@ -944,6 +974,7 @@ export default function DonatePage() {
                           type="radio"
                           name="treeLocation"
                           value={option.value}
+                          disabled={rpPaymentSuccess}
                           className="mt-1 h-5 w-5"
                           onChange={() => setTreeLocation(option.value)}
                           checked={treeLocation === option.value}
@@ -1009,6 +1040,7 @@ export default function DonatePage() {
                         value="trees"
                         checked={pledgeType === "trees"}
                         onChange={() => setPledgeType("trees")}
+                        disabled={rpPaymentSuccess}
                         className="h-5 w-5"
                       />
                       <span>Trees</span>
@@ -1020,6 +1052,7 @@ export default function DonatePage() {
                         value="acres"
                         checked={pledgeType === "acres"}
                         onChange={() => setPledgeType("acres")}
+                        disabled={rpPaymentSuccess}
                         className="h-5 w-5"
                       />
                       <span>Area</span>
@@ -1038,6 +1071,7 @@ export default function DonatePage() {
                       min="1"
                       className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
                       required
+                      disabled={rpPaymentSuccess}
                       value={formData.numberOfTrees}
                       onChange={handleInputChange}
                     />
@@ -1115,6 +1149,11 @@ export default function DonatePage() {
 
                     {multipleNames && nameEntryMethod === "manual" ? (
                       <div className="space-y-4">
+                        {errors["totalTrees"] && (
+                          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                            <p className="text-red-700">{errors["totalTrees"]}</p>
+                          </div>
+                        )}
                         {dedicatedNames.map((name, index) => (
                           <UserDetailsForm
                             key={index}
@@ -1141,6 +1180,11 @@ export default function DonatePage() {
                     ) : multipleNames && nameEntryMethod === "csv" ? (
                       <div className="space-y-4 border border-gray-200 rounded-md p-4">
                         <div className="space-y-4">
+                          {errors["totalTrees"] && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                              <p className="text-red-700">{errors["totalTrees"]}</p>
+                            </div>
+                          )}
                           <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
                           <p className="text-sm text-gray-600">
                             <button
@@ -1241,7 +1285,7 @@ export default function DonatePage() {
                                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_name || '-'}</td>
                                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_email || '-'}</td>
                                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_phone || '-'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.tree_count || '1'}</td>
+                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
                                       <td className="px-4 py-2 whitespace-nowrap">
                                         {recipient.image && (
                                           typeof recipient.image === 'string' ? (
@@ -1521,7 +1565,7 @@ export default function DonatePage() {
                     <Button
                       type="button"
                       onClick={handleRazorpayPayment}
-                      disabled={isProcessing || !razorpayLoaded}
+                      disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
                       className={`bg-green-600 text-white w-full py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                     >

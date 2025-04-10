@@ -6,7 +6,7 @@ export interface UserDetailsData {
   recipient_name: string;
   recipient_email: string;
   recipient_phone: string;
-  tree_count: number;
+  trees_count: number;
   assignee_name: string;
   assignee_email: string;
   assignee_phone: string;
@@ -121,9 +121,9 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
         <UserFormField
           type="number"
           label="Trees"
-          name="tree_count"
-          value={data.tree_count}
-          onChange={(value) => onUpdate('tree_count', value)}
+          name="trees_count"
+          value={data.trees_count}
+          onChange={(value) => onUpdate('trees_count', value)}
           min={1}
         />
       </div>
