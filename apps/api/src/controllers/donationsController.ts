@@ -568,6 +568,28 @@ export const getDonationTrees = async (req: Request, res: Response) => {
     }
 }
 
+export const getDonationReservationStats = async (req: Request, res: Response) => {
+    const { donation_id } =  req.query;
+    
+    if (!donation_id || isNaN(parseInt(donation_id as string))) {
+        return res.status(status.bad).json({
+            status: status.bad,
+            message: 'Invalid donation ID'
+        });
+    }
+
+    try {
+        const stats = await DonationService.getDonationReservationStats(parseInt(donation_id as string));
+        res.status(status.success).json(stats);
+    } catch (error: any) {
+        console.log("[ERROR]", "DonationsController::getDonationReservationStats", error);
+        return res.status(status.error).json({
+            status: status.error,
+            message: error.message || 'Failed to fetch reservation stats'
+        });
+    }
+}
+
 /**
  * Donation Users
  */

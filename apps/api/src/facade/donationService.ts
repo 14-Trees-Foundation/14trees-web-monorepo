@@ -113,6 +113,29 @@ export class DonationService {
         await TreeRepository.mapTreesToUserAndGroup(donation.user_id, null, treeIds, donationId);
     }
 
+    public static async getDonationReservationStats(donationId: number): Promise<{
+        total_requested: number;
+        already_reserved: number;
+        remaining: number;
+    }> {
+        try {
+
+            const donation = await DonationRepository.getDonation(donationId);
+            const reservedCount = await TreeRepository.treesCount({
+                donation_id: donationId
+            });
+    
+            return {
+                total_requested: donation.trees_count,
+                already_reserved: reservedCount,
+                remaining: Math.max(0, donation.trees_count - reservedCount)
+            };
+        } catch (error) {
+            console.error("[ERROR] DonationService::getDonationReservationStats", error);
+            throw new Error('Failed to calculate reservation stats');
+        }
+    }
+
 
     private static async reserveTreesInPlots(
         userId: number,
@@ -144,6 +167,14 @@ export class DonationService {
         }
 
         if (finalTreeIds.length > 0) {
+            if (donation_id) {
+                const donation = await DonationRepository.getDonation(donation_id);
+                const alreadyReserved = await TreeRepository.treesCount({ donation_id });
+    
+                if (alreadyReserved + finalTreeIds.length > donation.trees_count) {
+                    throw new Error("Cannot reserve more trees than originally requested.");
+                }
+            }
             await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: finalTreeIds } });
         }
 
