@@ -5,6 +5,7 @@ import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes } from 'sequelize';
 import { Tree } from '../models/tree';
 import { SortOrder } from '../models/common';
+import TreeRepository from "../repo/treeRepo";
 export class DonationRepository {
    
     public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
@@ -68,7 +69,7 @@ export class DonationRepository {
             throw new Error('Failed to fetch donations');
         }
     }
-
+ 
     public static async getDonation(donationId: number): Promise<Donation> {
         const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
         if (donationsResp.results.length !== 1)
@@ -227,4 +228,20 @@ export class DonationRepository {
             throw new Error('Failed to fetch donation tags');
         }
     }
+    public static async getDonationReservationStats(donationId: number) {
+      try {
+        const donation = await this.getDonation(donationId);
+        const reservedCount = await TreeRepository.treesCount({
+            donation_id: donationId
+        });
+        return {
+            total_requested: donation.trees_count,
+            already_reserved: reservedCount,
+            remaining: Math.max(0, donation.trees_count - reservedCount)
+        };
+    } catch (error) {
+        console.error('[ERROR] DonationRepository::getDonationReservationStats:', error);
+        throw new Error('Failed to fetch donation reservation stats');
+    }    
+}
 }

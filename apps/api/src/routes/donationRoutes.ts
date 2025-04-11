@@ -423,6 +423,54 @@ routes.delete('/users/:donation_user_id', donations.deleteDonationUser);
 routes.post('/trees/reserve', donations.reserveTreesForDonation)
 
 
+/**
+ * @swagger
+ * /donations/trees/stats:
+ *   get:
+ *     summary: Get reservation stats for a donation
+ *     description: Fetches the reservation stats for a specific donation
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - name: donation_id
+ *         in: query            
+ *         description: ID of the donation to fetch stats for
+ *         required: true
+ *         type: integer
+ *         example: 123
+ *     responses:
+ *       200:           
+ *         description: Reservation stats fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             total_requested:
+ *               type: integer
+ *               example: 100           
+ *             already_reserved:
+ *               type: integer
+ *               example: 50
+ *             remaining:
+ *               type: integer
+ *               example: 50            
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid donation ID"     
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.get('/trees/stats', donations.getDonationReservationStats);
 
 /**
  * @swagger
@@ -640,6 +688,8 @@ routes.post('/trees/unassign', donations.unassignTrees)
  *               example: "Something went wrong. Please try again later."
  */
 routes.post('/trees/get', donations.getDonationTrees)
+
+
 
 /**
  * @swagger
