@@ -8,14 +8,19 @@ import GiftRequestHelper from "../helpers/giftRequests";
 
 export const getTransactions = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const { group_id } = req.params
-    const { search } = req.query
-    if (!group_id || isNaN(parseInt(group_id))) {
-        return res.status(status.bad).send({ message: "Invalid request. Please provide valid group id!" })
+    const { id } = req.params
+    const { search, type } = req.query
+
+    if (type !== 'group' && type !== 'user') {
+        return res.status(status.bad).send({ message: "Invalid request. Please provide valid type!" })
+    }
+
+    if (!id || isNaN(parseInt(id))) {
+        return res.status(status.bad).send({ message: `Invalid request. Please provide valid ${type} id!` })
     }
 
     try {
-        let result = await GRTransactionsRepository.getDetailsTransactions(offset, limit, parseInt(group_id), search as string);
+        let result = await GRTransactionsRepository.getDetailsTransactions(offset, limit, type, parseInt(id), search as string);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({

@@ -19,7 +19,7 @@ export class GRTransactionsRepository {
         }
     }
 
-    public static async getDetailsTransactions(offset: number, limit: number, groupId: number, search?: string): Promise<PaginatedResponse<GiftRedeemTransaction>> {
+    public static async getDetailsTransactions(offset: number, limit: number, type: 'group' | 'user', id: number, search?: string): Promise<PaginatedResponse<GiftRedeemTransaction>> {
         
         const query = `
             SELECT 
@@ -61,7 +61,7 @@ export class GRTransactionsRepository {
                     LIMIT 5
                 ) AS limited_tree_data
             ) AS tree_details ON true
-            WHERE grt.group_id = :groupId ${search ? 'AND ru.name ILIKE :search' : ''}
+            WHERE ${type === 'group' ? 'grt.group_id = :id' : 'grt.user_id = :id'} ${search ? 'AND ru.name ILIKE :search' : ''}
             GROUP BY grt.id, cu.name, ru.name, gca.gc_count, tree_details.tree_info
             ${limit > 0 ? 'OFFSET :offset LIMIT :limit;' : ';'}
         `
@@ -69,7 +69,7 @@ export class GRTransactionsRepository {
         const result: GiftRedeemTransaction[] = await sequelize.query(query, {
             type: QueryTypes.SELECT,
             replacements: {
-                groupId,
+                id,
                 limit, 
                 offset,
                 search: `%${search}%`
@@ -80,11 +80,11 @@ export class GRTransactionsRepository {
             SELECT COUNT(*)
             FROM "14trees_2".gift_redeem_transactions grt
             JOIN "14trees_2".users ru ON ru.id = grt.recipient
-            WHERE grt.group_id = :groupId ${search ? 'AND ru.name ILIKE :search' : ''}
+            WHERE ${type === 'group' ? 'grt.group_id = :id' : 'grt.user_id = :id'} ${search ? 'AND ru.name ILIKE :search' : ''}
         `
         const count: any = await sequelize.query(countQuery, {
             type: QueryTypes.SELECT,
-            replacements: { groupId, search: `%${search}%` }
+            replacements: { id, search: `%${search}%` }
         })
 
         return {

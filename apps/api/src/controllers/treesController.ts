@@ -417,14 +417,14 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
 export const getMappedGiftTrees = async (req: Request, res: Response) => {
 
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
-  const { group_id, filters } = req.body;
-  if (!group_id) {
-    res.status(status.bad).send({ message: "Invalid request! Corporate id required." });
+  const { group_id, user_id, filters } = req.body;
+  if (!group_id && !user_id) {
+    res.status(status.bad).send({ message: "Invalid request! Corporate id or user id required." });
     return;
   }
 
   try {
-    const treesData = await TreeRepository.getMappedGiftTrees(offset, limit, group_id, filters);
+    const treesData = await TreeRepository.getMappedGiftTrees(offset, limit, user_id, group_id, filters);
     res.status(status.success).send(treesData);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getMappedGiftTrees", error);
@@ -434,14 +434,14 @@ export const getMappedGiftTrees = async (req: Request, res: Response) => {
 
 export const getMappedGiftTreesAnalytics = async (req: Request, res: Response) => {
 
-  const { group_id } = req.body;
-  if (!group_id) {
-    res.status(status.bad).send({ message: "Invalid request! Corporate id required." });
+  const { group_id, user_id } = req.body;
+  if (!group_id && !user_id) {
+    res.status(status.bad).send({ message: "Invalid request! Corporate id or user id required." });
     return;
   }
 
   try {
-    const treesData = await TreeRepository.getMappedGiftTreesAnalytics(group_id);
+    const treesData = await TreeRepository.getMappedGiftTreesAnalytics(group_id, user_id);
     res.status(status.success).send(treesData);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getMappedGiftTreesAnalytics", error);
