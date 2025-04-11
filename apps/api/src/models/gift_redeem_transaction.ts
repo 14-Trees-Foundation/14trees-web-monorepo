@@ -14,6 +14,9 @@ interface GiftRedeemTransactionAttributes {
     occasion_type: string | null;
     gifted_by: string | null;
     gifted_on: Date;
+    mail_sent: boolean;
+    mail_error: string | null;
+    mail_sent_at: Date | null;
     created_at: Date;
     updated_at: Date;
 }
@@ -85,6 +88,15 @@ class GiftRedeemTransaction extends Model<GiftRedeemTransactionAttributes, GiftR
 
     @Column({ type: DataType.DATE, allowNull: false })
     gifted_on!: Date;
+
+    @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+    mail_sent!: boolean;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    mail_error!: string | null;
+
+    @Column({ type: DataType.DATE, allowNull: true })
+    mail_sent_at!: Date | null;
 
     @Column({ type: DataType.DATE, allowNull: false })
     created_at!: Date;
