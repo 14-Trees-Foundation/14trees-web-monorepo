@@ -19,7 +19,7 @@ export class GRTransactionsRepository {
         }
     }
 
-    public static async getDetailsTransactions(offset: number, limit: number, groupId: number): Promise<PaginatedResponse<GiftRedeemTransaction>> {
+    public static async getDetailsTransactions(offset: number, limit: number, groupId: number, search?: string): Promise<PaginatedResponse<GiftRedeemTransaction>> {
         
         const query = `
             SELECT 
@@ -61,7 +61,7 @@ export class GRTransactionsRepository {
                     LIMIT 5
                 ) AS limited_tree_data
             ) AS tree_details ON true
-            WHERE grt.group_id = :groupId
+            WHERE grt.group_id = :groupId ${search ? 'AND ru.name ILIKE :search' : ''}
             GROUP BY grt.id, cu.name, ru.name, gca.gc_count, tree_details.tree_info
             ${limit > 0 ? 'OFFSET :offset LIMIT :limit;' : ';'}
         `
@@ -72,16 +72,51 @@ export class GRTransactionsRepository {
                 groupId,
                 limit, 
                 offset,
+                search: `%${search}%`
             }
         })
 
-        const count = await GiftRedeemTransaction.count({ where: { group_id: groupId }});
+        const countQuery = `
+            SELECT COUNT(*)
+            FROM "14trees_2".gift_redeem_transactions grt
+            JOIN "14trees_2".users ru ON ru.id = grt.recipient
+            WHERE grt.group_id = :groupId ${search ? 'AND ru.name ILIKE :search' : ''}
+        `
+        const count: any = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT,
+            replacements: { groupId, search: `%${search}%` }
+        })
 
         return {
-            total: count,
+            total: parseInt(count[0].count),
             offset: offset,
             results: result
         }
+    }
+
+    public static async getDetailedTransactionById(transactionId: number) {
+        const query = `
+             SELECT 
+                grt.*,
+                g.name AS group_name,
+                g.logo_url AS logo_url,
+                ru.name AS recipient_name,
+                ru.email AS recipient_email
+            FROM "14trees_2".gift_redeem_transactions grt
+            JOIN "14trees_2".users ru ON ru.id = grt.recipient
+            JOIN "14trees_2".groups g ON g.id = grt.group_id
+            WHERE grt.id = :transactionId
+        `
+        const result: GiftRedeemTransaction[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements: {
+                transactionId,
+            }
+        })
+        if (result.length === 0) {
+            throw new Error("Transaction not found");
+        }
+        return result[0];
     }
 
     public static async createTransaction(data: GiftRedeemTransactionCreationAttributes): Promise<GiftRedeemTransaction> {
@@ -102,6 +137,30 @@ export class GRTransactionsRepository {
                 }
             }))
         } 
+    }
+
+    public static async updateTransactions(fields: any, whereClause: WhereOptions<GiftRedeemTransaction>) {
+        await GiftRedeemTransaction.update(fields, { where: whereClause });
+    }
+
+
+    public static async getTransactionTrees(transactionId: number) {
+        const query = `
+            SELECT t.sapling_id, pt.name AS plant_type, pt.scientific_name, gc.card_image_url
+            FROM "14trees_2".gift_redeem_transaction_cards grtc
+            JOIN "14trees_2".gift_cards gc ON gc.id = grtc.gc_id
+            JOIN "14trees_2".trees t ON t.id = gc.tree_id
+            JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            WHERE grtc.grt_id = :transactionId
+        `
+
+        const result: { sapling_id: string, plant_type: string, scientific_name: string, card_image_url: string }[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements: {
+                transactionId,
+            }
+        })
+        return result;
     }
 
 }
