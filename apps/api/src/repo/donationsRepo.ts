@@ -3,21 +3,156 @@ import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { Donation, DonationAttributes, DonationCreationAttributes } from '../models/donation'
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes } from 'sequelize';
-
+import { Tree } from '../models/tree';
+import { SortOrder } from '../models/common';
 export class DonationRepository {
+   
+    public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
+        try {
+            let whereConditions: string = "";
+            let replacements: any = {};
+    
+            if (filters && filters.length > 0) {
+                filters.forEach(filter => {
+                    let columnField = "d." + filter.columnField;
+                    if (filter.columnField === "user_name") {
+                        columnField = "u.name";
+                    }
+                    const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+                    whereConditions = whereConditions + " " + condition + " AND";
+                    replacements = { ...replacements, ...replacement };
+                });
+                whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+            }
 
-    public static async getDonations(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<Donation>> {
+            const sortOrderQuery = orderBy && orderBy.length > 0 ? orderBy.map(order => `d.${order.column} ${order.order}`).join(', ') : 'd.id DESC';
+    
+            const getQuery = `
+                SELECT 
+                    d.*,
+                    u.name as user_name,
+                    u.email as user_email,
+                    u.phone as user_phone
+                FROM "14trees_2".donations d
+                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+                ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            `;
+    
+            const countQuery = `
+                SELECT COUNT(*) 
+                FROM "14trees_2".donations d
+                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+            `;
+    
+            const [donations, donationsCount] = await Promise.all([
+                sequelize.query(getQuery, {
+                    replacements: replacements,
+                    type: QueryTypes.SELECT,
+                    model: Donation // Add this line
+                }),
+                sequelize.query(countQuery, {
+                    replacements: replacements,
+                    type: QueryTypes.SELECT
+                })
+            ]);
+    
+            return {
+                offset: offset,
+                total: parseInt((donationsCount[0] as any).count),
+                results: donations as Donation[]
+            };
+        } catch (error) {
+            console.error('[ERROR] DonationRepository::getDonations:', error);
+            throw new Error('Failed to fetch donations');
+        }
+    }
+
+    public static async getDonation(donationId: number): Promise<Donation> {
+        const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
+        if (donationsResp.results.length !== 1)
+            throw new Error("Donation request for given id not found.")
+        
+        return donationsResp.results[0];
+    }
+
+    public static async createdDonation(donationData: DonationCreationAttributes): Promise<Donation> {
+        try {
+            donationData.created_at = new Date();
+            donationData.updated_at = new Date();
+    
+            // Create donation with explicit field mapping
+            const donation = await Donation.create(donationData);
+            return donation;
+        } catch (error: any) {
+            console.error('[ERROR] DonationRepository::createdDonation:', error);
+            throw new Error(`Failed to create donation: ${error.message}`);
+        }
+    }
+
+    public static async deleteDonation(donationId: number): Promise<number> {
+        try {
+            // First check if donation exists
+            const donation = await Donation.findByPk(donationId);
+            if (!donation) {
+                throw new Error('Donation not found');
+            }
+    
+            // Delete the donation
+            const result = await Donation.destroy({
+                where: { id: donationId }
+            });
+    
+            return result;
+        } catch (error) {
+            console.error('[ERROR] DonationRepository::deleteDonation:', error);
+            throw new Error(`Failed to delete donation:`);
+        }
+    }
+
+    public static async updateDonation(donationId: number, updateData: any): Promise<Donation> {
+
+        try {
+            // Find the donation by its primary key (id)
+            const donation = await Donation.findByPk(donationId);
+            if (!donation) {
+                throw new Error('Donation not found for given id');
+            }
+
+            // Update the donation with provided data
+            const [numRowsUpdated, updatedDonations] = await Donation.update(updateData, {
+                where: { id: donationId},
+                returning: true, // Ensure Sequelize returns the updated record(s)
+            });
+
+            if (numRowsUpdated === 0) {
+                throw new Error('Failed to update donation');
+            }
+
+            return updatedDonations[0];
+        } catch (error: any) {
+            throw new Error(`Error updating donation: ${error.message}`);
+        }
+    }
+
+
+    public static async getDonationTrees(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<Tree>> {
+
         let whereConditions: string = "";
         let replacements: any = {}
 
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
-                let columnField = "d." + filter.columnField
-                if (filter.columnField === "user_name") {
-                    columnField = "u.name"
-                } else if (filter.columnField === "group_name") {
-                    columnField = "g.name"
+                let columnField = "t." + filter.columnField
+                if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name"
+                } else if (filter.columnField === "assignee_name") {
+                    columnField = "au.name"
+                } else if (filter.columnField === "plant_type") {
+                    columnField = "pt.name"
                 }
+                
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
@@ -26,79 +161,70 @@ export class DonationRepository {
         }
 
         const getQuery = `
-            SELECT d.*, 
-                u.name as user_name, u.email as user_email, u.phone as user_phone, 
-                g.name as group_name, cu.name as created_by_name, count(t.id) as booked
-            FROM "14trees_2".donations d
-            LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-            LEFT JOIN "14trees_2".users cu ON cu.id = d.created_by
-            LEFT JOIN "14trees_2".groups g ON g.id = d.group_id
-            LEFT JOIN "14trees_2".trees t ON t.donation_id = d.id
+            SELECT t.id, t.sapling_id, t.assigned_to as assignee, t.gifted_to as recipient, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
+            ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
+            au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
+            ur.relation
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            GROUP BY d.id, u.id, g.id, cu.id
-            ORDER BY d.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            ORDER BY t.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
+        const data: any[] = await sequelize.query(getQuery, {
+            type: QueryTypes.SELECT,
+            replacements
+        })
+
         const countQuery = `
-            SELECT COUNT(*) 
-            FROM "14trees_2".donations d
-            LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-            LEFT JOIN "14trees_2".groups g ON g.id = d.group_id
+            SELECT count(t.id)
+            FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id    
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
-        const donations: any[] = await sequelize.query(getQuery, {
-            replacements: replacements,
-            type: QueryTypes.SELECT
+        const countData: any[] = await sequelize.query(countQuery, {
+            type: QueryTypes.SELECT,
+            replacements
         })
-
-        const donationsCount: any = await sequelize.query(countQuery, {
-            replacements: replacements,
-            type: QueryTypes.SELECT
-        })
-        const totalResults = parseInt(donationsCount[0].count)
 
         return {
             offset: offset,
-            total: totalResults,
-            results: donations
+            total: parseInt(countData[0].count),
+            results: data
         };
     }
 
-    public static async createdDonation(donationData: DonationCreationAttributes): Promise<Donation> {
-        const new_donation = Donation.create(donationData);
-        return new_donation;
-    }
-
-    public static async deleteDonation(donationId: number): Promise<number> {
-        const result = await Donation.destroy({ where: { id: donationId } });
-        return result;
-    }
-
-    public static async updateDonation(DonationData: DonationAttributes): Promise<Donation> {
-
+    public static async getDonationTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
         try {
-            // Find the donation by its primary key (id)
-            const donation = await Donation.findByPk(DonationData.id);
+            const tags: string[] = [];
 
-            if (!donation) {
-                throw new Error('Donation not found for given id');
-            }
+            const getUniqueTagsQuery = 
+                `SELECT DISTINCT tag
+                    FROM "14trees_2".donations d,
+                    unnest(d.tags) AS tag
+                    ORDER BY tag
+                    OFFSET ${offset} LIMIT ${limit};`;
 
-            // Update the donation with provided data
-            const [numRowsUpdated, updatedDonations] = await Donation.update(DonationData, {
-                where: { id: DonationData.id }, // Specify the condition for which record(s) to update
-                returning: true, // Ensure Sequelize returns the updated record(s)
-            });
+            const countUniqueTagsQuery = 
+                `SELECT count(DISTINCT tag)
+                    FROM "14trees_2".donations d,
+                    unnest(d.tags) AS tag;`;
 
-            if (numRowsUpdated === 0) {
-                throw new Error('Failed to update donation');
-            }
+            const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
+            tagsResp.forEach(r => tags.push(r.tag));
 
-            // Sequelize returns an array when using returning: true, so we take the first element
-            return updatedDonations[0];
-        } catch (error: any) {
-            throw new Error(`Error updating donation: ${error.message}`);
+            const countResp: any[] = await sequelize.query(countUniqueTagsQuery, { type: QueryTypes.SELECT });
+            const total = parseInt(countResp[0].count);
+            return { offset: offset, total: total, results: tags };
+        } catch (error) {
+            console.error('[ERROR] DonationRepository::getDonationTags:', error);
+            throw new Error('Failed to fetch donation tags');
         }
     }
 }

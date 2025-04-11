@@ -102,6 +102,50 @@ class GiftRequestHelper {
         await runWithConcurrency(tasks, 10);
     }
 
+
+    public static async deleteGiftCardRequest(giftCardRequestId: number) {
+
+        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
+        const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
+
+        const treeIds: number[] = [];
+        cardsResp.results.forEach(card => {
+            if (card.tree_id) treeIds.push(card.tree_id);
+        })
+
+        if (treeIds.length > 0) {
+            const updateConfig = {
+                mapped_to_user: null,
+                mapped_to_group: null,
+                mapped_at: null,
+                sponsored_by_user: null,
+                sponsored_by_group: null,
+                gifted_to: null,
+                gifted_by: null,
+                gifted_by_name: null,
+                assigned_to: null,
+                assigned_at: null,
+                memory_images: null,
+                description: null,
+                planted_by: null,
+                user_tree_image: null,
+                event_type: null,
+                updated_at: new Date(),
+            }
+
+            await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
+            await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
+        }
+
+        // delete gift request plots
+        await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
+
+        await GiftCardsRepository.deleteGiftRequestUsers({ gift_request_id: giftCardRequestId });
+
+        let resp = await GiftCardsRepository.deleteGiftCardRequest(giftCardRequestId);
+        console.log(`Deleted Gift card with id: ${giftCardRequestId}`, resp);
+    }
+
     public static async emailReceiver(
         emailData: any, 
         eventType: string, 

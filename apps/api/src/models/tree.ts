@@ -42,12 +42,13 @@ interface TreeAttributes {
     status?: string;
     status_message?: string[] | null;
     last_system_updated_at?: Date;
+    deleted_at: Date | null;
     created_at?: Date;
     updated_at?: Date;
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name' | 'gifted_to' | 'gifted_by' | 'sponsored_by_user' | 'sponsored_by_group' | 'event_id' | 'memory_images'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name' | 'gifted_to' | 'gifted_by' | 'sponsored_by_user' | 'sponsored_by_group' | 'event_id' | 'memory_images' | 'deleted_at'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>
@@ -89,12 +90,12 @@ implements TreeAttributes {
   location!: Center;
 
   @ForeignKey(() => User)
-  @Column
-  mapped_to_user!: number;
+  @Column(DataType.INTEGER)
+  mapped_to_user!: number | null;
 
   @ForeignKey(() => Group)
-  @Column
-  mapped_to_group!: number;
+  @Column(DataType.INTEGER)
+  mapped_to_group!: number | null;
   
   @Column(DataType.DATE)
   mapped_at!: Date;
@@ -107,7 +108,7 @@ implements TreeAttributes {
 
   @ForeignKey(() => User)
   @Column(DataType.NUMBER)
-  assigned_to!: number;
+  assigned_to!: number | null;
 
   @ForeignKey(() => Group)
   @Column(DataType.NUMBER)
@@ -136,7 +137,7 @@ implements TreeAttributes {
   event_type!: string;
 
   @Column(DataType.NUMBER)
-  donation_id!: number;
+  donation_id!: number | null;
 
   @ForeignKey(() => Visit)
   @Column(DataType.NUMBER)
@@ -162,6 +163,9 @@ implements TreeAttributes {
 
   @Column(DataType.DATE)
   last_system_updated_at!: Date;
+
+  @Column(DataType.DATE)
+  deleted_at!: Date | null;
 
   @Column(DataType.DATE)
   created_at!: Date;

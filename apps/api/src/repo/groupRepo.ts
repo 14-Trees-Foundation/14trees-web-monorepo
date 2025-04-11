@@ -1,6 +1,9 @@
-import { Op, WhereOptions } from 'sequelize';
+import { QueryTypes, WhereOptions} from 'sequelize';
+import { sequelize } from '../config/postgreDB';
 import { Group, GroupAttributes, GroupCreationAttributes, GroupType} from '../models/group';
-import { PaginatedResponse } from '../models/pagination';
+import { PaginatedResponse, FilterItem }from '../models/pagination';
+import { getSqlQueryExpression } from "../controllers/helper/filters";
+import { SortOrder } from "../models/common"; 
 
 export class GroupRepository {
     public static async addGroup(data: any): Promise<Group> {
@@ -27,17 +30,61 @@ export class GroupRepository {
         return updatedGroup;
     }
 
-    public static async getGroups(offset: number, limit: number, whereClause: WhereOptions): Promise<PaginatedResponse<Group>> {
-        return {
-            offset: offset,
-            total: await Group.count({ where: whereClause }),
-            results: await Group.findAll({
-                where: whereClause,
-                order: [['id', 'DESC']],
-                offset,
-                limit
+    public static async getGroups(offset: number, limit: number,  filters: FilterItem[], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Group & { sponsored_trees: number }>> {
+        let whereCondition = "";
+        let replacements: any = {};
+        
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                const { condition, replacement } = getSqlQueryExpression(
+                    `g.${filter.columnField}`, 
+                    filter.operatorValue, 
+                    filter.columnField, 
+                    filter.value
+                );
+                whereCondition = whereCondition + " " + condition + " AND";
+                replacements = { ...replacements, ...replacement };
+            });
+            whereCondition = whereCondition.substring(0, whereCondition.length - 3);
+        }
+    
+        const orderByClause = orderBy && orderBy.length > 0 
+        ? `ORDER BY ${orderBy.map(o => `${o.column} ${o.order}`).join(', ')}` 
+            : 'ORDER BY g.id DESC';
+    
+        const query = `
+            SELECT 
+                g.*,
+                COUNT(t.id) as sponsored_trees
+            FROM 
+                "14trees_2".groups g
+            LEFT JOIN 
+                "14trees_2".trees t ON t.mapped_to_group = g.id
+            ${whereCondition ? `WHERE ${whereCondition}` : ''}
+            GROUP BY 
+                g.id
+            ${orderByClause}
+            ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''}
+        `;
+    
+        const countQuery = `
+            SELECT COUNT(*) as count
+            FROM "14trees_2".groups g
+            ${whereCondition ? `WHERE ${whereCondition}` : ''}
+        `;
+    
+        const [groups, resp] = await Promise.all([
+            sequelize.query<Group & { sponsored_trees: number }>(query, {
+                type: QueryTypes.SELECT,
+                replacements
+            }),
+            sequelize.query<{ count: string }>(countQuery, {
+                type: QueryTypes.SELECT,
+                replacements
             })
-        };
+        ]);
+    
+        return { offset: offset, total: parseInt(resp[0]?.count ?? '0', 10), results: groups };
     }
 
     public static async getGroup(id: number): Promise<Group | null> {
