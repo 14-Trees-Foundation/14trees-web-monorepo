@@ -1657,7 +1657,7 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
 
-routes.get('/transactions/:group_id', transactions.getTransactions);
+routes.get('/transactions/:id', transactions.getTransactions);
 routes.post('/transactions/send-email', transactions.sendEmailForTransaction);
 
 export default routes;

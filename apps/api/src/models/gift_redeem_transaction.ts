@@ -3,7 +3,8 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface GiftRedeemTransactionAttributes {
     id: number;
-    group_id: number,
+    group_id: number | null,
+    user_id: number | null,
     created_by: number,
     modified_by: number,
     recipient: number,
@@ -37,8 +38,15 @@ class GiftRedeemTransaction extends Model<GiftRedeemTransactionAttributes, GiftR
 
     @Column({
         type: DataType.INTEGER,
+        allowNull: true,
     })
-    group_id!: number;
+    group_id!: number | null;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+    })
+    user_id!: number | null;
 
     @Column({
         type: DataType.INTEGER,
