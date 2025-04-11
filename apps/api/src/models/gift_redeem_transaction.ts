@@ -22,7 +22,7 @@ interface GiftRedeemTransactionAttributes {
 }
 
 interface GiftRedeemTransactionCreationAttributes
-    extends Optional<GiftRedeemTransactionAttributes, 'id'> { }
+    extends Optional<GiftRedeemTransactionAttributes, 'id' | 'mail_sent' | 'mail_error' | 'mail_sent_at'> { }
 
 @Table({ tableName: 'gift_redeem_transactions' })
 class GiftRedeemTransaction extends Model<GiftRedeemTransactionAttributes, GiftRedeemTransactionCreationAttributes>
@@ -89,7 +89,7 @@ class GiftRedeemTransaction extends Model<GiftRedeemTransactionAttributes, GiftR
     @Column({ type: DataType.DATE, allowNull: false })
     gifted_on!: Date;
 
-    @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+    @Column({ type: DataType.BOOLEAN, defaultValue: false })
     mail_sent!: boolean;
 
     @Column({ type: DataType.STRING, allowNull: true })
