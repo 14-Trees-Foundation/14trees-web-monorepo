@@ -5,7 +5,6 @@ import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes } from 'sequelize';
 import { Tree } from '../models/tree';
 import { SortOrder } from '../models/common';
-import TreeRepository from "../repo/treeRepo";
 export class DonationRepository {
    
     public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
