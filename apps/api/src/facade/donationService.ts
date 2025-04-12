@@ -117,6 +117,7 @@ export class DonationService {
         total_requested: number;
         already_reserved: number;
         remaining: number;
+        assigned_trees: number;
     }> {
         try {
 
@@ -124,11 +125,17 @@ export class DonationService {
             const reservedCount = await TreeRepository.treesCount({
                 donation_id: donationId
             });
+
+            const assignedTrees = await TreeRepository.treesCount({
+                donation_id: donationId,
+                assigned_to: { [Op.is]: null }
+            });
     
             return {
                 total_requested: donation.trees_count,
                 already_reserved: reservedCount,
-                remaining: Math.max(0, donation.trees_count - reservedCount)
+                remaining: Math.max(0, donation.trees_count - reservedCount),
+                assigned_trees: assignedTrees
             };
         } catch (error) {
             console.error("[ERROR] DonationService::getDonationReservationStats", error);
