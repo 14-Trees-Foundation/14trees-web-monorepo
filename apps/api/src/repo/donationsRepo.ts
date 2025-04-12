@@ -228,20 +228,4 @@ export class DonationRepository {
             throw new Error('Failed to fetch donation tags');
         }
     }
-    public static async getDonationReservationStats(donationId: number) {
-      try {
-        const donation = await this.getDonation(donationId);
-        const reservedCount = await TreeRepository.treesCount({
-            donation_id: donationId
-        });
-        return {
-            total_requested: donation.trees_count,
-            already_reserved: reservedCount,
-            remaining: Math.max(0, donation.trees_count - reservedCount)
-        };
-    } catch (error) {
-        console.error('[ERROR] DonationRepository::getDonationReservationStats:', error);
-        throw new Error('Failed to fetch donation reservation stats');
-    }    
-}
 }
