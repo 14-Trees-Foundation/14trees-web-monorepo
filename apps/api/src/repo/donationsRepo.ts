@@ -68,7 +68,7 @@ export class DonationRepository {
             throw new Error('Failed to fetch donations');
         }
     }
-
+ 
     public static async getDonation(donationId: number): Promise<Donation> {
         const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
         if (donationsResp.results.length !== 1)
