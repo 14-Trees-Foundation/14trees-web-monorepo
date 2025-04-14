@@ -1621,5 +1621,65 @@ routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFun
 routes.get('/transactions/:id', transactions.getTransactions);
 routes.post('/transactions/send-email', transactions.sendEmailForTransaction);
 
+
+
+/**
+ * @swagger
+ * /transactions/update:
+ *   patch:
+ *     summary: Update transaction
+ *     description: Updates a transaction
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for updating a transaction
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             transaction_id:
+ *               type: integer
+ *               example: 1
+ *             mask:
+ *               type: array
+ *               items:
+ *                 type: string
+ *                 example: "primary_message"
+ *             data:
+ *               type: object
+ *               properties:
+ *                 primary_message:
+ *                   type: string
+ *                   example: "Happy Birthday"
+ *                 secondary_message:
+ *                   type: string
+ *                   example: "Best wishes"
+ *                 logo_message:
+ *                   type: string
+ *                   example: "Company Logo"
+ *                 name:
+ *                   type: string
+ *                   example: "John Doe"
+ *                 occasion_type:
+ *                   type: string
+ *                   example: "Birthday"
+ *     responses:
+ *        200:
+ *          description: Transaction updated successfully
+ *        400:
+ *          description: Bad request
+ *        500:
+ *          description: Internal server error
+ *          schema:
+ *            type: object
+ *            properties:
+ *              message:
+ *                type: string
+ *                example: "Something went wrong. Please try again later."
+ */
+routes.patch('/transactions/update', transactions.updateTransaction);
+
 export default routes;
 

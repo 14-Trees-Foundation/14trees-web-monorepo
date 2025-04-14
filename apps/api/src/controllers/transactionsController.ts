@@ -5,6 +5,7 @@ import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import { TemplateType } from "aws-sdk/clients/iot";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
+import * as transactionService from "../facade/transactionService";
 
 export const getTransactions = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -90,6 +91,49 @@ export const sendEmailForTransaction = async (req: Request, res: Response) => {
 
         res.status(status.success).send(statusMessage);
     } catch (error: any) {
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message,
+        });
+    }
+}
+
+export const updateTransaction = async (req: Request, res: Response) => {
+    const { transaction_id, mask, data } = req.body;
+
+    if (!transaction_id || isNaN(parseInt(transaction_id))) {
+        return res.status(status.bad).send({ message: "Invalid request. Please provide valid transaction id!" });
+    }
+
+    if (!mask || !Array.isArray(mask) || mask.length === 0) {
+        return res.status(status.bad).send({ message: "Invalid request. Please provide valid mask array!" });
+    }
+
+    if (!data || typeof data !== 'object') {
+        return res.status(status.bad).send({ message: "Invalid request. Please provide valid data object!" });
+    }
+
+    try {
+        const result = await transactionService.processTransactionUpdate(
+            parseInt(transaction_id),
+            mask,
+            data
+        );
+
+        if (!result.success) {
+            return res.status(status.bad).send({ message: result.message });
+        }
+
+        res.status(status.success).send({
+            message: "Transaction updated successfully",
+            updated_fields: result.updatedUserFields?.length 
+                ? [...result.updatedTransactionFields, 'user_data']
+                : result.updatedTransactionFields,
+            trees_updated: result.treesUpdated,
+            trees_update_count: result.treesUpdateCount
+        });
+    } catch (error: any) {
+        console.log("[ERROR]", "transactionsController::updateTransaction", error);
         res.status(status.error).json({
             status: status.error,
             message: error.message,
