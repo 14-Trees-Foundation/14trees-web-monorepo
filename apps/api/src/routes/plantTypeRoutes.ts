@@ -577,7 +577,8 @@ routes.post('/states', plantTypes.getTreeCountsForPlantTypes);
  *         description: Plant type state for plots fetched successfully
  *         schema:
  *           type: object
- *           offset:
+ *           properties:
+ *             offset:
  *               type: integer
  *               example: 0
  *             total:

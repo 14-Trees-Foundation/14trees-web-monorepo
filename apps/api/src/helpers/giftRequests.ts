@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { and, Op } from "sequelize";
 import { GiftCard } from "../models/gift_card";
 import { GiftCardRequestAttributes, GiftCardRequestStatus } from "../models/gift_card_request";
 import { GiftRequestUser } from "../models/gift_request_user";
@@ -6,6 +6,7 @@ import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import TreeRepository from "../repo/treeRepo";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import runWithConcurrency, { Task } from "./consurrency";
+import { sendDashboardMail } from "../services/gmail/gmail";
 
 
 class GiftRequestHelper {
@@ -33,7 +34,7 @@ class GiftRequestHelper {
         if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftCardRequest.user_id);
         await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
 
-        const cards = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
+        const cards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
         const finalTreeIds = cards.results.filter(card => card.tree_id).map(card => card.tree_id);
 
         if (finalTreeIds.length === giftCardRequest.no_of_cards) {
@@ -105,7 +106,7 @@ class GiftRequestHelper {
     public static async deleteGiftCardRequest(giftCardRequestId: number) {
 
         await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
-        const cardsResp = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
+        const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
 
         const treeIds: number[] = [];
         cardsResp.results.forEach(card => {
@@ -143,6 +144,60 @@ class GiftRequestHelper {
 
         let resp = await GiftCardsRepository.deleteGiftCardRequest(giftCardRequestId);
         console.log(`Deleted Gift card with id: ${giftCardRequestId}`, resp);
+    }
+
+    public static async emailReceiver(
+        emailData: any, 
+        eventType: string, 
+        template: string, 
+        attachCard: boolean, 
+        ccMailIds?: string[], 
+        testMails?: string[],
+        giftedBy?: string,
+        groupName?: string,
+    ) {
+        const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
+    
+        let attachments: { filename: string; path: string }[] | undefined = undefined;
+        if (attachCard) {
+            const files: { filename: string; path: string }[] = []
+            for (const tree of emailData.trees) {
+                if (tree.card_image_url) {
+                    files.push({
+                        filename: tree.assigned_to_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                        path: tree.card_image_url
+                    })
+                }
+            }
+    
+            if (files.length > 0) attachments = files;
+        }
+    
+        let subject: string | undefined = undefined;
+        if (eventType === 'birthday') {
+            subject = 'Birthday wishes from 14 Trees';
+            if (giftedBy || groupName) {
+                subject = `Birthday wishes from ${giftedBy || groupName} and 14 Trees`;
+            }
+        }
+    
+        let tries = 3;
+        const backOff = 2;
+        let statusMessage: string | undefined = undefined;
+        while (tries > 0) {
+            try {
+                statusMessage = await sendDashboardMail(template, emailData, mailIds, ccMailIds, attachments, subject);
+                break;
+            } catch (error: any) {
+                statusMessage = error.message;
+                console.log('[ERROR]', 'GiftCardController::emailReceiver', error);
+                tries--;
+                // sleep 
+                await new Promise(resolve => setTimeout(resolve, Math.pow(backOff, (3 - tries)) * 1000));
+            }
+        }
+
+        return statusMessage;
     }
 }
 

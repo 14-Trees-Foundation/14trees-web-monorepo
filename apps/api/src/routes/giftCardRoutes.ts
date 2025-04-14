@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as giftCards from '../controllers/giftCardController';
+import * as transactions from '../controllers/transactionsController';
 import uploadFiles from "../helpers/multer";
 
 const routes = Router();
@@ -1655,6 +1656,9 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  *               example: "Something went wrong. Please try again later."
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
+
+routes.get('/transactions/:id', transactions.getTransactions);
+routes.post('/transactions/send-email', transactions.sendEmailForTransaction);
 
 export default routes;
 

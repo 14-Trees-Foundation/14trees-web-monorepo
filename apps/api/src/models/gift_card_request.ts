@@ -12,6 +12,13 @@ export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETA
 export type GiftCardRequestType = 'Cards Request' | 'Normal Assignment' | 'Test' | 'Promotion'
 export type SponsorshipType = 'Unverified' | 'Pledged' | 'Promotional' | 'Unsponsored Visit' | 'Donation Received'
 
+export type GiftMessages = {
+    primary_message: string;
+    secondary_message: string;
+    logo_message: string;
+    event_type: string;
+}
+
 interface GiftCardRequestAttributes {
     id: number;
     request_id: string;

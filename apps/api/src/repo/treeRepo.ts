@@ -772,10 +772,17 @@ class TreeRepository {
     return { offset: offset, total: total, results: tags };
   }
 
-  public static async getMappedGiftTrees(offset: number, limit: number, groupId: number, filters?: FilterItem[]): Promise<PaginatedResponse<Tree>> {
+  public static async getMappedGiftTrees(offset: number, limit: number, userId: number | null, groupId: number | null, filters?: FilterItem[]): Promise<PaginatedResponse<Tree>> {
 
     let whereCondition = "";
     let replacements: any = {}
+
+    if (userId) {
+      whereCondition = `t.mapped_to_user = ${userId} AND`;
+    } else if (groupId) {
+      whereCondition = `t.mapped_to_group = ${groupId} AND`;
+    }
+
     if (filters && filters.length > 0) {
       filters.forEach(filter => {
         let columnField = "t." + filter.columnField
@@ -783,16 +790,19 @@ class TreeRepository {
         if (filter.columnField === "assigned_to_name") {
           columnField = 'au.name'
         }
+        if (filter.columnField === "transaction_id") {
+          columnField = 'grtc.grt_id'
+        }
 
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
         whereCondition = whereCondition + " " + condition + " AND";
         replacements = { ...replacements, ...replacement }
       })
-      whereCondition = whereCondition.substring(0, whereCondition.length - 3);
     }
+    whereCondition = whereCondition.substring(0, whereCondition.length - 3);
 
     const query = `
-      SELECT t.*, gc.id as gift_card_id, gcr.request_id, gcr.planted_by as gifted_by,
+      SELECT t.*, gc.id as gift_card_id, gc.card_image_url, gcr.request_id, gcr.planted_by as gifted_by,
         pt."name" as plant_type, 
         pt.habit as habit, 
         pt.illustration_s3_path as illustration_s3_path, 
@@ -808,6 +818,7 @@ class TreeRepository {
       FROM "14trees".trees t
       JOIN "14trees".gift_cards gc on gc.tree_id = t.id
       JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
       LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
       LEFT JOIN "14trees".plots p ON p.id = t.plot_id
@@ -817,7 +828,7 @@ class TreeRepository {
       LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
       LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
       LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
-      WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"}
+      WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
       ${ limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
 
@@ -826,6 +837,7 @@ class TreeRepository {
       FROM "14trees".trees t
       JOIN "14trees".gift_cards gc on gc.tree_id = t.id
       JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
       LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
       LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
       LEFT JOIN "14trees".plots p ON p.id = t.plot_id
@@ -835,7 +847,7 @@ class TreeRepository {
       LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
       LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
       LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
-      WHERE t.mapped_to_group = ${groupId} AND ${whereCondition !== "" ? whereCondition : "1=1"}`;
+      WHERE ${whereCondition !== "" ? whereCondition : "1=1"}`;
 
       const trees: any = await sequelize.query(query, {
         type: QueryTypes.SELECT,
@@ -851,19 +863,26 @@ class TreeRepository {
   }
 
 
-  public static async getMappedGiftTreesAnalytics(groupId: number): Promise<any> {
+  public static async getMappedGiftTreesAnalytics(groupId: number | null, userId: number | null): Promise<any> {
+
+    let whereCondition = "";
+    if (groupId) {
+      whereCondition = `WHERE t.mapped_to_group = ${groupId}`;
+    } else if (userId) {
+      whereCondition = `WHERE t.mapped_to_user = ${userId}`;
+    }
 
     const query = `
       SELECT count(t.id) as total_trees, count(t.assigned_to) as gifted_trees
       FROM "14trees".trees t
       JOIN "14trees".gift_cards gc on gc.tree_id = t.id
       LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
-      WHERE t.mapped_to_group = :groupId`;
+      ${whereCondition}
+    `;
 
       const data: any[] = await sequelize.query(query, {
         type: QueryTypes.SELECT,
-        replacements: { groupId }
-      })
+        })
 
       return data[0];
   }
