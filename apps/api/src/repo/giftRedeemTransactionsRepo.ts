@@ -101,10 +101,13 @@ export class GRTransactionsRepository {
                 g.name AS group_name,
                 g.logo_url AS logo_url,
                 ru.name AS recipient_name,
-                ru.email AS recipient_email
+                ru.email AS recipient_email,
+                u.name AS sponsor_name,
+                u.email AS sponsor_email
             FROM "14trees_2".gift_redeem_transactions grt
             JOIN "14trees_2".users ru ON ru.id = grt.recipient
-            JOIN "14trees_2".groups g ON g.id = grt.group_id
+            LEFT JOIN "14trees_2".groups g ON g.id = grt.group_id
+            LEFT JOIN "14trees_2".users u ON u.id = grt.user_id
             WHERE grt.id = :transactionId
         `
         const result: GiftRedeemTransaction[] = await sequelize.query(query, {
