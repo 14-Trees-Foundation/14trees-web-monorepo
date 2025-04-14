@@ -293,7 +293,7 @@ async function assignTreesForDonationRequest(data: any, requestId: number) {
     }
 
     let users = await GiftCardsRepository.getGiftRequestUsers(requestId);
-    const existingTreesResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
+    const existingTreesResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: requestId }]);
     if (users.length === 0) {
 
         if (data["Assignees"]) {

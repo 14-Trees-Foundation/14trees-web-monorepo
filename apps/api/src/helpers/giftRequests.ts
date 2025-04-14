@@ -33,7 +33,7 @@ class GiftRequestHelper {
         if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftCardRequest.user_id);
         await GiftCardsRepository.bookGiftCards(giftCardRequestId, treeIds);
 
-        const cards = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
+        const cards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
         const finalTreeIds = cards.results.filter(card => card.tree_id).map(card => card.tree_id);
 
         if (finalTreeIds.length === giftCardRequest.no_of_cards) {
@@ -105,7 +105,7 @@ class GiftRequestHelper {
     public static async deleteGiftCardRequest(giftCardRequestId: number) {
 
         await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })
-        const cardsResp = await GiftCardsRepository.getBookedTrees(giftCardRequestId, 0, -1);
+        const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
 
         const treeIds: number[] = [];
         cardsResp.results.forEach(card => {

@@ -1570,7 +1570,7 @@ export const updateGiftCardImagesForGiftRequest = async (req: Request, res: Resp
         res.status(status.success).send();
 
         const giftCardRequest = resp.results[0];
-        const giftCards = await GiftCardsRepository.getBookedTrees(giftCardRequest.id, 0, -1);
+        const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequest.id }]);
         for (const card of giftCards.results) {
             if (!card.presentation_id || !card.slide_id) continue;
             if (!presentationIdMap[card.presentation_id]){
