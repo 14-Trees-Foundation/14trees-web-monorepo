@@ -4,12 +4,14 @@ import { ViewPermissionRepository } from "../repo/viewPermissionsRepo";
 import { validate as isUUID, v7 as uuidv7 } from 'uuid'
 import { ViewAttributes } from "../models/permissions";
 import { Op } from "sequelize";
+import { UserRepository } from "../repo/userRepo";
 
 
 export const verifyUserAccessToView = async (req: Request, res: Response) => {
     const response = {
         code: status.forbidden,
-        message: ''
+        message: '',
+        view_name: ''
     }
 
     const { view_id, user_id, metadata, path } = req.body;
@@ -24,6 +26,22 @@ export const verifyUserAccessToView = async (req: Request, res: Response) => {
         if (!view) {
             response.code = status.notfound;
             response.message = "Page you are looking for doesn't exisits!";
+            return res.status(status.success).send(response);
+        }
+
+        response.code = status.success;
+        response.message = "Success";
+        response.view_name = view.name;
+
+        const userResp = await UserRepository.getUsers(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: user_id }]);
+        if (userResp.results.length === 0) {
+            response.code = status.forbidden;
+            response.message = "You are not authorized to access this page.";
+            return res.status(status.success).send(response);
+        }
+
+        const user = userResp.results[0];
+        if (user.roles && (user.roles.includes('admin') || user.roles.includes('super-admin'))) {
             return res.status(status.success).send(response);
         }
 
@@ -43,9 +61,6 @@ export const verifyUserAccessToView = async (req: Request, res: Response) => {
                 }
             }
         }
-
-        response.code = status.success;
-        response.message = "Success";
 
         return res.status(status.success).send(response);
     } catch (error: any) {

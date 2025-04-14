@@ -26,6 +26,8 @@ export class GRTransactionsRepository {
                 grt.*,
                 cu.name AS created_by_name,
                 ru.name AS recipient_name,
+                ru.email AS recipient_email,
+                ru.communication_email AS recipient_communication_email,
                 gca.gc_count AS trees_count,
                 COALESCE(tree_details.tree_info, '[]'::jsonb) AS tree_details
             FROM "14trees_2".gift_redeem_transactions grt
@@ -62,7 +64,8 @@ export class GRTransactionsRepository {
                 ) AS limited_tree_data
             ) AS tree_details ON true
             WHERE ${type === 'group' ? 'grt.group_id = :id' : 'grt.user_id = :id'} ${search ? 'AND ru.name ILIKE :search' : ''}
-            GROUP BY grt.id, cu.name, ru.name, gca.gc_count, tree_details.tree_info
+            GROUP BY grt.id, cu.id, ru.id, gca.gc_count, tree_details.tree_info
+            ORDER BY grt.id DESC
             ${limit > 0 ? 'OFFSET :offset LIMIT :limit;' : ';'}
         `
 
@@ -166,4 +169,7 @@ export class GRTransactionsRepository {
         return result;
     }
 
+    public static async getTransactionGiftCardIds(transactionId: number) {
+        return (await GRTCard.findAll({ where: { grt_id: transactionId } })).map(grc => grc.gc_id);
+    }
 }
