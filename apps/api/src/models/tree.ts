@@ -1,6 +1,6 @@
 // Model in postgresql db
 
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript'; 
 import { PlantType } from './plant_type'
 import { Plot } from '../models/plot'
 import { User } from './user'
@@ -83,8 +83,14 @@ implements TreeAttributes {
   @Column(DataType.STRING)
   planted_by!: string;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  tags!: string[] | null;
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    set(value: string[] | null) {
+      this.setDataValue('tags', value || []); // Converts `null` to `[]`
+    },
+    defaultValue: [], // Ensures new records start with empty array
+  })
+  tags!: string[];
 
   @Column(DataType.JSON)
   location!: Center;
@@ -149,8 +155,14 @@ implements TreeAttributes {
   @Column(DataType.STRING)
   user_card_image!: string;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  memory_images!: string[] | null;
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    set(value: string[] | null) {
+      this.setDataValue('memory_images', value || []);
+    },
+    defaultValue: [],
+  })
+  memory_images!: string[];
 
   @Column({type: DataType.ENUM('healthy', 'dead', 'lost'), defaultValue: 'healthy'})
   tree_status!: string;
@@ -158,8 +170,14 @@ implements TreeAttributes {
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status!: string;
 
-  @Column(DataType.ARRAY(DataType.STRING))
-  status_message!: string[] | null;
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    set(value: string[] | null) {
+      this.setDataValue('status_message', value || []); // or `null` if you prefer
+    },
+    defaultValue: [], // or `null` if needed
+  })
+  status_message!: string[] | null; 
 
   @Column(DataType.DATE)
   last_system_updated_at!: Date;
