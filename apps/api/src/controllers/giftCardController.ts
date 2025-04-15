@@ -107,6 +107,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         created_by: createdBy,
         gifted_on: giftedOn,
         request_type: requestType,
+        logo_url: logoUrl,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -123,7 +124,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         is_active: false,
         created_at: new Date(),
         updated_at: new Date(),
-        logo_url: null,
+        logo_url: logoUrl || null,
         primary_message: primaryMessage || null,
         secondary_message: secondaryMessage || null,
         event_name: eventName || null,
@@ -146,7 +147,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
         let changed = false;
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
-        if (files.logo && files.logo.length > 0) {
+        if (!logoUrl && files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
             giftCard.validation_errors = ['MISSING_USER_DETAILS']
