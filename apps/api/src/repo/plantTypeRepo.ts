@@ -1,7 +1,7 @@
 import { PlantType, PlantTypeAttributes, PlantTypeCreationAttributes } from "../models/plant_type";
 import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { PaginatedResponse } from "../models/pagination";
-import { QueryTypes, WhereOptions } from 'sequelize';
+import { QueryTypes, WhereOptions, Op } from 'sequelize';
 import { sequelize } from "../config/postgreDB";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 import { SortOrder } from "../models/common";
@@ -59,7 +59,6 @@ class PlantTypeRepository {
         const plantType = await PlantType.create(plantTypeObj);
         return plantType;
     };
-
 
     public static async updatePlantType(data: PlantTypeAttributes, files?: Express.Multer.File[]): Promise<PlantType> {
 
@@ -338,7 +337,23 @@ class PlantTypeRepository {
 
         return { offset: offset, total: totalResults, results: plantTypes as PlantType[] };
     }
+    
 
+    public static async getRecentlyModifiedPlantTypes(hours: number = 24): Promise<PlantType[]> {
+        const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+        console.log(`[DB Query] Checking for modifications since: ${cutoffTime.toISOString()}`);
+        
+        return await PlantType.findAll({
+            where: {
+                [Op.or]: [
+                    { updated_at: { [Op.gte]: cutoffTime } },
+                    { created_at: { [Op.gte]: cutoffTime } }
+                ]
+            },
+            order: [['updated_at', 'DESC']]
+        });
+    }
 }
+
 
 export default PlantTypeRepository;
