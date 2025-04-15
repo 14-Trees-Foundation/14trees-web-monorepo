@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; }
+    .header { color: #2c3e50; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f2f2f2; font-weight: bold; }
+    .footer { margin-top: 20px; font-size: 12px; color: #777; }
+    .new { color: #27ae60; font-weight: bold; }
+    .updated { color: #e67e22; font-weight: bold; }
+    .new-row { background-color: #e8f5e9; }
+    .updated-row { background-color: #fff9e6; }
+    .change-item { margin: 4px 0; }
+    .field-name { font-weight: bold; display: inline-block; width: 180px; }
+    .no-changes { font-style: italic; color: #7f8c8d; }
+  </style>
+</head>
+<body>
+    <div class="header">
+      <h2>🌿 Plant Updates Report</h2>
+      <p>{{count}} plant {{#if_eq count 1}}record was{{else}}records were{{/if_eq}} modified.</p>
+    </div>
+  
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>English Name</th>
+          <th>Common Name in English</th>
+          <th>Common Name in Marathi</th>
+          <th>Scientific Name</th>
+          <th>Known As</th>
+          <th>Category</th>
+          <th>Habit</th>
+          <th>Use</th>
+          <th>Family</th>
+          <th>Updated At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each plants}}
+        <tr>
+          <td>{{id}}</td>
+          <td>{{name}}</td>
+          <td>{{english_name}}</td>
+          <td>{{common_name_in_english}}</td>
+          <td>{{common_name_in_marathi}}</td>
+          <td>{{scientific_name}}</td>
+          <td>{{known_as}}</td>
+          <td>{{category}}</td>
+          <td>{{habit}}</td>
+          <td>{{use}}</td>
+          <td>{{family}}</td>
+          <td>{{updated_at}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  
+    <div class="footer">
+      <p>Report generated on {{currentDate}}</p>
+      <p>Only modified fields are displayed in this report.</p>
+    </div>
+  </body>
+  </html>
