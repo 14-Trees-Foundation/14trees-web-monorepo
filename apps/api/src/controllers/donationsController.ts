@@ -13,9 +13,10 @@ import { TemplateType } from "../models/email_template";
 import { Donation } from '../models/donation';
 import { Tree } from '../models/tree';
 import { User } from '../models/user';
-import { WhereOptions } from 'sequelize';
+import { WhereOptions, Op } from 'sequelize';
 import { EmailTemplate } from '../models/email_template';
-
+import { AlbumRepository } from "../repo/albumRepo";
+import  TreeRepository  from "../repo/treeRepo";
 /*
     Model - Donation
     CRUD Operations for donations collection
@@ -240,6 +241,62 @@ export const updateDonation = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const updateAlbumImagesForDonations = async (req: Request, res: Response) => {
+    const { donation_id: donationId, album_id: albumId } = req.body;
+    if (!donationId) {
+        res.status(status.bad).send({ message: "Invalid input!" });
+        return;
+    }
+
+    try {
+        let memoryImageUrls: string[] | null = [];
+        if (albumId) {
+            const albums = await AlbumRepository.getAlbums({ id: albumId });
+            if (albums.length === 1) {
+                memoryImageUrls = albums[0].images;
+            }
+        }
+
+        const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }]);
+        if (donationResp.results.length === 1) {
+            const donation = donationResp.results[0];
+            donation.album_id = albumId || null;
+            donation.updated_at = new Date();
+            console.log("Updating donation with ID:", donationId);
+            console.log("Update data:", donation);
+            await DonationRepository.updateDonation(donationId, donation);
+
+            const updateMemoryImages = {
+                memory_images: memoryImageUrls,
+                updated_at: new Date(),
+            };
+
+            await updateTreesForDonation(donationId, updateMemoryImages); // Ensure this function exists
+        }
+        res.status(status.success).send();
+        } catch (error: any) {
+            console.error("Error updating donation:", error);
+            throw new Error(`Error updating donation: ${error.message}`);
+        }
+    }
+
+    const updateTreesForDonation = async (donationId: number, updateFields: any) => {
+        let offset = 0, limit = 100;
+        while (true) {
+            const donationTreesResp = await DonationRepository.getDonationTrees(offset, limit, [{ columnField: 'donation_id', operatorValue: 'equals', value: donationId }]);
+            const treeIds = donationTreesResp.results.map((item: any) => item.tree_id).filter((id: any) => id ? true : false);
+    
+            if (treeIds.length > 0) {
+                await TreeRepository.updateTrees(updateFields, {id: { [Op.in]: treeIds } });
+            }
+    
+            offset += limit;
+            if (offset >= Number(donationTreesResp.total)) break;
+        }
+    };
+
+ 
 
 // export const createWorkOrder = async (req: Request, res: Response) => {
 //     const donationId = req.params.donation_id
