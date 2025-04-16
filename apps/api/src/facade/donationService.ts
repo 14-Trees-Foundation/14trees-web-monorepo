@@ -666,4 +666,19 @@ export class DonationService {
             throw new Error("Failed to send acknowledgement email");
         }
     }
+
+    public static async updateTreesForDonation(donationId: number, updateFields: any) {
+        let offset = 0, limit = 500;
+        while (true) {
+            const donationTreesResp = await DonationRepository.getDonationTrees(offset, limit, [{ columnField: 'donation_id', operatorValue: 'equals', value: donationId }]);
+            const treeIds = donationTreesResp.results.map((item: any) => item.tree_id).filter((id: any) => id ? true : false);
+    
+            if (treeIds.length > 0) {
+                await TreeRepository.updateTrees(updateFields, { id: { [Op.in]: treeIds } });
+            }
+    
+            offset += limit;
+            if (offset >= Number(donationTreesResp.total)) break;
+        }
+    };
 }

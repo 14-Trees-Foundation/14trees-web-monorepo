@@ -25,9 +25,11 @@ interface DonationAttributes {
   created_at: Date;
   updated_at: Date;
   tags: string[] | null;
+  notes: string | null;
+  album_id: number | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'notes' | 'album_id'> { }
 
 @Table({ 
     tableName: 'donations',
@@ -120,6 +122,18 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: true
   })
   tags!: string[] | null;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true
+  })
+  notes!: string | null;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true
+  })
+  album_id!: number | null;
 }
 
 export { Donation }
