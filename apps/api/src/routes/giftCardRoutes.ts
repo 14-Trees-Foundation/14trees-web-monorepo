@@ -1681,5 +1681,48 @@ routes.post('/transactions/send-email', transactions.sendEmailForTransaction);
  */
 routes.patch('/transactions/update', transactions.updateTransaction);
 
+
+/**
+ * @swagger
+ * /transactions/tree-cards/{transaction_id}:
+ *   get:
+ *     summary: Get tree cards for a transaction
+ *     description: Get tree cards for a transaction
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - name: transaction_id
+ *         in: path
+ *         description: ID of the transaction
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Tree cards fetched successfully
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: "https://example.com/tree_card.jpg"
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid request. Please provide valid transaction id!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.get('/transactions/tree-cards/:transaction_id', transactions.getTrancationTreeCardImages);
+
 export default routes;
 

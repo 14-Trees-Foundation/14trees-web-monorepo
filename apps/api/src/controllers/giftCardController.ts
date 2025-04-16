@@ -1422,7 +1422,8 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         logo,
-        logo_message: logoMessage
+        logo_message: logoMessage,
+        is_personal: isPersonal
     } = req.body;
 
     if (!process.env.LIVE_GIFT_CARD_PRESENTATION_ID) {
@@ -1445,9 +1446,9 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
     try {
         let pId: string = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
         let slideId: string | null = null;
-        if (plantType) slideId = await generateGiftCardTemplate(pId, plantType, record, true);
+        if (plantType) slideId = await generateGiftCardTemplate(pId, plantType, record, isPersonal ? false : true);
 
-        if (!slideId) slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record, true);
+        if (!slideId) slideId = await generateGiftCardTemplate(pId, 'Chinch (चिंच)', record, isPersonal ? false : true);
 
         res.status(status.success).send({
             presentation_id: pId,
