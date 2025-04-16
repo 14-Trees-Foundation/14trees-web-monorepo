@@ -802,7 +802,7 @@ class TreeRepository {
     whereCondition = whereCondition.substring(0, whereCondition.length - 3);
 
     const query = `
-      SELECT t.*, gc.id as gift_card_id, gc.card_image_url, gcr.request_id, gcr.planted_by as gifted_by,
+      SELECT t.*, gc.id as gift_card_id, gc.card_image_url, gcr.request_id, gcr.planted_by as gifted_by, gcr.logo_url,
         pt."name" as plant_type, 
         pt.habit as habit, 
         pt.illustration_s3_path as illustration_s3_path, 
