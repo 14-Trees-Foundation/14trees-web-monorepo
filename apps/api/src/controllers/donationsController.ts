@@ -10,13 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation } from '../models/donation';
-import { Tree } from '../models/tree';
-import { User } from '../models/user';
-import { WhereOptions, Op } from 'sequelize';
-import { EmailTemplate } from '../models/email_template';
 import { AlbumRepository } from "../repo/albumRepo";
-import  TreeRepository  from "../repo/treeRepo";
 /*
     Model - Donation
     CRUD Operations for donations collection
@@ -258,45 +252,30 @@ export const updateAlbumImagesForDonations = async (req: Request, res: Response)
             }
         }
 
-        const donationResp = await DonationRepository.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }]);
-        if (donationResp.results.length === 1) {
-            const donation = donationResp.results[0];
-            donation.album_id = albumId || null;
-            donation.updated_at = new Date();
-            console.log("Updating donation with ID:", donationId);
-            console.log("Update data:", donation);
-            await DonationRepository.updateDonation(donationId, donation);
-
-            const updateMemoryImages = {
-                memory_images: memoryImageUrls,
-                updated_at: new Date(),
-            };
-
-            await updateTreesForDonation(donationId, updateMemoryImages); // Ensure this function exists
+        const updateDonationData = {
+            album_id: albumId || null,
+            updated_at: new Date(),
         }
+
+        await DonationRepository.updateDonation(donationId, updateDonationData);
+
+
+        const updateMemoryImages = {
+            memory_images: memoryImageUrls,
+            updated_at: new Date(),
+        };
+
+        await DonationService.updateTreesForDonation(donationId, updateMemoryImages); // Ensure this function exists
+
         res.status(status.success).send();
-        } catch (error: any) {
-            console.error("Error updating donation:", error);
-            throw new Error(`Error updating donation: ${error.message}`);
-        }
+    } catch (error: any) {
+        console.error("[ERROR] DonationsController::updateAlbumImagesForDonations:", error);
+        res.status(status.error).json({
+            message: 'Failed to update album images for donation'
+        });
     }
+}
 
-    const updateTreesForDonation = async (donationId: number, updateFields: any) => {
-        let offset = 0, limit = 100;
-        while (true) {
-            const donationTreesResp = await DonationRepository.getDonationTrees(offset, limit, [{ columnField: 'donation_id', operatorValue: 'equals', value: donationId }]);
-            const treeIds = donationTreesResp.results.map((item: any) => item.tree_id).filter((id: any) => id ? true : false);
-    
-            if (treeIds.length > 0) {
-                await TreeRepository.updateTrees(updateFields, {id: { [Op.in]: treeIds } });
-            }
-    
-            offset += limit;
-            if (offset >= Number(donationTreesResp.total)) break;
-        }
-    };
-
- 
 
 // export const createWorkOrder = async (req: Request, res: Response) => {
 //     const donationId = req.params.donation_id
