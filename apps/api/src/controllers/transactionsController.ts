@@ -6,6 +6,8 @@ import { TemplateType } from "aws-sdk/clients/iot";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
 import * as transactionService from "../facade/transactionService";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { Op } from "sequelize";
 
 export const getTransactions = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -137,6 +139,28 @@ export const updateTransaction = async (req: Request, res: Response) => {
         res.status(status.error).json({
             status: status.error,
             message: error.message,
+        });
+    }
+}
+
+
+export const getTrancationTreeCardImages = async (req: Request, res: Response) => {
+    const { transaction_id } = req.params;
+    const transactionId = parseInt(transaction_id);
+    if (!transactionId || isNaN(transactionId)) {
+        return res.status(status.bad).send({ message: "Invalid request. Please provide valid transaction id!" });
+    }
+
+    try {
+        const cardIds = await GRTransactionsRepository.getTransactionGiftCardIds(transactionId);
+        const cards = await GiftCardsRepository.getGiftCards(0, -1, { id: { [Op.in]: cardIds } });
+        const imageUrls = cards.results.map(card => card.card_image_url).filter(url => url);
+        res.status(status.success).send(imageUrls);
+    } catch (error: any) {
+        console.log("[ERROR]", "transactionsController::getTrancationTreeCardImages", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again later.",
         });
     }
 }
