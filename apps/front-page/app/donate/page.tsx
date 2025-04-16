@@ -56,6 +56,7 @@ export default function DonatePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [razorpayPaymentId, setRazorpayPaymentId] = useState<number | null>(null);
+  const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
   const [rpPaymentSuccess, setRpPaymentSuccess] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
@@ -150,6 +151,9 @@ export default function DonatePage() {
 
     if (!value.trim()) {
       if (name === "phone") return "";
+      if (name === "panNumber") return "";
+      if (name === "comments") return "";
+
       return "This field is required";
     }
 
@@ -418,8 +422,12 @@ export default function DonatePage() {
     });
     const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
     const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
+    if (users.length === 1 && !multipleNames) {
+      users[0].trees_count = parseInt(formData.numberOfTrees);
+    }
 
     if (!mainFormValid || !dedicatedNamesValid) {
+      console.log(errors);
       alert("Please fix the errors in the form before submitting");
       setIsLoading(false);
       setIsSubmitting(false);
@@ -508,6 +516,10 @@ export default function DonatePage() {
       setCsvFile(null);
       setCsvPreview([]);
       setCsvErrors([]);
+      setErrors({});
+      setRpPaymentSuccess(false);
+      setRazorpayOrderId(null);
+      setRazorpayPaymentId(null);
 
     } catch (err: any) {
       console.error("Donation error:", err);
@@ -629,28 +641,31 @@ export default function DonatePage() {
         ? calculateDonationAmount() * Number(formData.numberOfTrees)
         : 0; // Acres have no immediate payment
       if (amount <= 0) throw new Error("Invalid amount");
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          amount,
-          donorType: taxStatus === "indian" ? "Individual" : "Foreign",
-          panNumber: formData.panNumber || null,
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          numberOfTrees: formData.numberOfTrees,
-          treeLocation
-        })
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Payment failed");
-      }
 
-      const { order_id, id } = await response.json();
-      setRazorpayPaymentId(id);
+      let orderId = razorpayOrderId;
+      if (!orderId) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            amount,
+            donor_type: taxStatus === "indian" ? "Individual" : taxStatus === "foreign" ? "Foreign" : null,
+            pan_number: taxStatus === "indian" ? formData.panNumber : null,
+            consent: taxStatus === "none" ? true : false,
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Payment failed");
+        }
+  
+        const { order_id, id } = await response.json();
+        setRazorpayPaymentId(id);
+        setRazorpayOrderId(order_id);
+        orderId = order_id;
+      }
+      
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -658,7 +673,7 @@ export default function DonatePage() {
         currency: 'INR',
         name: "14 Trees Foundation",
         description: `Donation for ${formData.numberOfTrees} trees`,
-        order_id: order_id,
+        order_id: orderId,
         handler: async (response: any) => {
           setRpPaymentSuccess(true);
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
@@ -793,9 +808,11 @@ export default function DonatePage() {
 
           {!updateSuccess ? (
             <div className="space-y-6">
+              {/* Divider */}
+              <div className="h-px bg-gray-200"></div>
+
               {/* Additional Involvement Section */}
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold">Additional Involvement</h4>
                 <p className="text-sm text-gray-600">Besides making a monetary contribution, I&apos;d also like to:</p>
                 <div className="space-y-2">
                   {involvementOptions.map((option) => (
@@ -810,14 +827,14 @@ export default function DonatePage() {
                     </label>
                   ))}
                 </div>
+                <p className="text-sm text-gray-600">We will get in touch with you based on the options you select.</p>
               </div>
 
               {/* Additional Comments Section */}
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold">Additional Information</h4>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Comments, feedback, ideas for improvement
+                    Would you like to add any comments, feedback, ideas for improvement?
                   </label>
                   <textarea
                     value={comments}
@@ -844,7 +861,7 @@ export default function DonatePage() {
                   disabled={isUpdating}
                   className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
                 >
-                  {isUpdating ? 'Updating...' : 'Submit Additional Information'}
+                  {isUpdating ? 'Updating...' : 'Submit'}
                 </button>
               </div>
             </div>
@@ -1004,6 +1021,7 @@ export default function DonatePage() {
                               name="groveType"
                               value={option}
                               className="h-5 w-5"
+                              disabled={rpPaymentSuccess}
                               onChange={(e) => {
                                 setGroveType(e.target.value);
                                 if (option !== "Other") setOtherGroveType("");
@@ -1031,7 +1049,7 @@ export default function DonatePage() {
 
                 {/* 3. Number of Trees */}
                 <div className="mb-6">
-                  <label className="mb-2 block text-lg font-light">Plantation Type</label>
+                  <label className="mb-2 block text-lg font-light">I would like to sponsor via:</label>
                   <div className="flex gap-4">
                     <label className="flex items-center space-x-2">
                       <input
@@ -1055,7 +1073,7 @@ export default function DonatePage() {
                         disabled={rpPaymentSuccess}
                         className="h-5 w-5"
                       />
-                      <span>Area</span>
+                      <span>Area (in acres)</span>
                     </label>
                   </div>
                 </div>
@@ -1096,7 +1114,7 @@ export default function DonatePage() {
                 {treeLocation && pledgeType === "trees" && (
                   <p className="mt-2 text-sm text-gray-600">
                     Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
-                    {isAboveLimit && " (Above Razorpay limit - Bank Transfer required)"}
+                    {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
                   </p>
                 )}
 
@@ -1104,7 +1122,7 @@ export default function DonatePage() {
                 {pledgeType === "trees" && (
                   <div className="space-y-4">
                     <label className="mb-2 block text-lg font-light">
-                      I&apos;d like my trees to be planted in the following names
+                      I&apos;d like my trees to be planted in the following name:
                     </label>
 
                     <div className="flex items-center mb-4">
@@ -1116,7 +1134,7 @@ export default function DonatePage() {
                         onChange={(e) => setMultipleNames(e.target.checked)}
                       />
                       <label htmlFor="multipleNames" className="text-gray-700">
-                        Dedicate to multiple people
+                        Dedicate to multiple people?
                       </label>
                     </div>
 
@@ -1467,6 +1485,28 @@ export default function DonatePage() {
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Tax Benefits</h2>
                   <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <label className="block text-lg font-light mb-2">Would you like to availe tax benefits?</label>
+                      {[
+                        { value: "indian", label: "Indian citizen (80G benefit)" },
+                        { value: "foreign", label: "Foreign donor (501(c) eligible)" },
+                        { value: "none", label: "No" },
+                      ].map((option) => (
+                        <label key={option.value} className="flex items-center space-x-3">
+                          <input
+                            type="radio"
+                            name="taxStatus"
+                            value={option.value}
+                            className="h-5 w-5"
+                            onChange={() => setTaxStatus(option.value)}
+                            checked={taxStatus === option.value}
+                            disabled={rpPaymentSuccess}
+                            required
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
                     {taxStatus === "indian" && (
                       <div>
                         <label className="mb-2 block text-lg font-light">
@@ -1491,26 +1531,6 @@ export default function DonatePage() {
                         )}
                       </div>
                     )}
-                    <div className="space-y-3">
-                      <label className="block text-lg font-light mb-2">Whould you like to availe tax benefits?</label>
-                      {[
-                        { value: "indian", label: "Indian citizen (80G benefit)" },
-                        { value: "foreign", label: "Foreign donor (501(c) eligible)" }
-                      ].map((option) => (
-                        <label key={option.value} className="flex items-center space-x-3">
-                          <input
-                            type="radio"
-                            name="taxStatus"
-                            value={option.value}
-                            className="h-5 w-5"
-                            onChange={() => setTaxStatus(option.value)}
-                            checked={taxStatus === option.value}
-                            required
-                          />
-                          <span>{option.label}</span>
-                        </label>
-                      ))}
-                    </div>
                   </div>
                 </div>
 
@@ -1535,7 +1555,7 @@ export default function DonatePage() {
                           value="razorpay"
                           checked={paymentOption === "razorpay" && !isAboveLimit}
                           onChange={() => setPaymentOption("razorpay")}
-                          disabled={isAboveLimit}
+                          disabled={isAboveLimit || rpPaymentSuccess}
                         />
                         <span>
                           Razorpay (UPI/Card/Net Banking)
@@ -1549,8 +1569,9 @@ export default function DonatePage() {
                           value="bank-transfer"
                           checked={paymentOption === "bank-transfer" || isAboveLimit}
                           onChange={() => setPaymentOption("bank-transfer")}
+                          disabled={rpPaymentSuccess}
                         />
-                        <span>Bank Transfer {isAboveLimit && "(Required for large donations)"}</span>
+                        <span>Bank Transfer {isAboveLimit && "(Recommended for large donations)"}</span>
                       </label>
                     </div>
 
@@ -1561,16 +1582,18 @@ export default function DonatePage() {
                     )}
                   </div>
 
-                  {pledgeType === "trees" && paymentOption === "razorpay" && !isAboveLimit && (
-                    <Button
-                      type="button"
-                      onClick={handleRazorpayPayment}
-                      disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
-                      className={`bg-green-600 text-white w-full py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
-                        }`}
-                    >
-                      {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
-                    </Button>
+                  {pledgeType === "trees" && paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
+                    <div className="flex justify-center">
+                      <Button
+                        type="button"
+                        onClick={handleRazorpayPayment}
+                        disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
+                        className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                          }`}
+                      >
+                        {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
+                      </Button>
+                    </div>
                   )}
 
                   {pledgeType === "acres" && (
@@ -1620,10 +1643,18 @@ export default function DonatePage() {
                   )}
                 </div>
 
-                <div className="pt-6">
+                {paymentOption === "razorpay" && rpPaymentSuccess && multipleNames && (
+                  <div className="pt-6 flex justify-center">
+                    <p className="text-gray-600">
+                      Only gifting {dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0)} trees out of {formData.numberOfTrees} trees. You can choose to provide all the recipients now or can do it later.
+                    </p>
+                  </div>
+                )}
+
+                {(paymentOption !== "razorpay" || rpPaymentSuccess) && <div className="pt-6 flex justify-center">
                   <Button
                     type="submit"
-                    className="bg-green-800 text-white hover:bg-green-900 w-full py-6 text-lg"
+                    className="bg-green-800 text-white hover:bg-green-900 w-[500px] py-6 text-lg"
                     size="xl"
                     disabled={isLoading}
                   >
@@ -1639,7 +1670,7 @@ export default function DonatePage() {
                       "Complete Donation"
                     )}
                   </Button>
-                </div>
+                </div>}
               </form>
             </ScrollReveal>
           </div>
