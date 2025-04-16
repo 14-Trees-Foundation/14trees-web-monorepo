@@ -126,6 +126,61 @@ class ApiClient {
         throw new Error(error.message || 'Donation submission failed');
       }
     }
+
+    /**
+     * Create a gift card request
+     * @param data - Gift card request data including required fields
+     * @returns Processed gift card request response
+     * @throws Error with backend message or default failure message
+     */
+    async createGiftCardRequest(data: {
+      user_id: number;
+      no_of_cards: number;
+      created_by?: number;
+      [key: string]: any; 
+    }): Promise<any> {
+      try {
+        const requiredFields = ['user_id', 'no_of_cards', 'created_by'];
+        const missingFields = requiredFields.filter(field => !data[field]);
+        
+        if (missingFields.length > 0) {
+          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+
+        const formData = new FormData();
+        
+        Object.keys(data).forEach(key => {
+          if (data[key] !== undefined) {
+            formData.append(key, data[key]);
+          }
+        });
+
+        const response = await this.api.post('/gift-cards/requests', formData);
+        return response.data;
+
+      } catch (error: any) {
+        console.error('[Gift Card Request Error]', error);
+        if (error.response?.data?.message) {
+          throw new Error(error.response.data.message);
+        }
+        throw new Error(error.message || 'Gift card request submission failed');
+      }
+    }
+
+  async createUser(name: string, email: string): Promise<any> {
+    const userPayload = { name, email };
+  
+    try {
+      const response = await this.api.post(`${process.env.NEXT_PUBLIC_API_URL}/users`, userPayload);
+      return response.data;
+    } catch (error: any) {
+      console.error('[User Creation Error]', error);
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error(error.message || 'User creation failed');
+    }
+  }
 }
 
 export const apiClient = new ApiClient();
