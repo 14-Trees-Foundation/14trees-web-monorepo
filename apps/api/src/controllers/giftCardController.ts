@@ -147,14 +147,14 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
         let changed = false;
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
-        if (!logoUrl && files.logo && files.logo.length > 0) {
+        if (!logoUrl && files && files.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
             giftCard.validation_errors = ['MISSING_USER_DETAILS']
             changed = true;
         }
 
-        if (files.csv_file && files.csv_file.length > 0) {
+        if (files && files.csv_file && files.csv_file.length > 0) {
             const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", requestId);
             giftCard.users_csv_file_url = location;
             changed = true;
