@@ -51,10 +51,12 @@ export class GRTransactionsRepository {
                         'plant_type', pt.name,
                         'illustration_s3_path', pt.illustration_s3_path,
                         'card_image_url', gc.card_image_url,
-                        'template_image', ptct.template_image
+                        'template_image', ptct.template_image,
+                        'logo_url', gcr.logo_url
                     ) AS tree_data
                     FROM "14trees".gift_redeem_transaction_cards grtc
                     JOIN "14trees".gift_cards gc ON gc.id = grtc.gc_id
+                    JOIN "14trees".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
                     JOIN "14trees".trees t ON t.id = gc.tree_id
                     JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
                     JOIN "14trees".plant_type_card_templates ptct ON ptct.plant_type = pt.name
