@@ -26,6 +26,7 @@ import { VisitImagesRepository } from "../repo/visitImagesRepo";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 import { Visit } from "../models/visits";
+import { SyncRepo } from "../repo/syncRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -69,13 +70,23 @@ export const uploadTrees = async (req: Request, res: Response) => {
         const saplingID = tree.sapling_id;
         treeUploadStatuses[saplingID] = {
             dataUploaded: false,
+            exisitng: false,
             imagesUploaded: [],
             imagesFailed: [],
         }
         let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
         if (existingMatch) {
+            treeUploadStatuses[saplingID].exisitng = true;
             treeUploadStatuses[saplingID].dataUploaded = true;
             treeUploadStatuses[saplingID].treeId = existingMatch.id;
+
+            await SyncRepo.addDuplicateTreeSync({
+                sapling_id: existingMatch.sapling_id,
+                plot_id: existingMatch.plot_id,
+                tree_id: existingMatch.id,
+                synced_by: tree.planted_by,
+                synced_at: new Date(),
+            })
             continue;
         }
 
