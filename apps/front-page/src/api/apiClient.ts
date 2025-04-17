@@ -127,6 +127,29 @@ class ApiClient {
       }
     }
 
+    async generateCardTemplate(request_id: string, primary_message: string, secondary_message: string, logo_message: string, logo?: string | null, sapling_id?: string | null, user_name?: string | null, plant_type?: string | null): Promise<{ presentation_id: string, slide_id: string }> {
+      try {
+          const resp = await this.api.post<any>(`/gift-cards/generate-template`, { request_id, primary_message, secondary_message, logo_message, logo, sapling_id, plant_type, user_name });
+          return resp.data;
+      } catch (error: any) {
+          if (error.response) {
+              throw new Error(error.response.data.message);
+          }
+          throw new Error('Failed to generate gift cards');
+      }
+  }
+
+  async updateGiftCardTemplate(slide_id: string, primary_message: string, secondary_message: string, logo_message: string, logo?: string | null, sapling_id?: string | null, user_name?: string | null, trees_count?: number): Promise<void> {
+    try {
+        await this.api.post<any>(`/gift-cards/update-template`, { slide_id, primary_message, secondary_message, logo_message, logo, sapling_id, user_name, trees_count });
+    } catch (error: any) {
+        if (error.response) {
+            throw new Error(error.response.data.message);
+        }
+        throw new Error('Failed to generate gift cards');
+    }
+}
+
     /**
      * Create a gift card request
      * @param data - Gift card request data including required fields
@@ -137,6 +160,10 @@ class ApiClient {
       user_id: number;
       no_of_cards: number;
       created_by?: number;
+      event_name?: string | null; 
+      event_type?: string | null; 
+      gifted_on?: Date; 
+      planted_by?: string | null;
       [key: string]: any; 
     }): Promise<any> {
       try {

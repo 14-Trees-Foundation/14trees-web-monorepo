@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "ui/components/button"; 
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import MotionDiv from "components/animation/MotionDiv";
@@ -15,6 +16,7 @@ import CsvUpload from "components/CsvUpload";
 import { getUniqueRequestId } from "~/utils";
 import { UploadIcon } from "lucide-react";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
+
 
 declare global {
   interface Window {
@@ -38,6 +40,12 @@ interface DedicatedName {
 
 export default function GiftTreesPage() {
   // Form state (existing state remains unchanged)
+  const [eventName, setEventName] = useState<string | null>(null); // New state for event name
+  const [eventType, setEventType] = useState<string | null>(null); // New state for event type
+  const [giftedOn, setGiftedOn] = useState<Date | null>(null); // New state for gifted on
+  const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
+  const [isCardDialogOpen, setCardDialogOpen] = useState(false);
+  const [cardDetailsProps, setCardDetailsProps] = useState<CardDetailsProps | null>(null);// This will hold the props for CardDetails
   const [treeLocation, setTreeLocation] = useState("");
   const [groveType, setGroveType] = useState("");
   const [otherGroveType, setOtherGroveType] = useState("other");
@@ -53,6 +61,16 @@ export default function GiftTreesPage() {
     relation: "",
     trees_count: 1
   }]);
+  const [primaryMessage, setPrimaryMessage] = useState(
+    "A tree has been planted in your name at our conservation site. This living gift will grow for years, supporting biodiversity and combating climate change."
+  );
+  const [secondaryMessage, setSecondaryMessage] = useState(
+    "We invite you to visit and witness your tree's growth as it contributes to a greener future."
+  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [presentationId, setPresentationId] = useState<string | null>(null);
+  const [slideId, setSlideId] = useState<string | null>(null);
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -183,6 +201,40 @@ export default function GiftTreesPage() {
     }
 
     return error;
+  };
+
+  const handleGeneratePreview = async () => {
+    setIsGeneratingPreview(true);
+    try {
+      const endpoint = presentationId && slideId 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/update-template`
+        : `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/generate-template`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: giftRequestId || getUniqueRequestId(),
+          presentationId,
+          slideId,
+          primaryMessage,
+          secondaryMessage
+        })
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        setPresentationId(data.presentation_id || presentationId);
+        setSlideId(data.slide_id || slideId);
+        setPreviewUrl(
+          `https://docs.google.com/presentation/d/${data.presentation_id || presentationId}/embed?rm=minimal&slide=id.${data.slide_id || slideId}&timestamp=${Date.now()}`
+        );
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+    } finally {
+      setIsGeneratingPreview(false);
+    }
   };
 
   // Handle input changes (existing unchanged)
@@ -1055,6 +1107,136 @@ export default function GiftTreesPage() {
                     {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
                   </p>
 
+                  <div>
+                  <label className="block text-lg font-light mb-2">Occasion Type</label>
+                  <select
+                    id="eventType"
+                    name="eventType"
+                    value={eventType || ""}
+                    onChange={(e) => setEventType(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                  >
+                    <option value="" disabled>Select an event type</option>
+                    <option value="Birthday">Birthday</option>
+                    <option value="Memorial">Memorial</option>
+                    <option value="General gift">General gift</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-lg font-light mb-2">Occasion Name</label>
+                  <input
+                    type="text"
+                    id="eventName"
+                    name="eventName"
+                    value={eventName || ""}
+                    onChange={(e) => setEventName(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                  />
+                </div>
+
+                <div> 
+                  <label className="block text-lg font-light mb-2">Gifted By</label>
+                  <input
+                    type="text"
+                    id="plantedBy"
+                    name="plantedBy"
+                    value={plantedBy || ""}
+                    onChange={(e) => setPlantedBy(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-lg font-light mb-2">Date of Occasion</label>
+                  <input
+                    type="date"
+                    id="giftedOn"
+                    name="giftedOn"
+                    value={giftedOn ? giftedOn.toISOString().split('T')[0] : ""}
+                    onChange={(e) => setGiftedOn(e.target.value ? new Date(e.target.value) : null)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                  />
+                  </div>
+
+                  <div className="space-y-6">
+  <h3 className="text-xl font-semibold">Tree Card Messages</h3>
+  
+  <div className="grid gap-6 md:grid-cols-2">
+    {/* Left column - Message inputs */}
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-1">Primary Message</label>
+        <textarea
+          className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+          rows={4}
+          value={primaryMessage}
+          onChange={(e) => setPrimaryMessage(e.target.value)}
+          maxLength={270}
+          placeholder="A tree has been planted in your name at our conservation site..."
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          {270 - primaryMessage.length} characters remaining
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Secondary Message</label>
+        <textarea
+          className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+          rows={2}
+          value={secondaryMessage}
+          onChange={(e) => setSecondaryMessage(e.target.value)}
+          maxLength={125}
+          placeholder="We invite you to visit and witness your tree's growth..."
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          {125 - secondaryMessage.length} characters remaining
+        </p>
+      </div>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          className="px-4 py-2 border border-gray-300 rounded-md"
+          onClick={() => {
+            setPrimaryMessage(DEFAULT_PRIMARY);
+            setSecondaryMessage(DEFAULT_SECONDARY);
+          }}
+        >
+          Reset to Default
+        </button>
+        <button
+          type="button"
+          className="px-4 py-2 bg-green-600 text-white rounded-md"
+          onClick={handleGeneratePreview}
+          disabled={isGeneratingPreview}
+        >
+          {isGeneratingPreview ? 'Generating...' : 'Preview'}
+        </button>
+      </div>
+    </div>
+
+    {/* Right column - Preview */}
+    <div className="border border-gray-200 rounded-md p-4 min-h-[300px] flex items-center justify-center">
+      {isGeneratingPreview ? (
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Generating your card preview...</p>
+        </div>
+      ) : previewUrl ? (
+        <iframe
+          src={previewUrl}
+          className="w-full h-full min-h-[300px] border-none rounded-md"
+          title="Gift card preview"
+        />
+      ) : (
+        <p className="text-gray-500">Your card preview will appear here</p>
+      )}
+    </div>
+  </div>
+</div>
+
+                
                 {/* 4. Tree Dedication Names */}
                 <div className="space-y-4">
                   <label className="mb-2 block text-lg font-light">
