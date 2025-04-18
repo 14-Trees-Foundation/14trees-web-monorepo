@@ -650,7 +650,7 @@ export default function DonatePage() {
           body: JSON.stringify({
             action: 'create',
             amount,
-            donor_type: taxStatus === "indian" ? "Individual" : taxStatus === "foreign" ? "Foreign" : null,
+            donor_type: taxStatus === "indian" ? "Indian Citizen" : taxStatus === "foreign" ? "Foreign Donor" : null,
             pan_number: taxStatus === "indian" ? formData.panNumber : null,
             consent: taxStatus === "none" ? true : false,
           })

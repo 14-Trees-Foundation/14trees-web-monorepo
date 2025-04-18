@@ -78,7 +78,7 @@ export default function Header() {
           <Link href={"/donate"}>
             <Button className="bg-green-800 mr-3">Donate</Button>
           </Link>
-          <Link href={"/giftTrees"}>
+          <Link href={"/gift-trees"}>
             <Button className="bg-green-800">Gift Trees</Button>
           </Link>
           {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
