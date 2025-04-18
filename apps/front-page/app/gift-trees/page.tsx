@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "ui/components/button";
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import MotionDiv from "components/animation/MotionDiv";
@@ -12,8 +13,17 @@ import Image from 'next/image';
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import CsvUpload from "components/CsvUpload";
+import { getUniqueRequestId } from "~/utils";
 import { UploadIcon } from "lucide-react";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
+
+const defaultMessages = {
+  primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
+  birthday: 'We are immensely delighted to share that a tree has been planted in your name on the occasion of your birthday at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.',
+  memorial: 'A tree has been planted in the memory of <name here> at the 14 Trees Foundation reforestation site. For many years, this tree will help rejuvenate local ecosystems, support local biodiversity and offset the harmful effects of climate change and global warming.',
+  secondary: 'We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future.',
+  logo: 'Gifted by 14 Trees in partnership with'
+}
 
 declare global {
   interface Window {
@@ -35,8 +45,12 @@ interface DedicatedName {
   [key: string]: string | number | undefined;
 }
 
-export default function DonatePage() {
+export default function GiftTreesPage() {
   // Form state (existing state remains unchanged)
+  const [eventName, setEventName] = useState<string | null>(null); // New state for event name
+  const [eventType, setEventType] = useState<string | null>(null); // New state for event type
+  const [giftedOn, setGiftedOn] = useState<Date>(new Date()); // New state for gifted on
+  const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
   const [treeLocation, setTreeLocation] = useState("");
   const [groveType, setGroveType] = useState("");
   const [otherGroveType, setOtherGroveType] = useState("other");
@@ -52,6 +66,12 @@ export default function DonatePage() {
     relation: "",
     trees_count: 1
   }]);
+  const [primaryMessage, setPrimaryMessage] = useState(defaultMessages.primary);
+  const [secondaryMessage, setSecondaryMessage] = useState(defaultMessages.secondary);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [presentationId, setPresentationId] = useState<string | null>(null);
+  const [slideId, setSlideId] = useState<string | null>(null);
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,11 +84,9 @@ export default function DonatePage() {
     email: "",
     phone: "",
     numberOfTrees: "",
-    pledgedArea: "",
     panNumber: "",
     comments: ""
   });
-  const [pledgeType, setPledgeType] = useState<"trees" | "acres">("trees");
   const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
@@ -83,7 +101,8 @@ export default function DonatePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [donationId, setDonationId] = useState<string | null>(null);
+  const [giftRequestId, setGiftRequestId] = useState<string | null>(null);
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -91,9 +110,15 @@ export default function DonatePage() {
     (currentPage + 1) * itemsPerPage
   );
 
+  const calculateGiftingAmount = (): number => {
+    if (treeLocation === "foundation") return 3000;
+    if (treeLocation === "public") return 2000;
+    return 0;
+  };
+
   // Calculate total amount (existing unchanged)
   useEffect(() => {
-    const perTreeAmount = calculateDonationAmount();
+    const perTreeAmount = calculateGiftingAmount();
     const total = perTreeAmount * Number(formData.numberOfTrees || 0);
     setTotalAmount(total);
     setIsAboveLimit(total > 100000);
@@ -114,16 +139,9 @@ export default function DonatePage() {
     setErrors(prev => {
       const newErrors = { ...prev };
 
-      // Clear opposite field errors completely
-      if (pledgeType === "acres") {
-        delete newErrors.numberOfTrees;
-      } else {
-        delete newErrors.pledgedArea;
-      }
-
       return newErrors;
     });
-  }, [pledgeType]);
+  }, []);
 
   // Animation variants (existing unchanged)
   const containerVariants = {
@@ -180,28 +198,12 @@ export default function DonatePage() {
         break;
 
       case "numberOfTrees":
-        if (pledgeType === "trees") {
-          if (!value.trim()) {
-            error = "Number of trees is required";
-          } else if (!validationPatterns.number.test(value)) {
-            error = "Please enter a valid number";
-          } else if (parseInt(value) <= 0) {
-            error = "Must be at least 1 tree";
-          }
-        } else {
-          error = ""; // Explicitly clear error when not applicable
-        }
-        break;
-      // NEW: Acre validation
-      case "pledgedArea":
-        if (pledgeType === "acres") {
-          if (!value.trim()) {
-            error = "Acres is required";
-          } else if (!validationPatterns.number.test(value)) {
-            error = "Please enter a valid number";
-          } else if (parseFloat(value) <= 0) {
-            error = "Must be greater than 0";
-          }
+        if (!value.trim()) {
+          error = "Number of trees is required";
+        } else if (!validationPatterns.number.test(value)) {
+          error = "Please enter a valid number";
+        } else if (parseInt(value) <= 0) {
+          error = "Must be at least 1 tree";
         }
         break;
     }
@@ -209,20 +211,68 @@ export default function DonatePage() {
     return error;
   };
 
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setPrimaryMessage(eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary);
+      setSecondaryMessage(defaultMessages.secondary);
+
+      handleGeneratePreview();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [eventType]);
+
+  const handleGeneratePreview = async () => {
+    setIsGeneratingPreview(true);
+    try {
+      const endpoint = presentationId && slideId
+        ? `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/update-template`
+        : `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/generate-template`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: giftRequestId || getUniqueRequestId(),
+          presentation_id: presentationId,
+          slide_id: slideId,
+          primary_message: primaryMessage,
+          secondary_message: secondaryMessage,
+          event_type: eventType,
+          is_personal: true,
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setPresentationId(data.presentation_id || presentationId);
+        setSlideId(data.slide_id || slideId);
+        setPreviewUrl(
+          `https://docs.google.com/presentation/d/${data.presentation_id || presentationId}/embed?rm=minimal&slide=id.${data.slide_id || slideId}&timestamp=${Date.now()}`
+        );
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  };
+
   // Handle input changes (existing unchanged)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
-    // NEW: Clear opposite field errors when typing
-    if (name === "pledgedArea" && pledgeType === "acres") {
+    if (name === "numberOfTrees") {
       setErrors(prev => ({ ...prev, numberOfTrees: "" }));
-    } else if (name === "numberOfTrees" && pledgeType === "trees") {
-      setErrors(prev => ({ ...prev, pledgedArea: "" }));
     }
 
     const error = validateField(name, value);
     setErrors(prev => ({ ...prev, [name]: error }));
+
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === "fullName") {
+      setPlantedBy(prev => prev || value);
+    }
   };
 
   // Validate dedicated names (existing unchanged)
@@ -232,10 +282,10 @@ export default function DonatePage() {
 
     // Calculate total trees count
     const totalTrees = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 1), 0);
-    
-    // Check if total trees exceed the number of trees being donated
+
+    // Check if total trees exceed the number of trees being gifting
     if (formData.numberOfTrees && totalTrees > Number(formData.numberOfTrees)) {
-      newErrors["totalTrees"] = `Total trees (${totalTrees}) cannot exceed the number of trees you're donating (${formData.numberOfTrees})`;
+      newErrors["totalTrees"] = `Total trees (${totalTrees}) cannot exceed the number of trees you're gifting (${formData.numberOfTrees})`;
       isValid = false;
     }
 
@@ -395,22 +445,55 @@ export default function DonatePage() {
     e.preventDefault();
     setIsLoading(true);
     setIsSubmitting(true);
+
+    const uniqueRequestId = getUniqueRequestId();
+    setGiftRequestId(uniqueRequestId);
+
+    let paymentId: number | null = razorpayPaymentId || null;
+    if (paymentOption === "bank-transfer") {
+      paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
+      setRazorpayPaymentId(paymentId);
+    }
+
+    if (!paymentId) {
+      setIsLoading(false);
+      setIsSubmitting(false);
+      return;
+    }
+
+    let userId: number | null = null;
+    try {
+      const user = await apiClient.getUser(formData.email);
+      if (!user) {
+        const userData = await apiClient.createUser(
+          formData.fullName,
+          formData.email
+        );
+        userId = userData.id; // Extract user_id from the response
+      } else {
+        userId = user.id;
+      }
+    } catch (error) {
+      console.error("User creation error:", error);
+      alert(error.message || "Failed to create user");
+      setIsLoading(false);
+      setIsSubmitting(false);
+      return;
+    }
+
     const mainFormValid = Object.keys(formData).every(key => {
       if (key === "comments") {
         return true;
       }
 
-      // NEW: Skip validation for fields not relevant to current pledge type
-      if ((key === "numberOfTrees" && pledgeType === "acres") ||
-        (key === "pledgedArea" && pledgeType === "trees")) {
-        return true;
-      }
 
       const value = formData[key as keyof typeof formData];
       if (!value && key !== "phone" && key !== "panNumber" && key !== "comments") {
         setErrors(prev => ({ ...prev, [key]: "This field is required" }));
         return false;
       }
+
+      if (key === 'panNumber' && taxStatus !== 'indian') return true;
 
       const error = validateField(key, value);
       if (error) {
@@ -451,39 +534,72 @@ export default function DonatePage() {
         })
       );
 
-      const donationRequest = {
+      const giftTreesRequest = {
+        request_id: uniqueRequestId,
+        user_id: userId,
         sponsor_name: formData.fullName,
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
         category: treeLocation === "foundation" ? "Foundation" : "Public",
         grove: groveType === "Other" ? otherGroveType : groveType,
-        trees_count: pledgeType === "trees" ? parseInt(formData.numberOfTrees) : null,
-        pledged_area_acres: pledgeType === "acres" ? parseFloat(formData.pledgedArea) : null,
-        payment_id: razorpayPaymentId,
+        no_of_cards: parseInt(formData.numberOfTrees),
+        payment_id: paymentId,
         contribution_options: [],
         comments: formData.comments,
-        users: users.map(user => ({
-          ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
-        })),
+        primary_message: primaryMessage,
+        secondary_message: secondaryMessage,
+        request_type: 'Cards Request',
+        event_name: eventName,
+        event_type: eventType,
+        planted_by: plantedBy,
+        gifted_on: giftedOn
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(donationRequest)
+        body: JSON.stringify(giftTreesRequest)
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Donation submission failed");
+        throw new Error(error.message || "Gift Trees Request submission failed");
       }
 
       const responseData = await response.json();
-      setDonationId(responseData.id);
+      const giftRequestId = responseData.id;
+
+      if (users.length > 0) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/users`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              gift_card_request_id: giftRequestId,
+              users: users.map(user => ({
+                ...user,
+                gifted_trees: user.trees_count,
+                recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
+                assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+              })),
+            })
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || "Gift Cards Users creation failed");
+          }
+
+        } catch (error) {
+          console.error("Failed to create gift cards users:", error);
+        }
+      }
+
+      setGiftRequestId(responseData.id);
       setShowSuccessDialog(true);
 
       // Reset form
@@ -492,7 +608,6 @@ export default function DonatePage() {
         email: "",
         phone: "",
         numberOfTrees: "",
-        pledgedArea: "",
         panNumber: "",
         comments: ""
       });
@@ -522,8 +637,8 @@ export default function DonatePage() {
       setRazorpayPaymentId(null);
 
     } catch (err: any) {
-      console.error("Donation error:", err);
-      alert(err.message || "Failed to create donation");
+      console.error("Gift trees request error:", err);
+      alert(err.message || "Failed to create gift trees request");
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
@@ -578,7 +693,7 @@ export default function DonatePage() {
       const error = isNaN(Number(value))
         ? "Please enter a valid number"
         : "";
-      
+
       // Check if the sum of trees_count exceeds formData.numberOfTrees
       if (!error && formData.numberOfTrees) {
         const totalTrees = dedicatedNames.reduce((sum, name, i) => {
@@ -587,16 +702,16 @@ export default function DonatePage() {
           }
           return sum + (name.trees_count || 0);
         }, 0);
-        
+
         if (totalTrees > Number(formData.numberOfTrees)) {
-          setErrors(prev => ({ 
-            ...prev, 
-            [`dedicatedTreeCount-${index}`]: `Total trees (${totalTrees}) cannot exceed the number of trees you're donating (${formData.numberOfTrees})` 
+          setErrors(prev => ({
+            ...prev,
+            [`dedicatedTreeCount-${index}`]: `Total trees (${totalTrees}) cannot exceed the number of trees you're gifting (${formData.numberOfTrees})`
           }));
           return;
         }
       }
-      
+
       setErrors(prev => ({ ...prev, [`dedicatedTreeCount-${index}`]: error }));
     } else if (field === "assignee_name" && value) {
       const error = !validationPatterns.name.test(value.toString())
@@ -614,19 +729,12 @@ export default function DonatePage() {
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedPhone-${index}`]: error }));
     }
-    
-  };
 
-  const calculateDonationAmount = (): number => {
-    if (treeLocation === "foundation") return 3000;
-    if (treeLocation === "public") return 1500;
-    if (treeLocation === "gift") return 2000;
-    return 0;
   };
 
   const handleRazorpayPayment = async () => {
     if (isAboveLimit) {
-      alert("Please use Bank Transfer for donations above ₹1,00,000");
+      alert("Please use Bank Transfer for gifting trees above ₹1,00,000");
       return;
     }
 
@@ -637,9 +745,7 @@ export default function DonatePage() {
 
     setIsProcessing(true);
     try {
-      const amount = pledgeType === "trees"
-        ? calculateDonationAmount() * Number(formData.numberOfTrees)
-        : 0; // Acres have no immediate payment
+      const amount = calculateGiftingAmount() * Number(formData.numberOfTrees);
       if (amount <= 0) throw new Error("Invalid amount");
 
       let orderId = razorpayOrderId;
@@ -659,20 +765,20 @@ export default function DonatePage() {
           const errorData = await response.json();
           throw new Error(errorData.error || "Payment failed");
         }
-  
+
         const { order_id, id } = await response.json();
         setRazorpayPaymentId(id);
         setRazorpayOrderId(order_id);
         orderId = order_id;
       }
-      
+
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: amount * 100,
         currency: 'INR',
         name: "14 Trees Foundation",
-        description: `Donation for ${formData.numberOfTrees} trees`,
+        description: `Gifting ${formData.numberOfTrees} trees`,
         order_id: orderId,
         handler: async (response: any) => {
           setRpPaymentSuccess(true);
@@ -718,6 +824,37 @@ export default function DonatePage() {
     }
   };
 
+  const handleBankPayment = async (uniqueRequestId: string, paymentId: number | null) => {
+    if (!paymentProof) {
+      alert("Please upload a payment proof");
+      return null;
+    }
+
+    try {
+      const amount = calculateGiftingAmount() * Number(formData.numberOfTrees);
+      if (amount <= 0) throw new Error("Invalid amount");
+
+      if (!paymentId) {
+        const response = await apiClient.createPayment(amount, taxStatus === "indian" ? "Individual" : taxStatus === "foreign" ? "Foreign" : null, formData.panNumber, taxStatus === "none" ? true : false);
+        paymentId = response.id;
+      }
+
+      if (!paymentId) {
+        alert("Payment ID is required");
+        return null;
+      }
+
+      const key = uniqueRequestId + "/payments/" + paymentProof.name;
+      const url = await apiClient.uploadPaymentProof({ key, payment_proof: paymentProof });
+      await apiClient.createPaymentHistory(paymentId, "Bank Transfer", amount, url);
+
+      return paymentId;
+    } catch (err: any) {
+      alert(err.message || "Payment failed");
+      return null;
+    }
+  }
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -753,27 +890,27 @@ export default function DonatePage() {
     ];
 
     const handleInvolvementChange = (value: string) => {
-      setAdditionalInvolvement(prev => 
-        prev.includes(value) 
+      setAdditionalInvolvement(prev =>
+        prev.includes(value)
           ? prev.filter(item => item !== value)
           : [...prev, value]
       );
     };
 
     const handleUpdate = async () => {
-      if (!donationId) return;
-      
+      if (!giftRequestId) return;
+
       setIsUpdating(true);
       setUpdateError(null);
-      
+
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/${donationId}`, {
-          method: 'PUT',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests/update`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            donation_id: donationId,
+            gift_card_request_id: giftRequestId,
             updateFields: ['contribution_options', 'comments'],
             data: {
               contribution_options: additionalInvolvement,
@@ -783,7 +920,7 @@ export default function DonatePage() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update donation details');
+          throw new Error('Failed to update gift trees request details');
         }
 
         setUpdateSuccess(true);
@@ -797,11 +934,11 @@ export default function DonatePage() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
-          <p className="mb-2">Your donation request has been processed successfully.</p>
-          {donationId && (
+          <h3 className="text-xl font-bold text-green-600 mb-4">Gift Trees Request Successful!</h3>
+          <p className="mb-2">Your gift trees request has been processed successfully.</p>
+          {giftRequestId && (
             <p className="mb-2">
-              <strong>Donation ID:</strong> {donationId}
+              <strong>Gift Trees Request ID:</strong> {giftRequestId}
             </p>
           )}
           <p className="mb-4">You will receive an acknowledgment email shortly.</p>
@@ -983,8 +1120,7 @@ export default function DonatePage() {
                   <div className="space-y-3">
                     {[
                       { value: "foundation", label: "I'd like my trees to be planted on 14 Trees Foundations land preserve. The cost is Rs 3,000 (USD $40) per tree (inclusive of land cost)" },
-                      { value: "public", label: "I'd like my trees to be planted on public land (gram panchayat or public school land). The cost is Rs. 1500 (USD $20) per tree." },
-                      { value: "gift", label: "I'd like to gift trees which are to be planted on public land (gram panchayat or public school land). The cost is Rs. 2000 (USD $27) per tree." }
+                      { value: "public", label: "I'd like my trees to be planted on public land (gram panchayat or public school land). The cost is Rs. 2000 (USD $23) per tree." },
                     ].map((option) => (
                       <label key={option.value} className="flex items-start space-x-3">
                         <input
@@ -1047,439 +1183,535 @@ export default function DonatePage() {
                   )}
                 </div>
 
-                {/* 3. Number of Trees */}
-                <div className="mb-6">
-                  <label className="mb-2 block text-lg font-light">I would like to sponsor via:</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="pledgeType"
-                        value="trees"
-                        checked={pledgeType === "trees"}
-                        onChange={() => setPledgeType("trees")}
-                        disabled={rpPaymentSuccess}
-                        className="h-5 w-5"
-                      />
-                      <span>Trees</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="pledgeType"
-                        value="acres"
-                        checked={pledgeType === "acres"}
-                        onChange={() => setPledgeType("acres")}
-                        disabled={rpPaymentSuccess}
-                        className="h-5 w-5"
-                      />
-                      <span>Area (in acres)</span>
-                    </label>
+                {/* 3. Number of Trees*/}
+                <div>
+                  <label className="mb-2 block text-lg font-light">
+                    Number of trees you would like to sponsor *
+                  </label>
+                  <input
+                    type="number"
+                    name="numberOfTrees"
+                    min="1"
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                    required
+                    disabled={rpPaymentSuccess}
+                    value={formData.numberOfTrees}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <p className="mt-2 text-sm text-gray-600">
+                  Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
+                  {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
+                </p>
+
+                {/* Occasion Details */}
+                <div className="space-y-6 mt-2">
+                  <h2 className="text-2xl font-semibold">Are you gifting this tree on an Occasion?</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-lg font-light mb-2">Occasion Type</label>
+                    <div className="relative">
+                      <select
+                        id="eventType"
+                        name="eventType"
+                        value={eventType || ""}
+                        onChange={(e) => {
+                          setEventType(e.target.value);
+                          setPrimaryMessage(e.target.value === "1" ? defaultMessages.birthday : e.target.value === "2" ? defaultMessages.memorial : defaultMessages.primary);
+                          setSecondaryMessage(defaultMessages.secondary);
+                        }}
+                        className="appearance-none w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700 bg-white transition-colors duration-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
+                      >
+                        <option value="" disabled>Select an event type</option>
+                        <option value="1">Birthday</option>
+                        <option value="2">Memorial</option>
+                        <option value="3">General gift</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-lg font-light mb-2">Occasion Name</label>
+                    <input
+                      type="text"
+                      id="eventName"
+                      name="eventName"
+                      value={eventName || ""}
+                      onChange={(e) => setEventName(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-lg font-light mb-2">Gifted By</label>
+                    <input
+                      type="text"
+                      id="plantedBy"
+                      name="plantedBy"
+                      value={plantedBy || ""}
+                      onChange={(e) => setPlantedBy(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-lg font-light mb-2">Date of Occasion</label>
+                    <input
+                      type="date"
+                      id="giftedOn"
+                      name="giftedOn"
+                      value={giftedOn ? giftedOn.toISOString().split('T')[0] : ""}
+                      onChange={(e) => setGiftedOn(e.target.value ? new Date(e.target.value) : new Date())}
+                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                    />
                   </div>
                 </div>
 
-                {pledgeType === "trees" ? (
-                  <div>
-                    <label className="mb-2 block text-lg font-light">
-                      Number of trees you would like to sponsor *
-                    </label>
-                    <input
-                      type="number"
-                      name="numberOfTrees"
-                      min="1"
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                      required
-                      disabled={rpPaymentSuccess}
-                      value={formData.numberOfTrees}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="mb-2 block text-lg font-light">
-                    Area to Reforest (acres) *
-                    </label>
-                    <input
-                      type="number"
-                      name="pledgedArea"
-                      min="0.1"
-                      step="0.1"
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                      required
-                      value={formData.pledgedArea}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                )}
-                {treeLocation && pledgeType === "trees" && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
-                    {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
-                  </p>
-                )}
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-semibold">Tree Card Messages</h3>
 
-                {/* 4. Tree Dedication Names */}
-                {pledgeType === "trees" && (
+                  {/* Left column - Message inputs */}
                   <div className="space-y-4">
-                    <label className="mb-2 block text-lg font-light">
-                      I&apos;d like my trees to be planted in the following name:
-                    </label>
-
-                    <div className="flex items-center mb-4">
-                      <input
-                        type="checkbox"
-                        id="multipleNames"
-                        className="h-5 w-5 mr-3"
-                        checked={multipleNames}
-                        onChange={(e) => setMultipleNames(e.target.checked)}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Primary Message</label>
+                      <textarea
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                        rows={window.innerWidth < 640 ? 5 : 3}
+                        value={primaryMessage}
+                        onChange={(e) => setPrimaryMessage(e.target.value)}
+                        maxLength={270}
+                        placeholder="A tree has been planted in your name at our conservation site..."
                       />
-                      <label htmlFor="multipleNames" className="text-gray-700">
-                        Dedicate to multiple people?
-                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {270 - primaryMessage.length} characters remaining
+                      </p>
                     </div>
 
-                    {multipleNames && (
-                      <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
-                        <button
-                          type="button"
-                          className={`${
-                            nameEntryMethod === "manual"
-                              ? "bg-green-500 shadow-sm text-white ring-green-700"
-                              : "text-green-600 hover:bg-green-100"
-                          } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                          onClick={() => setNameEntryMethod("manual")}
-                        >
-                          Add Manually
-                        </button>
-                        <button
-                          type="button"
-                          className={`${
-                            nameEntryMethod === "csv"
-                              ? "bg-green-500 shadow-sm text-white ring-green-700"
-                              : "text-green-600 hover:bg-green-100"
-                          } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                          onClick={() => setNameEntryMethod("csv")}
-                        >
-                          Bulk Upload CSV
-                        </button>
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Secondary Message</label>
+                      <textarea
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                        rows={window.innerWidth < 640 ? 4 : 2}
+                        value={secondaryMessage}
+                        onChange={(e) => setSecondaryMessage(e.target.value)}
+                        maxLength={125}
+                        placeholder="We invite you to visit and witness your tree's growth..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {125 - secondaryMessage.length} characters remaining
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        className="px-4 py-2 border border-gray-300 rounded-md"
+                        onClick={() => {
+                          setPrimaryMessage(eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary);
+                          setSecondaryMessage(defaultMessages.secondary);
+                        }}
+                      >
+                        Reset to Default
+                      </button>
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-green-600 text-white rounded-md"
+                        onClick={handleGeneratePreview}
+                        disabled={isGeneratingPreview}
+                      >
+                        {isGeneratingPreview ? 'Generating...' : 'Preview'}
+                      </button>
+                    </div>
+                  </div>
 
-                    {multipleNames && nameEntryMethod === "manual" ? (
+                  {/* Right column - Preview */}
+                  <div className="border border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
+                    {isGeneratingPreview ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-600">Generating your card preview...</p>
+                      </div>
+                    ) : previewUrl ? (
+                      <div className="w-full h-full aspect-[4/3] sm:aspect-[16/9]">
+                        <iframe
+                          src={previewUrl}
+                          className="w-full h-full border-none rounded-md"
+                          title="Gift card preview"
+                          style={{ minHeight: '250px', height: "100%", width: "100%" }}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 py-16">Your card preview will appear here</p>
+                    )}
+                  </div>
+                </div>
+
+
+                {/* 4. Tree Dedication Names */}
+                <div className="space-y-4 mt-2">
+                  <h3 className="text-2xl font-semibold">Tree Recipients</h3>
+                  <label className="mb-2 block text-lg font-light">
+                    I&apos;d like my trees to be planted in the following name:
+                  </label>
+
+                  <div className="flex items-center mb-4">
+                    <input
+                      type="checkbox"
+                      id="multipleNames"
+                      className="h-5 w-5 mr-3"
+                      checked={multipleNames}
+                      onChange={(e) => setMultipleNames(e.target.checked)}
+                    />
+                    <label htmlFor="multipleNames" className="text-gray-700">
+                      Dedicate to multiple people?
+                    </label>
+                  </div>
+
+                  {multipleNames && (
+                    <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
+                      <button
+                        type="button"
+                        className={`${nameEntryMethod === "manual"
+                          ? "bg-green-500 shadow-sm text-white ring-green-700"
+                          : "text-green-600 hover:bg-green-100"
+                          } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                        onClick={() => setNameEntryMethod("manual")}
+                      >
+                        Add Manually
+                      </button>
+                      <button
+                        type="button"
+                        className={`${nameEntryMethod === "csv"
+                          ? "bg-green-500 shadow-sm text-white ring-green-700"
+                          : "text-green-600 hover:bg-green-100"
+                          } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                        onClick={() => setNameEntryMethod("csv")}
+                      >
+                        Bulk Upload CSV
+                      </button>
+                    </div>
+                  )}
+
+                  {multipleNames && nameEntryMethod === "manual" ? (
+                    <div className="space-y-4">
+                      {errors["totalTrees"] && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                          <p className="text-red-700">{errors["totalTrees"]}</p>
+                        </div>
+                      )}
+                      {dedicatedNames.map((name, index) => (
+                        <UserDetailsForm
+                          key={index}
+                          data={name}
+                          index={index}
+                          onUpdate={(field, value) => handleNameChange(index, field, value)}
+                          errors={errors}
+                          canRemove={index > 0}
+                          onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
+                        />
+                      ))}
+                      <button
+                        type="button"
+                        onClick={handleAddName}
+                        className="flex items-center text-green-700 hover:text-green-900 mt-2"
+                        disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === ""}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        Add another name
+                      </button>
+                    </div>
+                  ) : multipleNames && nameEntryMethod === "csv" ? (
+                    <div className="space-y-4 border border-gray-200 rounded-md p-4">
                       <div className="space-y-4">
                         {errors["totalTrees"] && (
                           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
                             <p className="text-red-700">{errors["totalTrees"]}</p>
                           </div>
                         )}
-                        {dedicatedNames.map((name, index) => (
-                          <UserDetailsForm
-                            key={index}
-                            data={name}
-                            index={index}
-                            onUpdate={(field, value) => handleNameChange(index, field, value)}
-                            errors={errors}
-                            canRemove={index > 0}
-                            onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
+                        <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
+                        <p className="text-sm text-gray-600">
+                          <button
+                            type="button"
+                            onClick={downloadSampleCsv}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Download sample CSV
+                          </button>
+                        </p>
+
+                        {/* CSV Upload */}
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            accept=".csv"
+                            onChange={handleCsvUpload}
+                            className="hidden"
                           />
-                        ))}
-                        <button
-                          type="button"
-                          onClick={handleAddName}
-                          className="flex items-center text-green-700 hover:text-green-900 mt-2"
-                          disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === ""}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                          </svg>
-                          Add another name
-                        </button>
-                      </div>
-                    ) : multipleNames && nameEntryMethod === "csv" ? (
-                      <div className="space-y-4 border border-gray-200 rounded-md p-4">
-                        <div className="space-y-4">
-                          {errors["totalTrees"] && (
-                            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                              <p className="text-red-700">{errors["totalTrees"]}</p>
-                            </div>
+                          <button
+                            value={undefined}
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                          >
+                            Select CSV File
+                          </button>
+                          {csvFile && (
+                            <span className="self-center text-sm">
+                              {csvFile.name}
+                            </span>
                           )}
-                          <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
-                          <p className="text-sm text-gray-600">
-                            <button
-                              type="button"
-                              onClick={downloadSampleCsv}
-                              className="text-blue-600 hover:underline"
-                            >
-                              Download sample CSV
-                            </button>
-                          </p>
-
-                          {/* CSV Upload */}
-                          <div className="flex gap-2">
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              accept=".csv"
-                              onChange={handleCsvUpload}
-                              className="hidden"
-                            />
-                            <button
-                              value={undefined}
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
-                            >
-                              Select CSV File
-                            </button>
-                            {csvFile && (
-                              <span className="self-center text-sm">
-                                {csvFile.name}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Image Upload Section */}
-                          <div className="pt-2">
-                            <label className="block text-sm font-medium mb-1">
-                              Upload Recipient Images
-                            </label>
-                            <input
-                              type="file"
-                              id="recipient-images"
-                              multiple
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              className="hidden"
-                            />
-                            <label
-                              htmlFor="recipient-images"
-                              className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
-                            >
-                              <UploadIcon className="w-4 h-4" />
-                              Select Images
-                            </label>
-                            <p className="mt-1 text-xs text-gray-500">
-                              Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
-                            </p>
-                          </div>
                         </div>
 
-                        {csvErrors.length > 0 && (
-                          <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                            <h4 className="font-medium text-red-700">CSV Errors:</h4>
-                            <ul className="list-disc pl-5 text-red-600">
-                              {csvErrors.map((error, i) => (
-                                <li key={i} className="text-sm">{error}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {csvPreview.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="font-medium">
-                              Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
-                            </h4>
-                            <div className="max-h-96 overflow-y-auto border rounded-md">
-                              <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Email</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Phone</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                  {paginatedData.map((recipient, i) => (
-                                    <tr key={i}>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_name || '-'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_email || '-'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_phone || '-'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
-                                      <td className="px-4 py-2 whitespace-nowrap">
-                                        {recipient.image && (
-                                          typeof recipient.image === 'string' ? (
-                                            <img
-                                              src={recipient.image}
-                                              className="h-10 w-10 rounded-full object-cover"
-                                              alt={`${recipient.recipient_name}'s profile`}
-                                            />
-                                          ) : (
-                                            <div className="flex items-center">
-                                              <span className="text-sm text-gray-500">Ready to upload</span>
-                                              <button
-                                                onClick={() => {
-                                                  // Add image upload handler here
-                                                }}
-                                                className="ml-2 text-sm text-blue-600 hover:underline"
-                                              >
-                                                Upload
-                                              </button>
-                                            </div>
-                                          )
-                                        )}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                            <div className="flex justify-between items-center mt-2">
-                              <button
-                                onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                                disabled={currentPage === 0}
-                                className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                              >
-                                Previous
-                              </button>
-
-                              <button
-                                onClick={() => setCurrentPage(p =>
-                                  Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
-                                )}
-                                disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
-                                className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                              >
-                                Next
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        {/* Image Upload Section */}
+                        <div className="pt-2">
+                          <label className="block text-sm font-medium mb-1">
+                            Upload Recipient Images
+                          </label>
+                          <input
+                            type="file"
+                            id="recipient-images"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="recipient-images"
+                            className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
+                          >
+                            <UploadIcon className="w-4 h-4" />
+                            Select Images
+                          </label>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
+
+                      {csvErrors.length > 0 && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                          <h4 className="font-medium text-red-700">CSV Errors:</h4>
+                          <ul className="list-disc pl-5 text-red-600">
+                            {csvErrors.map((error, i) => (
+                              <li key={i} className="text-sm">{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {csvPreview.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
+                          </h4>
+                          <div className="max-h-96 overflow-y-auto border rounded-md">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Email</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Phone</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {paginatedData.map((recipient, i) => (
+                                  <tr key={i}>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_name || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_email || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_phone || '-'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap">
+                                      {recipient.image && (
+                                        typeof recipient.image === 'string' ? (
+                                          <img
+                                            src={recipient.image}
+                                            className="h-10 w-10 rounded-full object-cover"
+                                            alt={`${recipient.recipient_name}'s profile`}
+                                          />
+                                        ) : (
+                                          <div className="flex items-center">
+                                            <span className="text-sm text-gray-500">Ready to upload</span>
+                                            <button
+                                              onClick={() => {
+                                                // Add image upload handler here
+                                              }}
+                                              className="ml-2 text-sm text-blue-600 hover:underline"
+                                            >
+                                              Upload
+                                            </button>
+                                          </div>
+                                        )
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="flex justify-between items-center mt-2">
+                            <button
+                              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                              disabled={currentPage === 0}
+                              className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                            >
+                              Previous
+                            </button>
+
+                            <button
+                              onClick={() => setCurrentPage(p =>
+                                Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
+                              )}
+                              disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
+                              className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <input
+                        type="text"
+                        placeholder="Recipient name"
+                        className={`w-full rounded-md border ${errors['dedicatedName-0'] ? 'border-red-500' : 'border-gray-300'
+                          } px-4 py-3 text-gray-700`}
+                        value={dedicatedNames[0].recipient_name}
+                        onChange={(e) => {
+                          handleNameChange(0, "recipient_name", e.target.value);
+                          if (!isAssigneeDifferent) {
+                            handleNameChange(0, "assignee_name", e.target.value);
+                          }
+                        }}
+                      />
+                      {errors['dedicatedName-0'] && (
+                        <p className="mt-1 text-sm text-red-600">{errors['dedicatedName-0']}</p>
+                      )}
+                      <div className="grid gap-4 md:grid-cols-2">
                         <input
-                          type="text"
-                          placeholder="Recipient name"
-                          className={`w-full rounded-md border ${errors['dedicatedName-0'] ? 'border-red-500' : 'border-gray-300'
+                          type="email"
+                          placeholder="Recipient Email (optional)"
+                          className={`w-full rounded-md border ${errors['dedicatedEmail-0'] ? 'border-red-500' : 'border-gray-300'
                             } px-4 py-3 text-gray-700`}
-                          value={dedicatedNames[0].recipient_name}
+                          value={dedicatedNames[0].recipient_email}
                           onChange={(e) => {
-                            handleNameChange(0, "recipient_name", e.target.value);
+                            handleNameChange(0, "recipient_email", e.target.value)
                             if (!isAssigneeDifferent) {
-                              handleNameChange(0, "assignee_name", e.target.value);
+                              handleNameChange(0, "assignee_email", e.target.value)
                             }
                           }}
                         />
-                        {errors['dedicatedName-0'] && (
-                          <p className="mt-1 text-sm text-red-600">{errors['dedicatedName-0']}</p>
+                        {errors['dedicatedEmail-0'] && (
+                          <p className="mt-1 text-sm text-red-600">{errors['dedicatedEmail-0']}</p>
                         )}
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <input
-                            type="email"
-                            placeholder="Recipient Email (optional)"
-                            className={`w-full rounded-md border ${errors['dedicatedEmail-0'] ? 'border-red-500' : 'border-gray-300'
-                              } px-4 py-3 text-gray-700`}
-                            value={dedicatedNames[0].recipient_email}
-                            onChange={(e) => {
-                              handleNameChange(0, "recipient_email", e.target.value)
-                              if (!isAssigneeDifferent) {
-                                handleNameChange(0, "assignee_email", e.target.value)
-                              }
-                            }}
-                          />
-                          {errors['dedicatedEmail-0'] && (
-                            <p className="mt-1 text-sm text-red-600">{errors['dedicatedEmail-0']}</p>
-                          )}
-                          <input
-                            type="tel"
-                            placeholder="Recipient Phone (optional)"
-                            className={`w-full rounded-md border ${errors['dedicatedPhone-0'] ? 'border-red-500' : 'border-gray-300'
-                              } px-4 py-3 text-gray-700`}
-                            value={dedicatedNames[0].recipient_phone}
-                            onChange={(e) => {
-                              handleNameChange(0, "recipient_phone", e.target.value)
-                              if (!isAssigneeDifferent) {
-                                handleNameChange(0, "assignee_phone", e.target.value)
-                              }
-                            }}
-                            pattern="[0-9]{10,15}"
-                            title="10-15 digit phone number"
-                          />
-                          {errors['dedicatedPhone-0'] && (
-                            <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
-                          )}
-                        </div>
-                        <div className="mt-6">
-                          <label className="flex items-center space-x-3 mb-4">
-                            <input
-                              type="checkbox"
-                              checked={isAssigneeDifferent}
-                              onChange={(e) => setIsAssigneeDifferent(e.target.checked)}
-                              className="h-5 w-5"
-                            />
-                            <span>Assign trees to someone else?</span>
-                          </label>
-
-                          {isAssigneeDifferent && (
-                            <div className="border border-gray-200 rounded-md p-4 space-y-4">
-                              <h3 className="font-medium">Assignee Details</h3>
-                              <input
-                                type="text"
-                                placeholder="Assignee Name *"
-                                value={dedicatedNames[0].assignee_name}
-                                onChange={(e) => handleNameChange(0, "assignee_name", e.target.value)}
-                                className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                required
-                              />
-                              <div className="grid gap-4 md:grid-cols-2">
-                                <input
-                                  type="email"
-                                  placeholder="Assignee Email (optional)"
-                                  value={dedicatedNames[0].assignee_email}
-                                  onChange={(e) => handleNameChange(0, "assignee_email", e.target.value)}
-                                  className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                />
-                                <input
-                                  type="tel"
-                                  placeholder="Assignee Phone (optional)"
-                                  value={dedicatedNames[0].assignee_phone}
-                                  onChange={(e) => handleNameChange(0, "assignee_phone", e.target.value)}
-                                  className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium mb-1">Relation *</label>
-                                <select
-                                  value={dedicatedNames[0].relation}
-                                  onChange={(e) => handleNameChange(0, "relation", e.target.value)}
-                                  className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                >
-                                  <option value="father">Father</option>
-                                  <option value="mother">Mother</option>
-                                  <option value="uncle">Uncle</option>
-                                  <option value="aunt">Aunt</option>
-                                  <option value="grandfather">Grandfather</option>
-                                  <option value="grandmother">Grandmother</option>
-                                  <option value="son">Son</option>
-                                  <option value="daughter">Daughter</option>
-                                  <option value="wife">Wife</option>
-                                  <option value="husband">Husband</option>
-                                  <option value="grandson">Grandson</option>
-                                  <option value="granddaughter">Granddaughter</option>
-                                  <option value="brother">Brother</option>
-                                  <option value="sister">Sister</option>
-                                  <option value="cousin">Cousin</option>
-                                  <option value="friend">Friend</option>
-                                  <option value="colleague">Colleague</option>
-                                  <option value="other">Other</option>
-                                </select>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        <input
+                          type="tel"
+                          placeholder="Recipient Phone (optional)"
+                          className={`w-full rounded-md border ${errors['dedicatedPhone-0'] ? 'border-red-500' : 'border-gray-300'
+                            } px-4 py-3 text-gray-700`}
+                          value={dedicatedNames[0].recipient_phone}
+                          onChange={(e) => {
+                            handleNameChange(0, "recipient_phone", e.target.value)
+                            if (!isAssigneeDifferent) {
+                              handleNameChange(0, "assignee_phone", e.target.value)
+                            }
+                          }}
+                          pattern="[0-9]{10,15}"
+                          title="10-15 digit phone number"
+                        />
+                        {errors['dedicatedPhone-0'] && (
+                          <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="mt-6">
+                        <label className="flex items-center space-x-3 mb-4">
+                          <input
+                            type="checkbox"
+                            checked={isAssigneeDifferent}
+                            onChange={(e) => setIsAssigneeDifferent(e.target.checked)}
+                            className="h-5 w-5"
+                          />
+                          <span>Assign trees to someone else?</span>
+                        </label>
+
+                        {isAssigneeDifferent && (
+                          <div className="border border-gray-200 rounded-md p-4 space-y-4">
+                            <h3 className="font-medium">Assignee Details</h3>
+                            <input
+                              type="text"
+                              placeholder="Assignee Name *"
+                              value={dedicatedNames[0].assignee_name}
+                              onChange={(e) => handleNameChange(0, "assignee_name", e.target.value)}
+                              className="w-full rounded-md border border-gray-300 px-4 py-3"
+                              required
+                            />
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <input
+                                type="email"
+                                placeholder="Assignee Email (optional)"
+                                value={dedicatedNames[0].assignee_email}
+                                onChange={(e) => handleNameChange(0, "assignee_email", e.target.value)}
+                                className="w-full rounded-md border border-gray-300 px-4 py-3"
+                              />
+                              <input
+                                type="tel"
+                                placeholder="Assignee Phone (optional)"
+                                value={dedicatedNames[0].assignee_phone}
+                                onChange={(e) => handleNameChange(0, "assignee_phone", e.target.value)}
+                                className="w-full rounded-md border border-gray-300 px-4 py-3"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Relation *</label>
+                              <select
+                                value={dedicatedNames[0].relation}
+                                onChange={(e) => handleNameChange(0, "relation", e.target.value)}
+                                className="w-full rounded-md border border-gray-300 px-4 py-3"
+                              >
+                                <option value="father">Father</option>
+                                <option value="mother">Mother</option>
+                                <option value="uncle">Uncle</option>
+                                <option value="aunt">Aunt</option>
+                                <option value="grandfather">Grandfather</option>
+                                <option value="grandmother">Grandmother</option>
+                                <option value="son">Son</option>
+                                <option value="daughter">Daughter</option>
+                                <option value="wife">Wife</option>
+                                <option value="husband">Husband</option>
+                                <option value="grandson">Grandson</option>
+                                <option value="granddaughter">Granddaughter</option>
+                                <option value="brother">Brother</option>
+                                <option value="sister">Sister</option>
+                                <option value="cousin">Cousin</option>
+                                <option value="friend">Friend</option>
+                                <option value="colleague">Colleague</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
 
                 {/* 6. Tax Information */}
                 <div className="space-y-6">
@@ -1571,18 +1803,18 @@ export default function DonatePage() {
                           onChange={() => setPaymentOption("bank-transfer")}
                           disabled={rpPaymentSuccess}
                         />
-                        <span>Bank Transfer {isAboveLimit && "(Recommended for large donations)"}</span>
+                        <span>Bank Transfer {isAboveLimit && "(Recommended for large gifting)"}</span>
                       </label>
                     </div>
 
                     {isAboveLimit && (
                       <p className="text-yellow-600 bg-yellow-50 p-2 rounded-md">
-                        For donations above ₹1,00,000, please use Bank Transfer.
+                        For gifting trees above ₹1,00,000, please use Bank Transfer.
                       </p>
                     )}
                   </div>
 
-                  {pledgeType === "trees" && paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
+                  {paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
                     <div className="flex justify-center">
                       <Button
                         type="button"
@@ -1593,15 +1825,6 @@ export default function DonatePage() {
                       >
                         {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
                       </Button>
-                    </div>
-                  )}
-
-                  {pledgeType === "acres" && (
-                    <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mt-4">
-                      <p className="text-blue-800">
-                        For acre pledges, our team will contact you to finalize details.
-                        No payment is required at this stage.
-                      </p>
                     </div>
                   )}
 
@@ -1634,11 +1857,20 @@ export default function DonatePage() {
                         Upload Payment Confirmation *
                       </label>
                       <input
+                        value={undefined}
                         type="file"
                         accept="image/*,.pdf"
                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
                         required={paymentOption === "bank-transfer"}
+                        onChange={(e) => {
+                          setPaymentProof(e.target.files?.[0] || null);
+                        }}
                       />
+                      {paymentProof && (
+                        <p className="mt-1 text-sm text-gray-600">
+                          {paymentProof.name}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1667,7 +1899,7 @@ export default function DonatePage() {
                         Processing...
                       </div>
                     ) : (
-                      "Complete Donation"
+                      "Submit Request"
                     )}
                   </Button>
                 </div>}
