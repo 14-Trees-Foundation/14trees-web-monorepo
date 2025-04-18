@@ -92,7 +92,7 @@ export const updateTransactionFields = async (transactionId: number, filteredDat
  * @param mask - Array of fields that were updated
  * @returns Result of the regeneration operation
  */
-export const regenerateGiftCardTemplates = async (transactionId: number, transaction: any, mask: string[]) => {
+export const regenerateGiftCardTemplates = async (transactionId: number, mask: string[]) => {
     const templateFields = ['primary_message', 'secondary_message', 'logo_message', 'name'];
     const shouldRegenerateTemplates = mask.some(field => templateFields.includes(field));
     
@@ -101,6 +101,11 @@ export const regenerateGiftCardTemplates = async (transactionId: number, transac
     }
 
     try {
+        const transaction = await getTransactionById(transactionId);
+        if (!transaction) {
+            return { regenerated: false, message: "Transaction not found" };
+        }
+
         const cardIds = await GRTransactionsRepository.getTransactionGiftCardIds(transactionId);
         if (!cardIds || cardIds.length === 0) {
             return { regenerated: false, message: "No gift cards found for this transaction" };
@@ -274,7 +279,7 @@ export const processTransactionUpdate = async (transactionId: number, mask: stri
 
     // Regenerate gift card templates if necessary
     // this is a long running operation, so we need to run it in a separate process
-    regenerateGiftCardTemplates(transactionId, transaction, mask);
+    regenerateGiftCardTemplates(transactionId, mask);
 
     return { 
         success: true, 
