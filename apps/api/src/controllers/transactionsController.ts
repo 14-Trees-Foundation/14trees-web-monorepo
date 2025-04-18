@@ -8,6 +8,8 @@ import GiftRequestHelper from "../helpers/giftRequests";
 import * as transactionService from "../facade/transactionService";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { Op } from "sequelize";
+import archiver from "archiver";
+import axios from "axios";
 
 export const getTransactions = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
@@ -156,6 +158,52 @@ export const getTrancationTreeCardImages = async (req: Request, res: Response) =
         const cards = await GiftCardsRepository.getGiftCards(0, -1, { id: { [Op.in]: cardIds } });
         const imageUrls = cards.results.map(card => card.card_image_url).filter(url => url);
         res.status(status.success).send(imageUrls);
+    } catch (error: any) {
+        console.log("[ERROR]", "transactionsController::getTrancationTreeCardImages", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again later.",
+        });
+    }
+}
+
+
+export const downloadTrancationTreeCardImages = async (req: Request, res: Response) => {
+    const { transaction_id } = req.params;
+    const transactionId = parseInt(transaction_id);
+    if (!transactionId || isNaN(transactionId)) {
+        return res.status(status.bad).send({ message: "Invalid request. Please provide valid transaction id!" });
+    }
+
+    const { file_name } = req.query;
+    const fileName = file_name ? file_name as string : 'tree_cards';
+
+    try {
+        const cardIds = await GRTransactionsRepository.getTransactionGiftCardIds(transactionId);
+        const cards = await GiftCardsRepository.getGiftCards(0, -1, { id: { [Op.in]: cardIds } });
+        const imageUrls = cards.results.map(card => card.card_image_url).filter(url => url);
+        
+        // stream zip file back in such a way when user open url in broser it will download the zip file
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}.zip"`);
+
+        const archive = archiver('zip', {
+            zlib: { level: 9 },
+        });
+
+        archive.pipe(res);
+
+        for (const url of imageUrls) {
+            const response = await axios({
+                url: url,
+                method: 'GET',
+                responseType: 'stream',
+            });
+
+            archive.append(response.data, { name: url.split('/').pop() || 'image.jpg' });
+        }
+
+        archive.finalize();
     } catch (error: any) {
         console.log("[ERROR]", "transactionsController::getTrancationTreeCardImages", error);
         res.status(status.error).json({
