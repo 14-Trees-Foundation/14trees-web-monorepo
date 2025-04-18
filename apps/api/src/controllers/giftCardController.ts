@@ -147,14 +147,14 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
         let changed = false;
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
-        if (!logoUrl && files.logo && files.logo.length > 0) {
+        if (!logoUrl && files?.logo && files.logo.length > 0) {
             const location = await UploadFileToS3(files.logo[0].filename, "gift_cards", requestId);
             giftCard.logo_url = location;
             giftCard.validation_errors = ['MISSING_USER_DETAILS']
             changed = true;
         }
 
-        if (files.csv_file && files.csv_file.length > 0) {
+        if (files?.csv_file && files.csv_file.length > 0) {
             const location = await UploadFileToS3(files.csv_file[0].filename, "gift_cards", requestId);
             giftCard.users_csv_file_url = location;
             changed = true;
@@ -357,6 +357,39 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
     }
 };
+
+export const patchGiftCardRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId, updateFields, data } = req.body;
+    if (!giftCardRequestId || !updateFields || !Array.isArray(updateFields) || updateFields.length === 0 || !data) {
+        res.status(status.bad).send({ message: "Invalid input!" });
+        return;
+    }
+
+    try {
+        const giftCardRequest = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
+        if (giftCardRequest.results.length === 0) {
+            res.status(status.notfound).json({
+                status: status.notfound,
+                message: "Gif request not found!"
+            });
+            return;
+        }
+
+        const updateData: any = {};
+        updateFields.forEach((field: any) => {
+            updateData[field] = data[field];
+        });
+
+        await GiftCardsRepository.updateGiftCardRequests(updateData, { id: giftCardRequestId });
+
+        res.status(status.success).json();
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::patchGiftCardRequest", error);
+        res.status(status.error).json({
+            message: 'Something went wrong. Please try again later.'
+        })
+    }
+}
 
 export const deleteGiftCardRequest = async (req: Request, res: Response) => {
     const giftCardRequestId = parseInt(req.params.id)
