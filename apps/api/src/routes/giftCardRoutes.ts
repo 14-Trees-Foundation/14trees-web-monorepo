@@ -385,6 +385,10 @@ routes.post('/requests', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name
  */
 routes.put('/requests/:id', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name: 'csv_file', maxCount: 1}]), giftCards.updateGiftCardRequest);
 
+
+routes.patch('/requests/update', giftCards.patchGiftCardRequest);
+
+
 /**
  * @swagger
  * /gift-cards/requests/{id}:
