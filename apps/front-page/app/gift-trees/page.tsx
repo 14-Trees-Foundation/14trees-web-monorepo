@@ -103,6 +103,12 @@ export default function GiftTreesPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [giftRequestId, setGiftRequestId] = useState<string | null>(null);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [windowWidth, setWindowWidth] = useState(1024); // default value
+
+  useEffect(() => {
+    // Only runs on the client
+    setWindowWidth(window.innerWidth);
+  }, []);
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -1282,7 +1288,7 @@ export default function GiftTreesPage() {
                       <label className="block text-sm font-medium mb-1">Primary Message</label>
                       <textarea
                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        rows={window.innerWidth < 640 ? 5 : 3}
+                        rows={windowWidth < 640 ? 5 : 3}
                         value={primaryMessage}
                         onChange={(e) => setPrimaryMessage(e.target.value)}
                         maxLength={270}
@@ -1297,7 +1303,7 @@ export default function GiftTreesPage() {
                       <label className="block text-sm font-medium mb-1">Secondary Message</label>
                       <textarea
                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        rows={window.innerWidth < 640 ? 4 : 2}
+                        rows={windowWidth < 640 ? 4 : 2}
                         value={secondaryMessage}
                         onChange={(e) => setSecondaryMessage(e.target.value)}
                         maxLength={125}
