@@ -1724,5 +1724,45 @@ routes.patch('/transactions/update', transactions.updateTransaction);
  */
 routes.get('/transactions/tree-cards/:transaction_id', transactions.getTrancationTreeCardImages);
 
+
+/**
+ * @swagger
+ * /transactions/tree-cards/download/:transaction_id:
+ *   get:
+ *     summary: Download tree cards for a transaction
+ *     description: Download tree cards for a transaction
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - name: transaction_id
+ *         in: path
+ *         description: ID of the transaction
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Tree cards downloaded successfully
+ *         schema:
+ *           type: string
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid request. Please provide valid transaction id!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.get('/transactions/tree-cards/download/:transaction_id', transactions.downloadTrancationTreeCardImages);
+
 export default routes;
 
