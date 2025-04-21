@@ -1,4 +1,11 @@
 import axios, { AxiosInstance } from 'axios';
+import { Group } from 'next/dist/shared/lib/router/utils/route-regex';
+
+interface CorporateNamesResponse {
+  offset: number;
+  total: number;
+  results: Group[];
+}
 
 class ApiClient {
   private api: AxiosInstance;
@@ -67,23 +74,16 @@ class ApiClient {
   async uploadUserImage(file: File, folder: string = 'user-uploads'): Promise<string> {
     try {
       const key = `${folder}/${Date.now()}-${file.name.replace(/\s+/g, '-').toLowerCase()}`;
-
-      const presignedUrl = await this.getSignedPutUrl('user-avatars', key);
-
+      
+      const presignedUrl = await this.getSignedPutUrl('gift-request', key);
+      
       await axios.put(presignedUrl, file, {
         headers: {
           'Content-Type': file.type,
-          'x-amz-acl': 'public-read'
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / (progressEvent.total || 1)
-          );
-          console.log(`Upload progress: ${percentCompleted}%`);
         }
       });
-
-      return `https://14treesplants.s3.amazonaws.com/${key}`;
+  
+      return presignedUrl.split('?')[0];
     } catch (error: any) {
       console.error('Image upload failed:', error);
       if (error.response?.data?.message) {
@@ -239,6 +239,8 @@ class ApiClient {
     }
   }
 
+ 
+
   async uploadPaymentProof(data: {
     key: string;
     payment_proof: File;
@@ -251,6 +253,26 @@ class ApiClient {
     });
 
     return presignedUrl.split('?')[0];
+  }
+
+  async getGroups(offset: number, limit: number, filters?: any[]): Promise<CorporateNamesResponse> {
+    const url = `/groups/get`;
+    try {
+        // Validate filters to ensure they don't contain null or undefined values
+        const validatedFilters = filters?.filter(filter => 
+            filter && 
+            filter.columnField && 
+            filter.operatorValue &&
+            filter.value !== undefined && 
+            filter.value !== null
+        ) || [];
+        
+        const response = await this.api.post<CorporateNamesResponse>(url, { filters: validatedFilters });
+        return response.data;
+    } catch (error: any) {
+        console.error("Error fetching groups:", error);
+        return { offset: 0, total: 0, results: [] };
+    }
   }
 
 }

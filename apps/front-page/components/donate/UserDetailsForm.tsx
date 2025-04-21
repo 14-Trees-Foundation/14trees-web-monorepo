@@ -1,6 +1,7 @@
 // components/donate/UserDetailsForm.tsx
 import React, { useState } from 'react';
 import { UserFormField } from 'components/donate/UserFormField';
+import { UploadIcon } from "lucide-react";
 
 export interface UserDetailsData {
   recipient_name: string;
@@ -23,6 +24,9 @@ interface UserDetailsFormProps {
   onUpdate: (field: keyof UserDetailsData, value: string | number) => void;
   canRemove: boolean;
   onRemove?: () => void;
+  onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>, index: number) => void;
+  imagePreview?: string | null;
+  onImageRemove?: (index: number) => void;
 }
 
 export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
@@ -31,7 +35,10 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
   errors,
   onUpdate,
   canRemove,
-  onRemove
+  onRemove,
+  onImageUpload,
+  imagePreview,
+  onImageRemove
 }) => {
   const [showAssignee, setShowAssignee] = useState(false);
 
@@ -128,6 +135,38 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
         />
       </div>
       
+      {/* Image Upload Section */}
+      <label className="block text-sm font-medium mb-1">
+        Upload Recipient Image
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => onImageUpload && onImageUpload(e, index)} // Pass index to identify the recipient
+        className="hidden"
+        id={`imageUpload-${data.id}`}
+      />
+      <label
+        htmlFor={`imageUpload-${data.id}`}
+        className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
+      >
+        <UploadIcon className="w-4 h-4" />
+        Select Image
+      </label>
+
+      {/* Image Preview and Remove Option */}
+      {imagePreview && (
+        <div className="mt-2 flex items-center">
+          <img src={imagePreview} alt="Preview" className="h-20 w-20 rounded-md object-cover" />
+          <button
+            type="button"
+            onClick={() => onImageRemove && onImageRemove(index)}
+            className="ml-2 text-red-500 hover:text-red-700"
+          >
+            Remove
+          </button>
+        </div>
+      )}
       <div className="mt-6">
         <label className="flex items-center space-x-3 mb-4">
           <input
@@ -172,7 +211,10 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
                 placeholder="Phone (optional)"
               />
             </div>
-            
+          </div>
+        )}
+      </div>
+
             <UserFormField
               type="select"
               label="Relation"
@@ -182,9 +224,6 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
               required
               options={relationOptions}
             />
-          </div>
-        )}
-      </div>
     </div>
   );
 };
