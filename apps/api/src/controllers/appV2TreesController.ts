@@ -26,6 +26,7 @@ import { VisitImagesRepository } from "../repo/visitImagesRepo";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 import { Visit } from "../models/visits";
+import { SyncRepo } from "../repo/syncRepo";
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -63,28 +64,19 @@ export const getTreeBySaplingId = async (req: Request, res: Response) => {
 export const uploadTrees = async (req: Request, res: Response) => {
 
     const trees = req.body;
+
+    // user-id header
+    const userId = req.headers['user-id'] as string;
+    console.log("synced by: ", userId);
     console.log("trees: ", trees);
     const treeUploadStatuses = {} as any;
     for (let tree of trees) {
         const saplingID = tree.sapling_id;
         treeUploadStatuses[saplingID] = {
             dataUploaded: false,
+            existing: false,
             imagesUploaded: [],
             imagesFailed: [],
-        }
-        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
-        if (existingMatch) {
-            treeUploadStatuses[saplingID].dataUploaded = true;
-            treeUploadStatuses[saplingID].treeId = existingMatch.id;
-            continue;
-        }
-
-        let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
-        let userTreeImageUrl = await uploadImage([tree.user_tree_image], treeUploadStatuses, saplingID);
-        let userTreeCardUrl = await uploadImage([tree.user_card_image], treeUploadStatuses, saplingID);
-        const location = {
-            type: "Point",
-            coordinates: tree.coordinates
         }
 
         let plotId: number | undefined = undefined;
@@ -97,6 +89,33 @@ export const uploadTrees = async (req: Request, res: Response) => {
         
         if (!plotId) {
             plotId = Number(tree.plot_id);
+        }
+
+        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
+        if (existingMatch) {
+            treeUploadStatuses[saplingID].dataUploaded = true;
+            treeUploadStatuses[saplingID].treeId = existingMatch.id;
+
+            if (existingMatch.plot_id != plotId) {
+                treeUploadStatuses[saplingID].existing = true;
+                if (!isNaN(parseInt(userId)))
+                    await SyncRepo.addDuplicateTreeSync({
+                        sapling_id: existingMatch.sapling_id,
+                        plot_id: plotId,
+                        tree_id: existingMatch.id,
+                        synced_by: parseInt(userId),
+                        synced_at: new Date(),
+                    })
+            }
+            continue;
+        }
+
+        let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
+        let userTreeImageUrl = await uploadImage([tree.user_tree_image], treeUploadStatuses, saplingID);
+        let userTreeCardUrl = await uploadImage([tree.user_card_image], treeUploadStatuses, saplingID);
+        const location = {
+            type: "Point",
+            coordinates: tree.coordinates
         }
 
         let visit: Visit | null = null
