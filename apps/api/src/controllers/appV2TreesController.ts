@@ -101,7 +101,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
                 if (!isNaN(parseInt(userId)))
                     await SyncRepo.addDuplicateTreeSync({
                         sapling_id: existingMatch.sapling_id,
-                        plot_id: existingMatch.plot_id,
+                        plot_id: plotId,
                         tree_id: existingMatch.id,
                         synced_by: parseInt(userId),
                         synced_at: new Date(),
