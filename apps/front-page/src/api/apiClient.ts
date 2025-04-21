@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { Group } from 'next/dist/shared/lib/router/utils/route-regex';
+import { Group } from '../types/group';
 
 interface CorporateNamesResponse {
   offset: number;
