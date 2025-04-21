@@ -1621,6 +1621,7 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  *               example: "Something went wrong. Please try again later."
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
+routes.post('/requests/gift-trees', giftCards.quickServeGiftRequest);
 
 routes.get('/transactions/:id', transactions.getTransactions);
 routes.post('/transactions/send-email', transactions.sendEmailForTransaction);

@@ -29,7 +29,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
@@ -2026,6 +2026,58 @@ export const generateFundRequest = async (req: Request, res: Response) => {
         res.status(status.success).send({ url: s3Resp.location });
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::generateFundRequest", error);
+        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+}
+
+
+
+export const quickServeGiftRequest = async (req: Request, res: Response) => {
+    const payload = req.body;
+
+    const recipientsCount = payload.recipients_count;
+    let trees = 0;
+    let recipients: any[] = [];
+
+    for (const user of payload.recipients) {
+        const treesCount = user.trees_count;
+        trees += treesCount;
+
+        const recipientName: string = user.recipient_name;
+        let recipientEmail: string | undefined = user.recipient_email;
+        const recipientPhone: string | undefined = user.recipient_phone;
+
+        if (!recipientEmail)
+            recipientEmail = recipientName.toLocaleLowerCase().split(' ').join('.') + "@14trees";
+
+        recipients.push({
+            recipientName,
+            recipientEmail,
+            recipientPhone,
+            treesCount
+        })
+
+    }
+
+    try {
+        const { requestId } = await processGiftRequest({
+            treesCount: trees,
+            sponsorEmail: payload.sponsor_email,
+            sponsorName: payload.sponsor_name,
+            eventName: payload.ocassion_name,
+            eventType: payload.ocassion_type,
+            giftedBy: payload.gifted_by ? payload.gifted_by : payload.sponsor_name,
+            giftedOn: payload.gifted_on ? payload.gifted_on : new Date().toISOString().slice(0, 10),
+            primaryMessage: payload.ocassion_type === '1' ? defaultGiftMessages.birthday : payload.ocassion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary,
+            secondaryMessage: defaultGiftMessages.secondary,
+            recipients: recipients
+        }, (images: string[], requestId: number) => {
+            console.log(requestId, images)
+        })
+
+        res.status(status.success).send({ status: 'Success', request_id: requestId });
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::quickServeGiftRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
     }
 }
