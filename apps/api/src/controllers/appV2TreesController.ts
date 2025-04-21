@@ -70,32 +70,9 @@ export const uploadTrees = async (req: Request, res: Response) => {
         const saplingID = tree.sapling_id;
         treeUploadStatuses[saplingID] = {
             dataUploaded: false,
-            exisitng: false,
+            existing: false,
             imagesUploaded: [],
             imagesFailed: [],
-        }
-        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
-        if (existingMatch) {
-            treeUploadStatuses[saplingID].exisitng = true;
-            treeUploadStatuses[saplingID].dataUploaded = true;
-            treeUploadStatuses[saplingID].treeId = existingMatch.id;
-
-            await SyncRepo.addDuplicateTreeSync({
-                sapling_id: existingMatch.sapling_id,
-                plot_id: existingMatch.plot_id,
-                tree_id: existingMatch.id,
-                synced_by: tree.planted_by,
-                synced_at: new Date(),
-            })
-            continue;
-        }
-
-        let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
-        let userTreeImageUrl = await uploadImage([tree.user_tree_image], treeUploadStatuses, saplingID);
-        let userTreeCardUrl = await uploadImage([tree.user_card_image], treeUploadStatuses, saplingID);
-        const location = {
-            type: "Point",
-            coordinates: tree.coordinates
         }
 
         let plotId: number | undefined = undefined;
@@ -108,6 +85,32 @@ export const uploadTrees = async (req: Request, res: Response) => {
         
         if (!plotId) {
             plotId = Number(tree.plot_id);
+        }
+
+        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
+        if (existingMatch) {
+            treeUploadStatuses[saplingID].dataUploaded = true;
+            treeUploadStatuses[saplingID].treeId = existingMatch.id;
+
+            if (existingMatch.plot_id != plotId) {
+                treeUploadStatuses[saplingID].existing = true;
+                await SyncRepo.addDuplicateTreeSync({
+                    sapling_id: existingMatch.sapling_id,
+                    plot_id: existingMatch.plot_id,
+                    tree_id: existingMatch.id,
+                    synced_by: tree.planted_by,
+                    synced_at: new Date(),
+                })
+            }
+            continue;
+        }
+
+        let imageUrl = await uploadImage(tree.images, treeUploadStatuses, saplingID);
+        let userTreeImageUrl = await uploadImage([tree.user_tree_image], treeUploadStatuses, saplingID);
+        let userTreeCardUrl = await uploadImage([tree.user_card_image], treeUploadStatuses, saplingID);
+        const location = {
+            type: "Point",
+            coordinates: tree.coordinates
         }
 
         let visit: Visit | null = null
