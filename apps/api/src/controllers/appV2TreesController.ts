@@ -64,6 +64,10 @@ export const getTreeBySaplingId = async (req: Request, res: Response) => {
 export const uploadTrees = async (req: Request, res: Response) => {
 
     const trees = req.body;
+
+    // user-id header
+    const userId = req.headers['user-id'] as string;
+    console.log("synced by: ", userId);
     console.log("trees: ", trees);
     const treeUploadStatuses = {} as any;
     for (let tree of trees) {
@@ -94,13 +98,14 @@ export const uploadTrees = async (req: Request, res: Response) => {
 
             if (existingMatch.plot_id != plotId) {
                 treeUploadStatuses[saplingID].existing = true;
-                await SyncRepo.addDuplicateTreeSync({
-                    sapling_id: existingMatch.sapling_id,
-                    plot_id: existingMatch.plot_id,
-                    tree_id: existingMatch.id,
-                    synced_by: tree.planted_by,
-                    synced_at: new Date(),
-                })
+                if (!isNaN(parseInt(userId)))
+                    await SyncRepo.addDuplicateTreeSync({
+                        sapling_id: existingMatch.sapling_id,
+                        plot_id: existingMatch.plot_id,
+                        tree_id: existingMatch.id,
+                        synced_by: parseInt(userId),
+                        synced_at: new Date(),
+                    })
             }
             continue;
         }
