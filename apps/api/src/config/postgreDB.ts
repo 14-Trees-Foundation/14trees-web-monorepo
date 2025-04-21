@@ -40,6 +40,7 @@ import { GiftRequestUser } from "../models/gift_request_user";
 import { PlotPlantType } from "../models/plot_plant_type";
 import { View, ViewPermission } from "../models/permissions";
 import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transaction";
+import DuplicateTreeSync from "../models/duplicate_tree_sync";
 
 
 class Database {
@@ -114,6 +115,7 @@ class Database {
         ViewPermission,
         GiftRedeemTransaction,
         GRTCard,
+        DuplicateTreeSync,
       ]
     });
 
