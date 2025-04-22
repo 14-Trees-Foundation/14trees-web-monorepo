@@ -3,8 +3,8 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "./common";
 import { ChatOpenAI } from "@langchain/openai";
-import { getGiftingTools } from "../tools/gifting/gifting";
-import { dateTool } from "../tools/common";
+import { getGiftingTools } from "../../tools/gifting/gifting";
+import { dateTool } from "../../tools/common";
 
 // Define the LLM and tools
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });

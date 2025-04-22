@@ -10,7 +10,7 @@ import { decryptRequest, encryptResponse } from '../services/WhatsApp/incomingFl
 import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
 import { getSlideThumbnail, updateSlide } from './helper/slides';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
-import generateGiftMessages from '../services/genai/giftMessageAgent';
+import generateGiftMessages from '../services/genai/agents/gifting_agents/giftMessageAgent';
 
 const verificationToken = process.env.WA_WEBHOOK_VERIFICATION_TOKEN;
 const appSecret = process.env.WA_APP_SECRET;
