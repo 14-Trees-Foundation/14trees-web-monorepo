@@ -31,10 +31,10 @@ interface GiftRequestPayload {
     treesCount: number,
     sponsorName: string,
     sponsorEmail: string,
-    groupName?: string,
-    groupLogo?: string,
-    eventType?: string,
-    eventName?: string,
+    groupName?: string | null,
+    groupLogo?: string | null,
+    eventType?: string | null,
+    eventName?: string | null,
     giftedBy: string,
     giftedOn: string,
     primaryMessage: string,
@@ -243,7 +243,7 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
 
     const userTreeCount: Record<string, number> = {};
     const idToCardMap: Map<number, GiftCard> = new Map();
-    const giftCards = await GiftCardsRepository.getBookedTrees(giftCardRequest.id, 0, -1);
+    const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequest.id }]);
     for (const giftCard of giftCards.results) {
         idToCardMap.set(giftCard.id, giftCard);
 
@@ -541,7 +541,7 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
     await GiftCardsRepository.bookGiftCards(giftRequest.id, treeIds);
 
     // get gift cards
-    const cardsResp = await GiftCardsRepository.getBookedTrees(giftRequest.id, 0, -1);
+    const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftRequest.id }]);
     const cards = cardsResp.results;
 
     // assign trees
@@ -575,7 +575,7 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
     // sponsor group
     let group: Group | null = null;
     if (payload.groupName) {
-        const resp = await GroupRepository.getGroups(0, 1, { name: { [Op.iLike]: `%${payload.groupName.toLowerCase()}%` } });
+        const resp = await GroupRepository.getGroups(0, 1, [{ columnField: 'name', operatorValue: 'contains', value: payload.groupName.toLowerCase() }]);
         if (resp.results.length === 1) group = resp.results[0];
         else {
             group = await GroupRepository.addGroup({ name: payload.groupName, type: 'corporate' })
@@ -653,7 +653,7 @@ async function addGiftRequestUsers(payload: GiftRequestPayload, giftRequestId: n
 async function generateAndSendGiftCards(giftRequest: GiftCardRequest, giftCardsCallBack: (cardImages: string[], requestId: number) => void) {
     await generateGiftCardsForGiftRequest(giftRequest);
 
-    const giftCardsResp = await GiftCardsRepository.getBookedTrees(giftRequest.id, 0, -1);
+    const giftCardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftRequest.id }]);
     const images = giftCardsResp.results.map(card => card.card_image_url);
     giftCardsCallBack(images, giftRequest.id);
 }

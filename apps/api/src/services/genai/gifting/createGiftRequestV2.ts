@@ -6,29 +6,28 @@ import { PaymentCreationAttributes } from "../../../models/payment";
 import { PaymentRepository } from "../../../repo/paymentsRepo";
 import { GiftCardsRepository } from "../../../repo/giftCardsRepo";
 import { OccasionType, RecipientSchema } from "./createGiftRequest";
-import { getAttachmentData } from "../../gmail/gmail";
 import { parseCsv } from "../../../helpers/utils";
 
 
 // Define Main Request Schema
 const CreateGiftTreesRequestSchema = z.object({
-    recipients_count: z.number().optional().describe("Only required if csv file is not provided"),
-    recipients: z.array(RecipientSchema).optional().describe("Only required if csv file is not provided"),
+    recipients_count: z.number().optional().nullable().describe("Only required if csv file is not provided"),
+    recipients: z.array(RecipientSchema).optional().nullable().describe("Only required if csv file is not provided"),
     recipients_csv_file: z.object({
         attachmentId: z.string().describe("This will be string attachmentId of email attachment.\nSample csv file attachment which can be sent to user for reference: \n{ filename: 'GiftRecipientDetails.csv', path: 'https://14treesplants.s3.ap-south-1.amazonaws.com/cards/samples/GiftRecipientDetails.csv' }"),
         messageId: z.string().describe("Email message id. required to fetch data of attachment using attachmentId")
-    }).optional().describe("Only required if recipients are not provided. Consider providing csv file when gifting trees to morethan 5 recipients."),
+    }).optional().nullable().describe("Only required if recipients are not provided. Consider providing csv file when gifting trees to morethan 5 recipients."),
     sponsor_name: z.string(),
     sponsor_email: z.string(),
-    sponsor_group: z.string().optional().describe("Exect name of the corporate who is sponsoring trees. If any"),
+    sponsor_group: z.string().optional().nullable().describe("Exect name of the corporate who is sponsoring trees. If any"),
     sponsor_logo_file: z.object({
         attachmentId: z.string().describe("This will be string attachmentId of email attachment.\nLogo size will be 183x70 pixels"),
         messageId: z.string().describe("Email message id. required to fetch data of attachment using attachmentId")
-    }).optional().describe("Corporate logo image, which will be displayed on tree cards"),
-    ocassion_type: z.nativeEnum(OccasionType).default(OccasionType.GENERAL_GIFT),
-    ocassion_name: z.string().optional(),
-    gifted_by: z.string().optional().describe("Any spesific name(s) to put on dashboard. Default: sponsor's name. Corporate/Sponsor user"),
-    gifted_on: z.string().optional().describe("Occasion date or the date of gifting. Default: today's date"),
+    }).optional().nullable().describe("Corporate logo image, which will be displayed on tree cards"),
+    ocassion_type: z.nativeEnum(OccasionType).nullable().default(OccasionType.GENERAL_GIFT),
+    ocassion_name: z.string().optional().nullable(),
+    gifted_by: z.string().optional().nullable().describe("Any spesific name(s) to put on dashboard. Default: sponsor's name. Corporate/Sponsor user"),
+    gifted_on: z.string().optional().nullable().describe("Occasion date or the date of gifting. Default: today's date"),
 });
 
 const description = `
@@ -54,10 +53,10 @@ const createGiftTreesRequestToolV2 = new DynamicStructuredTool({
         }
 
         let logoData: string | undefined = undefined
-        if (data.sponsor_logo_file) {
-            const logoBuffer = await getAttachmentData(data.sponsor_logo_file.messageId, data.sponsor_logo_file.attachmentId)
-            if (logoBuffer) logoData = logoBuffer.toString('base64');
-        }
+        // if (data.sponsor_logo_file) {
+        //     const logoBuffer = await getAttachmentData(data.sponsor_logo_file.messageId, data.sponsor_logo_file.attachmentId)
+        //     if (logoBuffer) logoData = logoBuffer.toString('base64');
+        // }
 
         try {
             const { requestId } = await processGiftRequest({
@@ -131,7 +130,8 @@ async function getRecipientsData(payload: (typeof CreateGiftTreesRequestSchema._
 
     if (payload.recipients_csv_file) {
         const { messageId, attachmentId } = payload.recipients_csv_file
-        const data = await getAttachmentData(messageId, attachmentId);
+        // const data = await getAttachmentData(messageId, attachmentId);
+        const data = null;
         if (data) {
             const csvData = await parseCsv(data);
 
@@ -173,8 +173,8 @@ async function getRecipientsData(payload: (typeof CreateGiftTreesRequestSchema._
             trees += treesCount;
 
             const recipientName: string = user.recipient_name;
-            let recipientEmail: string | undefined = user.recipient_email;
-            const recipientPhone: string | undefined = user.recipient_phone;
+            let recipientEmail: string | null | undefined = user.recipient_email;
+            const recipientPhone: string | null | undefined = user.recipient_phone;
 
             if (!recipientEmail)
                 recipientEmail = recipientName.toLocaleLowerCase().split(' ').join('.') + "@14trees";

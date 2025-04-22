@@ -3,10 +3,9 @@ import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
 import { autoAssignTrees, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
 import RazorpayService from '../razorpay/razorpay';
-import { sendTemplateMail } from '../gmail/gmail';
 import { GiftCardsRepository } from '../../repo/giftCardsRepo';
 import { UserRepository } from '../../repo/userRepo';
-import { interactWithGiftingAgent, waInteractionsWithGiftingAgent } from '../genai/agent';
+import { waInteractionsWithGiftingAgent } from '../genai/agent';
 import { WAChatHistoryRepository } from '../../repo/waChatHistoryRepo';
 import { Op } from 'sequelize';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
@@ -164,7 +163,7 @@ async function handleGiftFormSubmit(customerPhoneNumber: string, formData: any) 
       ]
     }
 
-    await sendTemplateMail('gift-trees-required-details.html', mailOptions, { sponsorName: formData.user_name })
+    // await sendTemplateMail('gift-trees-required-details.html', mailOptions, { sponsorName: formData.user_name })
 
     let giftMessage = textMessage;
     giftMessage.to = customerPhoneNumber;
@@ -203,7 +202,7 @@ async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: 
   }
 
   const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }]);
-  const cardsResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
+  const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: requestId }]);
   recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
 
   await autoAssignTrees(giftRequestResp.results[0], recipients, cardsResp.results, null);
@@ -270,7 +269,7 @@ async function handleGiftMsgsEditSubmit(customerPhoneNumber: string, formData: a
   const giftRequestResp2 = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }])
   const giftRequest2 = giftRequestResp2.results[0]
 
-  const cardsResp = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
+  const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: requestId }]);
   const recipients = await GiftCardsRepository.getGiftRequestUsers(requestId);
   await autoAssignTrees(giftRequest2, recipients, cardsResp.results, null);
   await generateGiftCardsForGiftRequest(giftRequest2);

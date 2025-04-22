@@ -16,8 +16,8 @@ export enum OccasionType {
 // Define Recipient Schema
 export const RecipientSchema = z.object({
     recipient_name: z.string().describe("Full name of the recipient"),
-    recipient_email: z.string().optional().describe("Optional: email address of the recipient. This will be used to share tree cards and personalised dashboard links to recipient!"),
-    recipient_phone: z.string().optional().describe("Optional contact number of the recipient"),
+    recipient_email: z.string().optional().nullable().describe("Optional: email address of the recipient. This will be used to share tree cards and personalised dashboard links to recipient!"),
+    recipient_phone: z.string().optional().nullable().describe("Optional contact number of the recipient"),
     trees_count: z.number().default(1).describe("Number of trees to gift"),
 });
 
@@ -28,9 +28,9 @@ const CreateGiftTreesRequestSchema = z.object({
     sponsor_name: z.string(),
     sponsor_email: z.string(),
     ocassion_type: z.nativeEnum(OccasionType).default(OccasionType.GENERAL_GIFT),
-    ocassion_name: z.string().optional(),
-    gifted_by: z.string().optional(),
-    gifted_on: z.string().optional(),
+    ocassion_name: z.string().optional().nullable(),
+    gifted_by: z.string().optional().nullable(),
+    gifted_on: z.string().optional().nullable(),
 });
 
 const description = `
