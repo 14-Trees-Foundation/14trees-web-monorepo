@@ -1,6 +1,6 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { MailSubsRepository } from "../../../repo/mailSubsRepo";
-import sendMail, { getAttachmentData, getGmailService } from "../../gmail/gmail";
+import sendMail from "../../gmail/gmail";
 import { interactWithEmailAgent } from "./email_agent";
 import { gmail_v1 } from "googleapis";
 import { Readable } from "stream";
@@ -44,7 +44,8 @@ const getEmailBodyAndAttachments = (parts: gmail_v1.Schema$MessagePart[]) => {
 }
 
 const getLatestThreadDetails = async () => {
-    const gmail = await getGmailService();
+    // const gmail = await getGmailService();
+    const gmail: any = {};
     try {
         // Get the latest email
         const latestMessage = await gmail.users.messages.list({
@@ -96,7 +97,7 @@ const getLatestThreadDetails = async () => {
         for (const email of emails) {
             if (!email.payload) return;
 
-            const headers = email.payload.headers;
+            const headers: any[] = email.payload.headers;
             const parts = email.payload.parts || [];
 
             // Extract sender's email and subject
@@ -157,7 +158,8 @@ async function getValidCsvFileAndImage(attachments: any[]) {
 
     for (const attachment of attachments) {
         const { filename, mimeType, messageId, attachmentId } = attachment;
-        const data = await getAttachmentData(messageId, attachmentId);
+        // const data = await getAttachmentData(messageId, attachmentId);
+        const data = null;
 
         if (!data) continue;
         if (mimeType === 'text/csv' || filename.endsWith('.csv')) {
@@ -209,12 +211,13 @@ export async function checkLatestIncomingMail() {
             await sendMail({
                 from: 'me',
                 to: [emailDetails.senderEmail],
-                inReplyTo: emailDetails.messageId,
-                references: emailDetails.messageIds,
+                // inReplyTo: emailDetails.messageId,
+                // references: emailDetails.messageIds,
                 subject: emailDetails.subject,
                 text: messageResp.output.email_body,
                 attachments: messageResp.output.attachments,
-            }, emailDetails.threadId)
+            })
+            // }, emailDetails.threadId)
         }
     }
 

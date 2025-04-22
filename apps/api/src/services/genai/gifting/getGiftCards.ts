@@ -79,7 +79,7 @@ const getTreeCards = new DynamicStructuredTool({
             });
         }
 
-        const giftCards = await GiftCardsRepository.getBookedTrees(requestId, 0, -1);
+        const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', value: requestId, operatorValue: 'equals' }]);
         const imageUrls = giftCards.results.map(card => card.card_image_url).filter(imageUrl => imageUrl);
 
         if (imageUrls.length !== giftCards.results.length) {
