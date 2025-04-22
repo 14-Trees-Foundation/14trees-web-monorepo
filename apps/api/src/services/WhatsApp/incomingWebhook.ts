@@ -5,8 +5,8 @@ import { autoAssignTrees, generateGiftCardsForGiftRequest, processGiftRequest, s
 import RazorpayService from '../razorpay/razorpay';
 import { GiftCardsRepository } from '../../repo/giftCardsRepo';
 import { UserRepository } from '../../repo/userRepo';
-import { waInteractionsWithGiftingAgent } from '../genai/agent';
-import { WAChatHistoryRepository } from '../../repo/waChatHistoryRepo';
+import { waInteractionsWithGiftingAgent } from '../genai/agents/gifting_agents/wa_gifting_agent';
+import { ChatHistoryRepository } from '../../repo/chatHistoryRepo';
 import { Op } from 'sequelize';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
 import { PaymentCreationAttributes } from '../../models/payment';
@@ -24,16 +24,16 @@ export async function processIncomingWAMessageUsingGenAi(message: any) {
     const text = message.text.body;
 
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-    const chatHistory = await WAChatHistoryRepository.getWAChatMessages({ user_phone: customerPhoneNumber, timestamp: { [Op.gte]: fifteenMinutesAgo } })
+    const chatHistory = await ChatHistoryRepository.getChatMessages({ user_phone: customerPhoneNumber, timestamp: { [Op.gte]: fifteenMinutesAgo } })
 
     const history = chatHistory.map(item => {
       if (item.message_type === 'ai') return new AIMessage(item.message);
 
       return new HumanMessage(item.message);
     })
-    await WAChatHistoryRepository.addWAChatMessage(text, 'human', customerPhoneNumber);
+    await ChatHistoryRepository.addChatMessage(text, 'human', customerPhoneNumber, 'phone');
     const resp = await waInteractionsWithGiftingAgent(text, history, customerPhoneNumber);
-    await WAChatHistoryRepository.addWAChatMessage(resp, 'ai', customerPhoneNumber);
+    await ChatHistoryRepository.addChatMessage(resp, 'ai', customerPhoneNumber, 'phone');
 
     let messageUser = textMessage;
     messageUser.to = customerPhoneNumber;

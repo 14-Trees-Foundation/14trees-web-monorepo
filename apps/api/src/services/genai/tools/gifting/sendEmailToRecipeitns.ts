@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { DynamicStructuredTool } from "langchain/tools";
-import { GiftCardsRepository } from "../../../repo/giftCardsRepo";
-import { sendMailsToReceivers } from "../../../controllers/helper/giftRequestHelper";
+import { GiftCardsRepository } from "../../../../repo/giftCardsRepo";
+import { sendMailsToReceivers } from "../../../../controllers/helper/giftRequestHelper";
 
 // Define Main Request Schema
 const SendEmailRequestSchema = z.object({

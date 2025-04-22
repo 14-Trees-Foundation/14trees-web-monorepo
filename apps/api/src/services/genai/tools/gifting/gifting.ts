@@ -3,16 +3,17 @@ import createGiftTreesRequestTool from "./createGiftRequest";
 import getTreeCards from "./getGiftCards";
 import sendRecipientsEmail from "./sendEmailToRecipeitns";
 import listGiftTreesRequests from "./listPreviousRequests";
-import createGiftTreesRequestToolV2 from "./createGiftRequestV2";
+import createCorporateGiftTreesRequestTool from "./createCorporateGiftRequest";
+import contactUsInfo from "./contactUs";
 
 // Function to get tools
 export function getGiftingTools(): StructuredToolInterface[] {
 
-    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests];
+    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, contactUsInfo];
 }
 
 
 export function getCorporateGiftingTools(): StructuredToolInterface[] {
 
-    return [createGiftTreesRequestToolV2, getTreeCards, sendRecipientsEmail, listGiftTreesRequests];
+    return [createCorporateGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests];
 }

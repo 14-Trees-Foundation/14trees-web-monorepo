@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { DynamicStructuredTool, Tool } from "langchain/tools";
-import { defaultGiftMessages, processGiftRequest } from "../../../controllers/helper/giftRequestHelper";
-import RazorpayService from "../../razorpay/razorpay";
-import { PaymentCreationAttributes } from "../../../models/payment";
-import { PaymentRepository } from "../../../repo/paymentsRepo";
-import { GiftCardsRepository } from "../../../repo/giftCardsRepo";
+import { defaultGiftMessages, processGiftRequest } from "../../../../controllers/helper/giftRequestHelper";
+import RazorpayService from "../../../razorpay/razorpay";
+import { PaymentCreationAttributes } from "../../../../models/payment";
+import { PaymentRepository } from "../../../../repo/paymentsRepo";
+import { GiftCardsRepository } from "../../../../repo/giftCardsRepo";
 import { OccasionType, RecipientSchema } from "./createGiftRequest";
-import { parseCsv } from "../../../helpers/utils";
+import { parseCsv } from "../../../../helpers/utils";
 
 
 // Define Main Request Schema
@@ -39,7 +39,7 @@ Response: Request Id
 Sponsor can see all this using gift trees request id!
 `;
 
-const createGiftTreesRequestToolV2 = new DynamicStructuredTool({
+const createCorporateGiftTreesRequestTool = new DynamicStructuredTool({
     name: "create_gift_trees_request",
     description: description,
     schema: CreateGiftTreesRequestSchema,
@@ -191,4 +191,4 @@ async function getRecipientsData(payload: (typeof CreateGiftTreesRequestSchema._
     return { trees, recipients }
 }
 
-export default createGiftTreesRequestToolV2
+export default createCorporateGiftTreesRequestTool

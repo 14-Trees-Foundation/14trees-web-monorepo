@@ -1,10 +1,10 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
-import { DynamicTool } from "langchain/tools";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
-import { getGiftingTools } from "./gifting/gifting";
+import { getGiftingTools } from "../../tools/gifting/gifting";
 import { BaseMessage } from "@langchain/core/messages";
-import { getWhatsAppTools } from "./WhatsApp";
+import { getWhatsAppTools } from "../../tools/whatsapp";
+import { dateTool } from "../../tools/common";
 
 
 const systemMessage = `
@@ -47,17 +47,6 @@ Guidelines for Handling User Requests:
 
 Your goal is to assist users efficiently while ensuring accuracy and predictability in fulfilling their requests.
 `;
-
-// Function to get today's date
-function getTodaysDate(): string {
-    return new Date().toISOString().split("T")[0];
-}
-
-const dateTool = new DynamicTool({
-    name: "get_todays_date",
-    description: "Get today's date in YYYY-MM-DD format",
-    func: async () => getTodaysDate(),
-});
 
 const messages = [
     SystemMessagePromptTemplate.fromTemplate(systemMessage),

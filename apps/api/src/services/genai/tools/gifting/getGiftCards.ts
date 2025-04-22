@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { DynamicStructuredTool } from "langchain/tools";
-import { GiftCardsRepository } from "../../../repo/giftCardsRepo";
-import { PaymentRepository } from "../../../repo/paymentsRepo";
-import RazorpayService from "../../razorpay/razorpay";
-import { PaymentCreationAttributes } from "../../../models/payment";
+import { GiftCardsRepository } from "../../../../repo/giftCardsRepo";
+import { PaymentRepository } from "../../../../repo/paymentsRepo";
+import RazorpayService from "../../../razorpay/razorpay";
+import { PaymentCreationAttributes } from "../../../../models/payment";
 
 // Define Main Request Schema
 const GetTreeCardsRequestSchema = z.object({
