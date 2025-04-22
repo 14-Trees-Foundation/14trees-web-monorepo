@@ -56,8 +56,8 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
             trees += treesCount;
 
             const recipientName: string = user.recipient_name;
-            let recipientEmail: string | undefined = user.recipient_email;
-            const recipientPhone: string | undefined = user.recipient_phone;
+            let recipientEmail: string | null | undefined = user.recipient_email;
+            const recipientPhone: string | null | undefined = user.recipient_phone;
 
             if (!recipientEmail)
                 recipientEmail = recipientName.toLocaleLowerCase().split(' ').join('.') + "@14trees";
