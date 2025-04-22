@@ -10,6 +10,11 @@
     "swagger-autogen": "npx ts-node src/swagger.ts"
   },
   "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "@langchain/community": "^0.3.29",
+    "@langchain/core": "^0.3.38",
+    "@langchain/langgraph": "^0.2.46",
+    "@langchain/openai": "^0.4.2",
     "@sendgrid/mail": "^7.7.0",
     "archiver": "^7.0.1",
     "async": "^3.2.6",
@@ -21,7 +26,7 @@
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
     "debug": "~2.6.9",
-    "dotenv": "^10.0.0",
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "geolib": "^3.3.4",
     "google-auth-library": "^7.11.0",
@@ -32,6 +37,8 @@
     "intl": "^1.2.5",
     "jimp": "^0.16.1",
     "jsonwebtoken": "^9.0.2",
+    "langchain": "^0.3.15",
+    "langsmith": "^0.3.7",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
     "morgan": "^1.10.0",
@@ -51,6 +58,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^11.1.0",
+    "x-hub-signature": "^2.1.2",
     "zod": "^3.20.6"
   },
   "devDependencies": {
