@@ -553,6 +553,62 @@ routes.get("/assigned/:user_id", trees.getAssignedTrees);
  *               example: "Something went wrong. Please try again after some time."
  */
 routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
+
+/**
+ * @swagger
+ * /trees/generate-screenshots:
+ *   post:
+ *     summary: Generate dashboard screenshots for trees
+ *     description: Captures screenshots of tree dashboards and uploads to S3
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Array of tree IDs to process
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             treeIds:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [1, 2, 3]
+ *     responses:
+ *       200:
+ *         description: Screenshots processed successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             success:
+ *               type: boolean
+ *             processed:
+ *               type: integer
+ *               description: Number of successful uploads
+ *             total:
+ *               type: integer
+ *               description: Total trees processed
+ *             details:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   treeId:
+ *                     type: integer
+ *                   success:
+ *                     type: boolean
+ *                   s3Url:
+ *                     type: string
+ *                     description: URL of uploaded screenshot
+ *                   error:
+ *                     type: string
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Server error
+ */
+routes.post('/generate-screenshots', trees.generateTreeScreenshots);
 // routes.get("/plot/count", trees.countByPlot);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
