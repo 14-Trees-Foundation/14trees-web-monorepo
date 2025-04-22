@@ -39,6 +39,7 @@ import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
 import { View, ViewPermission } from "../models/permissions";
 import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transaction";
+import DuplicateTreeSync from "../models/duplicate_tree_sync";
 import { WAChatMessage } from "../models/wa_chat_message";
 import { MailSub } from "../models/mail_sub";
 
@@ -115,6 +116,7 @@ class Database {
         ViewPermission,
         GiftRedeemTransaction,
         GRTCard,
+        DuplicateTreeSync,
         WAChatMessage,
         MailSub,
       ]
