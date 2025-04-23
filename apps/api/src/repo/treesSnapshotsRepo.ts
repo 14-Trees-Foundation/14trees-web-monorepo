@@ -102,4 +102,51 @@ export class TreesSnapshotRepository {
 
         return result;
     }
+
+    public static async getAggregatedAuditReport(): Promise<any[]> {
+        const query = `
+            SELECT 
+                DATE(ts.image_date) AS audit_date, 
+                u.name AS user_name, 
+                COUNT(t.sapling_id) AS total_trees_audited
+            FROM "14trees_2".trees_snapshots ts
+            JOIN "14trees_2".trees t ON ts.sapling_id = t.sapling_id
+            JOIN "14trees_2".users u ON ts.user_id = u.id
+            GROUP BY u.id, DATE(ts.image_date)
+            ORDER BY audit_date DESC;
+        `;
+    
+        const result: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        });
+    
+        return result;
+    }
+
+    public static async getPlotsWithAuditedTrees(): Promise<any[]> {
+        const query = `
+            SELECT 
+                p."name" AS plot_name,
+                t.sapling_id,
+                latest_ts.image_date
+            FROM "14trees_2".trees t
+            JOIN "14trees_2".plots p ON t.plot_id = p.id
+            LEFT JOIN (
+                SELECT DISTINCT ON (sapling_id) sapling_id, image_date
+                FROM "14trees_2".trees_snapshots
+                ORDER BY sapling_id, image_date DESC
+            ) latest_ts ON latest_ts.sapling_id = t.sapling_id
+            WHERE t.plot_id IN (
+                SELECT DISTINCT t.plot_id
+                FROM "14trees_2".trees t
+                JOIN "14trees_2".trees_snapshots ts ON ts.sapling_id = t.sapling_id
+            );
+        `;
+    
+        const result: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        });
+    
+        return result;
+    }
 }
