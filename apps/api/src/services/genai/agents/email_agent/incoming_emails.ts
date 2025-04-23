@@ -1,11 +1,9 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { MailSubsRepository } from "../../../repo/mailSubsRepo";
-import sendMail from "../../gmail/gmail";
+import { MailSubsRepository } from "../../../../repo/mailSubsRepo";
+import sendMail from "../../../gmail/gmail";
 import { interactWithEmailAgent } from "./email_agent";
 import { gmail_v1 } from "googleapis";
-import { Readable } from "stream";
-import csv from 'csv-parser';
-import { parseCsv } from "../../../helpers/utils";
+import { parseCsv } from "../../../../helpers/utils";
 
 const getEmailBodyText = (parts: gmail_v1.Schema$MessagePart[]): string => {
     for (const part of parts) {

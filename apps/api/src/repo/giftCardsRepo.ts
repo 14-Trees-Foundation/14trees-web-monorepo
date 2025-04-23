@@ -529,8 +529,8 @@ export class GiftCardsRepository {
     static async getGiftRequestUsers(giftCardRequestId: number): Promise<GiftRequestUser[]> {
         const getQuery = `
             SELECT gru.*, 
-            ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
-            au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone, ur.relation
+            ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone, ru.communication_email as recipient_communication_email,
+            au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone, au.communication_email as assignee_communication_email, ur.relation
             FROM "14trees_2".gift_request_users gru
             LEFT JOIN "14trees_2".users ru ON ru.id = gru.recipient
             LEFT JOIN "14trees_2".users au ON au.id = gru.assignee
