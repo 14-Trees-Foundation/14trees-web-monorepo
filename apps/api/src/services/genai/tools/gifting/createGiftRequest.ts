@@ -5,6 +5,7 @@ import RazorpayService from "../../../razorpay/razorpay";
 import { PaymentCreationAttributes } from "../../../../models/payment";
 import { PaymentRepository } from "../../../../repo/paymentsRepo";
 import { GiftCardsRepository } from "../../../../repo/giftCardsRepo";
+import { UserRepository } from "../../../../repo/userRepo";
 
 // Define Enum for Occasion Type
 export enum OccasionType {
@@ -31,6 +32,7 @@ const CreateGiftTreesRequestSchema = z.object({
     ocassion_name: z.string().optional().nullable(),
     gifted_by: z.string().optional().nullable(),
     gifted_on: z.string().optional().nullable(),
+    force_create: z.boolean().default(false).nullable().describe("Force create gift request even if it already exists"),
 });
 
 const description = `
@@ -68,10 +70,26 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
                 recipientPhone,
                 treesCount
             })
-
         }
 
         try {
+
+            const sponsorUser = await UserRepository.upsertUser({
+                name: data.sponsor_name,
+                email: data.sponsor_email,
+                phone: null,
+            });
+
+            const requests = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'user_id', operatorValue: 'equals', value: sponsorUser.id }]);
+            if (requests.results.length > 0 && !data.force_create) {
+                if (requests.results[0].no_of_cards === trees && requests.results[0].event_name === data.ocassion_name && requests.results[0].event_type === data.ocassion_type) {
+                    return JSON.stringify({
+                        status: 'Exists',
+                        output: `You already have a gift request for *${trees} trees* for *${data.ocassion_name}* event. Request Id is ${requests.results[0].id}. Are you sure you want to create a new request?`,
+                    });
+                }
+            }
+
             const { requestId } = await processGiftRequest({
                 treesCount: trees,
                 sponsorEmail: data.sponsor_email,
