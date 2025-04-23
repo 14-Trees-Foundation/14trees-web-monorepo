@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { DynamicStructuredTool } from "langchain/tools";
-import { sendWhatsAppMessage } from '../../../WhatsApp/messageHelper'; // Import your WhatsApp message sending function
-import { imageMessage } from "../../../WhatsApp/messages";
-import { logResponseError } from "../../../WhatsApp/logResponseError";
+import { sendWhatsAppMessage } from '../../../whatsapp/messageHelper'; // Import your WhatsApp message sending function
+import { imageMessage } from "../../../whatsapp/messages";
+import { logResponseError } from "../../../whatsapp/logResponseError";
 
 // Define Main Request Schema
 const SendImagesToUserRequestSchema = z.object({

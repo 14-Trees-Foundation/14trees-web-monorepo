@@ -3,10 +3,10 @@ import * as fs from 'fs'
 import axios from 'axios'
 
 import { Request, Response } from "express";
-import { messageStatuses } from '../services/WhatsApp/messageStatuses';
-import { sendWhatsAppMessage } from '../services/WhatsApp/messageHelper';
-import processIncomingWAMessage, { processIncomingWAMessageUsingGenAi } from '../services/WhatsApp/incomingWebhook';
-import { decryptRequest, encryptResponse } from '../services/WhatsApp/incomingFlowWebhook';
+import { messageStatuses } from '../services/whatsapp/messageStatuses';
+import { sendWhatsAppMessage } from '../services/whatsapp/messageHelper';
+import processIncomingWAMessage, { processIncomingWAMessageUsingGenAi } from '../services/whatsapp/incomingWebhook';
+import { decryptRequest, encryptResponse } from '../services/whatsapp/incomingFlowWebhook';
 import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
 import { getSlideThumbnail, updateSlide } from './helper/slides';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';

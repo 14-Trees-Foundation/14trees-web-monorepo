@@ -1,19 +1,25 @@
 import { StructuredToolInterface } from "@langchain/core/tools";
 import createGiftTreesRequestTool from "./createGiftRequest";
 import getTreeCards from "./getGiftCards";
-import sendRecipientsEmail from "./sendEmailToRecipeitns";
+import sendRecipientsEmail from "./sendEmailToRecipients";
 import listGiftTreesRequests from "./listPreviousRequests";
 import createCorporateGiftTreesRequestTool from "./createCorporateGiftRequest";
 import contactUsInfo from "./contactUs";
+import getAvailableGiftTreesCount from "./getAvailableGiftTreesCount";
+import listPreviousTransactions from "./listPreviousGiftedTrees";
+import updateGiftRequest from "./updateGiftRequest";
+import listGiftRequestRecipients from "./listGiftRequestRecipients";
 
 // Function to get tools
 export function getGiftingTools(): StructuredToolInterface[] {
-
-    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, contactUsInfo];
+    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, listGiftRequestRecipients, updateGiftRequest, contactUsInfo];
 }
 
 
 export function getCorporateGiftingTools(): StructuredToolInterface[] {
-
     return [createCorporateGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests];
+}
+
+export function getPrePurchasedGiftingTools(): StructuredToolInterface[] {
+    return [getAvailableGiftTreesCount, listPreviousTransactions];
 }

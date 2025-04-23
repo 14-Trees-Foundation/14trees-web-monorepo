@@ -1,19 +1,20 @@
 import { RunnableConfig } from "@langchain/core/runnables";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "./common";
 import { ChatOpenAI } from "@langchain/openai";
-import { getGiftingTools } from "../../tools/gifting/gifting";
+import { getPrePurchasedGiftingTools } from "../../tools/gifting/gifting";
 import { dateTool } from "../../tools/common";
 
 const systemMessage = `
-You are a gifting agent. You help user
-1. fetch previous orders of giftable trees
-`
+You are a gifting agent. You help users...
+1. fetch count of available pre-purchased trees for gifting
+2. fetch list of last gift trees actions (N number of trees gifted to Persona on some date/occasion)
+`;
 
 // Define the LLM and tools
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
-const tools = [...getGiftingTools(), dateTool];
+const tools = [...getPrePurchasedGiftingTools(), dateTool];
 
 // Define the gifting agent
 const giftingAgent = createReactAgent({
@@ -23,7 +24,7 @@ const giftingAgent = createReactAgent({
 });
 
 // Define the gifting agent node
-const requestGiftableTreesAgentNode = async (
+const giftPrePurchasedTreesAgentNode = async (
     state: typeof AgentState.State,
     config?: RunnableConfig
 ) => {
@@ -31,9 +32,9 @@ const requestGiftableTreesAgentNode = async (
     const lastMessage = result.messages[result.messages.length - 1];
     return {
         messages: [
-            new AIMessage({ content: lastMessage.content, name: "RequestGiftableTrees_Agent" }),
+            new AIMessage({ content: lastMessage.content, name: "GiftPrePuchasedTrees_Agent" }),
         ],
     };
 };
 
-export default requestGiftableTreesAgentNode;
+export default giftPrePurchasedTreesAgentNode;

@@ -40,7 +40,7 @@ Sponsor can see all this using gift trees request id!
 `;
 
 const createCorporateGiftTreesRequestTool = new DynamicStructuredTool({
-    name: "create_gift_trees_request",
+    name: "create_corporate_gift_trees_request",
     description: description,
     schema: CreateGiftTreesRequestSchema,
     func: async (data): Promise<String> => {

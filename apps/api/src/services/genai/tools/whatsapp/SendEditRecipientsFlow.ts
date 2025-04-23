@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DynamicStructuredTool } from "langchain/tools";
-import { sendEditRecipientsFlow } from "../../../WhatsApp/incomingWebhook";
+import { sendEditRecipientsFlow } from "../../../whatsapp/incomingWebhook";
 
 // Define Main Request Schema
 const SendEditRecipientsFlowRequestSchema = z.object({

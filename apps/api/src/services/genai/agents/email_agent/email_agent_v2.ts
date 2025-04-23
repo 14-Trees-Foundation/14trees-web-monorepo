@@ -1,7 +1,7 @@
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { DynamicTool } from 'langchain/tools';
 import { getCorporateGiftingTools } from '../../tools/gifting/gifting';
-import verifyOutputFormat from '../../tools/email/output_varification';
+import verifyOutputFormat from '../../tools/email/output_verification';
 import {
     StateGraph,
     MessagesAnnotation,

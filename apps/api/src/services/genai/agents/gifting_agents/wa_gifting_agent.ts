@@ -2,9 +2,10 @@ import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { getGiftingTools } from "../../tools/gifting/gifting";
-import { BaseMessage } from "@langchain/core/messages";
+import { BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { getWhatsAppTools } from "../../tools/whatsapp";
 import { dateTool } from "../../tools/common";
+import getAgentGraph from "./gifting";
 
 
 const systemMessage = `
@@ -87,8 +88,18 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
         tools,
     });
 
+    // const graph = await getAgentGraph();
+    // const result = await graph.invoke({ messages: [
+    //     ...history,
+    //     new HumanMessage({
+    //         content: query,
+    //     }),
+    // ]}, { recursionLimit: 100 })
+
     const result = await agentExecutor.invoke({ input: query, history: history });
 
+    // let output = result.messages[result.messages.length - 1].content;
+    // console.log("Result:", output);
     let output = result["output"];
     if (typeof output === 'string') {
         output = output.replace(/\*\*/g, '*');
