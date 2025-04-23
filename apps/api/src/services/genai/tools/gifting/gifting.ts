@@ -9,10 +9,11 @@ import getAvailableGiftTreesCount from "./getAvailableGiftTreesCount";
 import listPreviousTransactions from "./listPreviousGiftedTrees";
 import updateGiftRequest from "./updateGiftRequest";
 import listGiftRequestRecipients from "./listGiftRequestRecipients";
+import updateGiftRequestRecipients from "./updateGiftRequestRecipients";
 
 // Function to get tools
 export function getGiftingTools(): StructuredToolInterface[] {
-    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, listGiftRequestRecipients, updateGiftRequest, contactUsInfo];
+    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, listGiftRequestRecipients, updateGiftRequest, updateGiftRequestRecipients, contactUsInfo];
 }
 
 
