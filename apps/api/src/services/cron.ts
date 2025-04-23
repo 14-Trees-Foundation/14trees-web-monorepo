@@ -108,6 +108,8 @@ export function updatePlotPlantTypes() {
 export function updateTheAuditReport() {
     const spreadsheetId = "1xGrvZkrOwGTXTQObSvUnP0Xl3vrigElRYh0Rm01DaXQ";
     const sheetName = "Automation"
+    const aggSheetName = "Agg. Audit Report"
+    const auditedTreesSheetName = "Plot Audit Report"; // Updated sheet name
 
     const task = cron.schedule('*/5 * * * *', async () => {
         try {
@@ -137,6 +139,37 @@ export function updateTheAuditReport() {
             }
 
             await spreadSheetClient.updateRowDataInSheet(spreadsheetId, sheetName, updatedValues);
+
+            const aggHeader = ['Staff Name', 'Audit Date', 'Total Trees Audited'];
+            const aggUpdatedValues: string[][] = [aggHeader];
+
+            const aggAuditData = await TreesSnapshotRepository.getAggregatedAuditReport();
+            for (const data of aggAuditData) {
+                const aggRow: any[] = [];
+                aggRow.push(data['user_name']);
+                aggRow.push(data['audit_date']);
+                aggRow.push(data['total_trees_audited']);
+                aggUpdatedValues.push(aggRow);
+            }
+
+            await spreadSheetClient.updateRowDataInSheet(spreadsheetId, aggSheetName, aggUpdatedValues);
+
+            const auditedTreesHeader = ['Plot ID', 'Plot Name', 'Sapling ID', 'Audit Date'];
+            const auditedTreesValues: string[][] = [auditedTreesHeader];
+
+            const auditedTreesData = await TreesSnapshotRepository.getPlotsWithAuditedTrees();
+            for (const tree of auditedTreesData) {
+                const treeRow: any[] = [];
+                treeRow.push(tree.plot_id);          
+                treeRow.push(tree.plot_name);        
+                treeRow.push(tree.sapling_id);       
+                treeRow.push(tree.audit_date ? tree.audit_date : ''); 
+            
+                auditedTreesValues.push(treeRow);    
+            }
+            
+            await spreadSheetClient.updateRowDataInSheet(spreadsheetId, auditedTreesSheetName, auditedTreesValues);
+
         } catch (error) {
             console.log('[ERROR]', 'CRON::updateTheAuditReport', error);
         }
