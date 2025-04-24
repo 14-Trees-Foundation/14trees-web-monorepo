@@ -3,12 +3,12 @@ import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { getGiftingTools } from "../../tools/gifting/gifting";
 import { BaseMessage } from "@langchain/core/messages";
-import { getWhatsAppTools } from "../../tools/whatsapp";
 import { dateTool } from "../../tools/common";
+import getAgentGraph from "./gifting";
 
 
 const systemMessage = `
-You are a WhatsApp service chat bot. Your primary task is to understand user queries, collect necessary information, and fulfill user requests using tools. You must ensure clear communication and provide a seamless user experience by guiding the user step by step.
+You are a Web service chat bot. Your primary task is to understand user queries, collect necessary information, and fulfill user requests using tools. You must ensure clear communication and provide a seamless user experience by guiding the user step by step.
 
 
 Guidelines for Handling User Requests:
@@ -43,7 +43,6 @@ Guidelines for Handling User Requests:
     - Use clear, concise, and polite language.
     - Avoid technical jargon—explain things in simple terms.
     - Provide step-by-step guidance to keep the interaction smooth.
-    
 
 Your goal is to assist users efficiently while ensuring accuracy and predictability in fulfilling their requests.
 `;
@@ -60,21 +59,31 @@ const tools = [...getGiftingTools(), dateTool];
 
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
-export const waInteractionsWithGiftingAgent = async (query: string, history: BaseMessage[], customerPhoneNumber: string) => {
+export const interactWithGiftingAgent = async (query: string, history: BaseMessage[]) => {
 
-    const newTools = [...tools, ...getWhatsAppTools(customerPhoneNumber)]
-    const agent = await createOpenAIToolsAgent({ llm, tools: newTools, prompt });
+    const agent = await createOpenAIToolsAgent({ llm, tools, prompt });
     const agentExecutor = new AgentExecutor({
         agent,
-        tools: newTools,
+        tools,
     });
 
-    const result = await agentExecutor.invoke({ input: query, history: history });
-    console.log("Result:", result);
+    // const graph = await getAgentGraph();
+    // const result = await graph.invoke({ messages: [
+    //     ...history,
+    //     new HumanMessage({
+    //         content: query,
+    //     }),
+    // ]}, { recursionLimit: 100 })
 
+    const result = await agentExecutor.invoke({ input: query, history: history });
+
+    // let output = result.messages[result.messages.length - 1].content;
+    // console.log("Result:", output);
     let output = result["output"];
     if (typeof output === 'string') {
         output = output.replace(/\*\*/g, '*');
     }
+
     return output;
 }
+

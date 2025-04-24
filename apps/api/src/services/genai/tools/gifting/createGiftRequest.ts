@@ -32,6 +32,8 @@ const CreateGiftTreesRequestSchema = z.object({
     ocassion_name: z.string().optional().nullable(),
     gifted_by: z.string().optional().nullable(),
     gifted_on: z.string().optional().nullable(),
+    primary_message: z.string().optional().nullable().describe("First message statements, maximum of 270 characters for tree cards"),
+    secondary_message: z.string().optional().nullable().describe("Seccond message statements, maximum of 125 characters for tree cards"),
     force_create: z.boolean().default(false).nullable().describe("Force create gift request even if it already exists"),
 });
 
@@ -98,8 +100,8 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
                 eventType: data.ocassion_type,
                 giftedBy: data.gifted_by ? data.gifted_by : data.sponsor_name,
                 giftedOn: data.gifted_on ? data.gifted_on : new Date().toISOString().slice(0, 10),
-                primaryMessage: data.ocassion_type === '1' ? defaultGiftMessages.birthday : data.ocassion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary,
-                secondaryMessage: defaultGiftMessages.secondary,
+                primaryMessage: data.primary_message ? data.primary_message : data.ocassion_type === '1' ? defaultGiftMessages.birthday : data.ocassion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary,
+                secondaryMessage: data.secondary_message ? data.secondary_message : defaultGiftMessages.secondary,
                 recipients: recipients,
                 source: 'WhatsApp'
             }, (images: string[], requestId: number) => {

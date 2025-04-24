@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { interactWithGiftingAgent } from "../services/genai/agents/gifting_agents/wa_gifting_agent";
+import { interactWithGiftingAgent } from "../services/genai/agents/gifting_agents/web_gifting_agent";
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 
