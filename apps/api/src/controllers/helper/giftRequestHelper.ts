@@ -548,7 +548,7 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
     const cards = cardsResp.results;
 
     // assign trees
-    await autoAssignTrees(giftRequest, users, cards, null);
+    await autoAssignTrees(giftRequest, users, cards, payload.memoryImages || null);
 
     // update gift card request
     giftRequest.status = GiftCardRequestStatus.completed;
