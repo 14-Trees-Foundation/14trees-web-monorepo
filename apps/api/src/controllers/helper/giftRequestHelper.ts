@@ -18,6 +18,7 @@ import { UserGroupRepository } from "../../repo/userGroupRepo";
 import { UserRelationRepository } from "../../repo/userRelationsRepo";
 import { GroupRepository } from "../../repo/groupRepo";
 import { Group } from "../../models/group";
+import { AlbumRepository } from "../../repo/albumRepo";
 
 export const defaultGiftMessages = {
     primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
@@ -35,6 +36,7 @@ interface GiftRequestPayload {
     groupLogo?: string | null,
     eventType?: string | null,
     eventName?: string | null,
+    memoryImages?: string[] | null,
     giftedBy: string,
     giftedOn: string,
     primaryMessage: string,
@@ -50,6 +52,7 @@ interface GiftRequestPayload {
         assigneeCommEmail?: string,
         assigneePhone?: string,
         relation?: string,
+        profileImageUrl?: string,
         treesCount: number,
     }[]
 }
@@ -588,6 +591,19 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
         logoUrl = await uploadFileToS3('gift_cards', Buffer.from(payload.groupLogo, 'base64'), `${requestId}/logo.png`, 'image/png')
     }
 
+    let albumId: number | null = null;
+    if (payload.memoryImages && payload.memoryImages.length > 0) {
+        const album = await AlbumRepository.addAlbum({
+            album_name: `Gift Request - ${requestId}`,
+            user_id: user.id,
+            images: payload.memoryImages,
+            status: 'active',
+            created_at: new Date(),
+            updated_at: new Date(),
+        })
+        albumId = album.id;
+    }
+
     const request: GiftCardRequestCreationAttributes = {
         user_id: user.id,
         group_id: group ? group.id : null,
@@ -610,6 +626,7 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
         updated_at: new Date(),
         request_id: requestId,
         payment_id: null,
+        album_id: albumId,
         validation_errors: null,
         tags: [payload.source]
     }
@@ -640,6 +657,7 @@ async function addGiftRequestUsers(payload: GiftRequestPayload, giftRequestId: n
         usersData.push({
             recipient: recipient.id,
             assignee: assignee.id,
+            profile_image_url: user.profileImageUrl,
             gifted_trees: user.treesCount,
             gift_request_id: giftRequestId,
             created_at: new Date(),
