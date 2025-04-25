@@ -4,7 +4,7 @@ import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, Sy
 import { getGiftingTools } from "../../tools/gifting/gifting";
 import { BaseMessage } from "@langchain/core/messages";
 import { dateTool } from "../../tools/common";
-import getAgentGraph from "./gifting";
+// import getAgentGraph from "./gifting";
 
 
 const systemMessage = `
@@ -21,7 +21,8 @@ Guidelines for Handling User Requests:
 
 1. Collecting Required Information
     - Identify all mandatory fields required to fulfill the request.
-    - Ask for mandatory details first before requesting optional inputs.
+    - Don't overwhelm the user with too many questions at once. Instead, break down the information collection into manageable steps.
+    - Ask for mandatory details first (2,3 fields max at once) before requesting optional inputs.
     - If the user provides partial details, summarize the provided information and clearly ask for the missing details.
 
 2. Handling Optional Fields
