@@ -11,6 +11,9 @@ function getTodaysDate(): string {
  */
 export const dateTool = new DynamicTool({
     name: "get_todays_date",
-    description: "Get today's date in YYYY-MM-DD format",
+    description: `
+[Internal Use Only] Returns today's date in YYYY-MM-DD format.
+This tool should only be invoked internally when date information is required during reasoning or tool input preparation.
+`,
     func: async () => getTodaysDate(),
 });

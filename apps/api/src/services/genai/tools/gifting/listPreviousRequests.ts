@@ -7,8 +7,6 @@ import { PaymentRepository } from "../../../../repo/paymentsRepo";
 
 // Define Main Request Schema
 const ListPreviousRequestsSchema = z.object({
-    offset: z.number().describe("Fetch records after this offset. In case of mary requests"),
-    limit: z.number().describe("Fetch limited records. In case of mary requests"),
     email_id: z.string().describe("The email address you/sponsor used to make gift trees requests")
 });
 
@@ -22,8 +20,8 @@ const listGiftTreesRequests = new DynamicStructuredTool({
     schema: ListPreviousRequestsSchema,
     func: async (data): Promise<string> => {
         const Email = data.email_id;
-        const offset = data.offset;
-        const limit = data.limit;
+        const offset = 0;
+        const limit = 5;
 
         const userResp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: Email, operatorValue: 'equals' }])
         if (userResp.results.length === 0) {
