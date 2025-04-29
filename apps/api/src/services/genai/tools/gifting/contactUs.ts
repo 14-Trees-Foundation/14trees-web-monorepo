@@ -1,7 +1,14 @@
 import { DynamicTool } from "langchain/tools";
 
 const description = `
-Get the contact info of the support team.
+Provides contact information for the support team.
+
+- For gifting-related queries, a dedicated support number is available.
+- For site visit coordination, a separate contact number is provided.
+- For general inquiries, use the general support number.
+- Additionally, a support email is available for all types of requests.
+
+Use this tool when the user asks for help, contact details, or support-related information.
 `;
 
 const contactUsInfo = new DynamicTool({

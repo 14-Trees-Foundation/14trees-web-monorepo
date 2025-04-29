@@ -9,8 +9,11 @@ const ListPreviousTransactionsSchema = z.object({
 });
 
 const description = `
-For sponsor user/group get previous gift trees actions.
+Retrieve the history of past Gift Trees actions performed by a specific sponsor (individual or group).
+
+Requires the sponsor ID or group ID to fetch relevant records.
 `;
+
 
 const listPreviousTransactions = new DynamicStructuredTool({
     name: "list_previously_gifted_trees",

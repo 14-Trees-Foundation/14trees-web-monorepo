@@ -11,8 +11,13 @@ const ListPreviousRequestsSchema = z.object({
 });
 
 const description = `
-For a given user/Sponsor email list the previous gift trees request
+Retrieve a list of previous Gift Trees requests made by a specific user or sponsor using their email address.
+
+Use this to:
+- Track past gifting activity associated with an email.
+- Access details like request ID, occasion, and date of gifting.
 `;
+
 
 const listGiftTreesRequests = new DynamicStructuredTool({
     name: "list_gift_trees_request",

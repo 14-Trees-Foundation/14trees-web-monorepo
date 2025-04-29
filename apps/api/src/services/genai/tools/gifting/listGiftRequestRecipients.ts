@@ -9,8 +9,15 @@ const ListGiftRequestRecipientsSchema = z.object({
 });
 
 const description = `
-List recipients for a gift request.
+Retrieve the list of recipients associated with a specific Gift Trees Request.
+
+Use this to:
+- View recipient details for a gift request.
+- Verify who has been included in the gifting.
+
+Requires the GiftTreesRequest ID to return recipient information.
 `;
+
 
 const listGiftRequestRecipients = new DynamicStructuredTool({
     name: "list_gift_request_recipients",

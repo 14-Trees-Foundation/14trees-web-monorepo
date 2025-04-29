@@ -11,9 +11,15 @@ const GetTreeCardsRequestSchema = z.object({
 });
 
 const description = `
-Get the list of s3Urls of tree card images for GiftTreesRequest.
-The output of this tool must not be send back to end user directly!
+Retrieve the list of S3 URLs for tree card images associated with a specific Gift Trees Request.
+
+Use this to:
+- Access the personalized tree cards created for each recipient.
+- Share or display the tree cards externally.
+
+Requires the GiftTreesRequest ID to fetch the associated images.
 `;
+
 
 const getTreeCards = new DynamicStructuredTool({
     name: "get_tree_cards",
