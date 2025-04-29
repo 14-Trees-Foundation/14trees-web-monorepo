@@ -1,14 +1,28 @@
 import { Router } from 'express';
-import { handleSupplierQuery } from "../controllers/SupplierAIController";
+import * as genAi from '../controllers/supplierAIController';
 import { verifyToken } from '../auth/verifyToken';
 
 const routes = Router();
 
 // Supplier AI Chatbot endpoint
 routes.post(
-    'supplier/gen-ai',
+    '/gen-ai',
     verifyToken, // Authentication middleware
-    handleSupplierQuery
+    genAi.handleSupplierQuery
+);
+
+// Route to update supplier data
+routes.put(
+    '/update', 
+    verifyToken, // Authentication middleware
+    genAi.updateSupplier // Call the update function
+);
+
+// Route to get supplier details
+routes.get(
+    '/get', 
+    verifyToken, // Authentication middleware
+    genAi.getSupplierDetails // Call the get details function
 );
 
 export default routes;

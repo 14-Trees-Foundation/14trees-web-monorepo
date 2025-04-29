@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { interactWithSupplierAgent } from '../services/genai/agents/supplier_agent/web_supplier';
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { SupplierRepository } from '../repo/suppliersRepo';
 
 export const handleSupplierQuery = async (req: Request, res: Response) => {
     try {
@@ -33,6 +34,34 @@ export const handleSupplierQuery = async (req: Request, res: Response) => {
         console.error("Error in handleSupplierQuery:", error);
         return res.status(status.error).send({
             message: "An error occurred while processing your supplier request.",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+}
+
+// New function to update supplier data
+export const updateSupplier = async (req: Request, res: Response) => {
+    try {
+        const { code } = req.params;
+        const updateData = req.body;
+
+        // Validate required fields
+        if (!code) {
+            return res.status(status.bad).send({
+                message: "Supplier code is required as a path parameter."
+            });
+        }
+
+        // Call the repository method to update the supplier
+        const updatedSupplier = await SupplierRepository.updateSupplier(code, updateData);
+
+        return res.status(status.success).send({
+            supplier: updatedSupplier,
+        });
+    } catch (error) {
+        console.error("Error in updateSupplier:", error);
+        return res.status(status.error).send({
+            message: "Failed to update supplier details.",
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
