@@ -16,9 +16,7 @@ export const serveUserQuery = async (req: Request, res: Response) => {
 
         const resp = await interactWithGiftingAgent(message, messageHistory);
 
-        res.status(status.success).send({
-            output: resp,
-        })
+        res.status(status.success).send(resp);
     }
     catch (error) {
         console.error("Error in serveUserQuery:", error);

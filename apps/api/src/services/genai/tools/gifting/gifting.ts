@@ -11,10 +11,11 @@ import updateGiftRequest from "./updateGiftRequest";
 import listGiftRequestRecipients from "./listGiftRequestRecipients";
 import updateGiftRequestRecipients from "./updateGiftRequestRecipients";
 import generateSampleCardMessages from "./generateSampleCardMessages";
+import verifyToolInputs from "./verifyToolInputs";
 
 // Function to get tools
 export function getGiftingTools(): StructuredToolInterface[] {
-    return [createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, listGiftRequestRecipients, updateGiftRequest, updateGiftRequestRecipients, generateSampleCardMessages, contactUsInfo];
+    return [verifyToolInputs, createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, listGiftRequestRecipients, updateGiftRequest, updateGiftRequestRecipients, generateSampleCardMessages, contactUsInfo];
 }
 
 

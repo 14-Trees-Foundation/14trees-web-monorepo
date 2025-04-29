@@ -1,9 +1,14 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
+import { AgentExecutor, AgentFinish, AgentStep, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
+import { BaseMessage, AIMessage, FunctionMessage } from "@langchain/core/messages";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { getGiftingTools } from "../../tools/gifting/gifting";
-import { BaseMessage } from "@langchain/core/messages";
 import { dateTool } from "../../tools/common";
+import { z } from "zod";
+import { FunctionsAgentAction } from "langchain/agents/openai/output_parser";
+import { convertToOpenAIFunction } from "@langchain/core/utils/function_calling";
 // import getAgentGraph from "./gifting";
 
 
@@ -23,7 +28,8 @@ Guidelines for Handling User Requests:
     - Identify all mandatory fields required to fulfill the request.
     - Don't overwhelm the user with too many questions at once. Instead, break down the information collection into manageable steps.
     - Ask for mandatory details first (2,3 fields max at once) before requesting optional inputs.
-    - If the user provides partial details, summarize the provided information and clearly ask for the missing details.
+    - Every time use provides some input, always call the function named "verify_tool_inputs" to verify inputs provided so far. It will return structured data of inputs provided by user.
+    - If the user provides partial details, return the provided data in structured JSON format as data field and clearly ask for the missing details using text_output field.
 
 2. Handling Optional Fields
     - Inform the user about all optional fields and their default values.
@@ -31,7 +37,7 @@ Guidelines for Handling User Requests:
     - Ensure the user is aware of all available options before proceeding.
 
 3. Confirmation Before Execution
-    - Before taking action, summarize all collected details and ask for user confirmation.
+    - Before taking action, return provided fields in structured format and ask for user confirmation.
     - Only proceed once the user explicitly confirms the request.
     - If the user requests a modification, update the summary and confirm again.
 
@@ -45,11 +51,20 @@ Guidelines for Handling User Requests:
     - Avoid technical jargon—explain things in simple terms.
     - Provide step-by-step guidance to keep the interaction smooth.
 
+6. When you want to respond finally to the user, always call the function named "response" with the following parameters:
+    - text_output: A markdown formatted message for the user.
+    - data: Structured JSON (can contain any fields) containing either the tool outputs, the collected partial inputs, or any useful structured data.
+    - The data field can contain fields like:
+        - collected_inputs: {{ gift_type: "birthday", recipient_name: "John" }}
+        - tool_output: {{ suggested_gifts: [...] }}
+
+Do not directly answer with plain text. Always call the "response" function for the final reply.
+
 Your goal is to assist users efficiently while ensuring accuracy and predictability in fulfilling their requests.
 `;
 
 const messages = [
-    SystemMessagePromptTemplate.fromTemplate(systemMessage),
+    SystemMessagePromptTemplate.fromTemplate(`${systemMessage}`),
     new MessagesPlaceholder({ variableName: "history" }),
     HumanMessagePromptTemplate.fromTemplate("{input}"),
     new MessagesPlaceholder({ variableName: "agent_scratchpad" }),
@@ -60,13 +75,78 @@ const tools = [...getGiftingTools(), dateTool];
 
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
+const responseSchema = z.object({
+    text_output: z.string().describe("Markdown formatted text/message to be displayed/conwayed to the user"),
+    data: z.record(z.any()).optional().nullable().describe("Data to be used by the client application."),
+});
+
+const responseOpenAIFunction = {
+    name: "response",
+    description: "Return the response to the user",
+    parameters: zodToJsonSchema(responseSchema),
+};
+
+const structuredOutputParser = (
+    message: AIMessage,
+): FunctionsAgentAction | AgentFinish => {
+    if (message.content && typeof message.content !== "string") {
+        throw new Error("This agent cannot parse non-string model responses.");
+    }
+
+    console.log("calls:", message.tool_calls);
+    if (message.additional_kwargs.function_call) {
+        const { function_call } = message.additional_kwargs;
+        try {
+            const toolInput = function_call.arguments
+                ? JSON.parse(function_call.arguments)
+                : {};
+            // If the function call name is `response` then we know it's used our final
+            // response function and can return an instance of `AgentFinish`
+            if (function_call.name === "response") {
+                return { returnValues: { ...toolInput }, log: message.content };
+            }
+            return {
+                tool: function_call.name,
+                toolInput,
+                log: `Invoking "${function_call.name}" with ${function_call.arguments ?? "{}"
+                    }\n${message.content}`,
+                messageLog: [message],
+            };
+        } catch (error) {
+            throw new Error(
+                `Failed to parse function arguments from chat model response. Text: "${function_call.arguments}". ${error}`
+            );
+        }
+    } else {
+        return {
+            returnValues: { output: message.content },
+            log: message.content,
+        };
+    }
+};
+
+
+const formatAgentSteps = (steps: AgentStep[]): BaseMessage[] =>
+    steps.flatMap(({ action, observation }) => {
+        if ("messageLog" in action && action.messageLog !== undefined) {
+            const log = action.messageLog as BaseMessage[];
+            return log.concat(new FunctionMessage(observation, action.tool));
+        } else {
+            return [new AIMessage(action.log)];
+        }
+    });
+
+const llmWithTools = llm.bind({
+    functions: [...tools.map((tool) => convertToOpenAIFunction(tool)), responseOpenAIFunction],
+});
+
 export const interactWithGiftingAgent = async (query: string, history: BaseMessage[]) => {
 
-    const agent = await createOpenAIToolsAgent({ llm, tools, prompt });
-    const agentExecutor = new AgentExecutor({
-        agent,
-        tools,
-    });
+    // const agent = await createOpenAIToolsAgent({ llm, tools, prompt });
+    // const agentExecutor = new AgentExecutor({
+    //     agent,
+    //     tools,
+    // });
 
     // const graph = await getAgentGraph();
     // const result = await graph.invoke({ messages: [
@@ -76,15 +156,49 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
     //     }),
     // ]}, { recursionLimit: 100 })
 
-    const result = await agentExecutor.invoke({ input: query, history: history });
+    // const result = await agentExecutor.invoke({ input: query, history: history });
+    // const parsedOutput = await parser.parse(result.output);
+    // return parsedOutput;
 
     // let output = result.messages[result.messages.length - 1].content;
     // console.log("Result:", output);
-    let output = result["output"];
-    if (typeof output === 'string') {
-        output = output.replace(/\*\*/g, '*');
-    }
+    // let output = result["output"];
+    // if (typeof output === 'string') {
+    //     output = output.replace(/\*\*/g, '*');
+    // }
 
-    return output;
+    // return output;
+
+
+    const runnableAgent = RunnableSequence.from<{
+        input: string;
+        history: BaseMessage[];
+        steps: Array<AgentStep>;
+    }>([
+        {
+            input: (i) => i.input,
+            history: (i) => i.history,
+            agent_scratchpad: (i) => formatAgentSteps(i.steps),
+        },
+        prompt,
+        llmWithTools,
+        structuredOutputParser,
+    ]);
+
+    const executor = AgentExecutor.fromAgentAndTools({
+        agent: runnableAgent,
+        tools: tools,
+    });
+
+    const result = await executor.invoke({
+        input: query,
+        history: history,
+    });
+
+    console.log("Result:", result);
+    return {
+        text_output: result.text_output || result.output,
+        data: result.data,
+    }
 }
 

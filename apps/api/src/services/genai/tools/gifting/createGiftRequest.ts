@@ -122,11 +122,12 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
 
             const razorpayService = new RazorpayService();
             const qrCode = await razorpayService.generatePaymentQRCode(trees * 1 * 100);
+            const order = await razorpayService.createOrder(trees * 1 * 100);
 
             const paymentRequest: PaymentCreationAttributes = {
                 pan_number: null,
                 consent: false,
-                order_id: null,
+                order_id: order?.id || null,
                 qr_id: qrCode.id,
                 amount: trees * 1 * 100,
                 created_at: new Date(),
