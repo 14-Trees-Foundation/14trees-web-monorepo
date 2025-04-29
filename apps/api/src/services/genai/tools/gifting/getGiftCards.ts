@@ -29,22 +29,16 @@ const getTreeCards = new DynamicStructuredTool({
         const totalAmount = request.no_of_cards * 1
 
         let qrCodeUrl = '';
-        let orderId: string | null = null;
         if (amountReceived != totalAmount) {
             const razorpayService = new RazorpayService();
             if (!request.payment_id) {
                 const qrCode = await razorpayService.generatePaymentQRCode(request.no_of_cards * 1 * 100);
-                const order = await razorpayService.createOrder(request.no_of_cards * 1 * 100);
-                if (order) {
-                    orderId = order.id;
-                }
-
                 qrCodeUrl = qrCode.image_url
 
                 const paymentRequest: PaymentCreationAttributes = {
                     pan_number: null,
                     consent: false,
-                    order_id: orderId,
+                    order_id: null,
                     qr_id: qrCode.id,
                     amount: request.no_of_cards * 1 * 100,
                     created_at: new Date(),
@@ -55,27 +49,17 @@ const getTreeCards = new DynamicStructuredTool({
 
             } else {
                 const payment = await PaymentRepository.getPayment(request.payment_id);
-                if (payment && (payment.order_id || payment.qr_id)) {
+                if (payment && payment.qr_id) {
                     let amount = 0;
 
-                    if (payment.qr_id) {
-                        const payments = await razorpayService.getPayments(payment.qr_id);
-                        payments?.forEach(payment => {
-                            amount += Number(payment.amount) / 100
-                        })
+                    const payments = await razorpayService.getPayments(payment.qr_id);
+                    payments?.forEach(payment => {
+                        amount += Number(payment.amount) / 100
+                    })
 
-                        const qrCode = await razorpayService.generatePaymentQRCodeForId(payment.qr_id)
-                        qrCodeUrl = qrCode.image_url;
-                    }
-
-                    if (payment.order_id) {
-                        const payments = await razorpayService.getPayments(payment.order_id);
-                        payments?.forEach(payment => {
-                            amount += Number(payment.amount) / 100
-                        })
-                        orderId = payment.order_id;
-                    }
-
+                    const qrCode = await razorpayService.generatePaymentQRCodeForId(payment.qr_id)
+                    qrCodeUrl = qrCode.image_url;
+                    
                     amountReceived = amount
                     await GiftCardsRepository.updateGiftCardRequests({ amount_received: amountReceived }, { id: requestId });
                 }
@@ -83,26 +67,15 @@ const getTreeCards = new DynamicStructuredTool({
         }
 
         if (amountReceived !== totalAmount) {
-            // return JSON.stringify({
-            //     status: 'Pending Payment',
-            //     output: `You haven't paid for trees of request Id ${requestId}.`,
-            //     next_step: {
-            //         note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
-            //         payment_request: {
-            //             rq_code_image_url: qrCodeUrl,
-            //             order_id: orderId,
-            //             image_caption: `You have requested *${request.no_of_cards === 1 ? '1 tree' : `${request.no_of_cards} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${request.no_of_cards * 1}/-*.`
-            //         }
-            //     }
-            // });
             return JSON.stringify({
                 status: 'Pending Payment',
                 output: `You haven't paid for trees of request Id ${requestId}.`,
-                note: 'Below data must be sent as structured data to client so that it can be used to enable payment.',
-                data: {
-                    order_id: orderId,
-                    amount: request.no_of_cards * 1 * 100,
-                    amount_inr: `INR ${request.no_of_cards * 1}/-`,
+                next_step: {
+                    note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
+                    payment_request: {
+                        rq_code_image_url: qrCodeUrl,
+                        image_caption: `You have requested *${request.no_of_cards === 1 ? '1 tree' : `${request.no_of_cards} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${request.no_of_cards * 1}/-*.`
+                    }
                 }
             });
         }

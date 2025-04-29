@@ -77,7 +77,7 @@ Your goal is to assist users efficiently while ensuring accuracy and predictabil
 `;
 
 const messages = [
-    SystemMessagePromptTemplate.fromTemplate(`${systemMessage}`),
+    SystemMessagePromptTemplate.fromTemplate(systemMessage),
     new MessagesPlaceholder({ variableName: "history" }),
     HumanMessagePromptTemplate.fromTemplate("{input}"),
     new MessagesPlaceholder({ variableName: "agent_scratchpad" }),
@@ -150,34 +150,6 @@ const llmWithTools = llm.bind({
 
 export const interactWithGiftingAgent = async (query: string, history: BaseMessage[]) => {
 
-    // const agent = await createOpenAIToolsAgent({ llm, tools, prompt });
-    // const agentExecutor = new AgentExecutor({
-    //     agent,
-    //     tools,
-    // });
-
-    // const graph = await getAgentGraph();
-    // const result = await graph.invoke({ messages: [
-    //     ...history,
-    //     new HumanMessage({
-    //         content: query,
-    //     }),
-    // ]}, { recursionLimit: 100 })
-
-    // const result = await agentExecutor.invoke({ input: query, history: history });
-    // const parsedOutput = await parser.parse(result.output);
-    // return parsedOutput;
-
-    // let output = result.messages[result.messages.length - 1].content;
-    // console.log("Result:", output);
-    // let output = result["output"];
-    // if (typeof output === 'string') {
-    //     output = output.replace(/\*\*/g, '*');
-    // }
-
-    // return output;
-
-
     const runnableAgent = RunnableSequence.from<{
         input: string;
         history: BaseMessage[];
@@ -203,7 +175,6 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
         history: history,
     });
 
-    console.log("Result:", result);
     return {
         text_output: result.text_output || result.output,
         data: result.data,
