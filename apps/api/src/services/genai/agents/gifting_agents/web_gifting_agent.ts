@@ -57,11 +57,21 @@ Guidelines for Handling User Requests:
     - Avoid technical jargon—explain things in simple terms.
     - Provide step-by-step guidance to keep the interaction smooth.
 
-7. When you want to respond finally to the user, always call the function named "response" with the following parameters:
-    - "text_output": A markdown-formatted message to be shown to the user.
-    - "data": **The exact, unmodified JSON output returned by the last tool call**. Do not summarize or alter the output.
+7. When the user has provided all required inputs and the tool has returned its result, you must respond by calling the function named **"response"**.
+    - Always use "response" as the final step of the conversation.
+    - Pass the tool result **exactly as it was returned**, without summarizing or rephrasing.
+    - Use the following arguments:
+        - "text_output": A markdown-formatted explanation or result message for the user.
+        - "data": A JSON object containing the **unmodified tool output**, for example:
+        \`\`\`json
+        {{
+            "text_output": "A markdown-formatted explanation or result message for the user.",
+            "data": {{ ...exact contents from the last tool call... }}
+        }}
+        \`\`\`
 
-Do not directly answer with plain text. Always call the "response" function for the final reply.
+🔁 Never skip the final "response" call — it is mandatory once the process is complete.
+
 
 Your goal is to assist users efficiently while ensuring accuracy and predictability in fulfilling their requests.
 `;
@@ -80,7 +90,7 @@ const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
 const responseSchema = z.object({
     text_output: z.string().describe("Markdown formatted text/message to be displayed/conwayed to the user"),
-    data: z.record(z.any()).optional().nullable().describe("Data to be used by the client application."),
+    data: z.any().optional().nullable().describe("Data to be used by the client application."),
 });
 
 const responseOpenAIFunction = {
@@ -88,6 +98,23 @@ const responseOpenAIFunction = {
     description: "Return the response to the user",
     parameters: zodToJsonSchema(responseSchema),
 };
+
+function parseToolCall(function_call: any, message: AIMessage): FunctionsAgentAction | AgentFinish {
+    if (message.content && typeof message.content !== "string") {
+        throw new Error("This agent cannot parse non-string model responses.");
+    }
+
+    const toolInput = function_call.arguments ? JSON.parse(function_call.arguments) : {};
+    if (function_call.name === "response") {
+        return { returnValues: { ...toolInput }, log: message.content };
+    }
+    return {
+        tool: function_call.name,
+        toolInput,
+        log: `Invoking "${function_call.name}" with ${function_call.arguments ?? "{}"}\n${message.content}`,
+        messageLog: [message],
+    };
+}
 
 const structuredOutputParser = (
     message: AIMessage,
@@ -97,34 +124,13 @@ const structuredOutputParser = (
     }
 
     if (message.additional_kwargs.function_call) {
-        const { function_call } = message.additional_kwargs;
-        try {
-            const toolInput = function_call.arguments
-                ? JSON.parse(function_call.arguments)
-                : {};
-            // If the function call name is `response` then we know it's used our final
-            // response function and can return an instance of `AgentFinish`
-            if (function_call.name === "response") {
-                return { returnValues: { ...toolInput }, log: message.content };
-            }
-            return {
-                tool: function_call.name,
-                toolInput,
-                log: `Invoking "${function_call.name}" with ${function_call.arguments ?? "{}"
-                    }\n${message.content}`,
-                messageLog: [message],
-            };
-        } catch (error) {
-            throw new Error(
-                `Failed to parse function arguments from chat model response. Text: "${function_call.arguments}". ${error}`
-            );
-        }
-    } else {
-        return {
-            returnValues: { output: message.content },
-            log: message.content,
-        };
+        return parseToolCall(message.additional_kwargs.function_call, message);
     }
+
+    return {
+        returnValues: { output: message.content },
+        log: message.content,
+    };
 };
 
 
