@@ -18,6 +18,7 @@ interface DonationAttributes {
   grove: string;
   grove_type_other: string | null;
   trees_count: number;
+  pledged_area_acres: number| null;
   contribution_options: ContributionOption[] | null;
   names_for_plantation: string | null;
   comments: string | null;
@@ -78,6 +79,12 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: false
   })
   trees_count!: number;
+
+  @Column({ 
+    type: DataType.FLOAT,
+    allowNull: true
+  })
+  pledged_area_acres!: number | null;
 
   @Column({ 
     type: DataType.ARRAY(DataType.STRING),

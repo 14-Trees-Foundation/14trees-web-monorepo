@@ -97,7 +97,7 @@ export const createDonation = async (req: Request, res: Response) => {
     const data = req.body;
     const {
         sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove,
-        grove_type_other, trees_count, contribution_options, names_for_plantation,
+        grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
         comments, users
     } = data;
 
@@ -108,7 +108,7 @@ export const createDonation = async (req: Request, res: Response) => {
         });
 
     // Validate tree plantaion details
-    if (!trees_count || !category)
+    if ((!trees_count && !pledged_area_acres) || !category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
         });
@@ -119,6 +119,7 @@ export const createDonation = async (req: Request, res: Response) => {
         sponsor_email,
         sponsor_phone,
         trees_count,
+        pledged_area_acres,
         payment_id,
         category,
         grove,

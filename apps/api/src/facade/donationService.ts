@@ -30,7 +30,8 @@ interface CreateDonationRequest {
     payment_id: number | null;
     category: LandCategory;
     grove: string;
-    trees_count: number,
+    trees_count: number | null,
+    pledged_area_acres: number | null,
     continution_options: ContributionOption[],
     comments: string | null,
 }
@@ -40,7 +41,7 @@ export class DonationService {
     public static async createDonation(data: CreateDonationRequest): Promise<Donation> {
         const {
             sponsor_name, sponsor_email, sponsor_phone, grove,
-            trees_count, category, payment_id, continution_options, comments
+            trees_count, pledged_area_acres, category, payment_id, continution_options, comments
         } = data;
 
         const sponsorUser = await UserRepository.upsertUser({
@@ -54,7 +55,8 @@ export class DonationService {
 
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
-            trees_count: trees_count,
+            trees_count: trees_count || 0,
+            pledged_area_acres: pledged_area_acres,
             category: category,
             grove: grove,
             payment_id: payment_id,
@@ -107,7 +109,7 @@ export class DonationService {
             donation_id: donationId,
         })
 
-        if (alreadyReserved + treeIds.length > donation.trees_count)
+        if (alreadyReserved + treeIds.length > (donation.trees_count || 0))
             throw new Error("Can not reserve more trees than originally requested.")
 
         await TreeRepository.mapTreesToUserAndGroup(donation.user_id, null, treeIds, donationId);
@@ -126,9 +128,9 @@ export class DonationService {
             });
     
             return {
-                total_requested: donation.trees_count,
+                total_requested: donation.trees_count || 0,
                 already_reserved: reservedCount,
-                remaining: Math.max(0, donation.trees_count - reservedCount)
+                remaining: Math.max(0, (donation.trees_count || 0) - reservedCount)
             };
         } catch (error) {
             console.error("[ERROR] DonationService::getDonationReservationStats", error);
@@ -171,7 +173,7 @@ export class DonationService {
                 const donation = await DonationRepository.getDonation(donation_id);
                 const alreadyReserved = await TreeRepository.treesCount({ donation_id });
     
-                if (alreadyReserved + finalTreeIds.length > donation.trees_count) {
+                if (alreadyReserved + finalTreeIds.length > (donation.trees_count || 0)) {
                     throw new Error("Cannot reserve more trees than originally requested.");
                 }
             }
@@ -234,7 +236,7 @@ export class DonationService {
         const alreadyReserved = await TreeRepository.treesCount({
             donation_id: donationId,
         })
-        if (treesCount + alreadyReserved > donation.trees_count)
+        if (treesCount + alreadyReserved > (donation.trees_count || 0))
             throw new Error("Can not reserve more trees than originally requested.")
 
 
@@ -527,7 +529,7 @@ export class DonationService {
         const { addUsersData, updateUsersData, count } = await this.upsertDonationUsersAndRelations(donationId, users);
         const donation = await DonationRepository.getDonation(donationId);
 
-        if (donation.trees_count < count)
+        if ((donation.trees_count || 0) < count)
             throw new Error("You cannot assign more trees to users than originally requested.");
 
         const existingUsers = await DonationUserRepository.getAllDonationUsers(donationId);
