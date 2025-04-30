@@ -423,6 +423,54 @@ routes.delete('/users/:donation_user_id', donations.deleteDonationUser);
 routes.post('/trees/reserve', donations.reserveTreesForDonation)
 
 
+/**
+ * @swagger
+ * /donations/trees/stats:
+ *   get:
+ *     summary: Get reservation stats for a donation
+ *     description: Fetches the reservation stats for a specific donation
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - name: donation_id
+ *         in: query            
+ *         description: ID of the donation to fetch stats for
+ *         required: true
+ *         type: integer
+ *         example: 123
+ *     responses:
+ *       200:           
+ *         description: Reservation stats fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             total_requested:
+ *               type: integer
+ *               example: 100           
+ *             already_reserved:
+ *               type: integer
+ *               example: 50
+ *             remaining:
+ *               type: integer
+ *               example: 50            
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid donation ID"     
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.get('/trees/stats', donations.getDonationReservationStats);
 
 /**
  * @swagger
@@ -641,6 +689,8 @@ routes.post('/trees/unassign', donations.unassignTrees)
  */
 routes.post('/trees/get', donations.getDonationTrees)
 
+
+
 /**
  * @swagger
  * /donations/tags:
@@ -683,5 +733,66 @@ routes.post('/trees/get', donations.getDonationTrees)
  */
 routes.get('/tags', donations.getDonationTags);
 
+/**
+ * @swagger
+ * /donations/emails/send:
+ *   post:
+ *     summary: Send email for a donation
+ *     description: Sends email notifications for a donation with optional test emails and CC recipients.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for sending donation email
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             test_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["test@example.com"]
+ *             sponsor_cc_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["cc@example.com"]
+ *             event_type:
+ *               type: string
+ *               example: "default"
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Donation ID is required"
+ *       404:
+ *         description: Not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Donation not found"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Internal server error"
+ */
+routes.post('/emails/send', donations.sendEmailForDonation);
 
 export default routes;
