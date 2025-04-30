@@ -3,7 +3,7 @@ import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { BaseMessage } from "@langchain/core/messages";
 import { dateTool } from "../../tools/common";
-import { createSupplierTool, getSupplierTool, listSuppliersTool } from "../../tools/supplier/createSupplier";
+import { createSupplierTool, getSupplierTool, listSuppliersTool } from "../../tools/lighthouse/createSupplier";
 
 const systemMessage = `
 You are a Supplier Management chatbot for 14Trees. Your primary task is to help users manage supplier information through CRUD operations.
