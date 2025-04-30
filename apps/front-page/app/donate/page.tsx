@@ -1486,7 +1486,7 @@ export default function DonatePage() {
                   <h2 className="text-2xl font-semibold">Tax Benefits</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                      <label className="block text-lg font-light mb-2">Would you like to availe tax benefits?</label>
+                      <label className="block text-lg font-light mb-2">Would you like to avail tax benefits?</label>
                       {[
                         { value: "indian", label: "Indian citizen (80G benefit)" },
                         { value: "foreign", label: "Foreign donor (501(c) eligible)" },
@@ -1555,7 +1555,7 @@ export default function DonatePage() {
                           value="razorpay"
                           checked={paymentOption === "razorpay" && !isAboveLimit}
                           onChange={() => setPaymentOption("razorpay")}
-                          disabled={isAboveLimit || rpPaymentSuccess}
+                          disabled={isAboveLimit || rpPaymentSuccess || pledgeType === 'acres'}
                         />
                         <span>
                           Razorpay (UPI/Card/Net Banking)
@@ -1569,7 +1569,7 @@ export default function DonatePage() {
                           value="bank-transfer"
                           checked={paymentOption === "bank-transfer" || isAboveLimit}
                           onChange={() => setPaymentOption("bank-transfer")}
-                          disabled={rpPaymentSuccess}
+                          disabled={rpPaymentSuccess || pledgeType === 'acres'}
                         />
                         <span>Bank Transfer {isAboveLimit && "(Recommended for large donations)"}</span>
                       </label>
@@ -1651,7 +1651,7 @@ export default function DonatePage() {
                   </div>
                 )}
 
-                {(paymentOption !== "razorpay" || rpPaymentSuccess) && <div className="pt-6 flex justify-center">
+                {(paymentOption !== "razorpay" || (rpPaymentSuccess || pledgeType === 'acres')) && <div className="pt-6 flex justify-center">
                   <Button
                     type="submit"
                     className="bg-green-800 text-white hover:bg-green-900 w-[500px] py-6 text-lg"

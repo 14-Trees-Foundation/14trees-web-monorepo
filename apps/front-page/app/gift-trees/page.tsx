@@ -1724,7 +1724,7 @@ export default function GiftTreesPage() {
                   <h2 className="text-2xl font-semibold">Tax Benefits</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                      <label className="block text-lg font-light mb-2">Would you like to availe tax benefits?</label>
+                      <label className="block text-lg font-light mb-2">Would you like to avail tax benefits?</label>
                       {[
                         { value: "indian", label: "Indian citizen (80G benefit)" },
                         { value: "foreign", label: "Foreign donor (501(c) eligible)" },
