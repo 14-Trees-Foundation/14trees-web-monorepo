@@ -4,7 +4,7 @@ import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { BaseMessage } from "@langchain/core/messages";
 import { dateTool } from "../../tools/common";
-import { createBuyerTool, getBuyerTool, listBuyersTool } from "../../tools/buyer/buyer";
+import { createBuyerTool, getBuyerTool, listBuyersTool } from "../../tools/lighthouse/buyer";
 
 const systemMessage = `
 You are a Buyer Management chatbot for 14Trees. Your primary task is to help users manage buyer information through CRUD operations.
