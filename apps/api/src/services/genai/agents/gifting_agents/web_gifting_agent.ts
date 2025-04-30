@@ -57,18 +57,12 @@ Guidelines for Handling User Requests:
     - Avoid technical jargon—explain things in simple terms.
     - Provide step-by-step guidance to keep the interaction smooth.
 
-7. When the user has provided all required inputs and the tool has returned its result, you must respond by calling the function named **"response"**.
-    - Always use "response" as the final step of the conversation.
-    - Pass the tool result **exactly as it was returned**, without summarizing or rephrasing.
-    - Use the following arguments:
+7. You must always return the final output by calling the function named "response"
+    - Use the following arguments for the "response" function:
         - "text_output": A markdown-formatted explanation or result message for the user.
-        - "data": A JSON object containing the **unmodified tool output**, for example:
-        \`\`\`json
-        {{
-            "text_output": "A markdown-formatted explanation or result message for the user.",
-            "data": {{ ...exact contents from the last tool call... }}
-        }}
-        \`\`\`
+        - sponsor_details: A JSON object containing:
+            - name: Name of the sponsor user, or null if not captured.
+            - email: Email of the sponsor user, or null if not captured.
 
 🔁 Never skip the final "response" call — it is mandatory once the process is complete.
 
@@ -90,7 +84,10 @@ const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
 const responseSchema = z.object({
     text_output: z.string().describe("Markdown formatted text/message to be displayed/conwayed to the user"),
-    data: z.any().optional().nullable().describe("Data to be used by the client application."),
+    sponsor_details: z.object({
+        name: z.string().nullable().optional().describe("Name of the sponsor user"),
+        email: z.string().nullable().optional().describe("Email of the sponsor user"),
+    }).describe("Sponsor details if it were captured previously in conversations"),
 });
 
 const responseOpenAIFunction = {
@@ -128,7 +125,7 @@ const structuredOutputParser = (
     }
 
     return {
-        returnValues: { output: message.content },
+        returnValues: { text_output: message.content },
         log: message.content,
     };
 };
@@ -177,7 +174,7 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
 
     return {
         text_output: result.text_output || result.output,
-        data: result.data,
+        sponsor_details: result.sponsor_details,
     }
 }
 
