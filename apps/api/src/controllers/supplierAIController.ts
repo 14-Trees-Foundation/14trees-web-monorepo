@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { interactWithSupplierAgent } from '../services/genai/agents/supplier_agent/web_supplier';
+import { interactWithSupplierAgent } from '../services/genai/agents/light_house/web_supplier';
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { SupplierRepository } from '../repo/suppliersRepo';

@@ -1,6 +1,6 @@
 // src/controllers/buyerController.ts
 import { Request, Response } from "express";
-import { interactWithBuyerAgent } from '../services/genai/agents/buyer_agent/web_buyer';
+import { interactWithBuyerAgent } from '../services/genai/agents/light_house/web_buyer';
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { BuyerRepository } from '../repo/buyersRepo';
