@@ -107,3 +107,37 @@ export const getBuyerAgentTools = () => {
         dateTool
     };
 }
+
+/**
+ * Using for Multi Agent
+ */
+import { RunnableConfig } from "@langchain/core/runnables";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AgentState } from "./common";
+import { ChatOpenAI } from "@langchain/openai";
+import { getGiftingTools } from "../../tools/gifting/gifting";
+import { dateTool } from "../../tools/common";
+
+// Define the gifting agent
+const buyerAgent = createReactAgent({
+    llm,
+    tools,
+    stateModifier: new SystemMessage(systemMessage),
+});
+
+// Define the gifting agent node
+const buyerAgentNode = async (
+    state: typeof AgentState.State,
+    config?: RunnableConfig
+) => {
+    const result = await buyerAgent.invoke(state, config);
+    const lastMessage = result.messages[result.messages.length - 1];
+    return {
+        messages: [
+            new AIMessage({ content: lastMessage.content, name: "Buyer_Agent" }),
+        ],
+    };
+};
+
+export default buyerAgentNode;

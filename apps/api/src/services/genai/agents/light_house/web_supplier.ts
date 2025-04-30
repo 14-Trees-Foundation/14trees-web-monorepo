@@ -107,3 +107,34 @@ export const getSupplierAgentTools = () => {
         dateTool
     };
 }
+
+/**
+ * Using for Multi Agent
+ */
+import { RunnableConfig } from "@langchain/core/runnables";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AgentState } from "./common";
+
+// Define the gifting agent
+const supplierAgent = createReactAgent({
+    llm,
+    tools,
+    stateModifier: new SystemMessage(systemMessage),
+});
+
+// Define the gifting agent node
+const supplierAgentNode = async (
+    state: typeof AgentState.State,
+    config?: RunnableConfig
+) => {
+    const result = await supplierAgent.invoke(state, config);
+    const lastMessage = result.messages[result.messages.length - 1];
+    return {
+        messages: [
+            new AIMessage({ content: lastMessage.content, name: "Supplier_Agent" }),
+        ],
+    };
+};
+
+export default supplierAgentNode;
