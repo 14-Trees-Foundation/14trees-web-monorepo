@@ -1,4 +1,4 @@
-// src/agents/error-query.agent.ts
+require("dotenv").config();
 import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
@@ -10,11 +10,11 @@ import { SqlToolkit } from "langchain/agents/toolkits/sql";
 // Database Configuration
 const datasource = new DataSource({
   type: "postgres",
-  host: process.env.DB_HOST || "vivek-tree-vivek-tree.e.aivencloud.com",
-  port: Number(process.env.DB_PORT) || 15050,
-  username: process.env.DB_USER || "avnadmin",
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME || "defaultdb",
+  host: process.env.POSTGRES_HOST || "vivek-tree-vivek-tree.e.aivencloud.com",
+  port: Number(process.env.POSTGRES_PORT) || 15050,
+  username: process.env.POSTGRES_USER || "avnadmin",
+  password: process.env.POSTGRES_PD,
+  database: process.env.POSTGRES_DB || "defaultdb",
   schema: "LightHouse",
   ssl: true,
   extra: {
@@ -24,18 +24,29 @@ const datasource = new DataSource({
   }
 });
 
-// System Prompt
+// Enhanced System Prompt
 const systemMessage = `
-You are an Error Analysis assistant for the LightHouse system. 
-Only work with the 'errors' table in LightHouse schema (read-only operations).
+You are an expert Error Analysis assistant for the LightHouse system.
+You ONLY work with the 'errors' table in the LightHouse schema.
 
-Key Error Fields:
-- log_date: Date of error
-- server_name: Originating server
-- processor_name: Responsible processor
-- module: System module
-- status: Error status (critical/warning/info)
-- problem: Error description
+RESPONSE RULES:
+1. For count queries: "There are X errors between [date1] and [date2]"
+2. For no results: "No errors found matching your criteria"
+3. For general questions: Provide concise summary with key statistics
+4. For complex queries: Offer to break down into simpler questions
+
+TABLE STRUCTURE:
+- log_date (TIMESTAMP): When error occurred
+- server_name (VARCHAR): Originating server
+- error_audit (VARCHAR): Error code
+- status (VARCHAR): Error severity
+- problem (TEXT): Error description
+- solution (TEXT): Suggested fix
+
+ALWAYS:
+- Verify date formats (DD/MM/YYYY)
+- Include timeframes when relevant
+- Summarize before providing details
 `;
 
 const messages = [
@@ -45,41 +56,79 @@ const messages = [
     new MessagesPlaceholder({ variableName: "agent_scratchpad" }),
 ];
 
-export const analyzeErrorsAgent = async (query: string, history: BaseMessage[] = []): Promise<{ output: string; query?: string; success: boolean }> => {
-    const db = await SqlDatabase.fromDataSourceParams({ 
-        appDataSource: datasource,
-        includesTables: ['errors'] // Restrict to errors table
-    });
+export const analyzeErrorsAgent = async (query: string, history: BaseMessage[] = []): Promise<{ 
+  output: string; 
+  query?: string; 
+  success: boolean;
+  count?: number;
+}> => {
+    console.log('\n[Agent] New Query:', query);
+    try {
+        const db = await SqlDatabase.fromDataSourceParams({ 
+            appDataSource: datasource,
+            includesTables: ['errors']
+        });
 
-    const llm = new ChatOpenAI({ 
-        model: "gpt-4o",
-        temperature: 0,
-        configuration: { apiKey: process.env.OPENAI_API_KEY }
-    });
+        const llm = new ChatOpenAI({ 
+            model: "gpt-4o",
+            temperature: 0,
+            configuration: { apiKey: process.env.OPENAI_API_KEY }
+        });
 
-    
-    const toolkit = new SqlToolkit(db, llm);
-    const tools = toolkit.getTools(); 
+        const toolkit = new SqlToolkit(db, llm);
+        const tools = toolkit.getTools();
 
-    const agent = await createOpenAIToolsAgent({ 
-        llm, 
-        tools, 
-        prompt: ChatPromptTemplate.fromMessages(messages)
-    });
-    
-    const result = await new AgentExecutor({
-        agent,
-        tools,
-        verbose: process.env.NODE_ENV === 'development'
-    }).invoke({ 
-        input: `Regarding the LightHouse errors table: ${query}`,
-        history 
-    });
+        const agent = await createOpenAIToolsAgent({ 
+            llm, 
+            tools, 
+            prompt: ChatPromptTemplate.fromMessages(messages)
+        });
+        
+        const result = await new AgentExecutor({
+            agent,
+            tools,
+        
+            verbose: process.env.NODE_ENV === 'development'
+        }).invoke({ 
+            input: `LightHouse errors query: ${query}`,
+            history 
+        });
 
-    return {
-        output: result.output,
-        // Built-in tools automatically provide these:
-        query: result.intermediateSteps?.[0]?.action.toolInput,
-        success: !result.intermediateSteps?.some((step: { observation: string }) => step.observation.includes('Error'))
-    };
+        // Enhanced response processing
+        let finalOutput = result.output;
+        let count: number | undefined;
+        
+        // Extract count if available
+        const countMatch = finalOutput.match(/(\d+) errors? found|count is (\d+)/i);
+        if (countMatch) {
+            count = parseInt(countMatch[1] || countMatch[2]);
+        }
+
+        // Standardize no results response
+        if (finalOutput.includes("0 rows") || finalOutput.includes("no records")) {
+            finalOutput = "No errors found matching your criteria";
+        }
+
+        // Format date ranges clearly
+        if (query.includes("between") && count !== undefined) {
+            const dateMatch = query.match(/between (.+?) and (.+?)( |$)/i);
+            if (dateMatch) {
+                finalOutput = `There ${count === 1 ? 'is' : 'are'} ${count} error${count === 1 ? '' : 's'} between ${dateMatch[1]} and ${dateMatch[2]}`;
+            }
+        }
+
+        return {
+            output: finalOutput,
+            query: result.intermediateSteps?.[0]?.action.toolInput,
+            success: true,
+            count
+        };
+
+    } catch (error) {
+        console.error("Agent execution failed:", error);
+        return {
+            output: "Failed to process your query. Please try again with more specific details.",
+            success: false
+        };
+    }
 }
