@@ -35,7 +35,7 @@ export const interactLightHouseAgent = async (query: string, history: BaseMessag
         new HumanMessage({
             content: query,
         }),
-    ]}, { recursionLimit: 100 })
+    ]}, { recursionLimit: 20 })
 
     let output = result.messages[result.messages.length - 1].content;
     return output;

@@ -4,19 +4,25 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { members } from "./common";
 
-const systemPrompt = ` You are a supervisor tasked with managing a conversation between the following workers: {members}. Given the following user request," +
-  " respond with the worker to act next. Each worker will perform a" +
-  " task and respond with their results and status. When finished," +
-  " respond with FINISH.";
-`;
-const options = [END, ...members];
+const systemPrompt = `You are a supervisor managing a conversation between the following agents: {members}.
+Your job is to decide which agent should act next based on the current conversation.
+
+Each agent performs a task and either:
+- Returns a result, or
+- Asks the user for more information.
+
+If an agent asks the user for more input, or if the overall task is complete, respond with ${END}.
+
+Respond with only one of the following options: {options}.`;
+
+const options = [END, ...members] as const;
 
 // Define the routing function
 const routingTool = {
   name: "route",
   description: "Select the next role.",
   schema: z.object({
-    next: z.enum([END, ...members]),
+    next: z.enum(options),
   }),
 };
 
