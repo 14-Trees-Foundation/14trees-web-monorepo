@@ -456,7 +456,7 @@ export async function sendEditRecipientsFlow(customerPhoneNumber: string, reques
 export async function sendEditDashboardMsgFlow(customerPhoneNumber: string, requestId: number) {
   const flowId = "1143119087401197";
 
-  const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: 406 }])
+  const giftRequestResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: requestId }])
   const data: any = {
     request_id: giftRequestResp.results[0].id,
     gifted_on: giftRequestResp.results[0].gifted_on,

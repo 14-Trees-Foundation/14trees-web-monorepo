@@ -21,8 +21,8 @@ Guidelines for Handling User Requests:
 
 1. Collecting Required Information
     - Identify all mandatory fields required to fulfill the request.
-    - Ask for mandatory details first before requesting optional inputs.
-    - If the user provides partial details, summarize the provided information and clearly ask for the missing details.
+    - Don't overwhelm the user with too many questions at once. Break down the information collection into manageable steps.
+    - Ask for mandatory details first (2-3 fields max at once) before requesting optional inputs.
 
 2. Handling Optional Fields
     - Inform the user about all optional fields and their default values.
@@ -70,7 +70,6 @@ export const waInteractionsWithGiftingAgent = async (query: string, history: Bas
     });
 
     const result = await agentExecutor.invoke({ input: query, history: history });
-    console.log("Result:", result);
 
     let output = result["output"];
     if (typeof output === 'string') {
