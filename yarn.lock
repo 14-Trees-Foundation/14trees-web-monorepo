@@ -1489,7 +1489,9 @@
     eslint-visitor-keys "^3.3.0"
 
 "@eslint-community/regexpp@^4.6.1":
-  version "4.12.1"
+  version "4.10.1"
+  resolved "https://registry.npmjs.org/@eslint-community/regexpp/-/regexpp-4.10.1.tgz"
+  integrity sha512-Zm2NGpWELsQAD1xsJzGQpYfvICSsFkEpU0jxBjfdC6uNEWXcHnfs9hScFWtXVDVl+rBQJGrl4g1vcKIejpH9dA==
 
 "@eslint/eslintrc@^0.4.3":
   version "0.4.3"
@@ -1522,7 +1524,9 @@
     strip-json-comments "^3.1.1"
 
 "@eslint/js@^8.46.0":
-  version "8.57.1"
+  version "8.57.0"
+  resolved "https://registry.npmjs.org/@eslint/js/-/js-8.57.0.tgz"
+  integrity sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==
 
 "@floating-ui/core@^1.0.0":
   version "1.6.2"
@@ -4476,8 +4480,10 @@ acorn-walk@^8.1.1:
   dependencies:
     acorn "^8.11.0"
 
-"acorn@^6.0.0 || ^7.0.0 || ^8.0.0", acorn@^8, acorn@^8.11.0, acorn@^8.2.4, acorn@^8.4.1, acorn@^8.5.0, acorn@^8.8.2, acorn@^8.9.0:
-  version "8.12.0"
+"acorn@^6.0.0 || ^7.0.0 || ^8.0.0", acorn@^7.4.0:
+  version "7.4.1"
+  resolved "https://registry.npmjs.org/acorn/-/acorn-7.4.1.tgz"
+  integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
 
 acorn@^6.4.1:
   version "6.4.2"
@@ -4494,15 +4500,13 @@ acorn@^7.1.1:
   resolved "https://registry.npmjs.org/acorn/-/acorn-7.4.1.tgz"
   integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
 
-acorn@^7.4.0:
-  version "7.4.1"
-  resolved "https://registry.npmjs.org/acorn/-/acorn-7.4.1.tgz"
-  integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
-
 acorn@^7.4.1:
   version "7.4.1"
   resolved "https://registry.npmjs.org/acorn/-/acorn-7.4.1.tgz"
   integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
+
+acorn@^8, acorn@^8.11.0, acorn@^8.2.4, acorn@^8.4.1, acorn@^8.5.0, acorn@^8.8.2, acorn@^8.9.0:
+  version "8.12.0"
 
 address@^1.0.1:
   version "1.2.2"
@@ -4705,6 +4709,11 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
   version "0.0.0"
   resolved "file:apps/api"
   dependencies:
+    "@google-cloud/local-auth" "^3.0.1"
+    "@langchain/community" "^0.3.29"
+    "@langchain/core" "^0.3.38"
+    "@langchain/langgraph" "^0.2.46"
+    "@langchain/openai" "^0.4.2"
     "@sendgrid/mail" "^7.7.0"
     archiver "^7.0.1"
     async "^3.2.6"
@@ -4716,7 +4725,7 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     csv-parser "^3.0.0"
     csv-writer "^1.6.0"
     debug "~2.6.9"
-    dotenv "^10.0.0"
+    dotenv "^16.4.5"
     express "^4.18.2"
     geolib "^3.3.4"
     google-auth-library "^7.11.0"
@@ -4726,7 +4735,9 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     http-errors "~1.6.3"
     intl "^1.2.5"
     jimp "^0.16.1"
-    jsonwebtoken "^8.5.1"
+    jsonwebtoken "^9.0.2"
+    langchain "^0.3.15"
+    langsmith "^0.3.7"
     lodash "^4.17.21"
     moment "^2.30.1"
     morgan "^1.10.0"
@@ -4746,7 +4757,9 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     swagger-jsdoc "^6.2.8"
     swagger-ui-express "^5.0.0"
     uuid "^11.1.0"
+    x-hub-signature "^2.1.2"
     zod "^3.20.6"
+    zod-to-json-schema "^3.24.5"
 
 append-field@^1.0.0:
   version "1.0.0"
@@ -18693,20 +18706,22 @@ tty-browserify@0.0.0:
   resolved "https://registry.npmjs.org/tty-browserify/-/tty-browserify-0.0.0.tgz"
   integrity sha512-JVa5ijo+j/sOoHGjw0sxw734b1LhBkQ3bvUGNdxnVXDCX81Yx7TFgnZygxrIIWn23hbfTaMYLwRmAxFyDuFmIw==
 
-turbo-linux-64@2.4.4:
+turbo-linux-64@2.0.11:
   version "2.0.11"
   resolved "https://registry.npmjs.org/turbo-linux-64/-/turbo-linux-64-2.0.11.tgz"
   integrity sha512-mv8CwGP06UPweMh1Vlp6PI6OWnkuibxfIJ4Vlof7xqjohAaZU5FLqeOeHkjQflH/6YrCVuS9wrK0TFOu+meTtA==
 
 turbo@latest:
-  version "2.4.4"
+  version "2.0.11"
+  resolved "https://registry.npmjs.org/turbo/-/turbo-2.0.11.tgz"
+  integrity sha512-imDlFFAvitbCm1JtDFJ6eG882qwxHUmVT2noPb3p2jq5o5DuXOchMbkVS9kUeC3/4WpY5N0GBZ3RvqNyjHZw1Q==
   optionalDependencies:
-    turbo-darwin-64 "2.4.4"
-    turbo-darwin-arm64 "2.4.4"
-    turbo-linux-64 "2.4.4"
-    turbo-linux-arm64 "2.4.4"
-    turbo-windows-64 "2.4.4"
-    turbo-windows-arm64 "2.4.4"
+    turbo-darwin-64 "2.0.11"
+    turbo-darwin-arm64 "2.0.11"
+    turbo-linux-64 "2.0.11"
+    turbo-linux-arm64 "2.0.11"
+    turbo-windows-64 "2.0.11"
+    turbo-windows-arm64 "2.0.11"
 
 type-check@^0.4.0:
   version "0.4.0"
