@@ -17,39 +17,18 @@ export const handleAgentQuery = async (req: Request, res: Response) => {
             });
         }
 
-        // Convert chat history to Langchain messages
-        const messageHistory = !Array.isArray(history) 
-            ? []
-            : history.map(it => {
-                return it.sender === 'user' 
-                    ? new HumanMessage(it.text) 
-                    : new AIMessage(it.text);
-            });
+        // Convert chat history
+        const messageHistory = !Array.isArray(history) ? [] : 
+            history.map(it => it.sender === 'user' 
+                ? new HumanMessage(it.text) 
+                : new AIMessage(it.text));
 
         // Process query with unified agent
-        const startTime = Date.now();
-        const { output, success } = await interactWithUnifiedAgent(message, messageHistory);
-        const processingTime = Date.now() - startTime;
-
-        // Format response based on query type
-        if (message.toLowerCase().includes('error') || message.toLowerCase().includes('log')) {
-            // Error analysis response format
-            return res.status(status.success).json({
-                status: "success",
-                data: output,
-                processingTime: `${processingTime}ms`,
-                metadata: {
-                    source: "LightHouse errors table",
-                    recordCount: typeof output === 'string' ? output.match(/\d+(?=\s*error)/i)?.[0] : undefined
-                }
-            });
-        } else {
-            // Standard buyer/supplier response format
-            return res.status(status.success).json({
-                output,
-                processingTime: `${processingTime}ms`
-            });
-        }
+        const { output } = await interactWithUnifiedAgent(message, messageHistory);
+        return res.status(status.success).json({
+            output: output 
+        });
+        
     } catch (error) {
         console.error("Error in handleAgentQuery:", error);
         return res.status(status.error).json({

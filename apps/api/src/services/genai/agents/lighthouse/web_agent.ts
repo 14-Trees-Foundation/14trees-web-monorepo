@@ -126,19 +126,9 @@ export const interactWithUnifiedAgent = async (
             history: history 
         });
 
-        let output = result["output"];
-        
-        // Format output consistently
-        if (typeof output === 'string') {
-            output = output
-                .replace(/\*\*/g, '*')
-                .replace(/"buyer": ({[^}]+})/g, '"buyer":\n$1')
-                .replace(/"supplier": ({[^}]+})/g, '"supplier":\n$1')
-                .replace(/"results": \[({[^}]+})]/g, '"results": [\n$1\n]');
-        }
-
+        // Return raw output without formatting
         return {
-            output,
+            output: result["output"],
             success: true
         };
 

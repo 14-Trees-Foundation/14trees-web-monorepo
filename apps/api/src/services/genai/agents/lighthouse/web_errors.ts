@@ -1,4 +1,4 @@
-require("dotenv").config();
+/*require("dotenv").config();
 import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
@@ -7,7 +7,6 @@ import { SqlDatabase } from "langchain/sql_db";
 import { DataSource } from "typeorm";
 import { SqlToolkit } from "langchain/agents/toolkits/sql";
 
-// Database Configuration
 const datasource = new DataSource({
   type: "postgres",
   host: process.env.POSTGRES_HOST || "vivek-tree-vivek-tree.e.aivencloud.com",
@@ -24,7 +23,6 @@ const datasource = new DataSource({
   }
 });
 
-// Enhanced System Prompt
 const systemMessage = `
 You are an expert Error Analysis assistant for the LightHouse system.
 You ONLY work with the 'errors' table in the LightHouse schema.
@@ -34,7 +32,6 @@ RESPONSE RULES:
 2. For no results: "No errors found matching your criteria"
 3. For general questions: Provide concise summary with key statistics
 4. For complex queries: Offer to break down into simpler questions
-
 TABLE STRUCTURE:
 - log_date (TIMESTAMP): When error occurred
 - server_name (VARCHAR): Originating server
@@ -58,9 +55,7 @@ const messages = [
 
 export const analyzeErrorsAgent = async (query: string, history: BaseMessage[] = []): Promise<{ 
   output: string; 
-  query?: string; 
   success: boolean;
-  count?: number;
 }> => {
     console.log('\n[Agent] New Query:', query);
     try {
@@ -87,41 +82,15 @@ export const analyzeErrorsAgent = async (query: string, history: BaseMessage[] =
         const result = await new AgentExecutor({
             agent,
             tools,
-        
             verbose: process.env.NODE_ENV === 'development'
         }).invoke({ 
             input: `LightHouse errors query: ${query}`,
             history 
         });
 
-        // Enhanced response processing
-        let finalOutput = result.output;
-        let count: number | undefined;
-        
-        // Extract count if available
-        const countMatch = finalOutput.match(/(\d+) errors? found|count is (\d+)/i);
-        if (countMatch) {
-            count = parseInt(countMatch[1] || countMatch[2]);
-        }
-
-        // Standardize no results response
-        if (finalOutput.includes("0 rows") || finalOutput.includes("no records")) {
-            finalOutput = "No errors found matching your criteria";
-        }
-
-        // Format date ranges clearly
-        if (query.includes("between") && count !== undefined) {
-            const dateMatch = query.match(/between (.+?) and (.+?)( |$)/i);
-            if (dateMatch) {
-                finalOutput = `There ${count === 1 ? 'is' : 'are'} ${count} error${count === 1 ? '' : 's'} between ${dateMatch[1]} and ${dateMatch[2]}`;
-            }
-        }
-
         return {
-            output: finalOutput,
-            query: result.intermediateSteps?.[0]?.action.toolInput,
-            success: true,
-            count
+            output: result.output,
+            success: true
         };
 
     } catch (error) {
@@ -131,4 +100,4 @@ export const analyzeErrorsAgent = async (query: string, history: BaseMessage[] =
             success: false
         };
     }
-}
+} */
