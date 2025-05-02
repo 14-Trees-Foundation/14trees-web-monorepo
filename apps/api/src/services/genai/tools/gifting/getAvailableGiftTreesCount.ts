@@ -11,7 +11,11 @@ const GetAvailableGiftTreesCountSchema = z.object({
 });
 
 const description = `
-For sponsor user/group get count of pre-purchased gift trees.
+Retrieve the count of pre-purchased gift trees available for a specific sponsor user or group.
+
+Use this tool when you need to:
+- Check how many gift trees a sponsor has already purchased.
+- Determine if additional trees need to be bought before creating a new gift request.
 `;
 
 const getAvailableGiftTreesCount = new DynamicStructuredTool({

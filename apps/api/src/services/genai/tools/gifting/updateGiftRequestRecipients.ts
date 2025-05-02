@@ -28,8 +28,16 @@ const UpdateGiftRequestRecipientsSchema = z.object({
 
 
 const description = `
-Add/Edit/Delete recipients for a gift request.
+Manage the recipients of a gift tree request by adding new recipients, editing their details, or removing existing ones.
+
+Use this tool when:
+- You want to add new recipients to a gift request.
+- You need to update recipient names or email addresses.
+- You want to remove recipients from an existing request.
+
+Requires: gift request ID and recipient details.
 `;
+
 
 const updateGiftRequestRecipients = new DynamicStructuredTool({
     name: "update_gift_request_recipients",

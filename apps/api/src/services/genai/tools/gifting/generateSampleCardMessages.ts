@@ -11,7 +11,8 @@ const GenerateSampleCardMessagesSchema = z.object({
 });
 
 const description = `
-Bassed on given occasion name and type, generate sample messages for tree cards.
+[Internal Use Only] Generates sample tree card messages based on the occasion name and type.
+This tool should not be presented to the user and should only be invoked during the process of creating or updating a gift request.
 `;
 
 const generateSampleCardMessages = new DynamicStructuredTool({

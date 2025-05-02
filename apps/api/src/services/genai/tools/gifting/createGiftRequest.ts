@@ -48,12 +48,16 @@ const CreateGiftTreesRequestSchema = z.object({
 });
 
 const description = `
-Want to gift trees to someone? 
+Create a tree gifting request for someone special.
 
-Create a gift trees request. It will internally reserve trees for recipients and create personalized tree cards and dashboards for recipients.
+This tool allows sponsors to:
+- Reserve trees for one or more recipients.
+- Automatically generate personalized tree cards and dashboards for each recipient.
 
-Response: Request Id
-Sponsor can see all this using gift trees request id!
+Upon successful creation, a **Gift Request ID** is returned.
+Sponsors can use this ID to view and manage all related gifting details.
+
+Use this tool when the user wants to gift trees to someone.
 `;
 
 const createGiftTreesRequestTool = new DynamicStructuredTool({

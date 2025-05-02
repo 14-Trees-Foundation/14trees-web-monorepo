@@ -11,9 +11,15 @@ const GetTreeCardsRequestSchema = z.object({
 });
 
 const description = `
-Get the list of s3Urls of tree card images for GiftTreesRequest.
-The output of this tool must not be send back to end user directly!
+Retrieve the list of S3 URLs for tree card images associated with a specific Gift Trees Request.
+
+Use this to:
+- Access the personalized tree cards created for each recipient.
+- Share or display the tree cards externally.
+
+Requires the GiftTreesRequest ID to fetch the associated images.
 `;
+
 
 const getTreeCards = new DynamicStructuredTool({
     name: "get_tree_cards",
@@ -28,11 +34,12 @@ const getTreeCards = new DynamicStructuredTool({
         let amountReceived = request.amount_received
         const totalAmount = request.no_of_cards * 1
 
-        let qrCodeUrl = ''    
+        let qrCodeUrl = '';
         if (amountReceived != totalAmount) {
             const razorpayService = new RazorpayService();
             if (!request.payment_id) {
                 const qrCode = await razorpayService.generatePaymentQRCode(request.no_of_cards * 1 * 100);
+                qrCodeUrl = qrCode.image_url
 
                 const paymentRequest: PaymentCreationAttributes = {
                     pan_number: null,
@@ -46,21 +53,21 @@ const getTreeCards = new DynamicStructuredTool({
                 const resp = await PaymentRepository.createPayment(paymentRequest);
                 await GiftCardsRepository.updateGiftCardRequests({ payment_id: resp.id }, { id: requestId });
 
-                qrCodeUrl = qrCode.image_url
             } else {
                 const payment = await PaymentRepository.getPayment(request.payment_id);
                 if (payment && payment.qr_id) {
                     let amount = 0;
+
                     const payments = await razorpayService.getPayments(payment.qr_id);
                     payments?.forEach(payment => {
                         amount += Number(payment.amount) / 100
                     })
 
+                    const qrCode = await razorpayService.generatePaymentQRCodeForId(payment.qr_id)
+                    qrCodeUrl = qrCode.image_url;
+                    
                     amountReceived = amount
                     await GiftCardsRepository.updateGiftCardRequests({ amount_received: amountReceived }, { id: requestId });
-
-                    const qrCode = await razorpayService.generatePaymentQRCodeForId(payment.qr_id)
-                    qrCodeUrl = qrCode.image_url
                 }
             }
         }

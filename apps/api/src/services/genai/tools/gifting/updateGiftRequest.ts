@@ -13,8 +13,15 @@ const UpdateGiftRequestSchema = z.object({
 });
 
 const description = `
-Update occasion and gifting details for a gift request.
+Update the details of an existing gift tree request, such as the gifting date, sponsor, and occasion information.
+
+Use this when:
+- The gift occasion name or type needs to be corrected or modified.
+- The gifting date or gifted by has changed.
+
+Requires: request ID and any fields to update.
 `;
+
 
 const updateGiftRequest = new DynamicStructuredTool({
     name: "update_gift_request",

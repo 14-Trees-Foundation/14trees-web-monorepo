@@ -9,8 +9,13 @@ const SendEmailRequestSchema = z.object({
 });
 
 const description = `
-Send personalized tree dashboard's Link and tree cards to recipients of gifted trees via email.
+Send personalized tree dashboard links and tree card images to the recipients of gifted trees via email.
+
+Use this to:
+- Share gift-related content with recipients.
+- Ensure each recipient receives their unique tree dashboard and tree cards.
 `;
+
 
 const sendRecipientsEmail = new DynamicStructuredTool({
     name: "send_recipients_email",

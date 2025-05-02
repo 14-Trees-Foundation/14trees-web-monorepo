@@ -1,9 +1,14 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
+import { AgentExecutor, AgentFinish, AgentStep, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
+import { BaseMessage, AIMessage, FunctionMessage } from "@langchain/core/messages";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { getGiftingTools } from "../../tools/gifting/gifting";
-import { BaseMessage } from "@langchain/core/messages";
 import { dateTool } from "../../tools/common";
+import { z } from "zod";
+import { FunctionsAgentAction } from "langchain/agents/openai/output_parser";
+import { convertToOpenAIFunction } from "@langchain/core/utils/function_calling";
 // import getAgentGraph from "./gifting";
 
 
@@ -21,29 +26,46 @@ Guidelines for Handling User Requests:
 
 1. Collecting Required Information
     - Identify all mandatory fields required to fulfill the request.
-    - Don't overwhelm the user with too many questions at once. Instead, break down the information collection into manageable steps.
-    - Ask for mandatory details first (2,3 fields max at once) before requesting optional inputs.
-    - If the user provides partial details, summarize the provided information and clearly ask for the missing details.
+    - Don't overwhelm the user with too many questions at once. Break down the information collection into manageable steps.
+    - Ask for mandatory details first (2-3 fields max at once) before requesting optional inputs.
+    - Every time the user provides any input (even partial), always call the function named "verify_tool_inputs" immediately.
 
-2. Handling Optional Fields
+2. How to call verify_tool_inputs:
+    - tool_name: The name of the tool for which we are collecting input.
+    - input_data: A JSON object containing **only the fields** the user has provided so far.  
+    - Even if the user provides **only partial** information, include it inside "input_data".
+    - If the user has not provided a certain field, simply omit it from input_data (do not put null or undefined).
+    - Never leave input_data empty if any input is provided.
+
+3. Handling Optional Fields
     - Inform the user about all optional fields and their default values.
     - Allow the user to modify optional fields if needed.
     - Ensure the user is aware of all available options before proceeding.
 
-3. Confirmation Before Execution
-    - Before taking action, summarize all collected details and ask for user confirmation.
+4. Confirmation Before Execution
+    - Before taking action, return provided fields in structured format and ask for user confirmation.
     - Only proceed once the user explicitly confirms the request.
     - If the user requests a modification, update the summary and confirm again.
 
-4. Decision-Making & Tool Invocation
+5. Decision-Making & Tool Invocation
     - Do not assume missing details—always ask the user for clarification.
     - Do not invoke any tool without collecting all required inputs.
     - Ensure all necessary information is present before triggering any action.
 
-5. Communication Best Practices
+6. Communication Best Practices
     - Use clear, concise, and polite language.
     - Avoid technical jargon—explain things in simple terms.
     - Provide step-by-step guidance to keep the interaction smooth.
+
+7. You must always return the final output by calling the function named "response"
+    - Use the following arguments for the "response" function:
+        - "text_output": A markdown-formatted explanation or result message for the user.
+        - sponsor_details: A JSON object containing:
+            - name: Name of the sponsor user, or null if not captured.
+            - email: Email of the sponsor user, or null if not captured.
+
+🔁 Never skip the final "response" call — it is mandatory once the process is complete.
+
 
 Your goal is to assist users efficiently while ensuring accuracy and predictability in fulfilling their requests.
 `;
@@ -60,31 +82,99 @@ const tools = [...getGiftingTools(), dateTool];
 
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
-export const interactWithGiftingAgent = async (query: string, history: BaseMessage[]) => {
+const responseSchema = z.object({
+    text_output: z.string().describe("Markdown formatted text/message to be displayed/conwayed to the user"),
+    sponsor_details: z.object({
+        name: z.string().nullable().optional().describe("Name of the sponsor user"),
+        email: z.string().nullable().optional().describe("Email of the sponsor user"),
+    }).describe("Sponsor details if it were captured previously in conversations"),
+});
 
-    const agent = await createOpenAIToolsAgent({ llm, tools, prompt });
-    const agentExecutor = new AgentExecutor({
-        agent,
-        tools,
-    });
+const responseOpenAIFunction = {
+    name: "response",
+    description: "Return the response to the user",
+    parameters: zodToJsonSchema(responseSchema),
+};
 
-    // const graph = await getAgentGraph();
-    // const result = await graph.invoke({ messages: [
-    //     ...history,
-    //     new HumanMessage({
-    //         content: query,
-    //     }),
-    // ]}, { recursionLimit: 100 })
-
-    const result = await agentExecutor.invoke({ input: query, history: history });
-
-    // let output = result.messages[result.messages.length - 1].content;
-    // console.log("Result:", output);
-    let output = result["output"];
-    if (typeof output === 'string') {
-        output = output.replace(/\*\*/g, '*');
+function parseToolCall(function_call: any, message: AIMessage): FunctionsAgentAction | AgentFinish {
+    if (message.content && typeof message.content !== "string") {
+        throw new Error("This agent cannot parse non-string model responses.");
     }
 
-    return output;
+    const toolInput = function_call.arguments ? JSON.parse(function_call.arguments) : {};
+    if (function_call.name === "response") {
+        return { returnValues: { ...toolInput }, log: message.content };
+    }
+    return {
+        tool: function_call.name,
+        toolInput,
+        log: `Invoking "${function_call.name}" with ${function_call.arguments ?? "{}"}\n${message.content}`,
+        messageLog: [message],
+    };
+}
+
+const structuredOutputParser = (
+    message: AIMessage,
+): FunctionsAgentAction | AgentFinish => {
+    if (message.content && typeof message.content !== "string") {
+        throw new Error("This agent cannot parse non-string model responses.");
+    }
+
+    if (message.additional_kwargs.function_call) {
+        return parseToolCall(message.additional_kwargs.function_call, message);
+    }
+
+    return {
+        returnValues: { text_output: message.content },
+        log: message.content,
+    };
+};
+
+
+const formatAgentSteps = (steps: AgentStep[]): BaseMessage[] =>
+    steps.flatMap(({ action, observation }) => {
+        if ("messageLog" in action && action.messageLog !== undefined) {
+            const log = action.messageLog as BaseMessage[];
+            return log.concat(new FunctionMessage(observation, action.tool));
+        } else {
+            return [new AIMessage(action.log)];
+        }
+    });
+
+const llmWithTools = llm.bind({
+    functions: [...tools.map((tool) => convertToOpenAIFunction(tool)), responseOpenAIFunction],
+});
+
+export const interactWithGiftingAgent = async (query: string, history: BaseMessage[]) => {
+
+    const runnableAgent = RunnableSequence.from<{
+        input: string;
+        history: BaseMessage[];
+        steps: Array<AgentStep>;
+    }>([
+        {
+            input: (i) => i.input,
+            history: (i) => i.history,
+            agent_scratchpad: (i) => formatAgentSteps(i.steps),
+        },
+        prompt,
+        llmWithTools,
+        structuredOutputParser,
+    ]);
+
+    const executor = AgentExecutor.fromAgentAndTools({
+        agent: runnableAgent,
+        tools: tools,
+    });
+
+    const result = await executor.invoke({
+        input: query,
+        history: history,
+    });
+
+    return {
+        text_output: result.text_output || result.output,
+        sponsor_details: result.sponsor_details,
+    }
 }
 
