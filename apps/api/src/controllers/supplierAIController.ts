@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+/*import { Request, Response } from "express";
 import { interactWithSupplierAgent } from '../services/genai/agents/lighthouse/web_supplier';
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
@@ -93,4 +93,4 @@ export const getSupplierDetails = async (req: Request, res: Response) => {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-}
+} */

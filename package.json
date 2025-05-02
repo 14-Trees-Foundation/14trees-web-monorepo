@@ -23,10 +23,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-    "@notionhq/client": "^2.2.15",
-    "langchain": "^0.3.24",
-    "typeorm": "^0.3.22"
-  }
+  ]
 }

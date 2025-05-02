@@ -1,15 +1,13 @@
-// src/routes/errorRoutes.ts
-/*import { Router } from 'express';
+import { Router } from 'express';
 import * as genAi from '../controllers/lighthouseController';
 import { verifyToken } from '../auth/verifyToken';
 
 const routes = Router();
 
-// Natural language query endpoint
 routes.post(
     '/gen-ai',
     verifyToken, // Authentication middleware
     genAi.handleAgentQuery
 );
 
-export default routes; */
+export default routes;

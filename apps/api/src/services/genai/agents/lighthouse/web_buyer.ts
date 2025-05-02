@@ -1,5 +1,5 @@
 // src/services/genai/agents/buyer_agents/web_buyer_agent.ts
-import { ChatOpenAI } from "@langchain/openai";
+/*import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { BaseMessage } from "@langchain/core/messages";
@@ -89,21 +89,21 @@ export const interactWithBuyerAgent = async (query: string, history: BaseMessage
     
     // Consistent formatting with supplier agent
     if (typeof output === 'string') {
-        output = output
-            .replace(/\*\*/g, '*')
-            .replace(/"buyer": ({[^}]+})/g, '"buyer":\n$1')
-            .replace(/"results": \[({[^}]+})]/g, '"results": [\n$1\n]');
-    }
+        output = output*/
+         //   .replace(/\*\*/g, '*')
+         //   .replace(/"buyer": ({[^}]+})/g, '"buyer":\n$1')
+         //   .replace(/"results": \[({[^}]+})]/g, '"results": [\n$1\n]');
+ //   }
 
-    return output;
-}
+//    return output;
+//}
 
 // Matching utility function export
-export const getBuyerAgentTools = () => {
+/*export const getBuyerAgentTools = () => {
     return {
         createBuyerTool,
         getBuyerTool,
         listBuyersTool,
         dateTool
     };
-}
+} */

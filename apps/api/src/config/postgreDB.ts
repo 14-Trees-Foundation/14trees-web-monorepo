@@ -44,7 +44,7 @@ import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { Supplier } from "../models/suppliers";
 import {Buyer} from "../models/buyers";
-import {Error} from "../models/errors";
+
 class Database {
   public sequelize: Sequelize;
 
@@ -122,7 +122,6 @@ class Database {
         MailSub,
         Supplier,
         Buyer,
-        Error,
       ]
     });
 

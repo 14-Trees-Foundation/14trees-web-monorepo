@@ -1,5 +1,5 @@
 // src/controllers/buyerController.ts
-import { Request, Response } from "express";
+/*import { Request, Response } from "express";
 import { interactWithBuyerAgent } from '../services/genai/agents/lighthouse/web_buyer';
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
@@ -92,5 +92,5 @@ export const getBuyerDetails = async (req: Request, res: Response) => {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-}
+} */
 

@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+/*import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { BaseMessage } from "@langchain/core/messages";
@@ -89,21 +89,21 @@ export const interactWithSupplierAgent = async (query: string, history: BaseMess
     let output = result["output"];
     
     // Clean up markdown formatting if needed
-    if (typeof output === 'string') {
-        output = output.replace(/\*\*/g, '*');
+    if (typeof output === 'string') { */
+    //    output = output.replace(/\*\*/g, '*');
         // Format supplier data for better readability
-        output = output.replace(/"supplier": ({[^}]+})/g, '"supplier":\n$1');
-    }
+   //     output = output.replace(/"supplier": ({[^}]+})/g, '"supplier":\n$1');
+//    }
 
-    return output;
-}
+ //   return output;
+//}
 
 // Additional utility function for direct supplier operations
-export const getSupplierAgentTools = () => {
+/*export const getSupplierAgentTools = () => {
     return {
         createSupplierTool,
         getSupplierTool,
         listSuppliersTool,
         dateTool
     };
-}
+} */

@@ -1,10 +1,13 @@
 // src/controllers/error-query.controller.ts
-import { Request, Response } from "express";
+/*import { Request, Response } from "express";
 import { analyzeErrorsAgent } from '../services/genai/agents/lighthouse/web_errors';
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 
 export const handleErrorQuery = async (req: Request, res: Response) => {
+    console.log('\n=== NEW REQUEST ===');
+    console.log('Headers:', req.headers);
+    console.log('Body:', JSON.stringify(req.body, null, 2));
     try {
         const { message, history } = req.body;
         
@@ -30,17 +33,23 @@ export const handleErrorQuery = async (req: Request, res: Response) => {
         const response = await analyzeErrorsAgent(message, messageHistory);
         const processingTime = Date.now() - startTime;
 
+        console.log('Agent Response:', {
+            query: message,
+            response: response.output,
+            processingTime: `${processingTime}ms`,
+            success: response.success
+        });
+
         return res.status(status.success).json({
             status: "success",
-            data: response.formattedOutput,
+            data: response.output,  // ← Changed from formattedOutput to output
             processingTime: `${processingTime}ms`,
             metadata: {
                 source: "LightHouse errors table",
-                recordCount: typeof response.formattedOutput === 'string' 
-                    ? response.formattedOutput.match(/row(s)?/gi)?.[0] 
-                    : undefined
+                recordCount: response.output.match(/\d+(?=\s*error)/i)?.[0] || undefined
             }
         });
+
     } catch (error) {
         console.error("Error in handleErrorQuery:", error);
         return res.status(status.error).json({
@@ -52,32 +61,4 @@ export const handleErrorQuery = async (req: Request, res: Response) => {
             })
         });
     }
-}
-
-export const getErrorStats = async (req: Request, res: Response) => {
-    try {
-        const { period = '24h' } = req.query;
-        
-        // Predefined statistical queries
-        const statsQuery = `Provide statistics for errors in the last ${period} including:
-                           - Total count
-                           - Count by severity
-                           - Most common error modules
-                           - Recent critical errors`;
-        
-        const response = await analyzeErrorsAgent(statsQuery);
-
-        return res.status(status.success).json({
-            status: "success",
-            period,
-            stats: response.formattedOutput,
-            generatedAt: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error("Error in getErrorStats:", error);
-        return res.status(status.error).json({
-            status: "error",
-            message: "Failed to generate error statistics"
-        });
-    }
-}
+} */
