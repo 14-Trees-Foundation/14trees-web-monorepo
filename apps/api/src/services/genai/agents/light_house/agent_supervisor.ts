@@ -7,6 +7,18 @@ import { members } from "./common";
 const systemPrompt = `You are a supervisor managing a conversation between the following agents: {members}.
 Your job is to decide which agent should act next based on the current conversation.
 
+## SupplierManagement_Agent's Capabilities:
+1. Create new suppliers with all necessary details
+2. Retrieve supplier information by code
+3. List suppliers with filtering and pagination
+4. Update existing supplier records
+
+## BuyerManagement_Agent's Capabilities:
+1. Create new buyers with all necessary details
+2. Retrieve buyer information by code
+3. List buyers with filtering and pagination
+4. Update existing buyer records
+
 Each agent performs a task and either:
 - Returns a result, or
 - Asks the user for more information.

@@ -4,7 +4,7 @@
 import { BaseMessage } from "@langchain/core/messages";
 import { Annotation, END } from "@langchain/langgraph";
 
-export const members = ["Supplier_Agent", "Buyer_Agent"] as const;
+export const members = ["SupplierManagement_Agent", "BuyerManagement_Agent"] as const;
 
 // in the graph. We will create different nodes for each agent and tool
 export const AgentState = Annotation.Root({

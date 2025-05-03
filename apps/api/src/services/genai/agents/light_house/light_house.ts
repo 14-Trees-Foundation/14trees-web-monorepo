@@ -9,8 +9,8 @@ async function getAgentGraph() {
 
     const supervisorChain: any = await createSupervisorChain()
     const workflow = new StateGraph(AgentState)
-        .addNode("Supplier_Agent", supplierAgentNode)
-        .addNode("Buyer_Agent", buyerAgentNode)
+        .addNode("SupplierManagement_Agent", supplierAgentNode)
+        .addNode("BuyerManagement_Agent", buyerAgentNode)
         .addNode("supervisor", supervisorChain);
 
     members.forEach((member) => {
