@@ -321,7 +321,7 @@ const syncDataFromNotionToDb = async () => {
         username: 'avnadmin',
         password: process.env.POSTGRES_PD,
         host: 'vivek-tree-vivek-tree.e.aivencloud.com',
-        schema: "14trees_2",
+        schema: "14trees",
         port: 15050,
         attributeBehavior: 'escape',
         dialect: "postgres",

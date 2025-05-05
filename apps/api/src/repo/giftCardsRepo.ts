@@ -16,14 +16,14 @@ export class GiftCardsRepository {
 
         const getUniqueTagsQuery = 
             `SELECT DISTINCT tag
-                FROM "14trees_2".gift_card_requests gcr,
+                FROM "14trees".gift_card_requests gcr,
                 unnest(gcr.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
         const countUniqueTagsQuery = 
             `SELECT count(DISTINCT tag)
-                FROM "14trees_2".gift_card_requests gcr,
+                FROM "14trees".gift_card_requests gcr,
                 unnest(gcr.tags) AS tag;`;
 
         const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
@@ -86,13 +86,13 @@ export class GiftCardsRepository {
                     ELSE 3000
                 END * gcr.no_of_cards AS total_amount,
                 array_agg(distinct gc.presentation_id) as presentation_ids
-            FROM "14trees_2".gift_card_requests gcr
-            LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
-            LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
-            LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
-            LEFT JOIN "14trees_2".gift_cards gc ON gc.gift_card_request_id = gcr.id
-            left join "14trees_2".trees t on t.id = gc.tree_id
-            LEFT JOIN "14trees_2".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            FROM "14trees".gift_card_requests gcr
+            LEFT JOIN "14trees".users u ON u.id = gcr.user_id
+            LEFT JOIN "14trees".users cu ON cu.id = gcr.created_by
+            LEFT JOIN "14trees".groups g ON g.id = gcr.group_id
+            LEFT JOIN "14trees".gift_cards gc ON gc.gift_card_request_id = gcr.id
+            left join "14trees".trees t on t.id = gc.tree_id
+            LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY gcr.id, u.id, cu.id, g.name
             ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'gcr.id DESC'}
@@ -101,10 +101,10 @@ export class GiftCardsRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees_2".gift_card_requests gcr
-            LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
-            LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
-            LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
+            FROM "14trees".gift_card_requests gcr
+            LEFT JOIN "14trees".users u ON u.id = gcr.user_id
+            LEFT JOIN "14trees".users cu ON cu.id = gcr.created_by
+            LEFT JOIN "14trees".groups g ON g.id = gcr.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -139,7 +139,7 @@ export class GiftCardsRepository {
               SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_gifted_trees,
               COUNT(id) as total_gift_requests,
               SUM(no_of_cards) as total_gifted_trees
-            FROM "14trees_2".gift_card_requests
+            FROM "14trees".gift_card_requests
             WHERE request_type = 'Cards Request'
         `;
         const result = await sequelize.query(query, { type: QueryTypes.SELECT });
@@ -267,14 +267,14 @@ export class GiftCardsRepository {
     static async getDetailedGiftCardByTreeId(treeId: number): Promise<GiftCard | null> {
         const getQuery = `
             SELECT gc.*, sg.name as group_name, su.name as sponsor_name, u.name as user_name, t.sapling_id, pt.name as plant_type
-            FROM "14trees_2".gift_cards gc
-            JOIN "14trees_2".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
-            LEFT JOIN "14trees_2".gift_request_users gru ON gru.id = gc.gift_request_user_id
-            LEFT JOIN "14trees_2".users su ON su.id = gcr.user_id
-            LEFT JOIN "14trees_2".groups sg ON sg.id = gcr.group_id
-            LEFT JOIN "14trees_2".users u ON u.id = gru.recipient
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "14trees".gift_cards gc
+            JOIN "14trees".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+            LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            LEFT JOIN "14trees".users su ON su.id = gcr.user_id
+            LEFT JOIN "14trees".groups sg ON sg.id = gcr.group_id
+            LEFT JOIN "14trees".users u ON u.id = gru.recipient
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.tree_id = ${treeId};
         `
 
@@ -398,12 +398,12 @@ export class GiftCardsRepository {
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
             t.sapling_id, t.assigned_to, t.gifted_to, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
             ur.relation
-            FROM "14trees_2".gift_cards gc
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
-            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
-            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "14trees".gift_cards gc
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
@@ -415,10 +415,10 @@ export class GiftCardsRepository {
 
         const countQuery = `
             SELECT count(gc.id)
-            FROM "14trees_2".gift_cards gc
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
-            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
+            FROM "14trees".gift_cards gc
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = t.assigned_to
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -501,13 +501,13 @@ export class GiftCardsRepository {
             ru.name as user_name, ru.email as user_email,
             au.name as assigned_to_name, au.email as assigned_to_email, ur.relation,
             t.sapling_id, t.description as event_name, t.event_type, t.gifted_by_name as planted_via, pt.name as plant_type, pt.scientific_name
-            FROM "14trees_2".gift_cards gc
-            LEFT JOIN "14trees_2".gift_request_users gru ON gru.id = gc.gift_request_user_id
-            LEFT JOIN "14trees_2".users ru ON ru.id = gru.recipient
-            LEFT JOIN "14trees_2".users au ON au.id = gru.assignee
-            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = gru.recipient AND ur.secondary_user = gru.assignee
-            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "14trees".gift_cards gc
+            LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            LEFT JOIN "14trees".users ru ON ru.id = gru.recipient
+            LEFT JOIN "14trees".users au ON au.id = gru.assignee
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = gru.recipient AND ur.secondary_user = gru.assignee
+            LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE gc.gift_card_request_id = ${giftCardRequestId}
             ORDER BY gc.id
         `
@@ -531,10 +531,10 @@ export class GiftCardsRepository {
             SELECT gru.*, 
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone, ru.communication_email as recipient_communication_email,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone, au.communication_email as assignee_communication_email, ur.relation
-            FROM "14trees_2".gift_request_users gru
-            LEFT JOIN "14trees_2".users ru ON ru.id = gru.recipient
-            LEFT JOIN "14trees_2".users au ON au.id = gru.assignee
-            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = gru.recipient AND ur.secondary_user = gru.assignee
+            FROM "14trees".gift_request_users gru
+            LEFT JOIN "14trees".users ru ON ru.id = gru.recipient
+            LEFT JOIN "14trees".users au ON au.id = gru.assignee
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = gru.recipient AND ur.secondary_user = gru.assignee
             WHERE gru.gift_request_id = ${giftCardRequestId}
             ORDER BY gru.id
         `

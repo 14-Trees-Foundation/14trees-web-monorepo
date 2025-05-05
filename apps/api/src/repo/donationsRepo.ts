@@ -33,16 +33,16 @@ export class DonationRepository {
                     u.name as user_name,
                     u.email as user_email,
                     u.phone as user_phone
-                FROM "14trees_2".donations d
-                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                FROM "14trees".donations d
+                LEFT JOIN "14trees".users u ON u.id = d.user_id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
             const countQuery = `
                 SELECT COUNT(*) 
-                FROM "14trees_2".donations d
-                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                FROM "14trees".donations d
+                LEFT JOIN "14trees".users u ON u.id = d.user_id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
     
@@ -165,11 +165,11 @@ export class DonationRepository {
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
             ur.relation
-            FROM "14trees_2".trees t
-            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
-            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
-            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "14trees".trees t
+            LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY t.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
@@ -181,10 +181,10 @@ export class DonationRepository {
 
         const countQuery = `
             SELECT count(t.id)
-            FROM "14trees_2".trees t
-            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
-            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id    
+            FROM "14trees".trees t
+            LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "14trees".users au ON au.id = t.assigned_to
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id    
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -206,14 +206,14 @@ export class DonationRepository {
 
             const getUniqueTagsQuery = 
                 `SELECT DISTINCT tag
-                    FROM "14trees_2".donations d,
+                    FROM "14trees".donations d,
                     unnest(d.tags) AS tag
                     ORDER BY tag
                     OFFSET ${offset} LIMIT ${limit};`;
 
             const countUniqueTagsQuery = 
                 `SELECT count(DISTINCT tag)
-                    FROM "14trees_2".donations d,
+                    FROM "14trees".donations d,
                     unnest(d.tags) AS tag;`;
 
             const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });

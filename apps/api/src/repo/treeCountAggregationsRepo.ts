@@ -111,11 +111,11 @@ export class TreeCountAggregationsRepo {
                 THEN 1 
                 ELSE 0 
             END) AS unbooked_assigned
-            FROM "14trees_2".plots p
-            LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
-            LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
-            LEFT JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
+            FROM "14trees".plots p
+            LEFT JOIN "14trees".trees t ON t.plot_id = p.id
+            LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
+            LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+            LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
             GROUP by p.id, pt.id
             ORDER BY p.id
             OFFSET ${offset} LIMIT ${limit};

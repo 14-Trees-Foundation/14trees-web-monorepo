@@ -52,7 +52,7 @@ export function updatePlotPlantTypes() {
             // fetch distinct plot plant types
             const query = `
                 SELECT DISTINCT plot_id, plant_type_id
-                FROM "14trees_2".trees;
+                FROM "14trees".trees;
             `
 
             const plotPlantTypes: any[] = await sequelize.query(query, { type: QueryTypes.SELECT });

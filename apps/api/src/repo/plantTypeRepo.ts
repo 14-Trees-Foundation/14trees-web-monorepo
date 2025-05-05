@@ -92,9 +92,9 @@ class PlantTypeRepository {
 
     public static async plantTypesPresentInPlot(plotId: number) {
         const query = `
-            SELECT pt.id, pt."name", count(pt.id) as pt_cnt FROM "14trees_2".trees t 
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-            LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
+            SELECT pt.id, pt."name", count(pt.id) as pt_cnt FROM "14trees".trees t 
+            LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
             WHERE t.plot_id = :plot_id
             GROUP BY pt.id
         `
@@ -110,7 +110,7 @@ class PlantTypeRepository {
     public static async getDeletedPlantTypesFromList(plantTypeIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:plant_type_ids]::int[]) AS num
-            LEFT JOIN "14trees_2".plant_types AS pt
+            LEFT JOIN "14trees".plant_types AS pt
             ON num = pt.id
             WHERE pt.id IS NULL;`
 
@@ -127,14 +127,14 @@ class PlantTypeRepository {
 
         const getUniqueTagsQuery = 
             `SELECT DISTINCT tag
-                FROM "14trees_2".plant_types pt,
+                FROM "14trees".plant_types pt,
                 unnest(pt.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
         const countUniqueTagsQuery = 
             `SELECT count(DISTINCT tag)
-                FROM "14trees_2".plant_types pt,
+                FROM "14trees".plant_types pt,
                 unnest(pt.tags) AS tag;`;
 
         const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
@@ -177,9 +177,9 @@ class PlantTypeRepository {
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
                 SUM(COALESCE(tcg.card_available, 0)) as card_available,
                 SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
-            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
             WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY pt.id, ptct.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
@@ -193,8 +193,8 @@ class PlantTypeRepository {
 
         const countQuery = `
             SELECT count(distinct pt.name)
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
             WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
@@ -246,11 +246,11 @@ class PlantTypeRepository {
                 SUM(COALESCE(tcg.void_assigned, 0)) as void_assigned,
                 SUM(COALESCE(tcg.card_available, 0)) as card_available,
                 SUM(COALESCE(tcg.unbooked_assigned, 0)) as unbooked_assigned
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
-            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            LEFT JOIN "14trees_2".plots p ON p.id = tcg.plot_id
-            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            LEFT JOIN "14trees".plots p ON p.id = tcg.plot_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY pt.id, s.id, p.id, ptct.id
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : 'ORDER BY total DESC'}
@@ -264,11 +264,11 @@ class PlantTypeRepository {
 
         const countQuery = `
             SELECT count(distinct (pt.id, s.id, p.id))
-            FROM "14trees_2".plant_types pt
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
-            LEFT JOIN "14trees_2".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
-            LEFT JOIN "14trees_2".plots p ON p.id = tcg.plot_id
-            LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
+            FROM "14trees".plant_types pt
+            LEFT JOIN "14trees".plant_type_card_templates ptct ON pt."name" = ptct.plant_type
+            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plant_type_id = pt.id
+            LEFT JOIN "14trees".plots p ON p.id = tcg.plot_id
+            LEFT JOIN "14trees".sites s ON s.id = p.site_id
             WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
@@ -282,7 +282,7 @@ class PlantTypeRepository {
 
     public static async syncPlantTypeIllustrations() {
         const query = `
-            update "14trees_2".plant_types pt
+            update "14trees".plant_types pt
                 set illustration_link = pti."Link to artwork "
             from plant_type_illustrations pti
             where pt."name" ILIKE '%' || pti."Name" || '%' or pt."name" ILIKE '%' || pti."Common name English" || '%' or pt."name" ILIKE '%' || pti."Common name Marathi" || '%'
@@ -310,8 +310,8 @@ class PlantTypeRepository {
         const query = `
         SELECT pt.id, pt.name, pt.habit, pt.category, pt.scientific_name, pt.known_as,
             count(t.id) AS booked
-        FROM "14trees_2".plant_types pt
-        JOIN "14trees_2".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+        FROM "14trees".plant_types pt
+        JOIN "14trees".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY pt.id
         ORDER BY booked DESC
@@ -320,8 +320,8 @@ class PlantTypeRepository {
 
         const countPlantTypesQuery =
             `SELECT count(distinct pt.id)
-                FROM "14trees_2".plant_types pt
-                JOIN "14trees_2".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
+                FROM "14trees".plant_types pt
+                JOIN "14trees".trees t ON t.plant_type_id = pt.id AND ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'}
                 WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             `
 

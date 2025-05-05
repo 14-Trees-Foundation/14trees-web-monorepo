@@ -29,8 +29,8 @@ export class VisitImagesRepository {
 
         let query = `
             SELECT vi.*
-            FROM "14trees_2".visit_images vi
-            JOIN "14trees_2".visits v ON v.id = vi.visit_id
+            FROM "14trees".visit_images vi
+            JOIN "14trees".visits v ON v.id = vi.visit_id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             ORDER BY vi.id DESC
         `
@@ -44,8 +44,8 @@ export class VisitImagesRepository {
 
         const countQuery = `
             SELECT count(*) as count
-            FROM "14trees_2".visit_images vi
-            JOIN "14trees_2".visits v ON v.id = vi.visit_id
+            FROM "14trees".visit_images vi
+            JOIN "14trees".visits v ON v.id = vi.visit_id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         `
         const resp = await sequelize.query(countQuery, {
@@ -57,7 +57,7 @@ export class VisitImagesRepository {
     public static async getDeletedVisitImagesFromList(visitImageIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:visit_image_ids]::int[]) AS num
-            LEFT JOIN "14trees_2".visit_images AS v
+            LEFT JOIN "14trees".visit_images AS v
             ON num = v.id
             WHERE v.id IS NULL;`
 

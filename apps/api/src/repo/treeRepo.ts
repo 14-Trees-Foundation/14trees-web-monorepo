@@ -68,15 +68,15 @@ class TreeRepository {
       sg."name" as sponsor_group_name, 
       au."name" as assigned_to_name,
       t.tree_status as tree_health
-    FROM "14trees_2".trees t 
-    LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-    LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-    LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
-    LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
-    LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
-    LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
-    LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
-    LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
+    FROM "14trees".trees t 
+    LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+    LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+    LEFT JOIN "14trees".sites s ON s.id = p.site_id
+    LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+    LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
+    LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
+    LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
+    LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
     WHERE t.deleted_at IS NULL AND ${whereCondition !== "" ? whereCondition : "1=1"}
     ORDER BY ${sortOrder ? sortOrder : 't.sapling_id'}
     `
@@ -90,15 +90,15 @@ class TreeRepository {
 
     const countQuery = `
     SELECT count(*)
-    FROM "14trees_2".trees t 
-    LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-    LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-    LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
-    LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
-    LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
-    LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
-    LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
-    LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
+    FROM "14trees".trees t 
+    LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+    LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+    LEFT JOIN "14trees".sites s ON s.id = p.site_id
+    LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+    LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
+    LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
+    LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
+    LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
     WHERE t.deleted_at IS NULL AND ${whereCondition !== "" ? whereCondition : "1=1"};
     `
     const resp = await sequelize.query(countQuery, {
@@ -249,17 +249,17 @@ class TreeRepository {
       SELECT t.sapling_id, t."location", t.event_id, t.image,
         pt."name" AS plant_type, p."name" AS plot, 
         u."name" AS assigned_to
-      FROM "14trees_2".trees AS t
-      LEFT JOIN "14trees_2".plant_types AS pt ON pt.id = t.plant_type_id
-      LEFT JOIN "14trees_2".plots AS p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".users AS u ON u.id = t.assigned_to
+      FROM "14trees".trees AS t
+      LEFT JOIN "14trees".plant_types AS pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plots AS p ON p.id = t.plot_id
+      LEFT JOIN "14trees".users AS u ON u.id = t.assigned_to
       WHERE t.mapped_to_user = ${user.id};
       -- OFFSET ${offset} LIMIT ${limit};
     `;
 
     const countQuery = `
       SELECT count(t."id")
-      FROM "14trees_2".trees AS t
+      FROM "14trees".trees AS t
       WHERE t.mapped_to_user = ${user.id};
     `;
 
@@ -286,17 +286,17 @@ class TreeRepository {
       SELECT t.sapling_id, t."location", t.event_id, t.image,
         pt."name" AS plant_type, p."name" AS plot, 
         u."name" AS assigned_to
-      FROM "14trees_2".trees AS t
-      LEFT JOIN "14trees_2".plant_types AS pt ON pt.id = t.plant_type_id
-      LEFT JOIN "14trees_2".plots AS p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".users AS u ON u.id = t.assigned_to
+      FROM "14trees".trees AS t
+      LEFT JOIN "14trees".plant_types AS pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plots AS p ON p.id = t.plot_id
+      LEFT JOIN "14trees".users AS u ON u.id = t.assigned_to
       WHERE t.mapped_to_group = ${groupId};
       -- OFFSET ${offset} LIMIT ${limit};
     `;
 
     const countQuery = `
       SELECT count(t."id")
-      FROM "14trees_2".trees AS t
+      FROM "14trees".trees AS t
       WHERE t.mapped_to_group = ${groupId};
     `;
 
@@ -417,13 +417,13 @@ class TreeRepository {
 
     let query = `
       SELECT t.id as tree_id, pt."name" as plant_type
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id ${booAllHabitats ? '' : 'AND pt.habit = \'Tree\''}
-      JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
+      FROM "14trees".trees t
+      JOIN "14trees".plant_types pt on pt.id = t.plant_type_id ${booAllHabitats ? '' : 'AND pt.habit = \'Tree\''}
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
     `
 
     if (!bookNonGiftable) {
-      query += `JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"\n`
+      query += `JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"\n`
     }
 
     query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND t.plot_id IN (' + plotIds.join(',') + ')\n'
@@ -486,10 +486,10 @@ class TreeRepository {
 
     let query = `
       SELECT t.id AS tree_id, pt."name" AS plant_type
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${booAllHabitats ? '' : "AND pt.habit = 'Tree'"}
-      JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
-      ${bookNonGiftable ? '' : 'JOIN "14trees_2".plant_type_card_templates ptct ON ptct.plant_type = pt."name"'}
+      FROM "14trees".trees t
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id ${booAllHabitats ? '' : "AND pt.habit = 'Tree'"}
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
+      ${bookNonGiftable ? '' : 'JOIN "14trees".plant_type_card_templates ptct ON ptct.plant_type = pt."name"'}
       WHERE t.deleted_at IS NULL
         AND t.mapped_to_user IS NULL 
         AND t.mapped_to_group IS NULL 
@@ -608,15 +608,15 @@ class TreeRepository {
         au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at,
         array_agg(distinct(vi.image_url)) AS visit_images,
         json_agg(ts) AS tree_audits
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-      JOIN "14trees_2".plots p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".users du ON du.id = t.sponsored_by_user
-      LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
-      LEFT JOIN "14trees_2".users gu ON gu.id = t.gifted_by
-      LEFT JOIN "14trees_2".visits v ON v.id = t.visit_id
-      LEFT JOIN "14trees_2".visit_images vi ON v.id = vi.visit_id
-      LEFT JOIN "14trees_2".trees_snapshots ts ON ts.sapling_id = t.sapling_id
+      FROM "14trees".trees t
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".users du ON du.id = t.sponsored_by_user
+      LEFT JOIN "14trees".users au ON au.id = t.assigned_to
+      LEFT JOIN "14trees".users gu ON gu.id = t.gifted_by
+      LEFT JOIN "14trees".visits v ON v.id = t.visit_id
+      LEFT JOIN "14trees".visit_images vi ON v.id = vi.visit_id
+      LEFT JOIN "14trees".trees_snapshots ts ON ts.sapling_id = t.sapling_id
       WHERE t.assigned_to = '${userId}'
       GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id;
     `;
@@ -630,7 +630,7 @@ class TreeRepository {
   public static async getDeletedTreesFromList(treeIds: number[]): Promise<number[]> {
     const query = `SELECT num
     FROM unnest(array[:tree_ids]::int[]) AS num
-    LEFT JOIN "14trees_2".trees AS t
+    LEFT JOIN "14trees".trees AS t
     ON num = t.id
     WHERE t.id IS NULL OR t.deleted_at IS NOT NULL;`
 
@@ -665,9 +665,9 @@ class TreeRepository {
 
     const query = `
       SELECT u.name as user_name, p."name" as plot_name, count(t.id) as trees_planted
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".users u ON u.name = t.planted_by
+      FROM "14trees".trees t
+      JOIN "14trees".plots p ON p.id = t.plot_id
+      JOIN "14trees".users u ON u.name = t.planted_by
       WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
       GROUP BY u.name, p."name"
       OFFSET ${offset} LIMIT ${limit};
@@ -682,9 +682,9 @@ class TreeRepository {
       SELECT count(*)
       FROM (
         SELECT u.name as user_name, p."name" as plot_name, count(t.id) as trees_planted
-        FROM "14trees_2".trees t
-        JOIN "14trees_2".plots p ON p.id = t.plot_id
-        JOIN "14trees_2".users u ON u.name = t.planted_by
+        FROM "14trees".trees t
+        JOIN "14trees".plots p ON p.id = t.plot_id
+        JOIN "14trees".users u ON u.name = t.planted_by
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY u.name, p."name"
       ) as count_table;
@@ -730,13 +730,13 @@ class TreeRepository {
 
     let query = `
       SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
-      JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
+      FROM "14trees".trees t
+      JOIN "14trees".plots p ON p.id = t.plot_id
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
     if (!include_no_giftable) {
-      query += '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+      query += '\nJOIN "14trees".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
     }
 
     query += `
@@ -757,12 +757,12 @@ class TreeRepository {
 
     let countQuery = `
       SELECT count(t.id)
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".plots p ON p.id = t.plot_id
-      JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
-      JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
+      FROM "14trees".trees t
+      JOIN "14trees".plots p ON p.id = t.plot_id
+      JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
+      JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
-    if (!include_no_giftable) '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+    if (!include_no_giftable) '\nJOIN "14trees".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
 
     countQuery += `
         WHERE t.deleted_at IS NULL
@@ -789,14 +789,14 @@ class TreeRepository {
 
     const getUniqueTagsQuery =
       `SELECT DISTINCT tag
-            FROM "14trees_2".trees t,
+            FROM "14trees".trees t,
             unnest(t.tags) AS tag
             ORDER BY tag
             OFFSET ${offset} LIMIT ${limit};`;
 
     const countUniqueTagsQuery =
       `SELECT count(DISTINCT tag)
-            FROM "14trees_2".trees t,
+            FROM "14trees".trees t,
             unnest(t.tags) AS tag;`;
 
     const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
@@ -850,38 +850,38 @@ class TreeRepository {
         au."name" as assigned_to_name,
         t.tree_status as tree_health,
         ptct.template_image
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
-      JOIN "14trees_2".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
-      LEFT JOIN "14trees_2".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
-      LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-      LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt.name = ptct.plant_type
-      LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
-      LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
-      LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
-      LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
-      LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
-      LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
+      FROM "14trees".trees t
+      JOIN "14trees".gift_cards gc on gc.tree_id = t.id
+      JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
+      LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
+      LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".sites s ON s.id = p.site_id
+      LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
       WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
       ${limit > 0 ? `OFFSET ${offset} LIMIT ${limit}` : ''}`;
 
     const countQuery = `
       SELECT count(*)
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
-      JOIN "14trees_2".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
-      LEFT JOIN "14trees_2".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
-      LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
-      LEFT JOIN "14trees_2".plant_type_card_templates ptct ON pt.name = ptct.plant_type
-      LEFT JOIN "14trees_2".plots p ON p.id = t.plot_id
-      LEFT JOIN "14trees_2".sites s ON s.id = p.site_id
-      LEFT JOIN "14trees_2".users mu ON mu.id = t.mapped_to_user
-      LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
-      LEFT JOIN "14trees_2".users su ON su.id = t.sponsored_by_user
-      LEFT JOIN "14trees_2".groups sg ON sg.id = t.sponsored_by_group
-      LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to 
+      FROM "14trees".trees t
+      JOIN "14trees".gift_cards gc on gc.tree_id = t.id
+      JOIN "14trees".gift_card_requests gcr on gc.gift_card_request_id = gcr.id
+      LEFT JOIN "14trees".gift_redeem_transaction_cards grtc ON grtc.gc_id = gc.id
+      LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "14trees".plant_type_card_templates ptct ON pt.name = ptct.plant_type
+      LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".sites s ON s.id = p.site_id
+      LEFT JOIN "14trees".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "14trees".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "14trees".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "14trees".users au ON au.id = t.assigned_to 
       WHERE ${whereCondition !== "" ? whereCondition : "1=1"}`;
 
     const trees: any = await sequelize.query(query, {
@@ -909,9 +909,9 @@ class TreeRepository {
 
     const query = `
       SELECT count(t.id) as total_trees, count(t.assigned_to) as gifted_trees
-      FROM "14trees_2".trees t
-      JOIN "14trees_2".gift_cards gc on gc.tree_id = t.id
-      LEFT JOIN "14trees_2".groups mg ON mg.id = t.mapped_to_group
+      FROM "14trees".trees t
+      JOIN "14trees".gift_cards gc on gc.tree_id = t.id
+      LEFT JOIN "14trees".groups mg ON mg.id = t.mapped_to_group
       ${whereCondition}
     `;
 

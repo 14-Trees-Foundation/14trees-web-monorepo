@@ -101,16 +101,16 @@ export class UserRepository {
 
         const getQuery = `
             SELECT u.*, ug.created_at as user_group_created_at 
-            FROM "14trees_2".users u 
-            LEFT JOIN "14trees_2".user_groups ug ON u.id = ug.user_id
+            FROM "14trees".users u 
+            LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY u.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees_2".users u 
-            LEFT JOIN "14trees_2".user_groups ug ON u.id = ug.user_id
+            FROM "14trees".users u 
+            LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -171,9 +171,9 @@ export class UserRepository {
             SELECT u.id, u.name, 
                 count(distinct mt.id) as sponsored_trees,
                 jsonb_agg(distinct jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_image)) AS assigned_trees
-            FROM "14trees_2".users u
-            left JOIN "14trees_2".trees t ON t.assigned_to = u.id
-            left JOIN "14trees_2".trees mt ON mt.mapped_to_user = u.id
+            FROM "14trees".users u
+            left JOIN "14trees".trees t ON t.assigned_to = u.id
+            left JOIN "14trees".trees mt ON mt.mapped_to_user = u.id
             WHERE ${condition}
             GROUP BY u.id;
         `
@@ -189,7 +189,7 @@ export class UserRepository {
         FROM unnest(array[:user_ids]::int[]) AS num
         WHERE num NOT IN (
             SELECT u.id
-            FROM "14trees_2".users as u
+            FROM "14trees".users as u
         );`
 
         const result = await sequelize.query(query, {

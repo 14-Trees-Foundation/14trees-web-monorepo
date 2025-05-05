@@ -57,9 +57,9 @@ export class GroupRepository {
                 g.*,
                 COUNT(t.id) as sponsored_trees
             FROM 
-                "14trees_2".groups g
+                "14trees".groups g
             LEFT JOIN 
-                "14trees_2".trees t ON t.mapped_to_group = g.id
+                "14trees".trees t ON t.mapped_to_group = g.id
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
             GROUP BY 
                 g.id
@@ -69,7 +69,7 @@ export class GroupRepository {
     
         const countQuery = `
             SELECT COUNT(*) as count
-            FROM "14trees_2".groups g
+            FROM "14trees".groups g
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
         `;
     
