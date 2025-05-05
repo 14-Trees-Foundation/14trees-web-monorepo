@@ -1188,3 +1188,146 @@ definitions:
         type: integer
       card_available_herbs:
         type: integer
+  LandCategory:
+    type: string
+    enum: [Foundation, Public]
+  ContributionOption:
+    type: string
+    enum: [Planning visit, CSR, Volunteer, Share]
+  Donation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        payment_id:
+          type: integer
+          format: int64
+          nullable: true
+        category:
+          $ref: '#/definitions/LandCategory'
+        grove:
+          type: string
+        grove_type_other:
+          type: string
+          nullable: true
+        trees_count:
+          type: integer
+        contribution_options:
+          $ref: '#/definitions/ContributionOption'
+          nullable: true
+        names_for_plantation:
+          type: string
+          nullable: true
+        comments:
+          type: string
+          nullable: true
+        created_by:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+  DonationUser:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      recipient:
+        type: integer
+        example: 1
+      assignee:
+        type: integer
+        example: 1
+      recipient_name:
+        type: string
+        example: "Recipient Name"
+      recipient_email:
+        type: string
+        format: email
+        example: "recipient@gmail.com"
+      recipient_phone:
+        type: string
+        example: "9876543210"
+      assignee_name:
+        type: string
+        example: "Assignee Name"
+      assignee_email:
+        type: string
+        format: email
+        example: "assignee@gmail.com"
+      assignee_phone:
+        type: string
+        example: "9876543210"
+      donation_id:
+        type: integer
+        example: 1
+      trees_count:
+        type: integer
+        example: 14
+      profile_image_url:
+        type: string
+        example: "https://bucket.ap-south-1.s3.aws.com/image.png"
+      mail_sent:
+        type: boolean
+        example: false
+      mail_error:
+        type: string
+        example: ""
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time 
+  DonationTree:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      recipient:
+        type: integer
+        example: 1
+      assignee:
+        type: integer
+        example: 1
+      recipient_name:
+        type: string
+        example: "Recipient Name"
+      recipient_email:
+        type: string
+        format: email
+        example: "recipient@gmail.com"
+      recipient_phone:
+        type: string
+        example: "9876543210"
+      assignee_name:
+        type: string
+        example: "Assignee Name"
+      assignee_email:
+        type: string
+        format: email
+        example: "assignee@gmail.com"
+      assignee_phone:
+        type: string
+        example: "9876543210"
+      sapling_id:
+        type: string
+        example: "126783"
+      assigned:
+        type: integer
+        example: 1
+      plant_type:
+        type: string
+        example: "Kadulimb (कडुलिंब)"
+      scientific_name:
+        type: string
+        example: "Azadirachta indica"

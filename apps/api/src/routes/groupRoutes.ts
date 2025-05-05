@@ -227,4 +227,44 @@ routes.put('/:id', uploadFiles.fields([{name: 'logo', maxCount: 1 }]), group.upd
 routes.delete('/:id', group.deleteGroup);
 
 
+/**
+ * @swagger
+ * /groups/merge:
+ *   post:
+ *     summary: Merge groups
+ *     description: Merges two groups into one.
+ *     tags:
+ *       - Groups
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for merging groups
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             primary_group:
+ *               type: integer
+ *               example: 1
+ *             secondary_group:
+ *               type: integer
+ *               example: 2
+ *             delete_secondary:
+ *               type: boolean
+ *               example: true
+ *     responses:
+ *       200:
+ *         description: Groups merged successfully
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/merge', group.mergeGroups);
+
+
 export default routes;

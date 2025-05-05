@@ -9,11 +9,12 @@ interface PaymentAttributes {
   pan_number: string | null;
   consent: boolean;
   order_id: string | null;
+  qr_id: string | null;
   created_at: Date;
   updated_at: Date;  
 }
 
-interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'donor_type'> {}
+interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'donor_type' | 'qr_id'> {}
 
 @Table({ tableName: 'payments' })
 class Payment extends Model<PaymentAttributes, PaymentCreationAttributes>
@@ -36,11 +37,14 @@ implements PaymentAttributes {
     @Column({ type: DataType.STRING })
     pan_number!: string | null;
 
+    @Column({ type: DataType.BOOLEAN })
+    consent!: boolean;
+
     @Column({ type: DataType.STRING })
     order_id!: string | null;
 
-    @Column({ type: DataType.BOOLEAN })
-    consent!: boolean;
+    @Column({ type: DataType.STRING })
+    qr_id!: string | null;
 
     @Column({ type: DataType.DATE })
     created_at!: Date;

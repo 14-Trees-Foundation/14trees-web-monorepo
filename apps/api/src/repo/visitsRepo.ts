@@ -16,6 +16,15 @@ export class VisitRepository {
         return updatedPlot;
     }
 
+    public static async updateVisits(fields: any, whereClause: WhereOptions<Visit>): Promise<number> {
+        const [resp] =  await Visit.update(fields, {
+            where: whereClause,
+            returning: false,
+        })
+
+        return resp;
+    }
+
 
     public static async addVisit(visitData: VisitCreationAttributes): Promise<Visit> {
         visitData.created_at = visitData.updated_at = new Date();

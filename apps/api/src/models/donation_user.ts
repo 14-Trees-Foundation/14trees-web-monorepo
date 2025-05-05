@@ -1,14 +1,21 @@
+import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface DonationUserAttributes {
-	user_id: number;
+  id: number;
+	recipient: number;
+	assignee: number;
 	donation_id: number;
-  gifted_trees: number;
+  trees_count: number;
+  mail_sent: boolean | null;
+  mail_error: string | null;
+  profile_image_url: string | null;
 	created_at: Date;
+	updated_at: Date;
 }
 
 interface DonationUserCreationAttributes
-	extends DonationUserAttributes {}
+	extends Optional<DonationUserAttributes, 'id' | 'mail_sent' | 'mail_error' | 'profile_image_url' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'donation_users' })
 class DonationUser extends Model<DonationUserAttributes, DonationUserCreationAttributes>
@@ -16,14 +23,26 @@ implements DonationUserAttributes {
 
   @Column({
     type: DataType.NUMBER,
+    autoIncrement: true,
     primaryKey: true,
-    allowNull: false,
+    unique: true
   })
-  user_id!: number;
+  id!: number;
 
   @Column({
     type: DataType.NUMBER,
-    primaryKey: true,
+    allowNull: false,
+  })
+  recipient!: number;
+
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: false,
+  })
+  assignee!: number;
+
+  @Column({
+    type: DataType.NUMBER,
     allowNull: false,
   })
   donation_id!: number;
@@ -32,10 +51,22 @@ implements DonationUserAttributes {
     type: DataType.NUMBER,
     allowNull: false,
   })
-  gifted_trees!: number;
+  trees_count!: number;
+
+  @Column({ type: DataType.BOOLEAN })
+  mail_sent!: boolean | null;
+
+  @Column({ type: DataType.STRING })
+  mail_error!: string | null;
+
+  @Column({ type: DataType.STRING })
+  profile_image_url!: string | null;
 
   @Column({ type: DataType.DATE, allowNull: false })
   created_at!: Date;
+
+  @Column({ type: DataType.DATE, allowNull: false })
+  updated_at!: Date;
 }
 
 export { DonationUser }

@@ -237,6 +237,7 @@ export async function uploadFileToS3(
     type: string,
     data: Readable | Buffer,
     key: string,
+    mimeType?: string,
 ): Promise<string> {
     const bucketName = getBucketFromTypeAndFolderName(type, '').split('/')[0];
 
@@ -245,6 +246,7 @@ export async function uploadFileToS3(
         Key: key,
         Body: data,
         ACL: 'public-read',
+        ContentType: mimeType,
     };
 
     const uploadResult = await s3.upload(uploadParams).promise();

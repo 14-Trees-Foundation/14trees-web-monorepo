@@ -130,6 +130,29 @@ export class GiftCardsRepository {
             })
         };
     }
+    
+    static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number,total_gift_requests: number, total_gifted_trees: number}>{
+        const query = `
+          SELECT 
+              COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_gift_requests,
+              COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_gift_requests,
+              SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_gifted_trees,
+              SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_gifted_trees,
+              COUNT(id) as total_gift_requests,
+              SUM(no_of_cards) as total_gifted_trees
+            FROM "14trees".gift_card_requests
+            WHERE request_type = 'Cards Request'
+        `;
+        const result = await sequelize.query(query, { type: QueryTypes.SELECT });
+        return result[0] as {
+          personal_gift_requests: number,
+          corporate_gift_requests: number,
+          personal_gifted_trees: number,
+          corporate_gifted_trees: number,
+          total_gift_requests: number,
+          total_gifted_trees: number
+        };
+      }
 
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
         return await GiftCardRequest.create(data);
@@ -507,8 +530,8 @@ export class GiftCardsRepository {
     static async getGiftRequestUsers(giftCardRequestId: number): Promise<GiftRequestUser[]> {
         const getQuery = `
             SELECT gru.*, 
-            ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
-            au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone, ur.relation
+            ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone, ru.communication_email as recipient_communication_email,
+            au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone, au.communication_email as assignee_communication_email, ur.relation
             FROM "14trees".gift_request_users gru
             LEFT JOIN "14trees".users ru ON ru.id = gru.recipient
             LEFT JOIN "14trees".users au ON au.id = gru.assignee

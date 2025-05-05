@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import { status } from "../helpers/status";
 import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
-import { isArray } from "lodash";
 import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
@@ -67,7 +66,7 @@ export const getTrees = async (req: Request, res: Response) => {
 
 export const updateTree = async (req: Request, res: Response) => {
   try {
-    const tree = await TreeRepository.updateTree(req.body, isArray(req.files) ? req.files : [])
+    const tree = await TreeRepository.updateTree(req.body, Array.isArray(req.files) ? req.files : [])
     res.status(status.success).json(tree);
   } catch (error: any) {
     console.error("Tree update error:", error);

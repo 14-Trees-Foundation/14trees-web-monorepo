@@ -52,10 +52,12 @@ interface GiftCardRequestAttributes {
     donation_receipt_number: string | null,
     amount_received: number | null,
     donation_date: Date | null,
+    contribution_options: string[] | null,
+    comments: string | null
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -206,6 +208,18 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.ARRAY(DataType.STRING),
     })
     validation_errors!: GiftCardRequestValidationError[];
+
+    @Column({
+        type: DataType.ARRAY(DataType.STRING),
+        allowNull: true,
+    })
+    contribution_options!: string[] | null;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+    })
+    comments!: string | null;
 
     @Column({ type: DataType.DATE, allowNull: false })
     gifted_on!: Date;

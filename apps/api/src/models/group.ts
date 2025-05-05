@@ -12,6 +12,7 @@ interface GroupAttributes {
   address: string | null;
   created_at: Date;
   updated_at: Date;
+  sponsored_trees?: number; 
 }
 
 interface GroupCreationAttributes

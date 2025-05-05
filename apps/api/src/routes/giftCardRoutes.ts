@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as giftCards from '../controllers/giftCardController';
 import * as transactions from '../controllers/transactionsController';
+import * as genAi from '../controllers/giftRequestAIController';
 import uploadFiles from "../helpers/multer";
 
 const routes = Router();
@@ -384,6 +385,10 @@ routes.post('/requests', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name
  *               example: "Something went wrong. Please try again later."
  */
 routes.put('/requests/:id', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name: 'csv_file', maxCount: 1}]), giftCards.updateGiftCardRequest);
+
+
+routes.patch('/requests/update', giftCards.patchGiftCardRequest);
+
 
 /**
  * @swagger
@@ -1297,8 +1302,6 @@ routes.post('/assign', giftCards.assignGiftRequestTrees);
  */
 routes.get('/generate/:gift_card_request_id', giftCards.generateGiftCardTemplatesForGiftCardRequest);
 
-
-
 /**
  * @swagger
  * /gift-cards/update-card-images/{gift_card_request_id}:
@@ -1335,7 +1338,6 @@ routes.get('/generate/:gift_card_request_id', giftCards.generateGiftCardTemplate
  *               example: "Something went wrong. Please try again later."
  */
 routes.get('/update-card-images/:gift_card_request_id', giftCards.updateGiftCardImagesForGiftRequest);
-
 
 /**
  * @swagger
@@ -1802,6 +1804,9 @@ routes.get('/transactions/tree-cards/:transaction_id', transactions.getTrancatio
  *               example: "Something went wrong. Please try again later."
  */
 routes.get('/transactions/tree-cards/download/:transaction_id', transactions.downloadTrancationTreeCardImages);
+
+
+routes.post('/gen-ai', genAi.serveUserQuery);
 
 export default routes;
 

@@ -25,22 +25,23 @@ import { Visit } from "../models/visits";
 import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
 import { SyncHistory } from "../models/sync_history";
-import { TreeCountAggregation } from "../models/tree_count_aggregation";
 import { GiftCardRequest } from "../models/gift_card_request";
 import { GiftCard } from "../models/gift_card";
 import { GiftCardPlot } from "../models/gift_card_plot";
 import { GiftCardUserTemplate } from "../models/gift_card_user_template";
 import { PlantTypeCardTemplate } from "../models/plant_type_card_template";
+import { TreeCountAggregation } from "../models/tree_count_aggregation";
 import { Tag } from "../models/tag";
 import { UserRelation } from "../models/user_relation";
 import { EmailTemplate } from "../models/email_template";
 import { Payment } from "../models/payment";
 import { PaymentHistory } from "../models/payment_history";
 import { GiftRequestUser } from "../models/gift_request_user";
-import { PlotPlantType } from "../models/plot_plant_type";
 import { View, ViewPermission } from "../models/permissions";
 import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transaction";
 import DuplicateTreeSync from "../models/duplicate_tree_sync";
+import { ChatMessage } from "../models/chat_message";
+import { MailSub } from "../models/mail_sub";
 
 
 class Database {
@@ -72,6 +73,7 @@ class Database {
       define: {
         timestamps: false,
       },
+      logging: false,
       models:[
         Pond,
         Plot,
@@ -98,24 +100,25 @@ class Database {
         VisitImage,
         VisitUsers,
         SyncHistory,
-        TreeCountAggregation,
         GiftCard,
         GiftCardRequest,
         GiftCardPlot,
         GiftCardUserTemplate,
         GiftRequestUser,
         PlantTypeCardTemplate,
+        TreeCountAggregation,
         Tag,
         UserRelation,
         EmailTemplate,
         Payment,
         PaymentHistory,
-        PlotPlantType,
         View,
         ViewPermission,
         GiftRedeemTransaction,
         GRTCard,
         DuplicateTreeSync,
+        ChatMessage,
+        MailSub,
       ]
     });
 

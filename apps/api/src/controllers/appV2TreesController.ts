@@ -334,9 +334,13 @@ export const login = async (req: Request, res: Response) => {
         roles: user.roles,
         token: ""
     }
-    const groupCheck = await GroupRepository.getGroups(0, 1, {
-        type: "onsite_staff"
-    });
+    const groupCheck = await GroupRepository.getGroups(0, 1, [
+        { 
+            columnField: "type", 
+            operatorValue: "equals",
+            value: "onsite_staff" 
+        }
+    ], []);
     let isAuthorized = false;
     if (groupCheck.results.length !== 0) {
         const userGroup = await UserGroupRepository.getUserGroup(user.id, groupCheck.results[0].id);
@@ -849,7 +853,7 @@ export const treesCount = async (req: Request, res: Response) => {
             total_trees_planted: await TreeRepository.treesCount(),
             trees_planted_this_year: await TreeRepository.treesCount({ created_at: { [Op.gte]:  year} }),
             trees_planted_this_month: await TreeRepository.treesCount({ created_at: { [Op.gte]:  month} }),
-            trees_planted_by_you: name ? await TreeRepository.treesCount({ planted_by: name }) : 0,
+            trees_planted_by_you: name ? await TreeRepository.treesCount({ planted_by: name as string }) : 0,
         };
         res.status(status.success).json(result);
     } catch(err: any) {

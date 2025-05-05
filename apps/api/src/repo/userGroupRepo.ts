@@ -68,6 +68,30 @@ export class UserGroupRepository {
         }
     }
 
+    public static async changeGroup(primaryGroup: number, secondaryGroup: number): Promise<void> {
+        const primaryUsersGroups = await UserGroup.findAll({ where: { group_id: primaryGroup } });
+        const secondaryUsersGroups = await UserGroup.findAll({ where: { group_id: secondaryGroup } });
+
+        for (const group of secondaryUsersGroups) {
+            const idx = primaryUsersGroups.findIndex(userGroup => userGroup.user_id === group.user_id);
+            if (idx === -1) {
+                const userId = group.user_id;
+                const date = group.created_at;
+
+
+                const userGroupData: UserGroupCreationAttributes = {
+                    group_id: primaryGroup,
+                    user_id: userId,
+                    created_at: date,
+                };
+
+                await UserGroup.create(userGroupData);
+            }
+
+            await group.destroy()
+        }
+    }
+
     public static async upsertUsersIntoGroup(groupId: number, userIds: number[]): Promise<void> {
         const userGroups = await UserGroup.findAll({ where: { user_id: { [Op.in]: userIds }, group_id: groupId } });
         const exstingUsersMap: Map<number, boolean> = new Map();

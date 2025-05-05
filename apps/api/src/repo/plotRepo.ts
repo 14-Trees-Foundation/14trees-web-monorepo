@@ -11,6 +11,7 @@ export class PlotRepository {
         if (!plot) {
             throw new Error("Plot doesn't exist");
         }
+        plotData.label = plotData.label?.trim() || null,
         plotData.updated_at = new Date();
         const updatedPlot = await plot.update(plotData);
 
@@ -35,9 +36,10 @@ export class PlotRepository {
             gat: plotData.gat || null,
             category: plotData.category || null,
             site_id: siteId || null,
-            label: plotData.label || null,
+            label: plotData.label?.trim() || null,
             accessibility_status: plotData.accessibility_status || null,
             pit_count: plotData.pit_count || null,
+            notes: plotData.notes || null,
             created_at: new Date(),
             updated_at: new Date()
         };
@@ -160,6 +162,11 @@ export class PlotRepository {
                 ELSE 0
             END) AS herb_count,
             SUM(CASE 
+            WHEN pt.habit = 'Climber'
+            THEN 1
+            ELSE 0
+            END) AS climber_count,
+            SUM(CASE 
                 WHEN t.assigned_to IS NOT NULL 
                     AND pt.habit = 'Tree'
                 THEN 1 
@@ -279,6 +286,46 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS card_available_shrubs,
+            SUM(CASE 
+                WHEN t.assigned_to IS NOT NULL 
+                  AND pt.habit = 'Climber'
+                THEN 1 
+                ELSE 0 
+            END) as assigned_climbers,
+            SUM(CASE 
+                WHEN (t.mapped_to_user IS NOT NULL 
+                  OR t.mapped_to_group IS NOT NULL) AND pt.habit = 'Climber'
+                THEN 1 
+                ELSE 0 
+            END) AS booked_climbers,
+            SUM(CASE 
+                WHEN (t.mapped_to_user IS NULL 
+                  AND t.mapped_to_group IS NULL
+                  AND t.assigned_to IS NOT NULL) AND pt.habit = 'Climber'
+               THEN 1 
+               ELSE 0 
+            END) AS unbooked_assigned_climbers,
+            SUM(CASE 
+                WHEN (t.mapped_to_user IS NULL 
+                  AND t.mapped_to_group IS NULL 
+                  AND t.assigned_to IS NULL 
+                  AND t.id IS NOT NULL) AND pt.habit = 'Climber'
+                  AND ppt.sustainable = true
+                THEN 1 
+                ELSE 0 
+            END) AS available_climbers,
+            SUM(CASE 
+                WHEN t.mapped_to_user IS NULL 
+                  AND t.mapped_to_group IS NULL 
+                  AND t.assigned_to IS NULL 
+                  AND t.id IS NOT NULL
+                  AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
+                  AND pt.habit = 'Climber'
+                  AND ptct.plant_type IS NOT NULL
+                  AND ppt.sustainable = true
+                THEN 1 
+                ELSE 0 
+            END) AS card_available_climbers,
             array_agg(distinct CASE 
                 WHEN t.mapped_to_user IS NULL 
                     AND t.mapped_to_group IS NULL 
@@ -532,6 +579,7 @@ export class PlotRepository {
                     AND t.mapped_to_group IS NULL 
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS available,
@@ -542,6 +590,7 @@ export class PlotRepository {
                     AND t.id IS NOT NULL
                     AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                     AND ptct.plant_type IS NOT NULL
+                    AND ppt.sustainable = true
                 THEN 1 
                 ELSE 0 
             END) AS card_available
@@ -550,6 +599,7 @@ export class PlotRepository {
         LEFT JOIN "14trees".trees t ON t.plot_id = p.id
         LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
         LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
         HAVING SUM(CASE 

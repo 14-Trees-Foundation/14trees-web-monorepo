@@ -1,5 +1,6 @@
 import Razorpay from "razorpay";
 import { Orders } from "razorpay/dist/types/orders";
+import { Payments } from "razorpay/dist/types/payments";
 import { validatePaymentVerification } from "razorpay/dist/utils/razorpay-utils";
 
 class RazorpayService {
@@ -33,14 +34,49 @@ class RazorpayService {
         }
     }
 
-    async getPayments(orderId: string) {
+    async getPayments(id: string) {
         try {
-            const payments = await this.razorpay.orders.fetchPayments(orderId);
-            return payments.items;
+            let result: Payments.RazorpayPayment[] = []
+            if (id.startsWith("qr")) {
+                const payments = await this.razorpay.qrCode.fetchAllPayments(id);
+                result = payments.items;
+            } else if (id.startsWith("order")) {
+                const payments = await this.razorpay.orders.fetchPayments(id);
+                result = payments.items;
+            }
+
+            return result;
         } catch (error) {
             console.log("[ERROR] RazorpayService.getPayments: ", error);
         }
     }
+
+    async generatePaymentQRCode(amount: number) {
+        try {
+            const qrResp = await this.razorpay.qrCode.create({
+                type: 'upi_qr',
+                usage: 'single_use',
+                fixed_amount: true,
+                payment_amount: amount,
+            })
+
+            return qrResp;
+        } catch (error) {
+            console.log("[ERROR] RazorpayService.generatePaymentQRCode: ", error);
+            throw error;
+        }
+    }
+
+    async generatePaymentQRCodeForId(qrId: string) {
+        try {
+            const qrResp = await this.razorpay.qrCode.fetch(qrId)
+            return qrResp;
+        } catch (error) {
+            console.log("[ERROR] RazorpayService.generatePaymentQRCodeForId: ", error);
+            throw error;
+        }
+    }
+
 }
 
 export default RazorpayService;

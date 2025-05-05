@@ -5,7 +5,13 @@ import { getWhereOptions } from "./helper/filters";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { UploadFileToS3 } from "./helper/uploadtos3";
-  
+import TreeRepository from "../repo/treeRepo";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
+import { VisitRepository } from "../repo/visitsRepo";
+import { OrderRepository } from "../repo/ordersRepo";
+import { SortOrder } from "../models/common";
+
 
 /*
     Model - Group
@@ -13,17 +19,12 @@ import { UploadFileToS3 } from "./helper/uploadtos3";
 */
 
 export const getGroups = async (req: Request, res: Response) => {
-    const {offset, limit } = getOffsetAndLimitFromRequest(req);
-    const filters: FilterItem[] = req.body?.filters;
-    let whereClause = {};
-    if (filters && filters.length > 0) {
-        filters.forEach(filter => {
-            whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
-        })
-    }
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters || [];
+    const orderBy: SortOrder[] = req.body?.order_by || [];
 
     try {
-        let result = await GroupRepository.getGroups(offset, limit, whereClause);
+        let result = await GroupRepository.getGroups(offset, limit, filters, orderBy);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -86,7 +87,7 @@ export const deleteGroup = async (req: Request, res: Response) => {
         let resp = await GroupRepository.deleteGroup(parseInt(req.params.id));
         console.log("Delete group response for id: %s", req.params.id, resp);
         res.status(status.success).json({
-          message: "Group deleted successfully",
+            message: "Group deleted successfully",
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
@@ -96,10 +97,14 @@ export const deleteGroup = async (req: Request, res: Response) => {
 export const searchGroups = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const searchStr = req.params.search;
-    let whereClause = getWhereOptions("name", "contains", searchStr);
+    const filters: FilterItem[] = searchStr ? [{
+        columnField: "name",       
+        operatorValue: "contains",
+        value: searchStr
+    }] : [];
 
     try {
-        let result = await GroupRepository.getGroups(offset, limit, whereClause);
+        let result = await GroupRepository.getGroups(offset, limit, filters, []);
         res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
@@ -108,3 +113,37 @@ export const searchGroups = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const mergeGroups = async (req: Request, res: Response) => {
+
+    const { primary_group, secondary_group, delete_secondary } = req.body;
+    try {
+
+        // Update trees
+        const mappedTrees = { mapped_to_group: primary_group, updated_at: new Date() };
+        await TreeRepository.updateTrees(mappedTrees, { mapped_to_group: secondary_group });
+
+        const sponsoredTrees = { sponsored_by_group: primary_group, updated_at: new Date() };
+        await TreeRepository.updateTrees(sponsoredTrees, { sponsored_by_group: secondary_group });
+
+        // gift requests
+        const giftRequests = { group_id: primary_group, updated_at: new Date() };
+        await GiftCardsRepository.updateGiftCardRequests(giftRequests, { group_id: secondary_group });
+
+        // user groups
+        await UserGroupRepository.changeGroup(primary_group, secondary_group);
+
+        // visit
+        const visits = { group_id: primary_group, updated_at: new Date() };
+        await VisitRepository.updateVisits(visits, { group_id: secondary_group });
+
+        if (delete_secondary) {
+            await GroupRepository.deleteGroup(secondary_group);
+        }
+
+        res.status(status.success).json();
+    } catch (error: any) {
+        console.log("[ERROR]", "groupsController.mergeGroups", error);
+        res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
+    }
+};

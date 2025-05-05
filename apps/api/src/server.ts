@@ -38,10 +38,11 @@ import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import tagRoutes from "./routes/tagRoutes";
-import { recalculateAggregatedData, cleanUpGiftCardLiveTemplates, startAppV2ErrorLogsCronJob, updatePlotPlantTypes, updateTheAuditReport } from "./services/cron";
+import { cleanUpGiftCardLiveTemplates, startAppV2ErrorLogsCronJob, recalculateAggregatedData, updatePlotPlantTypes, updateTheAuditReport } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
+import whatsAppRoutes from "./routes/whatsAppRoutes";
 import viewRoutes from "./routes/viewRoutes";
 import swaggerJSDoc from "swagger-jsdoc";
 
@@ -127,6 +128,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/email-templates", emailTemplateRoutes );
   app.use("/api/payments", paymentRoutes );
   app.use("/api/view", viewRoutes);
+  app.use("/api/wa", whatsAppRoutes);
 
   app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
 
