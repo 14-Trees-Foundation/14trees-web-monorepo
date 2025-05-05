@@ -72,19 +72,19 @@ const getTreeCards = new DynamicStructuredTool({
             }
         }
 
-        if (amountReceived !== totalAmount) {
-            return JSON.stringify({
-                status: 'Pending Payment',
-                output: `You haven't paid for trees of request Id ${requestId}.`,
-                next_step: {
-                    note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
-                    payment_request: {
-                        rq_code_image_url: qrCodeUrl,
-                        image_caption: `You have requested *${request.no_of_cards === 1 ? '1 tree' : `${request.no_of_cards} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${request.no_of_cards * 1}/-*.`
-                    }
-                }
-            });
-        }
+        // if (amountReceived !== totalAmount) {
+        //     return JSON.stringify({
+        //         status: 'Pending Payment',
+        //         output: `You haven't paid for trees of request Id ${requestId}.`,
+        //         next_step: {
+        //             note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
+        //             payment_request: {
+        //                 rq_code_image_url: qrCodeUrl,
+        //                 image_caption: `You have requested *${request.no_of_cards === 1 ? '1 tree' : `${request.no_of_cards} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${request.no_of_cards * 1}/-*.`
+        //             }
+        //         }
+        //     });
+        // }
 
         const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', value: requestId, operatorValue: 'equals' }]);
         const imageUrls = giftCards.results.map(card => card.card_image_url).filter(imageUrl => imageUrl);
