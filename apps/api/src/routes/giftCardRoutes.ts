@@ -1302,6 +1302,42 @@ routes.post('/assign', giftCards.assignGiftRequestTrees);
  */
 routes.get('/generate/:gift_card_request_id', giftCards.generateGiftCardTemplatesForGiftCardRequest);
 
+/**
+ * @swagger
+ * /gift-cards/update-card-images/{gift_card_request_id}:
+ *   post:
+ *     summary: Update gift card images for gift card request
+ *     description: Updates gift card images for a specific gift card request.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - name: gift_card_request_id
+ *         in: path
+ *         description: ID of the gift card request
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Gift card image generation initiated successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Please provide valid input details!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.get('/update-card-images/:gift_card_request_id', giftCards.updateGiftCardImagesForGiftRequest);
 
 /**
  * @swagger
