@@ -14,6 +14,7 @@ const UpdateGiftRequestRecipientsSchema = z.object({
         email: z.string().describe("The email of the recipient"),
         name: z.string().describe("The name of the recipient"),
         communication_email: z.string().optional().nullable().describe("The communication email of the recipient"),
+        profile_image_url: z.string().optional().nullable().describe("Optional profile image URL of the recipient. Ask user to upload image file. When user uploads image, you will receive s3 image URLs."),
     })).optional().nullable().describe("The list of recipients to be updated"),
     delete_recipients: z.array(z.object({
         recipient_id: z.number().describe("The id of the recipient to be deleted"),
@@ -23,6 +24,7 @@ const UpdateGiftRequestRecipientsSchema = z.object({
         email: z.string().describe("The email of the recipient"),
         name: z.string().describe("The name of the recipient"),
         communication_email: z.string().optional().nullable().describe("The communication email of the recipient"),
+        profile_image_url: z.string().optional().nullable().describe("Optional profile image URL of the recipient. Ask user to upload image file. When user uploads image, you will receive s3 image URLs."),
     })).optional().nullable().describe("The list of recipients to be created"),
 }).describe("The data to update the gift request recipients");
 
