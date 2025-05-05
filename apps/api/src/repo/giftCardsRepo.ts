@@ -64,7 +64,7 @@ export class GiftCardsRepository {
                     ELSE 0
                 END) AS booked,
                 SUM(CASE 
-                    WHEN gru.mail_sent = true
+                    WHEN gru.id is not null and gru.mail_sent = true
                     THEN 1
                     ELSE 0
                 END) AS mailed_count,
@@ -75,7 +75,7 @@ export class GiftCardsRepository {
                     ELSE 0
                 END) AS assigned,
                 CASE
-                    WHEN gcr.category = 'Foundation'
+                    WHEN gcr.category = 'Public'
                     THEN (
                         CASE 
                             WHEN gcr.request_type = 'Normal Assignment'
@@ -130,6 +130,7 @@ export class GiftCardsRepository {
             })
         };
     }
+    
     static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number,total_gift_requests: number, total_gifted_trees: number}>{
         const query = `
           SELECT 

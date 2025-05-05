@@ -3,7 +3,6 @@ import * as giftCards from '../controllers/giftCardController';
 import * as transactions from '../controllers/transactionsController';
 import * as genAi from '../controllers/giftRequestAIController';
 import uploadFiles from "../helpers/multer";
-import { verifyToken } from '../auth/verifyToken';
 
 const routes = Router();
 
@@ -1771,7 +1770,7 @@ routes.get('/transactions/tree-cards/:transaction_id', transactions.getTrancatio
 routes.get('/transactions/tree-cards/download/:transaction_id', transactions.downloadTrancationTreeCardImages);
 
 
-routes.post('/gen-ai', verifyToken, genAi.serveUserQuery);
+routes.post('/gen-ai', genAi.serveUserQuery);
 
 export default routes;
 
