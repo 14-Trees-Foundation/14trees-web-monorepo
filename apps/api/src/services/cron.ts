@@ -3,6 +3,7 @@ import { LogsInfoRepository } from '../repo/logsInfoRepo';
 import sendDiscordMessage from './webhook';
 import PlantTypeTemplateRepository from '../repo/plantTypeTemplateRepo';
 import { deleteUnwantedSlides } from '../controllers/helper/slides';
+import { TreeCountAggregationsRepo } from '../repo/treeCountAggregationsRepo';
 import { sequelize } from '../config/postgreDB';
 import { QueryTypes } from 'sequelize';
 import { PlotPlantTypeRepository } from '../repo/plotPlantTypesRepo';
@@ -13,7 +14,7 @@ import { GoogleSpreadsheet } from './google';
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
         try {
-            const logs = await LogsInfoRepository.getLogsInfo(Date.now() - 10 * 24 * 60 * 60 * 1000);
+            const logs = await LogsInfoRepository.getLogsInfo(Date.now() - 60 * 60 * 1000);
     
             for (const log of logs) {
                 if (log.logs.includes('Network Error')) continue;
@@ -45,14 +46,21 @@ export function cleanUpGiftCardLiveTemplates() {
     });
 }
 
+export function recalculateAggregatedData() {
+    const task = cron.schedule('*/10 4-14 * * *', async () => {
+        await TreeCountAggregationsRepo.checkAndRecalculateData();
+    });
+}
+
 export function updatePlotPlantTypes() {
     const task = cron.schedule('0 * * * *', async () => {
         try {
 
             // fetch distinct plot plant types
             const query = `
-                SELECT DISTINCT plot_id, plant_type_id
-                FROM "14trees".trees;
+                SELECT DISTINCT t.plot_id, t.plant_type_id
+                FROM "14trees".trees t
+                WHERE t.plot_id is not null and t.plant_type_id is not null;
             `
 
             const plotPlantTypes: any[] = await sequelize.query(query, { type: QueryTypes.SELECT });
@@ -111,7 +119,7 @@ export function updateTheAuditReport() {
     const aggSheetName = "Agg. Audit Report"
     const auditedTreesSheetName = "Plot Audit Report"; // Updated sheet name
 
-    const task = cron.schedule('*/5 * * * *', async () => {
+    const task = cron.schedule('0 * * * *', async () => {
         try {
 
             const spreadSheetClient = new GoogleSpreadsheet();

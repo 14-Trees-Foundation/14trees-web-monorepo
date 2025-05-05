@@ -165,7 +165,7 @@ export class UserRepository {
 
     public static async search(searchStr: string): Promise<any[]> {
 
-        const { condition, replacement } = getSqlQueryExpression("u.name", "contains", "name", searchStr);
+        const { condition, replacement } = getSqlQueryExpression("u.name", "contains", "name", searchStr.split(" ").join("%"));
 
         const getQuery = `
             SELECT u.id, u.name, 

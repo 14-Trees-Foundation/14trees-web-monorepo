@@ -38,7 +38,7 @@ import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import tagRoutes from "./routes/tagRoutes";
-import { cleanUpGiftCardLiveTemplates, startAppV2ErrorLogsCronJob } from "./services/cron";
+import { cleanUpGiftCardLiveTemplates, startAppV2ErrorLogsCronJob, recalculateAggregatedData, updatePlotPlantTypes, updateTheAuditReport } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
@@ -60,7 +60,7 @@ function swaggerSpecification() {
       version: '1.0.0', // Version (required)
       description: 'APIs for 14trees Dashboard & Mobile application', // Description (optional)
     },
-    host: `dev-api.14trees.org`,
+    host: `api.14trees.org`,
     basePath: '/api',
   };
 
@@ -159,8 +159,12 @@ const initExpressApp = (app: express.Application) => {
 const app = express();
 
 const initServer = async () => {
-  // startAppV2ErrorLogsCronJob();
-  // cleanUpGiftCardLiveTemplates();
+  startAppV2ErrorLogsCronJob();
+  recalculateAggregatedData();
+  cleanUpGiftCardLiveTemplates();
+  updatePlotPlantTypes();
+  updateTheAuditReport();
+  
   initExpressApp(app);
 };
 

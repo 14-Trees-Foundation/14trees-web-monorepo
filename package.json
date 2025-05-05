@@ -9,6 +9,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.16",
     "dotenv-cli": "latest",
     "eslint-config-custom": "*",
     "prettier": "^2.7.1",

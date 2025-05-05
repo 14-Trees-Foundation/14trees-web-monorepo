@@ -27,6 +27,8 @@ export const summary = async (req: Request, res: Response) => {
       userCount,
       assignedTreeCount: treesCount.assigned,
       bookedTreeCount: treesCount.booked,
+      assignedTreeCount: treesCount.assigned,
+      bookedTreeCount: treesCount.booked,
       plotCount,
       pondCount,
       sitesCount: parseInt(sitesResp.sites),
