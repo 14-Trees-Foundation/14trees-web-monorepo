@@ -15,6 +15,7 @@
     "@langchain/core": "^0.3.38",
     "@langchain/langgraph": "^0.2.46",
     "@langchain/openai": "^0.4.2",
+    "@modelcontextprotocol/sdk": "^1.11.0",
     "@sendgrid/mail": "^7.7.0",
     "archiver": "^7.0.1",
     "async": "^3.2.6",
