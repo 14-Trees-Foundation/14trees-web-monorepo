@@ -351,7 +351,7 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
 }
 
 
-export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+export const sendMailsToSponsors = async ( giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[] ) => {
     const emailData: any = {
         trees: [] as any[],
         user_email: giftCardRequest.user_email,
@@ -406,7 +406,18 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
 
     const statusMessage: string = await sendDashboardMail(templates[0].template_name, emailData, mailIds, ccMailIds, attachments);
 
-}
+    if (statusMessage === '') {
+        await GiftCardsRepository.updateGiftCardRequests(
+            {
+                mail_sent: true,
+                updated_at: new Date()
+            },
+            {
+                id: giftCardRequest.id 
+            }
+        );
+    }
+};
 
 const emailReceiver = async (giftCardRequest: any, emailData: any, eventType: string, template: string, attachCard: boolean, ccMailIds?: string[], testMails?: string[]) => {
     const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
