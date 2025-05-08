@@ -358,6 +358,66 @@ routes.put('/users', donations.updateDonationUser);
  */
 routes.delete('/users/:donation_user_id', donations.deleteDonationUser);
 
+/**
+ * @swagger
+ * /donations/update-album-id:
+ *   post:
+ *     summary: Update album images for a donation
+ *     description: Updates the images in the specified album for a donation.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - name: donation_id
+ *         in: path
+ *         description: ID of the donation
+ *         required: true
+ *         type: integer
+ *         example: 123
+ *       - name: album_id
+ *         in: path
+ *         description: ID of the album to update
+ *         required: true
+ *         type: integer
+ *         example: 456
+ *       - in: body
+ *         name: body
+ *         description: Request body for updating album images
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             images:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["image1.jpg", "image2.jpg"]
+ *     responses:
+ *       200:
+ *         description: Album images updated successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Album images updated successfully"
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.post('/update-album_id/', donations.updateAlbumImagesForDonations);
 
 /**
  * @swagger

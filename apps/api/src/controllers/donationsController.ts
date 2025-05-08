@@ -10,12 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation } from '../models/donation';
-import { Tree } from '../models/tree';
-import { User } from '../models/user';
-import { WhereOptions } from 'sequelize';
-import { EmailTemplate } from '../models/email_template';
-
+import { AlbumRepository } from "../repo/albumRepo";
 /*
     Model - Donation
     CRUD Operations for donations collection
@@ -241,6 +236,47 @@ export const updateDonation = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const updateAlbumImagesForDonations = async (req: Request, res: Response) => {
+    const { donation_id: donationId, album_id: albumId } = req.body;
+    if (!donationId) {
+        res.status(status.bad).send({ message: "Invalid input!" });
+        return;
+    }
+
+    try {
+        let memoryImageUrls: string[] | null = [];
+        if (albumId) {
+            const albums = await AlbumRepository.getAlbums({ id: albumId });
+            if (albums.length === 1) {
+                memoryImageUrls = albums[0].images;
+            }
+        }
+
+        const updateDonationData = {
+            album_id: albumId || null,
+            updated_at: new Date(),
+        }
+
+        await DonationRepository.updateDonation(donationId, updateDonationData);
+
+
+        const updateMemoryImages = {
+            memory_images: memoryImageUrls,
+            updated_at: new Date(),
+        };
+
+        await DonationService.updateTreesForDonation(donationId, updateMemoryImages); // Ensure this function exists
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.error("[ERROR] DonationsController::updateAlbumImagesForDonations:", error);
+        res.status(status.error).json({
+            message: 'Failed to update album images for donation'
+        });
+    }
+}
+
 
 // export const createWorkOrder = async (req: Request, res: Response) => {
 //     const donationId = req.params.donation_id
