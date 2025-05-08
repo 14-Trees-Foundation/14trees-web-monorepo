@@ -42,7 +42,8 @@ import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transactio
 import DuplicateTreeSync from "../models/duplicate_tree_sync";
 import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
-
+import { Supplier } from "../models/suppliers";
+import {Buyer} from "../models/buyers";
 
 class Database {
   public sequelize: Sequelize;
@@ -119,6 +120,8 @@ class Database {
         DuplicateTreeSync,
         ChatMessage,
         MailSub,
+        Supplier,
+        Buyer,
       ]
     });
 
