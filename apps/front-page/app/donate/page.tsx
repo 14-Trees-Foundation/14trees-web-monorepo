@@ -84,7 +84,7 @@ export default function DonatePage() {
   const [donationType, setDonationType] = useState<"adopt" | "donate">("adopt");
   const [donationMethod, setDonationMethod] = useState<"trees" | "amount">("trees");
   const [donationTreeCount, setDonationTreeCount] = useState<number>(1);
-  const [donationAmount, setDonationAmount] = useState<number>(1500);
+  const [donationAmount, setDonationAmount] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   const itemsPerPage = 10;
@@ -794,6 +794,18 @@ export default function DonatePage() {
           setDonationMethod("trees");
           setDonationTreeCount(0);
           setDonationAmount(0);
+          setDedicatedNames([{
+              recipient_name: "",
+              recipient_email: "",
+              recipient_phone: "",
+              assignee_name: "",
+              assignee_email: "",
+              assignee_phone: "",
+              relation: "",
+             trees_count: 1
+           }]);
+    setMultipleNames(false);
+    setIsAssigneeDifferent(false);
         }}
         checked={treeLocation === "adopt"}
       />
@@ -893,6 +905,18 @@ export default function DonatePage() {
               onChange={() => {
                 setDonationMethod("amount");
                 setDonationTreeCount(0);
+                setDedicatedNames([{
+                  recipient_name: "",
+                  recipient_email: "",
+                  recipient_phone: "",
+                  assignee_name: "",
+                  assignee_email: "",
+                  assignee_phone: "",
+                  relation: "",
+                  trees_count: 1
+                }]);
+                setMultipleNames(false);
+                setIsAssigneeDifferent(false);
               }}
             />
             <span>I want to donate</span>
@@ -1382,7 +1406,11 @@ export default function DonatePage() {
                         const mainFormValid = Object.keys(formData).every(key => {
                           if (key === "comments") return true;
                           const value = formData[key as keyof typeof formData];
-                          return !(!value && key !== "phone" && key !== "panNumber");
+                          // Check for mandatory fields
+                          if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
+                            return !!value; 
+                          }
+                          return true;
                         });
                         
                         if (mainFormValid) {
