@@ -53,11 +53,12 @@ interface GiftCardRequestAttributes {
     amount_received: number | null,
     donation_date: Date | null,
     contribution_options: string[] | null,
-    comments: string | null
+    comments: string | null,
+    mail_sent: boolean;  
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments' | 'mail_sent'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -220,6 +221,13 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         allowNull: true,
     })
     comments!: string | null;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false 
+    })
+    mail_sent!: boolean;
 
     @Column({ type: DataType.DATE, allowNull: false })
     gifted_on!: Date;
