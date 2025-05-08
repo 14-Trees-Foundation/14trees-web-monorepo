@@ -45,10 +45,11 @@ interface TreeAttributes {
     deleted_at: Date | null;
     created_at?: Date;
     updated_at?: Date;
+    dashboard_image: string | null;
 };
 
 interface TreeCreationAttributes
-	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name' | 'gifted_to' | 'gifted_by' | 'sponsored_by_user' | 'sponsored_by_group' | 'event_id' | 'memory_images' | 'deleted_at'> {}
+	extends Optional<TreeAttributes, 'id' | 'tags' | 'location' | 'planted_by' | 'mapped_to_user' | 'mapped_to_group' | 'mapped_at' | 'description' | 'assigned_at' | 'assigned_to' | 'user_tree_image' | 'user_card_image' | 'visit_id' | 'donation_id' | 'event_type' | 'gifted_by_name' | 'gifted_to' | 'gifted_by' | 'sponsored_by_user' | 'sponsored_by_group' | 'event_id' | 'memory_images' | 'deleted_at' | 'dashboard_image'> {}
 
 @Table({ tableName: 'trees' })
 class Tree extends Model<TreeAttributes, TreeCreationAttributes>
@@ -190,6 +191,13 @@ implements TreeAttributes {
 
   @Column(DataType.DATE)
   updated_at!: Date;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,  // Can be null until screenshot is captured
+    defaultValue: null
+})
+dashboard_image!: string | null;
 }
 
 

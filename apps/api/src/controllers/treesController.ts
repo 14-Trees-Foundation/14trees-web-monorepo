@@ -8,6 +8,8 @@ import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
 import { Tree } from "../models/tree";
 import { SortOrder } from "../models/common";
+import { UploadFileToS3 } from "./helper/uploadtos3";
+import TreeService from "../facade/treeService";
 
 /*
   Model - Tree
@@ -448,3 +450,32 @@ export const getMappedGiftTreesAnalytics = async (req: Request, res: Response) =
     res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
   }
 }
+
+export const generateTreeScreenshots = async (req: Request, res: Response) => {
+  if (!req.body.treeIds || !Array.isArray(req.body.treeIds)) {
+    return res.status(status.bad).send({ error: "treeIds array required" });
+  }
+
+  try {
+    const results = await Promise.all(
+      req.body.treeIds.map((treeId: number) => { // Explicit type for treeId
+        return TreeService.captureAndUploadScreenshot(treeId);
+      })
+    );
+
+    const successCount = results.filter(r => r.success).length;
+    
+    res.status(status.success).send({
+      success: true,
+      processed: successCount,
+      total: results.length,
+      details: results
+    });
+  } catch (error: any) {
+    console.error("Screenshot processing error:", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: error.message,
+    });
+  }
+};
