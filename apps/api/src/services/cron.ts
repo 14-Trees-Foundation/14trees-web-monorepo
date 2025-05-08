@@ -2,13 +2,29 @@ import cron from 'node-cron';
 import { LogsInfoRepository } from '../repo/logsInfoRepo';
 import sendDiscordMessage from './webhook';
 import PlantTypeTemplateRepository from '../repo/plantTypeTemplateRepo';
+import fs from 'fs';
+import path from 'path';
+import handlebars from 'handlebars';
+import sendMail from '../services/gmail/gmail';
 import { deleteUnwantedSlides } from '../controllers/helper/slides';
 import { sequelize } from '../config/postgreDB';
 import { QueryTypes } from 'sequelize';
 import { PlotPlantTypeRepository } from '../repo/plotPlantTypesRepo';
 import { PlotPlantTypeCreationAttributes } from '../models/plot_plant_type';
+import PlantTypeRepository from '../repo/plantTypeRepo';
 import { TreesSnapshotRepository } from '../repo/treesSnapshotsRepo';
 import { GoogleSpreadsheet } from './google';
+
+function registerHandlebarsHelpers() {
+    handlebars.registerHelper('if_eq', function (this: Record<string, any>, a: any, b: any, opts: any) {
+      return a === b ? opts.fn(this) : opts.inverse(this);
+    });
+  
+    handlebars.registerHelper('formatDate', function (date: any) {
+      return date?.toLocaleString() || 'N/A';
+    });
+  }
+  
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -173,5 +189,60 @@ export function updateTheAuditReport() {
         } catch (error) {
             console.log('[ERROR]', 'CRON::updateTheAuditReport', error);
         }
+    });
+}
+
+export function setupDailyPlantTypeReport() {
+    registerHandlebarsHelpers();
+    cron.schedule('0 8 * * *', async () => {
+      try {
+        
+        const modifiedPlants = await PlantTypeRepository.getRecentlyModifiedPlantTypes();
+        
+        if (modifiedPlants.length === 0) {
+          return;
+        }
+
+
+        // Read the HTML template
+        const templatePath = path.join(__dirname, './gmail/templates/plantTypeUpdates.html');
+        const templateSource = fs.readFileSync(templatePath, 'utf8');
+        
+        // Compile the template
+        const template = handlebars.compile(templateSource);
+        
+        // Prepare data for the template
+        const templateData = {
+            count: modifiedPlants.length,
+            plants: modifiedPlants.map(plant => ({
+              id: plant.id,
+              name: plant.name || 'N/A',
+              english_name: plant.english_name || 'N/A',
+              common_name_in_english: plant.common_name_in_english || 'N/A',
+              common_name_in_marathi: plant.common_name_in_marathi || 'N/A',
+              scientific_name: plant.scientific_name || 'N/A',
+              known_as: plant.known_as || 'N/A',
+              category: plant.category || 'N/A',
+              habit: plant.habit || 'N/A',
+              use: plant.use || 'N/A',
+              family: plant.family || 'N/A',
+              updated_at: plant.updated_at // Raw date, formatted by helper
+            })),
+            currentDate: new Date()
+          };
+
+        // Generate HTML
+        const htmlEmail = template(templateData);
+  
+        await sendMail({
+          to: 'admin@14trees.org',
+          subject: `Daily Plant Report: ${modifiedPlants.length} Modifications`,
+          html: htmlEmail
+        });
+  
+        console.log('[Cron] Report email sent successfully.');
+      } catch (error) {
+        console.error('[Cron] Failed to send report:', error);
+      }
     });
 }
