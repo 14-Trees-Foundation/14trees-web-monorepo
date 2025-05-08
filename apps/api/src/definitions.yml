@@ -147,7 +147,7 @@ definitions:
         example: "Public"
       request_type:
         type: string
-        example: "Cards Request"
+        example: "Gift Cards"
       sponsorship_type:
         type: string
         example: "Donation Received"

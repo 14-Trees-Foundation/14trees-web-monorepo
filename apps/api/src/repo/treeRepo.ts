@@ -385,12 +385,12 @@ class TreeRepository {
     return trees.map(tree => tree.id);
   }
 
-  public static async mapTreesToUserAndGroup(userId: number, groupId: number | null, treeIds: number[], donation_id?: number | null) {
+  public static async mapTreesToUserAndGroup(userId: number, sponsorId: number | null, groupId: number | null, treeIds: number[], donation_id?: number | null) {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
-      sponsored_by_user: userId,
-      sponsored_by_group: groupId,
+      sponsored_by_user: sponsorId,
+      sponsored_by_group: sponsorId ? groupId : null,
       donation_id: donation_id,
       mapped_at: new Date(),
       updated_at: new Date(),
@@ -404,12 +404,12 @@ class TreeRepository {
     });
   }
 
-  public static async mapTreesInPlotToUserAndGroup(userId: number, groupId: number | null, plotIds: number[], count: number, bookNonGiftable: boolean = false, diversify: boolean = false, booAllHabitats: boolean = false, donation_id?: number | null) {
+  public static async mapTreesInPlotToUserAndGroup(userId: number, sponsorId: number | null, groupId: number | null, plotIds: number[], count: number, bookNonGiftable: boolean = false, diversify: boolean = false, booAllHabitats: boolean = false, donation_id?: number | null) {
     const updateConfig: any = {
       mapped_to_user: userId,
       mapped_to_group: groupId,
-      sponsored_by_user: userId,
-      sponsored_by_group: groupId,
+      sponsored_by_user: sponsorId,
+      sponsored_by_group: sponsorId ? groupId : null,
       donation_id: donation_id,
       mapped_at: new Date(),
       updated_at: new Date(),

@@ -9,7 +9,7 @@ export const GiftCardRequestStatus = {
 }
 
 export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETAILS'
-export type GiftCardRequestType = 'Cards Request' | 'Normal Assignment' | 'Test' | 'Promotion'
+export type GiftCardRequestType = 'Gift Cards' | 'Normal Assignment' | 'Visit' | 'Test' | 'Promotion'
 export type SponsorshipType = 'Unverified' | 'Pledged' | 'Promotional' | 'Unsponsored Visit' | 'Donation Received'
 
 export type GiftMessages = {
@@ -23,6 +23,7 @@ interface GiftCardRequestAttributes {
     id: number;
     request_id: string;
     user_id: number;
+    sponsor_id: number | null;
     group_id: number | null;
     no_of_cards: number;
     is_active: boolean;
@@ -44,6 +45,7 @@ interface GiftCardRequestAttributes {
     notes: string | null;
     album_id: number | null;
     payment_id: number | null;
+    visit_id: number | null;
     tags: string[] | null;
     gifted_on: Date;
     created_by: number;
@@ -90,6 +92,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         allowNull: false,
     })
     user_id!: number;
+
+    @Column({
+        type: DataType.NUMBER,
+    })
+    sponsor_id!: number | null;
 
     @Column({
         type: DataType.NUMBER,
@@ -177,6 +184,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.INTEGER,
     })
     album_id!: number;
+
+    @Column({
+        type: DataType.INTEGER,
+    })
+    visit_id!: number | null;
 
     @Column({
         type: DataType.INTEGER,

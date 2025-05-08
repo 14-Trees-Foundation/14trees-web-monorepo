@@ -152,6 +152,7 @@ async function processDonationData(data: any, createdBy: number): Promise<number
 
     const request: GiftCardRequestCreationAttributes = {
         user_id: user.id,
+        sponsor_id: user.id,
         group_id: null,
         no_of_cards: parseInt(treesCountStr),
         is_active: false,
@@ -174,6 +175,7 @@ async function processDonationData(data: any, createdBy: number): Promise<number
         donation_receipt_number: donationReceiptNumber,
         amount_received: amountReceived,
         payment_id: null,
+        visit_id: null,
         validation_errors: ['MISSING_USER_DETAILS'],
         tags: ["Backlog"],
     }
