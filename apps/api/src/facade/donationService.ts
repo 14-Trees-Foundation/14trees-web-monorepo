@@ -131,7 +131,7 @@ export class DonationService {
         if (alreadyReserved + treeIds.length > (donation.trees_count || 0))
             throw new Error("Can not reserve more trees than originally requested.")
 
-        await TreeRepository.mapTreesToUserAndGroup(donation.user_id, null, treeIds, donationId);
+        await TreeRepository.mapTreesToUserAndGroup(donation.user_id, donation.user_id, null, treeIds, donationId);
     }
 
     public static async getDonationReservationStats(donationId: number): Promise<{
