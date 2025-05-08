@@ -14,6 +14,9 @@ import { apiClient } from "~/api/apiClient";
 import CsvUpload from "components/CsvUpload";
 import { UploadIcon } from "lucide-react";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
+import { Group } from "~/types/group";
+import { AutocompleteWithPagination } from "components/AutoComplete";
+import ImagePicker from "components/ImagePicker";
 
 declare global {
   interface Window {
@@ -84,6 +87,12 @@ export default function DonatePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [donationId, setDonationId] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [logo, setLogo] = useState<File | string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [groupSearchQuery, setGroupSearchQuery] = useState("");
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [SponsorshipType, setSponsorshipType] = useState<string>("personal");
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -124,6 +133,20 @@ export default function DonatePage() {
       return newErrors;
     });
   }, [pledgeType]);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+        if (groupSearchQuery.length >= 3) {
+            const filters = [{ columnField: 'name', value: groupSearchQuery, operatorValue: 'contains' }];
+            const fetchedGroups = await apiClient.getGroups(0, 20, filters);
+            setGroups(fetchedGroups.results);
+        } else {
+            setGroups([]); // Clear the list if the query is less than 3 characters
+        }
+    };
+
+    fetchGroups();
+}, [groupSearchQuery]);
 
   // Animation variants (existing unchanged)
   const containerVariants = {
@@ -455,6 +478,8 @@ export default function DonatePage() {
         sponsor_name: formData.fullName,
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
+        sponsorship_type: SponsorshipType,
+        group_id: selectedGroup ? selectedGroup.id : null,
         category: treeLocation === "foundation" ? "Foundation" : "Public",
         grove: groveType === "Other" ? otherGroveType : groveType,
         trees_count: pledgeType === "trees" ? parseInt(formData.numberOfTrees) : null,
@@ -737,6 +762,46 @@ export default function DonatePage() {
     }));
   };
 
+  const handleManualImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newImagePreviews = [...imagePreviews];
+        newImagePreviews[index] = reader.result as string; // Set the preview URL
+        setImagePreviews(newImagePreviews);
+      };
+      reader.readAsDataURL(file);
+  
+      try {
+        const imageUrl = await apiClient.uploadUserImage(file);
+        setDedicatedNames(prev => prev.map((item, i) => 
+          i === index ? { ...item, image_url: imageUrl } : item
+        ));
+      } catch (error) {
+        console.error('Image upload failed:', error);
+      }
+    }
+  };
+
+  const handleImageRemove = (index: number) => {
+    setImagePreviews(prev => {
+      const newPreviews = [...prev];
+      newPreviews[index] = ""; // Clear the preview for the specific index
+      return newPreviews;
+    });
+    
+    setDedicatedNames(prev => {
+      const updatedNames = [...prev];
+      updatedNames[index].image_url = undefined; // Clear the image URL for the specific recipient
+      return updatedNames;
+    });
+  };
+
+  const onLogoChange = (newLogo: File | null) => {
+    setLogo(newLogo);
+};
+
   // Add this new component before your return statement
   const SuccessDialog = () => {
     const [additionalInvolvement, setAdditionalInvolvement] = useState<string[]>([]);
@@ -970,6 +1035,35 @@ export default function DonatePage() {
                         <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                       )}
                     </div>
+
+                    <div>
+                      <label className="mb-2 block text-lg font-light">Corporate Organization</label>
+                      <AutocompleteWithPagination
+                        label="Enter corporate name to search"
+                        value={selectedGroup}
+                        options={groups} // Ensure you have the groups data available
+                        getOptionLabel={group => group.name}
+                        onChange={(event, value: Group | null) => {
+                          setSelectedGroup(value);
+                          setFormData(prevState => ({ ...prevState, type: value ? String(value.id) : "" }));
+                          if (value) {
+                            setSponsorshipType('corporate'); // Set sponsorship type to corporate if a corporate name is selected
+                          } else {
+                            setSponsorshipType('personal'); // Default to personal if no corporate name is selected
+                          }
+                        }}
+                        onInputChange={(event) => { setGroupSearchQuery(event.target.value) }}
+                        fullWidth
+                        size="medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-lg font-light">Upload Corporate Logo *</label>
+                      <ImagePicker
+                          image={logo}
+                          onChange={onLogoChange}
+                         />
+                    </div>
                   </div>
                 </div>
 
@@ -1181,6 +1275,9 @@ export default function DonatePage() {
                             errors={errors}
                             canRemove={index > 0}
                             onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
+                            onImageUpload={(e) => handleManualImageUpload(e, index)}
+                           imagePreview={imagePreviews[index]} // Pass the correct preview
+                           onImageRemove={() => handleImageRemove(index)}
                           />
                         ))}
                         <button
@@ -1407,6 +1504,35 @@ export default function DonatePage() {
                           {errors['dedicatedPhone-0'] && (
                             <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
                           )}
+                          <label className="block text-sm font-medium mb-1">
+                                Upload Recipient Image
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleManualImageUpload(e, 0)} // Use the same handler
+                            className="hidden"
+                            id={`imageUpload-${dedicatedNames[0].id}`}
+                          />
+                          <label
+                             htmlFor={`imageUpload-${dedicatedNames[0].id}`}
+                              className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
+                            >
+                            <UploadIcon className="w-4 h-4" />
+                               Select Image
+                          </label>
+                            {imagePreviews[0] && (
+                             <div className="mt-2 flex items-center">
+                               <img src={imagePreviews[0]} alt="Preview" className="h-20 w-20 rounded-md object-cover" />
+                                <button
+                                      type="button"
+                                      onClick={() => handleImageRemove(0)} // Ensure this function is defined
+                                      className="ml-2 text-red-500 hover:text-red-700"
+                                    >
+                                       Remove
+                                </button>
+                              </div>
+                          )}                        
                         </div>
                         <div className="mt-6">
                           <label className="flex items-center space-x-3 mb-4">
