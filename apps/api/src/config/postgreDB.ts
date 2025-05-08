@@ -42,7 +42,7 @@ import { GiftRedeemTransaction, GRTCard } from "../models/gift_redeem_transactio
 import DuplicateTreeSync from "../models/duplicate_tree_sync";
 import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
-import { PlotPlantTypeRepository } from "../repo/plotPlantTypesRepo";
+import { PlotPlantType } from "../models/plot_plant_type";
 
 
 class Database {
@@ -108,7 +108,7 @@ class Database {
         GiftRequestUser,
         PlantTypeCardTemplate,
         TreeCountAggregation,
-        PlotPlantTypeRepository,
+        PlotPlantType,
         Tag,
         UserRelation,
         EmailTemplate,
