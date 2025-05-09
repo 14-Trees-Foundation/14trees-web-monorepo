@@ -75,9 +75,7 @@ export class DonationService {
             category: category,
             donation_type,
             donation_method: donation_type === 'donate' ? donation_method : null,
-            amount_donated: donation_type === 'donate' && donation_method === 'amount'
-                ? amount_donated
-                : null,
+            amount_donated: amount_donated,
             visit_date: donation_type === 'adopt' ? visit_date : null,
             grove: grove || '',
             payment_id: payment_id || null,
