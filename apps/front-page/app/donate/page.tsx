@@ -822,7 +822,7 @@ export default function DonatePage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date of visit: <span className="text-gray-500">- approx date / month is fine if not remembered</span>
+              Date of visit: <span className="text-gray-500">- approx date / month is fine if you don't remember</span>
             </label>
             <input
               type="date"
