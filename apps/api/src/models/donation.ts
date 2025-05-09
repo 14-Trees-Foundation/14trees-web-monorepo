@@ -143,19 +143,19 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
 
   @Column({
     type: DataType.ENUM('trees', 'amount'),
-    allowNull: true // Only required when donation_type='donate'
+    allowNull: true
   })
   donation_method!: DonationMethod | null;
 
   @Column({
     type: DataType.DECIMAL(12, 2),
-    allowNull: true // Only required when donation_method='amount'
+    allowNull: true 
   })
   amount_donated!: number | null;
 
   @Column({
     type: DataType.DATE,
-    allowNull: true // Only required when donation_type='adopt'
+    allowNull: true 
   })
   visit_date!: Date | null;
 }
