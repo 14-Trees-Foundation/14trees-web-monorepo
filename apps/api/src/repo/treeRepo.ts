@@ -606,6 +606,7 @@ class TreeRepository {
         p."name" AS plot, p.boundaries,
         au."name" AS assigned_to,
         au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at,
+        t.visit_id,
         array_agg(distinct(vi.image_url)) AS visit_images,
         json_agg(ts) AS tree_audits
       FROM "14trees_2".trees t
