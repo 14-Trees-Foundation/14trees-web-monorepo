@@ -55,7 +55,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
         let validatedAmount = 0;
         const totalAmount =
             (giftCardRequest.category === 'Public'
-                ? giftCardRequest.request_type === 'Normal Assignment'
+                ? giftCardRequest.request_type === 'Normal Assignment' || giftCardRequest.request_type === 'Visit'
                     ? 1500
                     : 2000
                 : 3000
@@ -187,7 +187,10 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         if (changed) await giftCard.save();
 
         const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
-        res.status(status.success).json(giftCards.results[0]);
+        res.status(status.success).json({
+            ...(giftCards.results[0]),
+            presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
+        });
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
@@ -353,7 +356,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         let validatedAmount = 0;
         const totalAmount =
             (giftCardRequest.category === 'Public'
-                ? giftCardRequest.request_type === 'Normal Assignment'
+                ? giftCardRequest.request_type === 'Normal Assignment' || giftCardRequest.request_type === 'Visit'
                     ? 1500
                     : 2000
                 : 3000
@@ -760,7 +763,10 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
         giftCardRequest.updated_at = new Date();
         const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
-        res.status(status.success).send(updated);
+        res.status(status.success).json({
+            ...updated,
+            presentation_ids: (updated as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
+        });
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::upsertGiftRequestUsers", error);
@@ -2077,7 +2083,7 @@ export const generateFundRequest = async (req: Request, res: Response) => {
 
         const perTreeCost =
             giftCardRequest.category === 'Public'
-                ? giftCardRequest.request_type === 'Normal Assignment'
+                ? giftCardRequest.request_type === 'Normal Assignment' || giftCardRequest.request_type === 'Visit'
                     ? 1500
                     : 2000
                 : 3000
