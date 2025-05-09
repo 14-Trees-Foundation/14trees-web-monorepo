@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Script from 'next/script';
 import Image from 'next/image';
 import { Button } from 'ui/components/button';
 
@@ -54,6 +53,7 @@ export const SummaryPaymentPage = ({
   donationAmount,
   dedicatedNames,
   isAboveLimit,
+  razorpayLoaded,
   rpPaymentSuccess,
   isProcessing,
   isLoading,
@@ -61,7 +61,6 @@ export const SummaryPaymentPage = ({
   handleRazorpayPayment,
   handleSubmit,
 }: SummaryPaymentProps) => {
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
 
   const handleCompleteDonation = (e: React.MouseEvent) => {
@@ -166,12 +165,6 @@ export const SummaryPaymentPage = ({
 
       {/* Payment Section */}
       <div className="space-y-6">
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="lazyOnload"
-          onLoad={() => setRazorpayLoaded(true)}
-        />
-
         {!isAboveLimit && !rpPaymentSuccess && (
           <div className="flex justify-center">
             <Button
