@@ -129,7 +129,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
     if (requestType === 'Visit') {
         const visit = await VisitRepository.addVisit({
             visit_name: eventName.trim() ? eventName.trim() : 'Visit on ' + new Date().toDateString(),
-            visit_date: giftedOn ? giftedOn : new Date(), 
+            visit_date: giftedOn ? giftedOn : new Date(),
             visit_type: groupId ? 'corporate' : 'family',
             created_at: new Date(),
             updated_at: new Date(),
@@ -292,6 +292,12 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
     else giftCardRequest.validation_errors = req.body.validation_errors?.split(',') ?? null
     if (req.body.tags) giftCardRequest.tags = req.body.tags?.split(',') ?? null;
 
+    if (!giftCardRequest.sponsor_id && giftCardRequest.request_type !== 'Visit') {
+        return res.status(status.bad).send({
+            message: "Please provid sponsor details."
+        })
+    }
+
     try {
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequest.id }]);
         if (resp.results.length === 0) {
@@ -303,6 +309,18 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         const originalRequest = resp.results[0];
+
+        if (!originalRequest.visit_id && giftCardRequest.request_type === 'Visit') {
+            const visit = await VisitRepository.addVisit({
+                visit_name: giftCardRequest.event_name?.trim() ? giftCardRequest.event_name.trim() : 'Visit on ' + new Date().toDateString(),
+                visit_date: giftCardRequest.gifted_on ? giftCardRequest.gifted_on : new Date(),
+                visit_type: giftCardRequest.group_id ? 'corporate' : 'family',
+                created_at: new Date(),
+                updated_at: new Date(),
+                site_id: 1197, // TBD site
+            })
+            giftCardRequest.visit_id = visit.id;
+        }
 
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
         if (files.logo && files.logo.length > 0) {
@@ -318,6 +336,14 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         if (giftCardRequest.request_type !== 'Visit') {
             giftCardRequest.visit_id = null;
+        }
+
+        if (!giftCardRequest.sponsor_id) {
+            giftCardRequest.sponsor_id = null;
+        }
+
+        if (giftCardRequest.request_type === 'Visit' || giftCardRequest.request_type === 'Normal Assignment') {
+            giftCardRequest.planted_by = null;
         }
 
         if (!giftCardRequest.validation_errors || giftCardRequest.validation_errors.length === 0) giftCardRequest.validation_errors = null;
@@ -383,6 +409,10 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
         if (updatedGiftCardRequest.event_type !== originalRequest.event_type) {
             treeUpdateRequest = { ...treeUpdateRequest, event_type: updatedGiftCardRequest.event_type }
+        }
+
+        if (updatedGiftCardRequest.request_type === 'Visit' || updatedGiftCardRequest.request_type === 'Normal Assignment') {
+            treeUpdateRequest = { ...treeUpdateRequest, gifted_by: null, gifted_by_name: null }
         }
 
         if (Object.keys(treeUpdateRequest).length !== 0) {
@@ -1576,11 +1606,11 @@ const redeemSingleGiftCard = async (giftCard: GiftCard, userId: number, eventTyp
         return;
     }
 
-        giftCard.assigned_to = userId;
-        giftCard.gifted_to = userId;
-        giftCard.gift_request_user_id = giftRequestUser ? giftRequestUser.id : null;
-        giftCard.updated_at = new Date();
-        await giftCard.save();
+    giftCard.assigned_to = userId;
+    giftCard.gifted_to = userId;
+    giftCard.gift_request_user_id = giftRequestUser ? giftRequestUser.id : null;
+    giftCard.updated_at = new Date();
+    await giftCard.save();
 }
 
 export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
@@ -1674,7 +1704,7 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
             logo_message: logoMessage,
             event_type: eventType,
         });
-        
+
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::redeemMultipleGiftCard", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
