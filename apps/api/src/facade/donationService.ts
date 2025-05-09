@@ -10,6 +10,7 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { sendDashboardMail } from '../services/gmail/gmail';
 import { User } from "../models/user";
+import { PaymentRepository } from "../repo/paymentsRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -29,42 +30,59 @@ interface CreateDonationRequest {
     sponsor_phone?: string | null;
     payment_id: number | null;
     category: LandCategory;
-    grove: string;
-    trees_count: number | null,
-    pledged_area_acres: number | null,
+    grove: string | null; // Updated to match model
+    trees_count: number | null;
+    pledged_area_acres: number | null;
     continution_options: ContributionOption[],
-    comments: string | null,
+    comments: string | null;
+    amount_donated: number | null;
+    visit_date: Date | null;
+    donation_type: 'adopt' | 'donate';
+    donation_method?: 'trees' | 'amount';
 }
 
 export class DonationService {
 
     public static async createDonation(data: CreateDonationRequest): Promise<Donation> {
         const {
-            sponsor_name, sponsor_email, sponsor_phone, grove,
-            trees_count, pledged_area_acres, category, payment_id, continution_options, comments
+            sponsor_name,
+            sponsor_email,
+            sponsor_phone,
+            grove,
+            trees_count,
+            pledged_area_acres,
+            category,
+            visit_date,
+            amount_donated,
+            payment_id,
+            continution_options,
+            comments,
+            donation_type,
+            donation_method,
         } = data;
-
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
             phone: sponsor_phone
         }).catch((error: any) => {
-            console.error("DonationService::createDonation", error)
-            throw new Error("Failed to save sponsor details in the system!")
-        })
-
+            console.error("DonationService::createDonation", error);
+            throw new Error("Failed to save sponsor details in the system!");
+        });
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
             trees_count: trees_count || 0,
-            pledged_area_acres: pledged_area_acres,
+            pledged_area_acres: pledged_area_acres || null,
             category: category,
-            grove: grove,
-            payment_id: payment_id,
-            created_by: sponsorUser.id, // For now setting created by = sponsor
-            contribution_options: continution_options,
-            comments: comments,
-        }
-
+            donation_type,
+            donation_method: donation_type === 'donate' ? donation_method : null,
+            amount_donated: amount_donated,
+            visit_date: donation_type === 'adopt' ? visit_date : null,
+            grove: grove || '',
+            payment_id: payment_id || null,
+            created_by: sponsorUser.id,
+            contribution_options: continution_options || null,
+            comments: comments || null
+        };
         const donation = await DonationRepository.createdDonation(
             request
         ).catch((error: any) => {
@@ -126,7 +144,7 @@ export class DonationService {
             const reservedCount = await TreeRepository.treesCount({
                 donation_id: donationId
             });
-    
+
             return {
                 total_requested: donation.trees_count || 0,
                 already_reserved: reservedCount,
@@ -172,7 +190,7 @@ export class DonationService {
             if (donation_id) {
                 const donation = await DonationRepository.getDonation(donation_id);
                 const alreadyReserved = await TreeRepository.treesCount({ donation_id });
-    
+
                 if (alreadyReserved + finalTreeIds.length > (donation.trees_count || 0)) {
                     throw new Error("Cannot reserve more trees than originally requested.");
                 }
@@ -405,7 +423,7 @@ export class DonationService {
         }
 
         await TreeRepository.updateTrees(
-            updateRequest, 
+            updateRequest,
             { id: { [Op.in]: treeIds } }
         ).catch(error => {
             console.log("[ERROR]", "DonationService::unassignTreesForTreeIds", error);
@@ -628,18 +646,29 @@ export class DonationService {
         ccMails?: string[]
     ): Promise<void> {
         try {
+
+            let panNumber = ""
+            if (donation.payment_id) {
+                const payment = await PaymentRepository.getPayment(donation.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
+
             const emailData = {
-                user_name: sponsorUser.name,
-                user_email: sponsorUser.email,
-                id: donation.id,
-                category: donation.category,
-                grove: donation.grove,
-                grove_type_other: donation.grove_type_other,
-                trees_count: donation.trees_count,
-                contribution_options: donation.contribution_options?.join(', ') || '',
-                names_for_plantation: donation.names_for_plantation,
-                comments: donation.comments,
-                created_at: new Date(donation.created_at).toLocaleDateString(),
+                userDetails: {
+                    name: sponsorUser.name,
+                    email: sponsorUser.email,
+                    phone: sponsorUser.phone,
+                    panNumber: panNumber,
+                },
+                donationDetails: {
+                    amount: donation.amount_donated,
+                    treesCount: donation.trees_count,
+                    donationType: donation.donation_type === 'donate'
+                        ? donation.trees_count
+                            ? 'trees'
+                            : 'amount'
+                        : 'adopted'
+                }
             };
 
             const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
@@ -648,8 +677,7 @@ export class DonationService {
                 [sponsorUser.email];
 
             // Use template directly instead of querying from repository
-            const templateName = 'donor-sum.html';
-
+            const templateName = 'donor-ack.html';
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
