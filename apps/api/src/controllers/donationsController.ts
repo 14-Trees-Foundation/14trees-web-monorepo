@@ -147,7 +147,7 @@ export const createDonation = async (req: Request, res: Response) => {
         payment_id,
         category,
         grove,
-        continution_options: contribution_options,
+        continution_options: contribution_options || [],
         comments,
         donation_type,
         donation_method,
