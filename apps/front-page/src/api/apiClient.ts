@@ -122,6 +122,10 @@ class ApiClient {
     created_by: string;
     trees_count?: number;
     pledged_area_acres?: number;
+    donation_type?: string; // "adopt" or "donate"
+  donation_method?: string; // "trees" or "amount"
+  visit_date?: string; // Required for adoptions
+  amount_donated?: number; // Required for monetary donations
     [key: string]: any; // For additional fields
   }): Promise<any> {
     try {
@@ -253,6 +257,20 @@ class ApiClient {
     return presignedUrl.split('?')[0];
   }
 
+  async serveUserQuery(message: string, history: any[]): Promise<{output: string}> {
+    try {
+        const response = await this.api.post<{output: string}>(`/gift-cards/gen-ai`, { message, history }, {
+            headers: {
+                "content-type": "application/json",
+            }
+        });
+        return response.data;
+    } catch (error: any) {
+        if (error.response) {
+            throw new Error(error.response.data.message);
+        }
+        throw new Error('Failed to connect with our AI bot!');
+    }
+  }
 }
-
 export const apiClient = new ApiClient();
