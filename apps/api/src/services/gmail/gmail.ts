@@ -53,6 +53,10 @@ interface MailOptions {
   attachments?: { filename: string; path: string }[];
 }
 
+handlebars.registerHelper('eq', function (a, b) {
+  return a === b;
+});
+
 const getHtmlTemplate = (templateName: string, emailData: any) => {
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();

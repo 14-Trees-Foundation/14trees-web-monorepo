@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Thank You for Your Donation</title>
 </head>
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; color: #333;">
@@ -14,18 +14,58 @@
     </tr>
     <tr>
       <td style="padding: 20px;">
-        <p>Dear <strong>{{user_name}}</strong>,</p>
-        <p>We are truly grateful for your generous donation of {{#if is_pledged}} planting <strong>{{pledged}} trees</strong> {{else}} supporting the restoration of <strong>{{pledged_area}} acres</strong> of forested land. {{/if}} Your contribution is making a meaningful impact on our mission to create greener, healthier communities.</p>
-        <h3 style="color: #4CAF50;">Details of Your Donation</h3>
+        <p>Dear <strong>{{userDetails.name}}</strong>,</p>
+        <p>We sincerely appreciate your donation of <strong>₹{{donationDetails.amount}}</strong>.</p>
+
+        <!-- Donation type-specific message -->
+        {{#if (eq donationDetails.donationType "adopted")}}
+          <p>Thank you for adopting <strong>{{donationDetails.treesCount}} trees</strong>. Your support ensures the continued care and survival of these already planted trees.</p>
+        {{/if}}
+
+        {{#if (eq donationDetails.donationType "trees")}}
+          <p>With your generous donation, we will plant <strong>{{donationDetails.treesCount}} new trees</strong> in regions that need them most. You're directly contributing to reforestation!</p>
+        {{/if}}
+
+        {{#if (eq donationDetails.donationType "amount")}}
+          <p>Your contribution is helping us with our broader reforestation and ecological restoration efforts. Every rupee helps us reach more land and plant more green.</p>
+        {{/if}}
+
+        <h3 style="color: #4CAF50;">Your Details</h3>
         <ul>
-          <li><strong>Land Type:</strong> {{category}}</li>
-          <li><strong>Grove:</strong> {{#if is_grove}} {{grove}} {{else}} Not specified {{/if}}</li>
-          <li><strong>Occasion/Event:</strong> {{#if is_event_name}} {{event_name}} {{else}} Not specified {{/if}}</li>
-          <li><strong>Alternate email:</strong> {{#if is_alternate_email}} {{alternate_email}} {{else}} Not specified {{/if}}</li>
+          <li><strong>Email:</strong> {{userDetails.email}}</li>
+          <li><strong>Phone:</strong> {{userDetails.phone}}</li>
+          <li><strong>PAN Number:</strong> {{userDetails.panNumber}}</li>
         </ul>
-        <p>Your support helps us work toward creating a sustainable future by enhancing green cover in the areas that need it the most. Every tree planted brings us closer to mitigating climate change and fostering biodiversity.</p>
-        <p>Should you have any questions, or if there's any additional information you'd like to share with us, please don't hesitate to reach out to us.</p>
-        <p>Once again, thank you for your support in helping us grow a greener tomorrow.</p>
+
+        {{#if trees.length}}
+        <h3 style="color: #4CAF50;">Tree Details</h3>
+        <table width="100%" cellpadding="5" cellspacing="0" border="1" style="border-collapse: collapse; border: 1px solid #ccc;">
+          <thead style="background-color: #f1f1f1;">
+            <tr>
+              <th>Sapling ID</th>
+              <th>Plant Type</th>
+              <th>Recipient</th>
+              <th>Assignee</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each trees}}
+            <tr>
+              <td>{{saplingId}}</td>
+              <td>{{plantType}}</td>
+              <td>{{recipientName}}</td>
+              <td>{{assigneeName}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+        {{/if}}
+
+        <p>Your support helps us move toward a greener and healthier future. Every tree you help support is a step toward combating climate change and promoting biodiversity.</p>
+
+        <p>If you have any questions, feel free to reach out to us anytime.</p>
+
+        <p>Thank you once again for your generous support!</p>
       </td>
     </tr>
     <tr>

@@ -75,10 +75,10 @@ export class GiftCardsRepository {
                     ELSE 0
                 END) AS assigned,
                 CASE
-                    WHEN gcr.category = 'Foundation'
+                    WHEN gcr.category = 'Public'
                     THEN (
                         CASE 
-                            WHEN gcr.request_type = 'Normal Assignment'
+                            WHEN gcr.request_type = 'Normal Assignment' OR gcr.request_type = 'Visit'
                             THEN 1500
                             ELSE 2000
                         END
@@ -140,7 +140,7 @@ export class GiftCardsRepository {
               COUNT(id) as total_gift_requests,
               SUM(no_of_cards) as total_gifted_trees
             FROM "14trees_2".gift_card_requests
-            WHERE request_type = 'Cards Request'
+            WHERE request_type = 'Gift Cards'
         `;
         const result = await sequelize.query(query, { type: QueryTypes.SELECT });
         return result[0] as {
