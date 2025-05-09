@@ -29,42 +29,61 @@ interface CreateDonationRequest {
     sponsor_phone?: string | null;
     payment_id: number | null;
     category: LandCategory;
-    grove: string;
-    trees_count: number | null,
-    pledged_area_acres: number | null,
+    grove: string | null; // Updated to match model
+    trees_count: number | null;
+    pledged_area_acres: number | null;
     continution_options: ContributionOption[],
-    comments: string | null,
+    comments: string | null;
+    amount_donated: number | null;
+    visit_date: Date | null;
+    donation_type: 'adopt' | 'donate';
+    donation_method?: 'trees' | 'amount'; 
 }
 
 export class DonationService {
 
     public static async createDonation(data: CreateDonationRequest): Promise<Donation> {
         const {
-            sponsor_name, sponsor_email, sponsor_phone, grove,
-            trees_count, pledged_area_acres, category, payment_id, continution_options, comments
+            sponsor_name, 
+            sponsor_email, 
+            sponsor_phone, 
+            grove,
+            trees_count, 
+            pledged_area_acres, 
+            category,
+            visit_date,
+            amount_donated,
+            payment_id, 
+            continution_options,
+            comments,
+            donation_type,
+            donation_method,
         } = data;
-
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
             phone: sponsor_phone
         }).catch((error: any) => {
-            console.error("DonationService::createDonation", error)
-            throw new Error("Failed to save sponsor details in the system!")
-        })
-
+            console.error("DonationService::createDonation", error);
+            throw new Error("Failed to save sponsor details in the system!");
+        });
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
             trees_count: trees_count || 0,
-            pledged_area_acres: pledged_area_acres,
+            pledged_area_acres: pledged_area_acres || null,
             category: category,
-            grove: grove,
-            payment_id: payment_id,
-            created_by: sponsorUser.id, // For now setting created by = sponsor
-            contribution_options: continution_options,
-            comments: comments,
-        }
-
+            donation_type,
+            donation_method: donation_type === 'donate' ? donation_method : null,
+            amount_donated: donation_type === 'donate' && donation_method === 'amount' 
+                ? amount_donated 
+                : null,
+            visit_date: donation_type === 'adopt' ? visit_date : null,
+            grove: grove || '',
+            payment_id: payment_id || null,
+            created_by: sponsorUser.id,
+            contribution_options: continution_options || null,
+            comments: comments || null
+        };
         const donation = await DonationRepository.createdDonation(
             request
         ).catch((error: any) => {

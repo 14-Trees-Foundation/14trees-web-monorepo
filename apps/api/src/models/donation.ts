@@ -4,10 +4,13 @@ import { Optional } from 'sequelize';
 import { LandCategory } from './common';
 
 export type ContributionOption = 'Planning visit' | 'CSR' | 'Volunteer' | 'Share';
+export type DonationType = 'adopt' | 'donate';
+export type DonationMethod = 'trees' | 'amount';
 export const ContributionOption_VISIT: ContributionOption = 'Planning visit';
 export const ContributionOption_CSR: ContributionOption = 'CSR';
 export const ContributionOption_VOLUNTEER: ContributionOption = 'Volunteer';
 export const ContributionOption_SHARE: ContributionOption = 'Share';
+
 
 
 interface DonationAttributes {
@@ -23,12 +26,16 @@ interface DonationAttributes {
   names_for_plantation: string | null;
   comments: string | null;
   created_by: number;
+  amount_donated: number | null;
+  visit_date: Date | null; 
   created_at: Date;
   updated_at: Date;
   tags: string[] | null;
+  donation_type: DonationType;
+  donation_method: DonationMethod | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' |  'amount_donated' | 'visit_date'| 'donation_method'> { }
 
 @Table({ 
     tableName: 'donations',
@@ -70,7 +77,7 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
 
   @Column({ 
     type: DataType.STRING,
-    allowNull: true
+    allowNull: true 
   })
   grove_type_other!: string | null;
 
@@ -127,6 +134,30 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: true
   })
   tags!: string[] | null;
+
+  @Column({
+    type: DataType.ENUM('adopt', 'donate'),
+    allowNull: false
+  })
+  donation_type!: DonationType;
+
+  @Column({
+    type: DataType.ENUM('trees', 'amount'),
+    allowNull: true // Only required when donation_type='donate'
+  })
+  donation_method!: DonationMethod | null;
+
+  @Column({
+    type: DataType.DECIMAL(12, 2),
+    allowNull: true // Only required when donation_method='amount'
+  })
+  amount_donated!: number | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true // Only required when donation_type='adopt'
+  })
+  visit_date!: Date | null;
 }
 
 export { Donation }
