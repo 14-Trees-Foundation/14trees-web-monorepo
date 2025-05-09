@@ -19,6 +19,7 @@ export interface UserDetailsData {
 interface UserDetailsFormProps {
   data: UserDetailsData;
   index: number;
+  maxTrees: number,
   errors: Record<string, string>;
   onUpdate: (field: keyof UserDetailsData, value: string | number) => void;
   canRemove: boolean;
@@ -28,6 +29,7 @@ interface UserDetailsFormProps {
 export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
   data,
   index,
+  maxTrees,
   errors,
   onUpdate,
   canRemove,
@@ -123,8 +125,9 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
           label="Trees"
           name="trees_count"
           value={data.trees_count}
-          onChange={(value) => onUpdate('trees_count', value)}
+          onChange={(value) => onUpdate('trees_count', maxTrees && typeof value === 'number' && value > maxTrees ? maxTrees : value)}
           min={1}
+          max={maxTrees}
         />
       </div>
       

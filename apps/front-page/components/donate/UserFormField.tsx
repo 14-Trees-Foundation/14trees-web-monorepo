@@ -11,6 +11,7 @@ interface UserFormFieldProps {
   placeholder?: string;
   error?: string;
   min?: number;
+  max?: number;
   options?: Array<{value: string, label: string}>;
   className?: string;
 }
@@ -25,6 +26,7 @@ export const UserFormField: React.FC<UserFormFieldProps> = ({
   placeholder = '',
   error,
   min,
+  max,
   options = [],
   className = '',
 }) => {
@@ -67,6 +69,7 @@ export const UserFormField: React.FC<UserFormFieldProps> = ({
           required={required}
           placeholder={placeholder}
           min={min}
+          max={max}
           pattern={type === 'tel' ? "[0-9]{10,15}" : undefined}
           title={type === 'tel' ? "10-15 digit phone number" : undefined}
         />

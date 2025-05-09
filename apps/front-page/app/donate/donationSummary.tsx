@@ -22,25 +22,20 @@ interface SummaryPaymentProps {
   donationMethod: 'trees' | 'amount';
   donationTreeCount: number;
   donationAmount: number;
-  multipleNames: boolean;
   dedicatedNames: Array<{
     recipient_name: string;
     trees_count: number;
     assignee_name?: string;
   }>;
-  isAssigneeDifferent: boolean;
   paymentOption: 'razorpay' | 'bank-transfer';
-  totalAmount: number;
   isAboveLimit: boolean;
   razorpayLoaded: boolean;
   rpPaymentSuccess: boolean;
   isProcessing: boolean;
   isLoading: boolean;
-  showSuccessDialog: boolean;
-  setCurrentStep: (step: number) => void;
+  setCurrentStep: (step: 1 | 2) => void;
   handleRazorpayPayment: () => void;
   handleSubmit: (e: React.FormEvent) => void;
-  setShowSuccessDialog: (show: boolean) => void;
   setDonationId: (id: string | null) => void;
 }
 
@@ -52,43 +47,28 @@ export const SummaryPaymentPage = ({
   donationMethod,
   donationTreeCount,
   donationAmount,
-  multipleNames,
   dedicatedNames,
-  isAssigneeDifferent,
-  totalAmount,
   isAboveLimit,
   rpPaymentSuccess,
   isProcessing,
   isLoading,
-  showSuccessDialog,
   setCurrentStep,
   handleRazorpayPayment,
   handleSubmit,
-  setShowSuccessDialog,
 }: SummaryPaymentProps) => {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
-  const [donationId, setDonationId] = useState<string | null>(null);
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
 
   return (
     <div className="space-y-8">
       {/* Summary Section */}
       <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
         <h2 className="text-2xl font-bold text-green-800">Order Summary</h2>
-        
-        {/* Donor Info */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Your Details</h3>
-          <p><span className="font-medium">Name:</span> {formData.fullName}</p>
-          <p><span className="font-medium">Email:</span> {formData.email}</p>
-          {formData.phone && <p><span className="font-medium">Phone:</span> {formData.phone}</p>}
-          <p><span className="font-medium">PAN:</span> {formData.panNumber}</p>
-        </div>
 
         {/* Tree Details */}
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">
-            {treeLocation === "adopt" ? "Tree Adoption" : "Donation Details"}
+            {treeLocation === "adopt" ? `${adoptedTreeCount === 1 ? "Tree" : "Trees"} Adopted` : "Donation Details"}
           </h3>
           {treeLocation === "adopt" ? (
             <>
@@ -102,19 +82,28 @@ export const SummaryPaymentPage = ({
                 <p><span className="font-medium">Trees:</span> {donationTreeCount}</p>
               )}
               <p><span className="font-medium">Amount:</span> ₹{
-                donationMethod === "trees" ? 
-                (donationTreeCount * 1500) : 
-                donationAmount
+                donationMethod === "trees" ?
+                  (donationTreeCount * 1500) :
+                  donationAmount
               }</p>
             </>
           )}
         </div>
 
+        {/* Donor Info */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Your Details</h3>
+          <p><span className="font-medium">Name:</span> {formData.fullName}</p>
+          <p><span className="font-medium">Email:</span> {formData.email}</p>
+          {formData.phone && <p><span className="font-medium">Phone:</span> {formData.phone}</p>}
+          <p><span className="font-medium">PAN:</span> {formData.panNumber}</p>
+        </div>
+
         {/* Dedication Info */}
         {dedicatedNames[0]?.recipient_name && (
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Dedication</h3>
-            {multipleNames ? (
+            <h3 className="text-lg font-semibold">Trees will be assigned to</h3>
+            {dedicatedNames?.length > 1 ? (
               <>
                 <p><span className="font-medium">Multiple Recipients:</span> {dedicatedNames.length}</p>
                 <div className="max-h-40 overflow-y-auto border rounded p-2">
@@ -128,7 +117,7 @@ export const SummaryPaymentPage = ({
             ) : (
               <>
                 <p><span className="font-medium">Recipient:</span> {dedicatedNames[0].recipient_name}</p>
-                {isAssigneeDifferent && (
+                {dedicatedNames[0].recipient_name != dedicatedNames[0].assignee_name && (
                   <p><span className="font-medium">Assignee:</span> {dedicatedNames[0].assignee_name}</p>
                 )}
               </>
@@ -153,87 +142,68 @@ export const SummaryPaymentPage = ({
           strategy="lazyOnload"
           onLoad={() => setRazorpayLoaded(true)}
         />
-        <h2 className="text-2xl font-semibold">Payment Information</h2>
 
-        <div>
-          <label className="mb-2 block text-lg font-light">
-            Payment Method *
-          </label>
-          <div className="space-y-3 mb-4">
-            <label className="flex items-center space-x-3">
-              <input
-                type="radio"
-                name="paymentOption"
-                value="razorpay"
-                checked={paymentOption === "razorpay" && !isAboveLimit}
-                onChange={() => setPaymentOption("razorpay")}
-                disabled={isAboveLimit || rpPaymentSuccess}
-              />
-              <span>
-                Razorpay (UPI/Card/Net Banking)
-                {isAboveLimit && " - Not available for amounts above ₹1,00,000"}
-              </span>
-            </label>
-            <label className="flex items-center space-x-3">
-              <input
-                type="radio"
-                name="paymentOption"
-                value="bank-transfer"
-                checked={paymentOption === "bank-transfer" || isAboveLimit}
-                onChange={() => setPaymentOption("bank-transfer")}
-                disabled={rpPaymentSuccess}
-              />
-              <span>Bank Transfer {isAboveLimit && "(Recommended for large donations)"}</span>
-            </label>
-          </div>
-
-          {isAboveLimit && (
-            <p className="text-yellow-600 bg-yellow-50 p-2 rounded-md">
-              For donations above ₹1,00,000, please use Bank Transfer.
-            </p>
-          )}
-        </div>
-
-        {paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
+        {!isAboveLimit && !rpPaymentSuccess && (
           <div className="flex justify-center">
             <Button
               type="button"
               onClick={handleRazorpayPayment}
               disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
-              className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${
-                isProcessing ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
             >
               {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
             </Button>
           </div>
         )}
 
-        {(paymentOption === "bank-transfer" || isAboveLimit) && (
-          <div className="bg-gray-100 p-4 rounded-md flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <h3 className="font-bold mb-2">Bank Transfer Details:</h3>
-              <p className="mb-1">Account Name: 14 Trees Foundation</p>
-              <p className="mb-1">Account Number: 007305012197</p>
-              <p className="mb-1">IFSC Code: ICIC0000073</p>
-              <p className="mb-1">Bank: ICICI Bank</p>
-              <p className="mb-1">Branch: Gurinovir park, IT1 road, Aundh, Pune 411007</p>
+        {isAboveLimit && (
+          <div>
+            <div className="bg-gray-100 p-4 rounded-md flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <h3 className="font-bold mb-2">Bank Transfer Details:</h3>
+                <p className="mb-1">Account Name: 14 Trees Foundation</p>
+                <p className="mb-1">Account Number: 007305012197</p>
+                <p className="mb-1">IFSC Code: ICIC0000073</p>
+                <p className="mb-1">Bank: ICICI Bank</p>
+                <p className="mb-1">Branch: Gurinovir park, IT1 road, Aundh, Pune 411007</p>
+              </div>
+              <div className="flex flex-col items-center">
+                <Image
+                  src="/images/QRCode.png"
+                  alt="Scan to pay via UPI/Bank Transfer"
+                  width={150}
+                  height={150}
+                  className="border border-gray-300 rounded-md mb-2"
+                />
+                <p className="text-sm text-gray-600">Scan to pay via UPI</p>
+              </div>
             </div>
-            <div className="flex flex-col items-center">
-              <Image
-                src="/images/QRCode.png"
-                alt="Scan to pay via UPI/Bank Transfer"
-                width={150}
-                height={150}
-                className="border border-gray-300 rounded-md mb-2"
+            <div className="mt-8">
+              <label className="mb-2 block text-lg font-light">
+                Upload Payment Confirmation (Screenshot/Pdf)*
+              </label>
+              <input
+                value={undefined}
+                type="file"
+                accept="image/*,.pdf"
+                className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                required={isAboveLimit}
+                onChange={(e) => {
+                  setPaymentProof(e.target.files?.[0] || null);
+                }}
               />
-              <p className="text-sm text-gray-600">Scan to pay via UPI</p>
+              {paymentProof && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {paymentProof.name}
+                </p>
+              )}
             </div>
           </div>
         )}
 
         {/* Complete Donation Button */}
-        {(paymentOption !== "razorpay" || rpPaymentSuccess) && (
+        {(isAboveLimit || rpPaymentSuccess) && (
           <div className="pt-6 flex justify-center">
             <Button
               type="submit"
@@ -256,14 +226,6 @@ export const SummaryPaymentPage = ({
           </div>
         )}
       </div>
-
-      {showSuccessDialog && (
-        <showSuccessDialog
-          donationId={donationId}
-          setShowSuccessDialog={setShowSuccessDialog}
-          setDonationId={setDonationId}
-        />
-      )}
     </div>
   );
 };

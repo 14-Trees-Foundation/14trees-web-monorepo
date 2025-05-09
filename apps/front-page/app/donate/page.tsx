@@ -84,7 +84,7 @@ export default function DonatePage() {
   const [donationType, setDonationType] = useState<"adopt" | "donate">("adopt");
   const [donationMethod, setDonationMethod] = useState<"trees" | "amount">("trees");
   const [donationTreeCount, setDonationTreeCount] = useState<number>(1);
-  const [donationAmount, setDonationAmount] = useState<number>(0);
+  const [donationAmount, setDonationAmount] = useState<number>(1500);
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   const itemsPerPage = 10;
@@ -98,7 +98,7 @@ export default function DonatePage() {
     if (treeLocation === "adopt") {
       amount = 3000 * (adoptedTreeCount || 0);
     } else if (treeLocation === "donate") {
-      amount = donationMethod === "trees" 
+      amount = donationMethod === "trees"
         ? 1500 * (donationTreeCount || 0)
         : donationAmount;
     }
@@ -137,7 +137,7 @@ export default function DonatePage() {
     if (!value.trim()) {
       if (name === "phone") return "";
       if (name === "panNumber") return "";
-     // if (name === "comments") return "";
+      // if (name === "comments") return "";
 
       return "This field is required";
     }
@@ -158,7 +158,7 @@ export default function DonatePage() {
           error = "Please enter a valid phone number (10-15 digits)";
         }
         break;
-        case "panNumber":
+      case "panNumber":
         if (value && !validationPatterns.pan.test(value)) {
           error = "Please enter a valid PAN number (e.g., ABCDE1234F)";
         }
@@ -342,7 +342,7 @@ export default function DonatePage() {
     const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
     const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
     if (users.length === 1 && !multipleNames) {
-      users[0].trees_count = parseInt(formData.numberOfTrees);
+      users[0].trees_count = donationTreeCount
     }
 
     if (!mainFormValid || !dedicatedNamesValid) {
@@ -420,7 +420,7 @@ export default function DonatePage() {
         trees_count: 1
       }]);
       setTreeLocation("");
-    
+
       setMultipleNames(false);
       setPaymentOption("razorpay");
       setCsvFile(null);
@@ -509,7 +509,7 @@ export default function DonatePage() {
         ? 3000 * (adoptedTreeCount || 0)
         : donationMethod === "trees"
           ? 1500 * (donationTreeCount || 0)
-          : donationAmount;  
+          : donationAmount;
       if (amount <= 0) throw new Error("Invalid amount");
 
       let orderId = razorpayOrderId;
@@ -528,21 +528,21 @@ export default function DonatePage() {
           const errorData = await response.json();
           throw new Error(errorData.error || "Payment failed");
         }
-  
+
         const { order_id, id } = await response.json();
         setRazorpayPaymentId(id);
         setRazorpayOrderId(order_id);
         orderId = order_id;
       }
-      
+
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: amount * 100,
         currency: 'INR',
         name: "14 Trees Foundation",
-        description:  treeLocation === "adopt" 
-        ? `Adoption of ${adoptedTreeCount} trees`
-        : `Donation for ${donationTreeCount} trees`,
+        description: treeLocation === "adopt"
+          ? `Adoption of ${adoptedTreeCount} trees`
+          : `Donation for ${donationTreeCount} trees`,
         order_id: orderId,
         handler: async (response: any) => {
           setRpPaymentSuccess(true);
@@ -622,8 +622,8 @@ export default function DonatePage() {
     ];
 
     const handleInvolvementChange = (value: string) => {
-      setAdditionalInvolvement(prev => 
-        prev.includes(value) 
+      setAdditionalInvolvement(prev =>
+        prev.includes(value)
           ? prev.filter(item => item !== value)
           : [...prev, value]
       );
@@ -631,10 +631,10 @@ export default function DonatePage() {
 
     const handleUpdate = async () => {
       if (!donationId) return;
-      
+
       setIsUpdating(true);
       setUpdateError(null);
-      
+
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/${donationId}`, {
           method: 'PUT',
@@ -761,7 +761,13 @@ export default function DonatePage() {
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-20 md:w-4/5 md:text-left">
-              <h2 className="leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
+              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                By donating towards the plantation of 14 native trees, you're directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+              </h6>
+              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you're enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
+              </h6>
+              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
               </h2>
               <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl">
@@ -772,176 +778,153 @@ export default function DonatePage() {
         </MotionDiv>
       </div>
 
-      <div className="text-gray-700">
-        <div className="container z-0 mx-auto overflow-hidden pb-20">
-          <div className="mx-auto w-full md:w-2/3">
+      <div className="relative min-h-[45vh] w-full md:min-h-[60vh] container mx-auto">
+        <div className="md:mx-28 container z-0 overflow-hidden pb-20">
+          <div className="w-full md:w-2/3">
             <ScrollReveal>
               {currentStep === 1 ? (
                 <form className="space-y-8">
                   <div className="space-y-6">
-                  
-  {/* First radio option - Adoption */}
-  <div className="space-y-3">
-    <label className="flex items-start space-x-3">
-      <input
-        type="radio"
-        name="treeLocation"
-        value="adopt"
-        className="mt-1 h-5 w-5"
-        onChange={() => {
-          setTreeLocation("adopt");
-          // Reset donation-related states
-          setDonationMethod("trees");
-          setDonationTreeCount(0);
-          setDonationAmount(0);
-          setDedicatedNames([{
-              recipient_name: "",
-              recipient_email: "",
-              recipient_phone: "",
-              assignee_name: "",
-              assignee_email: "",
-              assignee_phone: "",
-              relation: "",
-             trees_count: 1
-           }]);
-    setMultipleNames(false);
-    setIsAssigneeDifferent(false);
-        }}
-        checked={treeLocation === "adopt"}
-      />
-      <div>
-        <div>I would like to adopt the trees planted during my visit to 14Trees in the past</div>
-        <div className="text-sm text-gray-500 pl-6">
-          (This option is planting on the foundation land but we are limiting its reach)
-        </div>
-      </div>
-    </label>
 
-    {treeLocation === "adopt" && (
-      <div className="space-y-4 pl-6">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date of visit: <span className="text-gray-500">- approx date / month is fine if you don't remember</span>
-            </label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-              value={visitDate}
-              onChange={(e) => setVisitDate(e.target.value)}
-              placeholder="dd-mm-yyyy"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Number of Trees</label>
-            <input
-              type="number"
-              min="0"
-              className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-              value={adoptedTreeCount}
-              onChange={(e) => setAdoptedTreeCount(Number(e.target.value))}
-            />
-          </div>
-        </div>
-        <div className="mt-2">
-          <p className="font-medium">Amount: {3000 * (adoptedTreeCount || 0)} INR</p>
-        </div>
-      </div>
-    )}
-  </div>
+                    {/* First radio option - Adoption */}
+                    <div className="space-y-3">
+                      <label className="flex items-start space-x-3">
+                        <input
+                          type="radio"
+                          name="treeLocation"
+                          value="adopt"
+                          className="mt-1 h-5 w-5"
+                          onChange={() => {
+                            setTreeLocation("adopt");
+                          }}
+                          checked={treeLocation === "adopt"}
+                        />
+                        <div>
+                          <div>I would like to adopt the trees planted during my visit to 14Trees in the past</div>
+                          <div className="text-sm text-gray-500 pl-6">
+                            (This option is planting on the foundation land but we are limiting its reach)
+                          </div>
+                        </div>
+                      </label>
 
-  {/* Second radio option - Donation */}
-  <div className="space-y-3">
-    <label className="flex items-start space-x-3">
-      <input
-        type="radio"
-        name="treeLocation"
-        value="donate"
-        className="mt-1 h-5 w-5"
-        onChange={() => {
-          setTreeLocation("donate");
-          // Reset adoption-related states
-          setVisitDate("");
-          setAdoptedTreeCount(0);
-        }}
-        checked={treeLocation === "donate"}
-      />
-      <span>I am making a donation to support the reforestation project.</span>
-    </label>
+                      {treeLocation === "adopt" && (
+                        <div className="space-y-4 pl-6">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Date of visit: <span className="text-gray-500">- approx date / month is fine if you don't remember</span>
+                              </label>
+                              <input
+                                type="date"
+                                className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                                value={visitDate}
+                                onChange={(e) => setVisitDate(e.target.value)}
+                                placeholder="dd-mm-yyyy"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Number of Trees</label>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="Number of trees"
+                                className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                                value={adoptedTreeCount || ""}
+                                onChange={(e) => {
+                                  const number = parseInt(e.target.value);
+                                  if (isNaN(number) || number <= 0) setAdoptedTreeCount(0);
+                                  else setAdoptedTreeCount(number);
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <p className="font-medium">Amount: {3000 * (adoptedTreeCount || 0)} INR</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-    {treeLocation === "donate" && (
-      <div className="space-y-4 pl-6">
-        <div className="space-y-2">
-          <label className="flex items-center space-x-3">
-            <input
-              type="radio"
-              name="donationMethod"
-              value="trees"
-              className="h-5 w-5"
-              checked={donationMethod === "trees"}
-              onChange={() => {
-                setDonationMethod("trees");
-                setDonationAmount(0);
-              }}
-            />
-            <span>I want to donate</span>
-            <input
-              type="number"
-              min="0"
-              className="w-20 rounded-md border border-gray-300 px-3 py-1 text-gray-700"
-              value={donationTreeCount}
-              onChange={(e) => setDonationTreeCount(Number(e.target.value))}
-            />
-            <span>Trees</span>
-          </label>
+                    {/* Second radio option - Donation */}
+                    <div className="space-y-3">
+                      <label className="flex items-start space-x-3">
+                        <input
+                          type="radio"
+                          name="treeLocation"
+                          value="donate"
+                          className="mt-1 h-5 w-5"
+                          onChange={() => {
+                            setTreeLocation("donate");
+                          }}
+                          checked={treeLocation === "donate"}
+                        />
+                        <span>I am making a donation to support the reforestation project.</span>
+                      </label>
 
-          <label className="flex items-center space-x-3">
-            <input
-              type="radio"
-              name="donationMethod"
-              value="amount"
-              className="h-5 w-5"
-              checked={donationMethod === "amount"}
-              onChange={() => {
-                setDonationMethod("amount");
-                setDonationTreeCount(0);
-                setDedicatedNames([{
-                  recipient_name: "",
-                  recipient_email: "",
-                  recipient_phone: "",
-                  assignee_name: "",
-                  assignee_email: "",
-                  assignee_phone: "",
-                  relation: "",
-                  trees_count: 1
-                }]);
-                setMultipleNames(false);
-                setIsAssigneeDifferent(false);
-              }}
-            />
-            <span>I want to donate</span>
-            <input
-              type="number"
-              min="0"
-              className="w-20 rounded-md border border-gray-300 px-3 py-1 text-gray-700"
-              value={donationAmount}
-              onChange={(e) => setDonationAmount(Number(e.target.value))}
-            />
-            <span>Rupees</span>
-          </label>
-        </div>
+                      {treeLocation === "donate" && (
+                        <div className="space-y-4 pl-6">
+                          <div className="space-y-2">
+                            <label className="flex items-center space-x-3">
+                              <input
+                                type="radio"
+                                name="donationMethod"
+                                value="trees"
+                                className="h-5 w-5"
+                                checked={donationMethod === "trees"}
+                                onChange={() => {
+                                  setDonationMethod("trees");
+                                  setDonationAmount(1500);
+                                }}
+                              />
+                              <span>I want to donate</span>
+                              <input
+                                type="number"
+                                min="0"
+                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700"
+                                disabled={donationMethod !== 'trees'}
+                                value={donationTreeCount}
+                                onChange={(e) => setDonationTreeCount(Number(e.target.value))}
+                              />
+                              <span>Trees</span>
+                            </label>
 
-        {donationMethod === "trees" && (
-          <div className="font-medium">
-            Donation amount: {donationTreeCount * 1500} INR
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-</div>
+                            <label className="flex items-center space-x-3">
+                              <input
+                                type="radio"
+                                name="donationMethod"
+                                value="amount"
+                                className="h-5 w-5"
+                                checked={donationMethod === "amount"}
+                                onChange={() => {
+                                  setDonationMethod("amount");
+                                }}
+                              />
+                              <span>I want to donate</span>
+                              <input
+                                type="number"
+                                min="1500"
+                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700"
+                                disabled={donationMethod !== 'amount'}
+                                value={donationAmount}
+                                onChange={(e) => {
+                                  const amount = parseInt(e.target.value);
+                                  if (isNaN(amount) || amount < 1500) setDonationAmount(1500);
+                                  else setDonationAmount(amount);
+                                }}
+                              />
+                              <span>Rupees</span>
+                            </label>
+                          </div>
 
-
+                          {donationMethod === "trees" && (
+                            <div className="font-medium">
+                              Donation amount: {donationTreeCount * 1500} INR
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold">Your details</h2>
@@ -1029,7 +1012,7 @@ export default function DonatePage() {
                             placeholder="Enter your PAN number"
                             pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
                             maxLength={10}
-                            //required={taxStatus === "indian"}
+                          //required={taxStatus === "indian"}
                           />
                           {errors.panNumber && (
                             <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
@@ -1062,22 +1045,20 @@ export default function DonatePage() {
                         <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
                           <button
                             type="button"
-                            className={`${
-                              nameEntryMethod === "manual"
-                                ? "bg-green-500 shadow-sm text-white ring-green-700"
-                                : "text-green-600 hover:bg-green-100"
-                            } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                            className={`${nameEntryMethod === "manual"
+                              ? "bg-green-500 shadow-sm text-white ring-green-700"
+                              : "text-green-600 hover:bg-green-100"
+                              } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
                             onClick={() => setNameEntryMethod("manual")}
                           >
                             Add Manually
                           </button>
                           <button
                             type="button"
-                            className={`${
-                              nameEntryMethod === "csv"
-                                ? "bg-green-500 shadow-sm text-white ring-green-700"
-                                : "text-green-600 hover:bg-green-100"
-                            } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                            className={`${nameEntryMethod === "csv"
+                              ? "bg-green-500 shadow-sm text-white ring-green-700"
+                              : "text-green-600 hover:bg-green-100"
+                              } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
                             onClick={() => setNameEntryMethod("csv")}
                           >
                             Bulk Upload CSV
@@ -1099,6 +1080,7 @@ export default function DonatePage() {
                               index={index}
                               onUpdate={(field, value) => handleNameChange(index, field, value)}
                               errors={errors}
+                              maxTrees={donationTreeCount - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
                               canRemove={index > 0}
                               onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
                             />
@@ -1408,11 +1390,11 @@ export default function DonatePage() {
                           const value = formData[key as keyof typeof formData];
                           // Check for mandatory fields
                           if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
-                            return !!value; 
+                            return !!value;
                           }
                           return true;
                         });
-                        
+
                         if (mainFormValid) {
                           setCurrentStep(2);
                         } else {
@@ -1435,22 +1417,16 @@ export default function DonatePage() {
                     donationMethod={donationMethod}
                     donationTreeCount={donationTreeCount}
                     donationAmount={donationAmount}
-                    multipleNames={multipleNames}
                     dedicatedNames={dedicatedNames}
-                    isAssigneeDifferent={isAssigneeDifferent}
-                    pledgeType={pledgeType}
                     paymentOption={paymentOption}
-                    totalAmount={totalAmount}
                     isAboveLimit={isAboveLimit}
                     razorpayLoaded={razorpayLoaded}
                     rpPaymentSuccess={rpPaymentSuccess}
                     isProcessing={isProcessing}
                     isLoading={isLoading}
-                    showSuccessDialog={showSuccessDialog}
                     setCurrentStep={setCurrentStep}
                     handleRazorpayPayment={handleRazorpayPayment}
                     handleSubmit={handleSubmit}
-                    setShowSuccessDialog={setShowSuccessDialog}
                     setDonationId={setDonationId}
                   />
                 )
