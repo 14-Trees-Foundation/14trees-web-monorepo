@@ -75,10 +75,10 @@ export class GiftCardsRepository {
                     ELSE 0
                 END) AS assigned,
                 CASE
-                    WHEN gcr.category = 'Foundation'
+                    WHEN gcr.category = 'Public'
                     THEN (
                         CASE 
-                            WHEN gcr.request_type = 'Normal Assignment'
+                            WHEN gcr.request_type = 'Normal Assignment' OR gcr.request_type = 'Visit'
                             THEN 1500
                             ELSE 2000
                         END
