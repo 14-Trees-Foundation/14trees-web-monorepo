@@ -19,7 +19,7 @@ export interface UserDetailsData {
 interface UserDetailsFormProps {
   data: UserDetailsData;
   index: number;
-  maxTrees: number,
+  maxTrees?: number,
   errors: Record<string, string>;
   onUpdate: (field: keyof UserDetailsData, value: string | number) => void;
   canRemove: boolean;
