@@ -13,6 +13,7 @@ import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import CsvUpload from "components/CsvUpload";
 import { UploadIcon } from "lucide-react";
+import { getUniqueRequestId } from "~/utils";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
 import { SummaryPaymentPage } from './donationSummary';
 
@@ -65,6 +66,7 @@ export default function DonatePage() {
   });
   const [pledgeType, setPledgeType] = useState<"trees" | "acres">("trees");
   const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -320,6 +322,23 @@ export default function DonatePage() {
     e.preventDefault();
     setIsLoading(true);
     setIsSubmitting(true);
+
+    const uniqueRequestId = getUniqueRequestId();
+    setDonationId(uniqueRequestId);
+
+  // Handle payment based on selected option
+ 
+  let paymentId: number | null = razorpayPaymentId || null;
+  if (paymentOption === "bank-transfer") {
+    paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
+    setRazorpayPaymentId(paymentId);
+  }
+
+  if (!paymentId) {
+    setIsLoading(false);
+    setIsSubmitting(false);
+    return;
+  }
     const mainFormValid = Object.keys(formData).every(key => {
       if (key === "comments") {
         return true;
@@ -374,10 +393,26 @@ export default function DonatePage() {
         sponsor_name: formData.fullName,
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
-        category: treeLocation === "adopt" ? "adopt" : "donate",
+        category: treeLocation === "adopt" ? "Foundation" : "Public",
+        donation_type: treeLocation === "adopt" ? "adopt" : "donate", 
+        donation_method: treeLocation === "donate" ? donationMethod : undefined,
         payment_id: razorpayPaymentId,
         contribution_options: [],
         comments: formData.comments,
+         // Always include the calculated amount
+         amount_donated: treeLocation === "adopt" 
+         ? 3000 * (adoptedTreeCount || 0)
+           : donationMethod === "trees"
+         ? 1500 * (donationTreeCount || 0)
+           : donationAmount,
+        ...(treeLocation === "adopt" && {
+          visit_date: visitDate, // Required for adoptions
+          trees_count: adoptedTreeCount,
+        }),
+        ...(treeLocation === "donate" && {
+          ...(donationMethod === "trees" && { trees_count: donationTreeCount }),
+          ...(donationMethod === "amount" && { amount_donated: donationAmount }),
+        }),
         users: users.map(user => ({
           ...user,
           recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
@@ -587,6 +622,61 @@ export default function DonatePage() {
       setIsProcessing(false);
     }
   };
+
+  const handleBankPayment = async (uniqueRequestId: string, paymentId: number | null) => {
+    if (!paymentProof) {
+      alert("Please upload a payment proof");
+      return null;
+    }
+  
+    try {
+        // Calculate amount based on donation type
+        const amount = treeLocation === "adopt" 
+          ? 3000 * (adoptedTreeCount || 0)
+          : donationMethod === "trees"
+            ? 1500 * (donationTreeCount || 0)
+            : donationAmount;
+    
+        if (amount <= 0) throw new Error("Invalid amount");
+    
+  
+      if (!paymentId) {
+        const response = await apiClient.createPayment(
+          amount, 
+          "Individual", 
+          formData.panNumber, 
+          true
+        );
+        paymentId = response.id;
+          setRazorpayPaymentId(response.id); 
+      }
+  
+      if (!paymentId) {
+        alert("Payment ID is required");
+        return null;
+      }
+  
+      // Upload payment proof to S3
+      const key = uniqueRequestId + "/payments/" + paymentProof.name;
+      const url = await apiClient.uploadPaymentProof({ 
+        key, 
+        payment_proof: paymentProof 
+      });
+      
+      // Create payment history record
+      await apiClient.createPaymentHistory(
+         paymentId, 
+        "Bank Transfer", 
+        amount, 
+        url
+      );
+  
+      return paymentId;
+    } catch (err: any) {
+      alert(err.message || "Payment failed");
+      return null;
+    }
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
