@@ -133,7 +133,7 @@ export const SummaryPaymentPage = ({
             <th className="px-4 py-2 text-left border-b">Trees</th>
             <th className="px-4 py-2 text-left border-b">Assignee</th>
             <th className="px-4 py-2 text-left border-b">Assignee Email</th>
-            <th className="px-4 py-2 text-left border-b">Assignee's Relation</th>
+            <th className="px-4 py-2 text-left border-b">Assignee&apos;s Relation</th>
           </tr>
         </thead>
         <tbody>

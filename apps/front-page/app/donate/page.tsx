@@ -854,10 +854,10 @@ export default function DonatePage() {
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-20 md:w-4/5 md:text-left">
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of 14 native trees, you're directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+                By donating towards the plantation of 14 native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
               </h6>
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you're enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
+                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
               </h6>
               <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
@@ -904,7 +904,7 @@ export default function DonatePage() {
                           <div className="space-y-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Date of visit: <span className="text-gray-500">- approx date / month is fine if you don't remember</span>
+                                Date of visit: <span className="text-gray-500">- approx date / month is fine if you don&apos;t remember</span>
                               </label>
                               <input
                                 type="date"
