@@ -344,6 +344,10 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         if (!giftCardRequest.sponsor_id) {
             giftCardRequest.sponsor_id = null;
         }
+        if (!giftCardRequest.group_id) {
+            giftCardRequest.group_id = null;
+            giftCardRequest.logo_url = null;
+        }
 
         if (giftCardRequest.request_type === 'Visit' || giftCardRequest.request_type === 'Normal Assignment') {
             giftCardRequest.planted_by = null;
@@ -395,7 +399,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.group_id !== originalRequest.group_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id }
         }
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
@@ -403,7 +407,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.sponsor_id !== originalRequest.sponsor_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id }
+            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id }
         }
 
         if (updatedGiftCardRequest.visit_id !== originalRequest.visit_id) {
