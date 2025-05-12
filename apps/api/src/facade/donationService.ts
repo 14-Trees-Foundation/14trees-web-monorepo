@@ -11,6 +11,10 @@ import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { sendDashboardMail } from '../services/gmail/gmail';
 import { User } from "../models/user";
 import { PaymentRepository } from "../repo/paymentsRepo";
+import { formatNumber, numberToWords } from "../helpers/utils";
+import moment from "moment";
+import { GoogleDoc } from "../services/google";
+import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -655,6 +659,25 @@ export class DonationService {
                 panNumber = payment?.pan_number || "";
             }
 
+            const donationReceiptId = new Date().getFullYear() + "/" + donation.id;
+            const docService = new GoogleDoc();
+            const receiptId = await docService.get80GRecieptFileId({
+                "{Name}": sponsorUser.name,
+                "{FY}": "Year " + (new Date().getFullYear() - 1) + "-" + ((new Date().getFullYear())%100),
+                "{Rec}": donationReceiptId,
+                "{Date}": moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+                "{AmountW}": numberToWords(donation.amount_donated || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+                "{PAN}": panNumber,
+                "{Amt}": formatNumber(donation.amount_donated || 0),
+                "{CO}": "",
+                "{SG}": "",
+                "{OT}": "✓",
+            }, donationReceiptId);
+
+            const resp = await docService.download(receiptId);
+            
+            const fileUrl = await uploadFileToS3('cards', resp, `donations/${donation.id}/${donationReceiptId}`);
+
             const emailData = {
                 userDetails: {
                     name: sponsorUser.name,
@@ -663,7 +686,8 @@ export class DonationService {
                     panNumber: panNumber,
                 },
                 donationDetails: {
-                    amount: donation.amount_donated,
+                    amount: formatNumber(donation.amount_donated || 0),
+                    date:  moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                     treesCount: donation.trees_count,
                     donationType: donation.donation_type === 'donate'
                         ? donation.trees_count
@@ -685,7 +709,10 @@ export class DonationService {
                 emailData,
                 mailIds,
                 ccMailIds,
-                [], // no attachments
+                [{
+                    filename: donationReceiptId + " " + sponsorUser.name + ".pdf",
+                    path: fileUrl,
+                }], // no attachments
                 'Donation Request Received'
             );
 
