@@ -759,7 +759,7 @@ export default function DonatePage() {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
-          <p className="mb-2">Your donation request has been processed successfully.</p>
+          <p className="mb-2">Your donation request has been submitted successfully.</p>
           {donationId && (
             <p className="mb-2">
               <strong>Donation ID:</strong> {donationId}
@@ -767,7 +767,7 @@ export default function DonatePage() {
           )}
           <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (Sometimes the email lands up in the Spam/Junk folder, please ensure to check it.) This email will also contain the link to your tree dashboard if you have donated for planting trees, which will show the latest picture of the plant/tree, location on the map and other details.
           </p>
-          <p className="mb-5">In case of any issue pls call ....... | contact@14trees.org
+          <p className="mb-5">In case of any issue please  call +91 98458 05881 or write to us at contact@14trees.org
           </p>
 
           {!updateSuccess ? (
@@ -1111,6 +1111,7 @@ export default function DonatePage() {
 
                   {donationMethod === "trees" && treeLocation === "donate" && (
                     <div className="space-y-4">
+                      <h2 className="mt-6 text-2xl font-semibold">Additional Information (optional)</h2>
                       <label className="mb-2 block text-lg font-light">
                         I&apos;d like my trees to be planted in the following name:
                       </label>
