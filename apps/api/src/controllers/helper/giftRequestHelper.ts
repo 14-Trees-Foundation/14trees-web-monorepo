@@ -89,6 +89,7 @@ export const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes
     }
 
     const normalAssignment = giftCardRequest.request_type === 'Normal Assignment'
+    const visit = giftCardRequest.request_type === 'Visit'
 
     const tasks: Task<void>[] = [];
     for (const user of users) {
@@ -103,9 +104,10 @@ export const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes
             description: giftCardRequest.event_name,
             event_type: giftCardRequest.event_type,
             planted_by: null,
-            gifted_by: normalAssignment ? null : giftCardRequest.user_id,
-            gifted_by_name: normalAssignment ? null : giftCardRequest.planted_by,
+            gifted_by: normalAssignment || visit ? null : giftCardRequest.user_id,
+            gifted_by_name: normalAssignment || visit ? null : giftCardRequest.planted_by,
             user_tree_image: user.profile_image_url,
+            visit_id: giftCardRequest.visit_id,
             memory_images: memoryImageUrls,
         }
 
@@ -351,7 +353,7 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
 }
 
 
-export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+export const sendMailsToSponsors = async ( giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[] ) => {
     const emailData: any = {
         trees: [] as any[],
         user_email: giftCardRequest.user_email,
@@ -406,7 +408,18 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
 
     const statusMessage: string = await sendDashboardMail(templates[0].template_name, emailData, mailIds, ccMailIds, attachments);
 
-}
+    if (statusMessage === '') {
+        await GiftCardsRepository.updateGiftCardRequests(
+            {
+                mail_sent: true,
+                updated_at: new Date()
+            },
+            {
+                id: giftCardRequest.id 
+            }
+        );
+    }
+};
 
 const emailReceiver = async (giftCardRequest: any, emailData: any, eventType: string, template: string, attachCard: boolean, ccMailIds?: string[], testMails?: string[]) => {
     const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
@@ -537,7 +550,7 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
     const users = await addGiftRequestUsers(payload, giftRequest.id);
 
     // reserve trees for gift request
-    const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftRequest.user_id, giftRequest.group_id, plotIds, giftRequest.no_of_cards, false, true, false);
+    const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftRequest.user_id, giftRequest.sponsor_id, giftRequest.group_id, plotIds, giftRequest.no_of_cards, false, true, false);
 
     // add user to donations group
     if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftRequest.user_id);
@@ -606,6 +619,7 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
 
     const request: GiftCardRequestCreationAttributes = {
         user_id: user.id,
+        sponsor_id: user.id,
         group_id: group ? group.id : null,
         no_of_cards: payload.treesCount,
         is_active: false,
@@ -621,13 +635,14 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
         grove: null,
         gifted_on: new Date(payload.giftedOn),
         created_by: user.id,
-        request_type: 'Cards Request',
+        request_type: 'Gift Cards',
         created_at: new Date(),
         updated_at: new Date(),
         request_id: requestId,
         payment_id: null,
         album_id: albumId,
         validation_errors: null,
+        visit_id: null,
         tags: [payload.source]
     }
 

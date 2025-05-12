@@ -9,7 +9,7 @@ export const GiftCardRequestStatus = {
 }
 
 export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETAILS'
-export type GiftCardRequestType = 'Cards Request' | 'Normal Assignment' | 'Test' | 'Promotion'
+export type GiftCardRequestType = 'Gift Cards' | 'Normal Assignment' | 'Visit' | 'Test' | 'Promotion'
 export type SponsorshipType = 'Unverified' | 'Pledged' | 'Promotional' | 'Unsponsored Visit' | 'Donation Received'
 
 export type GiftMessages = {
@@ -23,6 +23,7 @@ interface GiftCardRequestAttributes {
     id: number;
     request_id: string;
     user_id: number;
+    sponsor_id: number | null;
     group_id: number | null;
     no_of_cards: number;
     is_active: boolean;
@@ -44,6 +45,7 @@ interface GiftCardRequestAttributes {
     notes: string | null;
     album_id: number | null;
     payment_id: number | null;
+    visit_id: number | null;
     tags: string[] | null;
     gifted_on: Date;
     created_by: number;
@@ -53,11 +55,12 @@ interface GiftCardRequestAttributes {
     amount_received: number | null,
     donation_date: Date | null,
     contribution_options: string[] | null,
-    comments: string | null
+    comments: string | null,
+    mail_sent: boolean;  
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments' | 'mail_sent'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -89,6 +92,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         allowNull: false,
     })
     user_id!: number;
+
+    @Column({
+        type: DataType.NUMBER,
+    })
+    sponsor_id!: number | null;
 
     @Column({
         type: DataType.NUMBER,
@@ -180,6 +188,11 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
     @Column({
         type: DataType.INTEGER,
     })
+    visit_id!: number | null;
+
+    @Column({
+        type: DataType.INTEGER,
+    })
     payment_id!: number;
 
     @Column({
@@ -220,6 +233,13 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         allowNull: true,
     })
     comments!: string | null;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false 
+    })
+    mail_sent!: boolean;
 
     @Column({ type: DataType.DATE, allowNull: false })
     gifted_on!: Date;

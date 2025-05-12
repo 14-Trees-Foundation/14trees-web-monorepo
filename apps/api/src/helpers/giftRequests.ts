@@ -29,7 +29,7 @@ class GiftRequestHelper {
         }
 
         let treeIds: number[] = [];
-        treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.group_id, plotIds, treesCount, bookNonGiftable, diversify, bookAllHabits);
+        treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.sponsor_id, giftCardRequest.group_id, plotIds, treesCount, bookNonGiftable, diversify, bookAllHabits);
         if (treeIds.length === 0) {
             return 'Enough trees not available for this request!';
         }

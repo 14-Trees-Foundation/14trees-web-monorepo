@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thank You for Your Donation</title>
 </head>
+
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; color: #333;">
-  <table align="center" width="600" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background: #ffffff; margin: 20px auto; border: 1px solid #dddddd;">
+  <table align="center" width="600" cellpadding="0" cellspacing="0"
+    style="border-collapse: collapse; background: #ffffff; margin: 20px auto; border: 1px solid #dddddd;">
     <tr>
       <td style="padding: 20px; text-align: center; background-color: #4CAF50; color: white;">
         <h1>Thank You for Your Generous Contribution 🌱</h1>
@@ -14,18 +17,24 @@
     </tr>
     <tr>
       <td style="padding: 20px;">
-        <p>Dear <strong>{{user_name}}</strong>,</p>
-        <p>We are truly grateful for your generous donation of {{#if is_pledged}} planting <strong>{{pledged}} trees</strong> {{else}} supporting the restoration of <strong>{{pledged_area}} acres</strong> of forested land. {{/if}} Your contribution is making a meaningful impact on our mission to create greener, healthier communities.</p>
-        <h3 style="color: #4CAF50;">Details of Your Donation</h3>
-        <ul>
-          <li><strong>Land Type:</strong> {{category}}</li>
-          <li><strong>Grove:</strong> {{#if is_grove}} {{grove}} {{else}} Not specified {{/if}}</li>
-          <li><strong>Occasion/Event:</strong> {{#if is_event_name}} {{event_name}} {{else}} Not specified {{/if}}</li>
-          <li><strong>Alternate email:</strong> {{#if is_alternate_email}} {{alternate_email}} {{else}} Not specified {{/if}}</li>
-        </ul>
-        <p>Your support helps us work toward creating a sustainable future by enhancing green cover in the areas that need it the most. Every tree planted brings us closer to mitigating climate change and fostering biodiversity.</p>
-        <p>Should you have any questions, or if there's any additional information you'd like to share with us, please don't hesitate to reach out to us.</p>
-        <p>Once again, thank you for your support in helping us grow a greener tomorrow.</p>
+        <p>Dear <strong>{{userDetails.name}}</strong>,</p>
+
+        <p>Thank you so much for your generous contribution of Rs. {{donationDetails.amount}} dated
+          {{donationDetails.date}} to 14 Trees Foundation!</p>
+
+        <p>As a direct result of your contribution, trees are being planted and nourished. Each of these trees that you
+          have brought into this world will, for its many living years, offset the devastating effects of carbon
+          consumption and climate change. They are transforming barren lands into thriving biodiverse forests full of
+          native flora and fauna, while adding to local livelihoods. Most importantly, your contribution allows us to
+          direct our energies solely towards sustainable ecological restoration unencumbered by short-term monetary
+          concerns.</p>
+
+        <p>We are immensely grateful and happy that you are joining us in restoring the beloved planet that we call home
+          and in saving it for future generations. You can follow our shared journey and find more ways of continuing to
+          be involved at <a href="https://14trees.org">14Trees</a>.</p>
+
+        <p>Attached is the 80G receipt for your contribution. The 10BE certificates will be emailed after the end of
+          current financial year.</p>
       </td>
     </tr>
     <tr>
@@ -38,7 +47,9 @@
               <a href="https://14trees.org">https://14trees.org</a>
             </td>
             <td style="text-align: right; vertical-align: top;">
-              <img src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png" alt="Logo" style="max-width: 70px; height: auto;">
+              <img
+                src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+                alt="Logo" style="max-width: 70px; height: auto;">
             </td>
           </tr>
         </table>
@@ -46,4 +57,5 @@
     </tr>
   </table>
 </body>
+
 </html>
