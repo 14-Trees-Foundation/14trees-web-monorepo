@@ -53,6 +53,10 @@ interface MailOptions {
   attachments?: { filename: string; path: string }[];
 }
 
+handlebars.registerHelper('eq', function (a, b) {
+  return a === b;
+});
+
 const getHtmlTemplate = (templateName: string, emailData: any) => {
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();
@@ -82,9 +86,9 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
 const sendDashboardMail = async (templateName: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[], subject?: string) => {
 
   const options = {
-    from: { name: '14 Trees', address: 'admin@14trees.org' },
+    from: { name: '14 Trees', address: 'dashboard@14trees.org' },
     to: toEmails,
-    replyTo: 'admin@14trees.org',
+    replyTo: 'dashboard@14trees.org',
     cc: cc,
     subject: subject ? subject : emailData.count > 1 ? `${emailData.count} Trees have been planted` : 'A Tree has been planted',
     html: "",

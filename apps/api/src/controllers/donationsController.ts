@@ -98,7 +98,7 @@ export const createDonation = async (req: Request, res: Response) => {
     const {
         sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
-        comments, users
+        comments, users,  donation_type, donation_method, visit_date, amount_donated,
     } = data;
 
     // Validate sponsor details
@@ -107,8 +107,32 @@ export const createDonation = async (req: Request, res: Response) => {
             message: 'Invalid sponsor name or email. Please provide valid details!'
         });
 
+        if (donation_type === 'adopt') {
+            if (!visit_date) {
+                return res.status(status.bad).json({
+                    message: 'Visit date is required for tree adoption'
+                });
+            }
+        } else if (donation_type === 'donate') {
+            if (donation_method === 'amount' && !amount_donated) {
+                return res.status(status.bad).json({
+                    message: 'Amount is required for monetary donations'
+                });
+            }
+            if (donation_method === 'trees' && !trees_count) {
+                return res.status(status.bad).json({
+                    message: 'Tree count is required for tree donations'
+                });
+            }
+        } else {
+            return res.status(status.bad).json({
+                message: 'Invalid donation type'
+            });
+
+        }
+
     // Validate tree plantaion details
-    if ((!trees_count && !pledged_area_acres) || !category)
+    if ( !category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
         });
@@ -117,14 +141,18 @@ export const createDonation = async (req: Request, res: Response) => {
     const donation = await DonationService.createDonation({
         sponsor_name,
         sponsor_email,
-        sponsor_phone,
+        sponsor_phone, 
         trees_count,
         pledged_area_acres,
         payment_id,
         category,
         grove,
-        continution_options: contribution_options,
+        continution_options: contribution_options || [],
         comments,
+        donation_type,
+        donation_method,
+        visit_date,
+        amount_donated,
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
@@ -158,7 +186,7 @@ export const createDonation = async (req: Request, res: Response) => {
         if (names_for_plantation) donation.names_for_plantation = names_for_plantation;
         if (comments) donation.comments = comments;
         
-        await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+        DonationService.sendDonationAcknowledgement(donation, sponsorUser);
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails

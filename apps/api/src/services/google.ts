@@ -1,4 +1,4 @@
-import { google, sheets_v4 } from 'googleapis';
+import { google, sheets_v4, docs_v1 } from 'googleapis';
 import path from 'path';
 import * as fs from 'fs';
 import { Readable } from 'stream';
@@ -124,5 +124,60 @@ export class GoogleSpreadsheet {
                 values: updatedValues,
             },
         });
+    }
+}
+
+export class GoogleDoc {
+    private docs: docs_v1.Docs;
+
+    constructor() {
+        // Load service account credentials
+        const credentialsPath = path.resolve(process.env.GOOGLE_APP_CREDENTIALS || '');
+        const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+
+        const auth = new google.auth.JWT({
+            email: credentials.client_email,
+            key: credentials.private_key,
+            scopes: [
+                'https://www.googleapis.com/auth/documents',
+            ],
+        });
+
+        this.docs = google.docs({ version: 'v1', auth });
+    }
+
+    public async get80GRecieptFileId(data: any, fileName: string) {
+
+        const copiedDocId = await copyFile("1s9xCuSDICsrmX73lKar59CCIGcPob4v-Yaty4bT8OCk", fileName);
+
+        const requests: any[] = Object.entries(data).map(([key, value]) => ({
+            replaceAllText: {
+                containsText: {
+                    text: key,
+                    matchCase: true,
+                },
+                replaceText: value,
+            },
+        }));
+
+        await this.docs.documents.batchUpdate({
+            documentId: copiedDocId,
+            requestBody: { requests },
+        });
+
+        return copiedDocId;
+    }
+
+    public async download(fileId: string) {
+        const response = await drive.files.export(
+            {
+                fileId,
+                mimeType: "application/pdf",
+            },
+            { responseType: 'stream' }
+        );
+    
+        // const chunks: Buffer[] = [];
+        return response.data as Readable;
     }
 }
