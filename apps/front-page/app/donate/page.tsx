@@ -852,7 +852,7 @@ export default function DonatePage() {
           variants={containerVariants}
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
-            <div className="md:mx-12 my-10 object-center text-center md:my-20 md:w-4/5 md:text-left">
+            <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
                 By donating towards the plantation of 14 native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
               </h6>
@@ -1018,7 +1018,7 @@ export default function DonatePage() {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
+                  {treeLocation !== "" && <div className="mt-6 space-y-6">
                     <h2 className="text-2xl font-semibold">Your details</h2>
                     <div className="grid grid-cols-1 gap-4">
                       <div className="flex items-center">
@@ -1094,17 +1094,12 @@ export default function DonatePage() {
                           <input
                             type="text"
                             name="panNumber"
-                            className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700 uppercase`}
+                            className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700 uppercase placeholder:text-gray-400 placeholder:normal-case`}
                             value={formData.panNumber}
                             onChange={handleInputChange}
-                            onBlur={(e) => {
-                              const error = validateField(e.target.name, e.target.value);
-                              setErrors(prev => ({ ...prev, panNumber: error }));
-                            }}
                             placeholder="Enter your PAN number"
                             pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
                             maxLength={10}
-                          //required={taxStatus === "indian"}
                           />
                           {errors.panNumber && (
                             <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
@@ -1112,7 +1107,7 @@ export default function DonatePage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div>}
 
                   {donationMethod === "trees" && treeLocation === "donate" && (
                     <div className="space-y-4">
