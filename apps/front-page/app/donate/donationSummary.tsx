@@ -35,6 +35,8 @@ interface SummaryPaymentProps {
   isAboveLimit: boolean;
   razorpayLoaded: boolean;
   rpPaymentSuccess: boolean;
+  paymentProof: File | null;
+  setPaymentProof: (file: File | null) => void;
   isProcessing: boolean;
   isLoading: boolean;
   setCurrentStep: (step: 1 | 2) => void;
@@ -55,13 +57,14 @@ export const SummaryPaymentPage = ({
   isAboveLimit,
   razorpayLoaded,
   rpPaymentSuccess,
+  paymentProof,
+  setPaymentProof,
   isProcessing,
   isLoading,
   setCurrentStep,
   handleRazorpayPayment,
   handleSubmit,
 }: SummaryPaymentProps) => {
-  const [paymentProof, setPaymentProof] = useState<File | null>(null);
 
   const handleCompleteDonation = (e: React.MouseEvent) => {
     e.preventDefault();
