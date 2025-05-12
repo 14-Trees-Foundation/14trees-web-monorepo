@@ -116,10 +116,14 @@ export default function GiftTreesPage() {
     (currentPage + 1) * itemsPerPage
   );
 
+  // const calculateGiftingAmount = (): number => {
+  //    if (treeLocation === "foundation") return 3000;
+  //   if (treeLocation === "public") return 2000;
+  //   return 0;
+  // };
+
   const calculateGiftingAmount = (): number => {
-    if (treeLocation === "foundation") return 3000;
-    if (treeLocation === "public") return 2000;
-    return 0;
+    return 2000;
   };
 
   // Calculate total amount (existing unchanged)
@@ -449,6 +453,12 @@ export default function GiftTreesPage() {
   // Existing form submission (unchanged)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.panNumber || !formData.numberOfTrees) {
+      alert("Please fill in all required fields before payment");
+      return;
+    }
+
     setIsLoading(true);
     setIsSubmitting(true);
 
@@ -456,7 +466,7 @@ export default function GiftTreesPage() {
     setGiftRequestId(uniqueRequestId);
 
     let paymentId: number | null = razorpayPaymentId || null;
-    if (paymentOption === "bank-transfer") {
+    if (isAboveLimit) {
       paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
       setRazorpayPaymentId(paymentId);
     }
@@ -498,8 +508,6 @@ export default function GiftTreesPage() {
         setErrors(prev => ({ ...prev, [key]: "This field is required" }));
         return false;
       }
-
-      if (key === 'panNumber' && taxStatus !== 'indian') return true;
 
       const error = validateField(key, value);
       if (error) {
@@ -543,18 +551,19 @@ export default function GiftTreesPage() {
       const giftTreesRequest = {
         request_id: uniqueRequestId,
         user_id: userId,
+        sponsor_id: userId,
         sponsor_name: formData.fullName,
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
-        category: treeLocation === "foundation" ? "Foundation" : "Public",
-        grove: groveType === "Other" ? otherGroveType : groveType,
+        category: "Public",
+        grove: null,
         no_of_cards: parseInt(formData.numberOfTrees),
         payment_id: paymentId,
         contribution_options: [],
         comments: formData.comments,
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
-        request_type: 'Cards Request',
+        request_type: 'Gift Cards',
         event_name: eventName,
         event_type: eventType,
         planted_by: plantedBy,
@@ -744,7 +753,7 @@ export default function GiftTreesPage() {
       return;
     }
 
-    if (!formData.fullName || !formData.email || !formData.numberOfTrees || !taxStatus) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.panNumber || !formData.numberOfTrees) {
       alert("Please fill in all required fields before payment");
       return;
     }
@@ -762,9 +771,9 @@ export default function GiftTreesPage() {
           body: JSON.stringify({
             action: 'create',
             amount,
-            donor_type: taxStatus === "indian" ? "Indian Citizen" : taxStatus === "foreign" ? "Foreign Donor" : null,
-            pan_number: taxStatus === "indian" ? formData.panNumber : null,
-            consent: taxStatus === "none" ? true : false,
+            donor_type: "Indian Citizen",
+            pan_number: formData.panNumber,
+            consent: false,
           })
         });
         if (!response.ok) {
@@ -841,7 +850,7 @@ export default function GiftTreesPage() {
       if (amount <= 0) throw new Error("Invalid amount");
 
       if (!paymentId) {
-        const response = await apiClient.createPayment(amount, taxStatus === "indian" ? "Individual" : taxStatus === "foreign" ? "Foreign" : null, formData.panNumber, taxStatus === "none" ? true : false);
+        const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false);
         paymentId = response.id;
       }
 
@@ -1026,8 +1035,6 @@ export default function GiftTreesPage() {
 
   return (
     <div className="overflow-hidden bg-white">
-
-      {/* Hero Section */}
       <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
         <MotionDiv
           className="container z-0 mx-auto my-10 overflow-hidden text-gray-800"
@@ -1036,8 +1043,14 @@ export default function GiftTreesPage() {
           variants={containerVariants}
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
-            <div className="md:mx-12 my-10 object-center text-center md:my-20 md:w-4/5 md:text-left">
-              <h2 className="leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
+            <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
+              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                By donating towards the plantation of 14 native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+              </h6>
+              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
+              </h6>
+              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
               </h2>
               <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl">
@@ -1049,12 +1062,12 @@ export default function GiftTreesPage() {
       </div>
 
       {/* Form Section */}
-      <div className="text-gray-700">
-        <div className="container z-0 mx-auto overflow-hidden pb-20">
-          <div className="mx-auto w-full md:w-2/3">
+      <div className="text-gray-700 relative min-h-[45vh] w-full md:min-h-[60vh] container mx-auto">
+        <div className="md:mx-28 container z-0 overflow-hidden pb-20">
+          <div className="w-full md:w-2/3">
             <ScrollReveal>
               <form className="space-y-8" onSubmit={handleSubmit}>
-                {/* 1. Personal Information */}
+                {/* 1. Personal Information 
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Your Information</h2>
                   <div className="space-y-4">
@@ -1116,7 +1129,7 @@ export default function GiftTreesPage() {
                   </div>
                 </div>
 
-                {/* 2. Tree Planting Options */}
+                 2. Tree Planting Options 
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Tree Planting Options</h2>
                   <p className="font-medium">
@@ -1187,7 +1200,7 @@ export default function GiftTreesPage() {
                       )}
                     </div>
                   )}
-                </div>
+                </div> */}
 
                 {/* 3. Number of Trees*/}
                 <div>
@@ -1248,6 +1261,7 @@ export default function GiftTreesPage() {
                       type="text"
                       id="eventName"
                       name="eventName"
+                      placeholder="Occasion Name"
                       value={eventName || ""}
                       onChange={(e) => setEventName(e.target.value)}
                       className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
@@ -1260,6 +1274,7 @@ export default function GiftTreesPage() {
                       type="text"
                       id="plantedBy"
                       name="plantedBy"
+                      placeholder="Gifted By"
                       value={plantedBy || ""}
                       onChange={(e) => setPlantedBy(e.target.value)}
                       className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
@@ -1416,6 +1431,7 @@ export default function GiftTreesPage() {
                           data={name}
                           index={index}
                           onUpdate={(field, value) => handleNameChange(index, field, value)}
+                          maxTrees={Number(formData.numberOfTrees) - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
                           errors={errors}
                           canRemove={index > 0}
                           onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
@@ -1719,56 +1735,95 @@ export default function GiftTreesPage() {
                 </div>
 
 
-                {/* 6. Tax Information */}
+                {/* 6. Personal Information */}
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Tax Benefits</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-3">
-                      <label className="block text-lg font-light mb-2">Would you like to avail tax benefits?</label>
-                      {[
-                        { value: "indian", label: "Indian citizen (80G benefit)" },
-                        { value: "foreign", label: "Foreign donor (501(c) eligible)" },
-                        { value: "none", label: "No" },
-                      ].map((option) => (
-                        <label key={option.value} className="flex items-center space-x-3">
-                          <input
-                            type="radio"
-                            name="taxStatus"
-                            value={option.value}
-                            className="h-5 w-5"
-                            onChange={() => setTaxStatus(option.value)}
-                            checked={taxStatus === option.value}
-                            disabled={rpPaymentSuccess}
-                            required
-                          />
-                          <span>{option.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {taxStatus === "indian" && (
-                      <div>
-                        <label className="mb-2 block text-lg font-light">
-                          PAN card number (for 80G benefit) *
-                        </label>
+                  <h2 className="text-2xl font-semibold">Your details</h2>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center">
+                      <label className="w-48 text-gray-700">Gifted by*:</label>
+                      <div className="flex-1">
                         <input
                           type="text"
-                          name="panNumber"
-                          className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'
-                            } px-4 py-3 text-gray-700`}
-                          value={formData.panNumber}
+                          name="fullName"
+                          className={`w-full rounded-md border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                          required
+                          value={formData.fullName}
                           onChange={handleInputChange}
                           onBlur={(e) => {
                             const error = validateField(e.target.name, e.target.value);
-                            setErrors(prev => ({ ...prev, panNumber: error }));
+                            setErrors(prev => ({ ...prev, fullName: error }));
                           }}
-                          placeholder="ABCDE1234F"
-                          required={taxStatus === "indian"}
+                          placeholder="Type your name"
+                        />
+                        {errors.fullName && (
+                          <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <label className="w-48 text-gray-700">Email ID*:</label>
+                      <div className="flex-1">
+                        <input
+                          type="email"
+                          name="email"
+                          className={`w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                          required
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          onBlur={(e) => {
+                            const error = validateField(e.target.name, e.target.value);
+                            setErrors(prev => ({ ...prev, email: error }));
+                          }}
+                          placeholder="Type your email id"
+                        />
+                        {errors.email && (
+                          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <label className="w-48 text-gray-700">Mobile number*:</label>
+                      <div className="flex-1">
+                        <input
+                          type="tel"
+                          name="phone"
+                          className={`w-full rounded-md border ${errors.phone ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          onBlur={(e) => {
+                            const error = validateField(e.target.name, e.target.value);
+                            setErrors(prev => ({ ...prev, phone: error }));
+                          }}
+                          placeholder="Type your mobile number"
+                          pattern="[0-9]{10,15}"
+                          title="10-15 digit phone number"
+                        />
+                        {errors.phone && (
+                          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <label className="w-48 text-gray-700">PAN number*:</label>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          name="panNumber"
+                          className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700 uppercase placeholder:text-gray-400 placeholder:normal-case`}
+                          value={formData.panNumber}
+                          onChange={handleInputChange}
+                          placeholder="Enter your PAN number"
+                          pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                          maxLength={10}
                         />
                         {errors.panNumber && (
                           <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
@@ -1779,9 +1834,9 @@ export default function GiftTreesPage() {
                     strategy="lazyOnload"
                     onLoad={() => setRazorpayLoaded(true)}
                   />
-                  <h2 className="text-2xl font-semibold">Payment Information</h2>
+                  {/* <h2 className="text-2xl font-semibold">Payment Information</h2> */}
 
-                  <div>
+                  {/* <div>
                     <label className="mb-2 block text-lg font-light">
                       Payment Method *
                     </label>
@@ -1819,6 +1874,7 @@ export default function GiftTreesPage() {
                       </p>
                     )}
                   </div>
+                  
 
                   {paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
                     <div className="flex justify-center">
@@ -1832,9 +1888,23 @@ export default function GiftTreesPage() {
                         {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
                       </Button>
                     </div>
+                  )} */}
+
+                  {!isAboveLimit && !rpPaymentSuccess && (
+                    <div className="flex justify-center">
+                      <Button
+                        type="button"
+                        onClick={handleRazorpayPayment}
+                        disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
+                        className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                          }`}
+                      >
+                        {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
+                      </Button>
+                    </div>
                   )}
 
-                  {(paymentOption === "bank-transfer" || isAboveLimit) && (
+                  {isAboveLimit && (
                     <div className="bg-gray-100 p-4 rounded-md flex flex-col sm:flex-row gap-4">
                       <div className="flex-1">
                         <h3 className="font-bold mb-2">Bank Transfer Details:</h3>
@@ -1857,7 +1927,7 @@ export default function GiftTreesPage() {
                     </div>
                   )}
 
-                  {paymentOption === "bank-transfer" && (
+                  {isAboveLimit && (
                     <div>
                       <label className="mb-2 block text-lg font-light">
                         Upload Payment Confirmation *
@@ -1867,7 +1937,7 @@ export default function GiftTreesPage() {
                         type="file"
                         accept="image/*,.pdf"
                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        required={paymentOption === "bank-transfer"}
+                        required={isAboveLimit}
                         onChange={(e) => {
                           setPaymentProof(e.target.files?.[0] || null);
                         }}
@@ -1881,7 +1951,7 @@ export default function GiftTreesPage() {
                   )}
                 </div>
 
-                {paymentOption === "razorpay" && rpPaymentSuccess && multipleNames && (
+                {!isAboveLimit && rpPaymentSuccess && multipleNames && Number(formData.numberOfTrees) != dedicatedNames.map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0) && (
                   <div className="pt-6 flex justify-center">
                     <p className="text-gray-600">
                       Only gifting {dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0)} trees out of {formData.numberOfTrees} trees. You can choose to provide all the recipients now or can do it later.
@@ -1889,7 +1959,7 @@ export default function GiftTreesPage() {
                   </div>
                 )}
 
-                {(paymentOption !== "razorpay" || rpPaymentSuccess) && <div className="pt-6 flex justify-center">
+                {(isAboveLimit || rpPaymentSuccess) && <div className="pt-6 flex justify-center">
                   <Button
                     type="submit"
                     className="bg-green-800 text-white hover:bg-green-900 w-[500px] py-6 text-lg"
