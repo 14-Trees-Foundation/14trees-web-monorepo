@@ -186,7 +186,7 @@ export const createDonation = async (req: Request, res: Response) => {
         if (names_for_plantation) donation.names_for_plantation = names_for_plantation;
         if (comments) donation.comments = comments;
         
-        await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+        DonationService.sendDonationAcknowledgement(donation, sponsorUser);
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails
