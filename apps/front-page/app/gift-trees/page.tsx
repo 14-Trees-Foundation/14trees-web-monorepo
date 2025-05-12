@@ -153,6 +153,13 @@ export default function GiftTreesPage() {
     });
   }, []);
 
+  const getOccasionQuestion = () => {
+    const treeCount = parseInt(formData.numberOfTrees) || 0;
+    return treeCount === 1 
+      ? "Are you gifting this tree for an occasion?" 
+      : "Are you gifting these trees for an occasion?";
+  };
+
   // Animation variants (existing unchanged)
   const containerVariants = {
     hidden: { opacity: 0, y: 10, scale: 1.05 },
@@ -1205,7 +1212,7 @@ export default function GiftTreesPage() {
                 {/* 3. Number of Trees*/}
                 <div>
                   <label className="mb-2 block text-lg font-light">
-                    Number of trees you would like to sponsor *
+                  Number of trees you would like to gift *
                   </label>
                   <input
                     type="number"
@@ -1225,7 +1232,7 @@ export default function GiftTreesPage() {
 
                 {/* Occasion Details */}
                 <div className="space-y-6 mt-2">
-                  <h2 className="text-2xl font-semibold">Are you gifting this tree on an Occasion?</h2>
+                <h2 className="text-2xl font-semibold">{getOccasionQuestion()}</h2>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1245,7 +1252,10 @@ export default function GiftTreesPage() {
                         <option value="" disabled>Select an event type</option>
                         <option value="1">Birthday</option>
                         <option value="2">Memorial</option>
-                        <option value="3">General gift</option>
+                        <option value="3">Wedding</option>
+                        <option value="4">Wedding Anniversary</option>
+                        <option value="5">Festival Celebration</option>
+                        <option value="6">General Gift</option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -1294,88 +1304,9 @@ export default function GiftTreesPage() {
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-semibold">Tree Card Messages</h3>
-
-                  {/* Left column - Message inputs */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Primary Message</label>
-                      <textarea
-                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        rows={windowWidth < 640 ? 5 : 3}
-                        value={primaryMessage}
-                        onChange={(e) => setPrimaryMessage(e.target.value)}
-                        maxLength={270}
-                        placeholder="A tree has been planted in your name at our conservation site..."
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {270 - primaryMessage.length} characters remaining
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Secondary Message</label>
-                      <textarea
-                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        rows={windowWidth < 640 ? 4 : 2}
-                        value={secondaryMessage}
-                        onChange={(e) => setSecondaryMessage(e.target.value)}
-                        maxLength={125}
-                        placeholder="We invite you to visit and witness your tree's growth..."
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {125 - secondaryMessage.length} characters remaining
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        className="px-4 py-2 border border-gray-300 rounded-md"
-                        onClick={() => {
-                          setPrimaryMessage(eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary);
-                          setSecondaryMessage(defaultMessages.secondary);
-                        }}
-                      >
-                        Reset to Default
-                      </button>
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-green-600 text-white rounded-md"
-                        onClick={handleGeneratePreview}
-                        disabled={isGeneratingPreview}
-                      >
-                        {isGeneratingPreview ? 'Generating...' : 'Preview'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Right column - Preview */}
-                  <div className="border border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
-                    {isGeneratingPreview ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-600">Generating your card preview...</p>
-                      </div>
-                    ) : previewUrl ? (
-                      <div className="w-full h-full aspect-[4/3] sm:aspect-[16/9]">
-                        <iframe
-                          src={previewUrl}
-                          className="w-full h-full border-none rounded-md"
-                          title="Gift card preview"
-                          style={{ minHeight: '250px', height: "100%", width: "100%" }}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 py-16">Your card preview will appear here</p>
-                    )}
-                  </div>
-                </div>
-
-
-                {/* 4. Tree Dedication Names */}
-                <div className="space-y-4 mt-2">
-                  <h3 className="text-2xl font-semibold">Tree Recipients</h3>
+                 {/* 4. Tree Dedication Names */}
+                 <div className="space-y-4 mt-2">
+                  <h3 className="text-2xl font-semibold">Gift Recipients</h3>
                   <label className="mb-2 block text-lg font-light">
                     I&apos;d like my trees to be planted in the following name:
                   </label>
@@ -1734,6 +1665,88 @@ export default function GiftTreesPage() {
                   )}
                 </div>
 
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-semibold">Help us craft a beautiful gift card for you!</h3>
+
+                     {/* Preview section - now comes first */}
+                     <div className="border border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
+                        {isGeneratingPreview ? (
+                         <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                           <p className="mt-2 text-gray-600">Generating your card preview...</p>
+                          </div>
+                 ) : previewUrl ? (
+                     <div className="w-full h-full aspect-[4/3] sm:aspect-[16/9]">
+                     <iframe
+                        src={previewUrl}
+                        className="w-full h-full border-none rounded-md"
+                        title="Gift card preview"
+                        style={{ minHeight: '250px', height: "100%", width: "100%" }}
+                      />
+                   </div>
+                ) : (
+                      <p className="text-gray-500 py-16">Your card preview will appear here</p>
+                   )}
+                 </div>
+
+                 {/* New line below the preview section */}
+                 <p className="text-xs text-gray-500 mt-2">
+                     The illustrations on the final gift card will differ from the template above depending upon the trees planted.
+                 </p>
+
+                 {/* Message inputs section - now comes after preview */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Primary Message</label>
+                      <textarea
+                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                         rows={windowWidth < 640 ? 5 : 3}
+                         value={primaryMessage}
+                         onChange={(e) => setPrimaryMessage(e.target.value)}
+                         maxLength={270}
+                         placeholder="A tree has been planted in your name at our conservation site..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                          {270 - primaryMessage.length} characters remaining
+                      </p>
+                  </div>
+
+                   <div>
+                      <label className="block text-sm font-medium mb-1">Secondary Message</label>
+                        <textarea
+                           className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                           rows={windowWidth < 640 ? 4 : 2}
+                           value={secondaryMessage}
+                           onChange={(e) => setSecondaryMessage(e.target.value)}
+                           maxLength={125}
+                           placeholder="We invite you to visit and witness your tree's growth..."
+                         />
+                         <p className="text-xs text-gray-500 mt-1">
+                          {125 - secondaryMessage.length} characters remaining
+                         </p>
+                    </div>
+                  <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 border border-gray-300 rounded-md"
+                    onClick={() => {
+                    setPrimaryMessage(eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary);
+                    setSecondaryMessage(defaultMessages.secondary);
+                   }}
+                  >
+                    Reset to Default
+                 </button>
+               <button
+                  type="button"
+                  className="px-4 py-2 bg-green-600 text-white rounded-md"
+                  onClick={handleGeneratePreview}
+                 disabled={isGeneratingPreview}
+                >
+                  {isGeneratingPreview ? 'Generating...' : 'Preview'}
+              </button>
+               </div>
+              </div>
+             </div>
 
                 {/* 6. Personal Information */}
                 <div className="space-y-6">
