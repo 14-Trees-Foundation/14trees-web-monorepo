@@ -116,11 +116,15 @@ export default function GiftTreesPage() {
     (currentPage + 1) * itemsPerPage
   );
 
-  const calculateGiftingAmount = (): number => {
-    if (treeLocation === "foundation") return 3000;
-    if (treeLocation === "public") return 2000;
-    return 0;
-  };
+ // const calculateGiftingAmount = (): number => {
+//    if (treeLocation === "foundation") return 3000;
+ //   if (treeLocation === "public") return 2000;
+//   return 0;
+ // };
+
+ const calculateGiftingAmount = (): number => {
+  return 2000;
+};
 
   // Calculate total amount (existing unchanged)
   useEffect(() => {
@@ -762,8 +766,8 @@ export default function GiftTreesPage() {
           body: JSON.stringify({
             action: 'create',
             amount,
-            donor_type: taxStatus === "indian" ? "Indian Citizen" : taxStatus === "foreign" ? "Foreign Donor" : null,
-            pan_number: taxStatus === "indian" ? formData.panNumber : null,
+            donor_type: "Indian Citizen",
+            pan_number: formData.panNumber,
             consent: taxStatus === "none" ? true : false,
           })
         });
@@ -1054,7 +1058,7 @@ export default function GiftTreesPage() {
           <div className="mx-auto w-full md:w-2/3">
             <ScrollReveal>
               <form className="space-y-8" onSubmit={handleSubmit}>
-                {/* 1. Personal Information */}
+                {/* 1. Personal Information 
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Your Information</h2>
                   <div className="space-y-4">
@@ -1116,7 +1120,7 @@ export default function GiftTreesPage() {
                   </div>
                 </div>
 
-                {/* 2. Tree Planting Options */}
+                 2. Tree Planting Options 
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Tree Planting Options</h2>
                   <p className="font-medium">
@@ -1187,7 +1191,7 @@ export default function GiftTreesPage() {
                       )}
                     </div>
                   )}
-                </div>
+                </div> */}
 
                 {/* 3. Number of Trees*/}
                 <div>
@@ -1719,58 +1723,102 @@ export default function GiftTreesPage() {
                 </div>
 
 
-                {/* 6. Tax Information */}
+                {/* 6. Personal Information */}
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Tax Benefits</h2>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-3">
-                      <label className="block text-lg font-light mb-2">Would you like to avail tax benefits?</label>
-                      {[
-                        { value: "indian", label: "Indian citizen (80G benefit)" },
-                        { value: "foreign", label: "Foreign donor (501(c) eligible)" },
-                        { value: "none", label: "No" },
-                      ].map((option) => (
-                        <label key={option.value} className="flex items-center space-x-3">
+                    <h2 className="text-2xl font-semibold">Your details</h2>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">Gifted by*:</label>
+                        <div className="flex-1">
                           <input
-                            type="radio"
-                            name="taxStatus"
-                            value={option.value}
-                            className="h-5 w-5"
-                            onChange={() => setTaxStatus(option.value)}
-                            checked={taxStatus === option.value}
-                            disabled={rpPaymentSuccess}
+                            type="text"
+                            name="fullName"
+                            className={`w-full rounded-md border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
                             required
+                            value={formData.fullName}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, fullName: error }));
+                            }}
+                            placeholder="Type your name"
                           />
-                          <span>{option.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {taxStatus === "indian" && (
-                      <div>
-                        <label className="mb-2 block text-lg font-light">
-                          PAN card number (for 80G benefit) *
-                        </label>
-                        <input
-                          type="text"
-                          name="panNumber"
-                          className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'
-                            } px-4 py-3 text-gray-700`}
-                          value={formData.panNumber}
-                          onChange={handleInputChange}
-                          onBlur={(e) => {
-                            const error = validateField(e.target.name, e.target.value);
-                            setErrors(prev => ({ ...prev, panNumber: error }));
-                          }}
-                          placeholder="ABCDE1234F"
-                          required={taxStatus === "indian"}
-                        />
-                        {errors.panNumber && (
-                          <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
-                        )}
+                          {errors.fullName && (
+                            <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                          )}
+                        </div>
                       </div>
-                    )}
+
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">Email ID*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="email"
+                            name="email"
+                            className={`w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                            required
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, email: error }));
+                            }}
+                            placeholder="Type your email id"
+                          />
+                          {errors.email && (
+                            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">Mobile number*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="tel"
+                            name="phone"
+                            className={`w-full rounded-md border ${errors.phone ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, phone: error }));
+                            }}
+                            placeholder="Type your mobile number"
+                            pattern="[0-9]{10,15}"
+                            title="10-15 digit phone number"
+                          />
+                          {errors.phone && (
+                            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">PAN number*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            name="panNumber"
+                            className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700 uppercase`}
+                            value={formData.panNumber}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, panNumber: error }));
+                            }}
+                            placeholder="Enter your PAN number"
+                            pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                            maxLength={10}
+                          //required={taxStatus === "indian"}
+                          />
+                          {errors.panNumber && (
+                            <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
                 {/* 7. Payment Information */}
                 <div className="space-y-6">
@@ -1781,7 +1829,7 @@ export default function GiftTreesPage() {
                   />
                   <h2 className="text-2xl font-semibold">Payment Information</h2>
 
-                  <div>
+                  {/* <div>
                     <label className="mb-2 block text-lg font-light">
                       Payment Method *
                     </label>
@@ -1819,6 +1867,7 @@ export default function GiftTreesPage() {
                       </p>
                     )}
                   </div>
+                  
 
                   {paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
                     <div className="flex justify-center">
@@ -1832,9 +1881,23 @@ export default function GiftTreesPage() {
                         {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
                       </Button>
                     </div>
-                  )}
+                  )} */}
 
-                  {(paymentOption === "bank-transfer" || isAboveLimit) && (
+        {!isAboveLimit && !rpPaymentSuccess && (
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              onClick={handleRazorpayPayment}
+              disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
+              className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+            >
+              {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
+            </Button>
+          </div>
+        )}
+
+                {isAboveLimit && (
                     <div className="bg-gray-100 p-4 rounded-md flex flex-col sm:flex-row gap-4">
                       <div className="flex-1">
                         <h3 className="font-bold mb-2">Bank Transfer Details:</h3>
