@@ -329,7 +329,7 @@ export default function DonatePage() {
     // Handle payment based on selected option
 
     let paymentId: number | null = razorpayPaymentId || null;
-    if (paymentOption === "bank-transfer") {
+    if (isAboveLimit) {
       paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
       setRazorpayPaymentId(paymentId);
     }
@@ -645,7 +645,7 @@ export default function DonatePage() {
       if (!paymentId) {
         const response = await apiClient.createPayment(
           amount,
-          "Individual",
+          "Indian Citizen",
           formData.panNumber,
           true
         );
@@ -1509,6 +1509,8 @@ export default function DonatePage() {
                     isAboveLimit={isAboveLimit}
                     razorpayLoaded={razorpayLoaded}
                     rpPaymentSuccess={rpPaymentSuccess}
+                    paymentProof={paymentProof}
+                    setPaymentProof={setPaymentProof}
                     isProcessing={isProcessing}
                     isLoading={isLoading}
                     setCurrentStep={setCurrentStep}
