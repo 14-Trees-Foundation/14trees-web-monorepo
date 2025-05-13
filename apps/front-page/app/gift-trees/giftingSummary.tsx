@@ -1,12 +1,5 @@
-import { useState } from 'react';
-import Image from 'next/image';
-import { Button } from 'ui/components/button';
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+import { Button } from "ui/components/button";
+import Image from "next/image";
 
 interface SummaryPaymentProps {
   formData: {
@@ -14,24 +7,16 @@ interface SummaryPaymentProps {
     email: string;
     phone: string;
     panNumber: string;
+    numberOfTrees: string;
   };
-  treeLocation: string;
-  visitDate: string;
-  adoptedTreeCount: number;
-  donationMethod: 'trees' | 'amount';
-  donationTreeCount: number;
-  donationAmount: number;
   dedicatedNames: Array<{
     recipient_name: string;
     recipient_email?: string;
-    recipient_phone?: string;
     trees_count: number;
     assignee_name?: string;
     assignee_email?: string;
-    assignee_phone?: string;
-    relation?: string;
   }>;
-  paymentOption: 'razorpay' | 'bank-transfer';
+  totalAmount: number;
   isAboveLimit: boolean;
   razorpayLoaded: boolean;
   rpPaymentSuccess: boolean;
@@ -42,18 +27,17 @@ interface SummaryPaymentProps {
   setCurrentStep: (step: 1 | 2) => void;
   handleRazorpayPayment: () => void;
   handleSubmit: (e: React.FormEvent) => void;
-  setDonationId: (id: string | null) => void;
+  eventType: string | null;
+  eventName: string | null;
+  giftedOn: Date;
+  plantedBy: string | null;
+
 }
 
 export const SummaryPaymentPage = ({
   formData,
-  treeLocation,
-  visitDate,
-  adoptedTreeCount,
-  donationMethod,
-  donationTreeCount,
-  donationAmount,
   dedicatedNames,
+  totalAmount,
   isAboveLimit,
   razorpayLoaded,
   rpPaymentSuccess,
@@ -64,64 +48,44 @@ export const SummaryPaymentPage = ({
   setCurrentStep,
   handleRazorpayPayment,
   handleSubmit,
+  eventType,
+  eventName,
+  giftedOn,
+  plantedBy,
 }: SummaryPaymentProps) => {
 
-  const handleCompleteDonation = (e: React.MouseEvent) => {
-    e.preventDefault();
 
-    // Validate payment proof for bank transfers
+  const handleCompleteGifting = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (isAboveLimit && !paymentProof) {
       alert("Please upload payment proof for bank transfer");
       return;
     }
 
-    // Create a synthetic form event
     const syntheticEvent = {
       preventDefault: () => { },
     } as React.FormEvent;
-
     handleSubmit(syntheticEvent);
   };
 
   return (
     <div className="space-y-8">
-      {/* Summary Section */}
       <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
         <h2 className="text-2xl font-bold text-green-800">Order Summary</h2>
 
-        {/* Tree Details */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">
-            {treeLocation === "adopt" ? `${adoptedTreeCount === 1 ? "Tree" : "Trees"} Adopted` : "Donation Details"}
-          </h3>
-          {treeLocation === "adopt" ? (
-            <>
-              <p><span className="font-medium">Visit Date:</span> {visitDate || "Not specified"}</p>
-              <p><span className="font-medium">Trees:</span> {adoptedTreeCount}</p>
-              <p><span className="font-medium">Amount:</span> ₹{3000 * (adoptedTreeCount || 0)}</p>
-            </>
-          ) : (
-            <>
-              {donationMethod === "trees" && (
-                <p><span className="font-medium">Trees:</span> {donationTreeCount}</p>
-              )}
-              <p><span className="font-medium">Amount:</span> ₹{
-                donationMethod === "trees" ?
-                  (donationTreeCount * 1500) :
-                  donationAmount
-              }</p>
-            </>
-          )}
+          <h3 className="text-lg font-semibold">Gift Details</h3>
+          <p>Gifted By: {plantedBy}</p>
+          <p>Email: {formData.email}</p>
+          {formData.phone && <p>Phone: {formData.phone}</p>}
+          <p>PAN: {formData.panNumber}</p>
+          <p>Trees: {formData.numberOfTrees}</p>
+          <p>Amount: ₹{totalAmount.toLocaleString('en-IN')}</p>
+          {eventType && <p>Occasion: {getOccasionName(eventType)}</p>}
+          {eventName && <p>Event Name: {eventName}</p>}
+          <p>Gifted On: {giftedOn.toLocaleDateString()}</p>
         </div>
 
-        {/* Donor Info */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Your Details</h3>
-          <p><span className="font-medium">Name:</span> {formData.fullName}</p>
-          <p><span className="font-medium">Email:</span> {formData.email}</p>
-          {formData.phone && <p><span className="font-medium">Phone:</span> {formData.phone}</p>}
-          <p><span className="font-medium">PAN:</span> {formData.panNumber}</p>
-        </div>
 
         {/* Dedication Info */}
         {dedicatedNames[0]?.recipient_name && (
@@ -136,7 +100,6 @@ export const SummaryPaymentPage = ({
                     <th className="px-4 py-2 text-left border-b">Trees</th>
                     <th className="px-4 py-2 text-left border-b">Assignee</th>
                     <th className="px-4 py-2 text-left border-b">Assignee Email</th>
-                    <th className="px-4 py-2 text-left border-b">Assignee&apos;s Relation</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -147,7 +110,6 @@ export const SummaryPaymentPage = ({
                       <td className="px-4 py-2 border-b">{recipient.trees_count}</td>
                       <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
                       <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
-                      <td className="px-4 py-2 border-b">{recipient.relation || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -156,7 +118,6 @@ export const SummaryPaymentPage = ({
           </div>
         )}
 
-        {/* Back Button */}
         <button
           type="button"
           onClick={() => setCurrentStep(1)}
@@ -227,12 +188,12 @@ export const SummaryPaymentPage = ({
           </div>
         )}
 
-        {/* Complete Donation Button */}
+        {/* Submit Button */}
         {(isAboveLimit || rpPaymentSuccess) && (
           <div className="pt-6 flex justify-center">
             <Button
               type="button"
-              onClick={handleCompleteDonation}
+              onClick={handleCompleteGifting}
               className="bg-green-800 text-white hover:bg-green-900 w-[500px] py-6 text-lg"
               size="xl"
               disabled={isLoading}
@@ -246,7 +207,7 @@ export const SummaryPaymentPage = ({
                   Processing...
                 </div>
               ) : (
-                "Complete Donation"
+                "Submit Request"
               )}
             </Button>
           </div>
@@ -255,3 +216,15 @@ export const SummaryPaymentPage = ({
     </div>
   );
 };
+
+function getOccasionName(type: string | null): string {
+  const types: Record<string, string> = {
+    "1": "Birthday",
+    "2": "Memorial",
+    "3": "Wedding",
+    "4": "Wedding Anniversary",
+    "5": "Festival Celebration",
+    "6": "General Gift"
+  };
+  return type ? types[type] || "Other" : "Not specified";
+}

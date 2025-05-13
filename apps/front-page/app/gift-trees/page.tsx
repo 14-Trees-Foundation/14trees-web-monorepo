@@ -1,29 +1,17 @@
 "use client";
 
-import { Button } from "ui/components/button";
-import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import Link from "next/link";
-import { motion } from "framer-motion";
+
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
 import { useState, useEffect, useRef } from "react";
 import Script from 'next/script';
-import Image from 'next/image';
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
-import CsvUpload from "components/CsvUpload";
 import { getUniqueRequestId } from "~/utils";
-import { UploadIcon } from "lucide-react";
-import { UserDetailsForm } from 'components/donate/UserDetailsForm';
-
-const defaultMessages = {
-  primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
-  birthday: 'We are immensely delighted to share that a tree has been planted in your name on the occasion of your birthday at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.',
-  memorial: 'A tree has been planted in the memory of <name here> at the 14 Trees Foundation reforestation site. For many years, this tree will help rejuvenate local ecosystems, support local biodiversity and offset the harmful effects of climate change and global warming.',
-  secondary: 'We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future.',
-  logo: 'Gifted by 14 Trees in partnership with'
-}
+import { SummaryPaymentPage } from "./giftingSummary";
+import Recipients from "components/Recipients";
+import GiftCardPreview from "components/gift-trees/GiftCardPreview";
 
 declare global {
   interface Window {
@@ -34,10 +22,8 @@ declare global {
 interface DedicatedName {
   recipient_name: string;
   recipient_email: string;
-  recipient_phone: string;
   assignee_name: string;
   assignee_email: string;
-  assignee_phone: string;
   relation: string;
   trees_count: number;
   image?: string;
@@ -52,26 +38,17 @@ export default function GiftTreesPage() {
   const [giftedOn, setGiftedOn] = useState<Date>(new Date()); // New state for gifted on
   const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
   const [treeLocation, setTreeLocation] = useState("");
-  const [groveType, setGroveType] = useState("");
-  const [otherGroveType, setOtherGroveType] = useState("other");
-  const [taxStatus, setTaxStatus] = useState("");
   const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
     recipient_name: "",
     recipient_email: "",
-    recipient_phone: "",
     assignee_name: "",
     assignee_email: "",
-    assignee_phone: "",
     relation: "",
     trees_count: 1
   }]);
-  const [primaryMessage, setPrimaryMessage] = useState(defaultMessages.primary);
-  const [secondaryMessage, setSecondaryMessage] = useState(defaultMessages.secondary);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
-  const [presentationId, setPresentationId] = useState<string | null>(null);
-  const [slideId, setSlideId] = useState<string | null>(null);
+  const [primaryMessage, setPrimaryMessage] = useState("");
+  const [secondaryMessage, setSecondaryMessage] = useState("");
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,7 +60,7 @@ export default function GiftTreesPage() {
     fullName: "",
     email: "",
     phone: "",
-    numberOfTrees: "",
+    numberOfTrees: "10",
     panNumber: "",
     comments: ""
   });
@@ -95,32 +72,17 @@ export default function GiftTreesPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
-  const [uploadedImages, setUploadedImages] = useState<Record<string, File>>({});
-  const [imageUploadProgress, setImageUploadProgress] = useState<Record<string, number>>({});
   const [currentPage, setCurrentPage] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [giftRequestId, setGiftRequestId] = useState<string | null>(null);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [windowWidth, setWindowWidth] = useState(1024); // default value
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   useEffect(() => {
-    // Only runs on the client
     setWindowWidth(window.innerWidth);
   }, []);
-
-  const itemsPerPage = 10;
-  const paginatedData = csvPreview.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
-
-  // const calculateGiftingAmount = (): number => {
-  //    if (treeLocation === "foundation") return 3000;
-  //   if (treeLocation === "public") return 2000;
-  //   return 0;
-  // };
 
   const calculateGiftingAmount = (): number => {
     return 2000;
@@ -155,8 +117,8 @@ export default function GiftTreesPage() {
 
   const getOccasionQuestion = () => {
     const treeCount = parseInt(formData.numberOfTrees) || 0;
-    return treeCount === 1 
-      ? "Are you gifting this tree for an occasion?" 
+    return treeCount === 1
+      ? "Are you gifting this tree for an occasion?"
       : "Are you gifting these trees for an occasion?";
   };
 
@@ -228,53 +190,6 @@ export default function GiftTreesPage() {
     return error;
   };
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setPrimaryMessage(eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary);
-      setSecondaryMessage(defaultMessages.secondary);
-
-      handleGeneratePreview();
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [eventType]);
-
-  const handleGeneratePreview = async () => {
-    setIsGeneratingPreview(true);
-    try {
-      const endpoint = presentationId && slideId
-        ? `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/update-template`
-        : `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/generate-template`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          request_id: giftRequestId || getUniqueRequestId(),
-          presentation_id: presentationId,
-          slide_id: slideId,
-          primary_message: primaryMessage,
-          secondary_message: secondaryMessage,
-          event_type: eventType,
-          is_personal: true,
-        })
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setPresentationId(data.presentation_id || presentationId);
-        setSlideId(data.slide_id || slideId);
-        setPreviewUrl(
-          `https://docs.google.com/presentation/d/${data.presentation_id || presentationId}/embed?rm=minimal&slide=id.${data.slide_id || slideId}&timestamp=${Date.now()}`
-        );
-      }
-    } catch (error) {
-      console.error("Error generating preview:", error);
-    } finally {
-      setIsGeneratingPreview(false);
-    }
-  };
-
   // Handle input changes (existing unchanged)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -296,6 +211,7 @@ export default function GiftTreesPage() {
   const validateDedicatedNames = () => {
     let isValid = true;
     const newErrors: Record<string, string> = {};
+    const seenNames = new Set();
 
     // Calculate total trees count
     const totalTrees = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 1), 0);
@@ -307,6 +223,13 @@ export default function GiftTreesPage() {
     }
 
     dedicatedNames.forEach((name, index) => {
+      const normalizedName = name.recipient_name.toLowerCase().trim();
+      if (seenNames.has(normalizedName)) {
+        newErrors[`dedicatedName-${index}`] = "Duplicate recipient name";
+        isValid = false;
+      } else if (normalizedName) {
+        seenNames.add(normalizedName);
+      }
       if (!name.recipient_name.trim()) {
         newErrors[`dedicatedName-${index}`] = "Name is required";
         isValid = false;
@@ -317,11 +240,6 @@ export default function GiftTreesPage() {
 
       if (name.recipient_email && !validationPatterns.email.test(name.recipient_email)) {
         newErrors[`dedicatedEmail-${index}`] = "Please enter a valid email";
-        isValid = false;
-      }
-
-      if (name.recipient_phone && !validationPatterns.phone.test(name.recipient_phone)) {
-        newErrors[`dedicatedPhone-${index}`] = "Please enter a valid phone number";
         isValid = false;
       }
 
@@ -458,8 +376,7 @@ export default function GiftTreesPage() {
   }
 
   // Existing form submission (unchanged)
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
 
     if (!formData.fullName || !formData.email || !formData.phone || !formData.panNumber || !formData.numberOfTrees) {
       alert("Please fill in all required fields before payment");
@@ -645,9 +562,8 @@ export default function GiftTreesPage() {
           trees_count: 1
         }
       ]);
+      setCurrentStep(1);
       setTreeLocation("");
-      setGroveType("");
-      setTaxStatus("");
       setMultipleNames(false);
       setPaymentOption("razorpay");
       setCsvFile(null);
@@ -667,13 +583,28 @@ export default function GiftTreesPage() {
     }
   };
 
+  useEffect(() => {
+    if (rpPaymentSuccess && !isLoading) handleSubmit();
+  }, [rpPaymentSuccess, handleSubmit])
+
   // Rest of your existing functions (unchanged)
   const handleAddName = () => {
-    // check if the last name is empty
-    if (dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "") {
+    console.log("Called")
+    const lastRecipient = dedicatedNames[dedicatedNames.length - 1];
+
+    // Check if the last name is empty
+    if (lastRecipient.recipient_name.trim() === "") {
+      console.log("Returned")
       return;
     }
-    setDedicatedNames([...dedicatedNames, { recipient_name: "", recipient_email: "", recipient_phone: "", assignee_name: "", assignee_email: "", assignee_phone: "", relation: "", trees_count: 1 }]);
+
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.duplicateRecipient;
+      return newErrors;
+    });
+
+    setDedicatedNames(prev => [...prev, { recipient_name: "", recipient_email: "", assignee_name: "", assignee_email: "", relation: "", trees_count: 1 }]);
   };
 
   const handleRemoveName = (index: number) => {
@@ -793,7 +724,6 @@ export default function GiftTreesPage() {
         setRazorpayOrderId(order_id);
         orderId = order_id;
       }
-
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -953,6 +883,7 @@ export default function GiftTreesPage() {
       }
     };
 
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -963,7 +894,27 @@ export default function GiftTreesPage() {
               <strong>Gift Trees Request ID:</strong> {giftRequestId}
             </p>
           )}
-          <p className="mb-4">You will receive an acknowledgment email shortly.</p>
+          <ul className="list-disc pl-6 mb-4 text-sm">
+            <li>The receipt and the certificate of appreciation have been sent to your email ID.</li>
+            <li>
+              Soft copy of the cards will be sent via email within two working days.
+              <ul className="list-disc pl-6">
+                <li>
+                  <i>(Sometimes the email lands up in the Spam/Junk folder, please ensure to check it)</i>.
+                </li>
+                <li>
+                  This email will contain the link to your tree dashboard, which will show the latest picture of the plant/tree, location on the map and other details.
+                </li>
+              </ul>
+            </li>
+            <li>You can also print the cards, the default size of the card is A5.</li>
+            <li>
+              In case of any issues, please call <strong>+91 98458 05881</strong> or email{" "}
+              <a href="mailto:contact@14trees.org" className="text-blue-600 underline">
+                contact@14trees.org
+              </a>.
+            </li>
+          </ul>
 
           {!updateSuccess ? (
             <div className="space-y-6">
@@ -1073,8 +1024,9 @@ export default function GiftTreesPage() {
         <div className="md:mx-28 container z-0 overflow-hidden pb-20">
           <div className="w-full md:w-2/3">
             <ScrollReveal>
-              <form className="space-y-8" onSubmit={handleSubmit}>
-                {/* 1. Personal Information 
+              {currentStep === 1 ? (
+                <form className="space-y-8">
+                  {/* 1. Personal Information 
                 <div className="space-y-6">
                   <h2 className="text-2xl font-semibold">Your Information</h2>
                   <div className="space-y-4">
@@ -1209,645 +1161,255 @@ export default function GiftTreesPage() {
                   )}
                 </div> */}
 
-                {/* 3. Number of Trees*/}
-                <div>
-                  <label className="mb-2 block text-lg font-light">
-                  Number of trees you would like to gift *
-                  </label>
-                  <input
-                    type="number"
-                    name="numberOfTrees"
-                    min="1"
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                    required
-                    disabled={rpPaymentSuccess}
-                    value={formData.numberOfTrees}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <p className="mt-2 text-sm text-gray-600">
-                  Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
-                  {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
-                </p>
-
-                {/* Occasion Details */}
-                <div className="space-y-6 mt-2">
-                <h2 className="text-2xl font-semibold">{getOccasionQuestion()}</h2>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-lg font-light mb-2">Occasion Type</label>
-                    <div className="relative">
-                      <select
-                        id="eventType"
-                        name="eventType"
-                        value={eventType || ""}
-                        onChange={(e) => {
-                          setEventType(e.target.value);
-                          setPrimaryMessage(e.target.value === "1" ? defaultMessages.birthday : e.target.value === "2" ? defaultMessages.memorial : defaultMessages.primary);
-                          setSecondaryMessage(defaultMessages.secondary);
-                        }}
-                        className="appearance-none w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700 bg-white transition-colors duration-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
-                      >
-                        <option value="" disabled>Select an event type</option>
-                        <option value="1">Birthday</option>
-                        <option value="2">Memorial</option>
-                        <option value="3">Wedding</option>
-                        <option value="4">Wedding Anniversary</option>
-                        <option value="5">Festival Celebration</option>
-                        <option value="6">General Gift</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-lg font-light mb-2">Occasion Name</label>
-                    <input
-                      type="text"
-                      id="eventName"
-                      name="eventName"
-                      placeholder="Occasion Name"
-                      value={eventName || ""}
-                      onChange={(e) => setEventName(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-lg font-light mb-2">Gifted By</label>
-                    <input
-                      type="text"
-                      id="plantedBy"
-                      name="plantedBy"
-                      placeholder="Gifted By"
-                      value={plantedBy || ""}
-                      onChange={(e) => setPlantedBy(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-lg font-light mb-2">Date of Occasion</label>
-                    <input
-                      type="date"
-                      id="giftedOn"
-                      name="giftedOn"
-                      value={giftedOn ? giftedOn.toISOString().split('T')[0] : ""}
-                      onChange={(e) => setGiftedOn(e.target.value ? new Date(e.target.value) : new Date())}
-                      className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                    />
-                  </div>
-                </div>
-
-                 {/* 4. Tree Dedication Names */}
-                 <div className="space-y-4 mt-2">
-                  <h3 className="text-2xl font-semibold">Gift Recipients</h3>
-                  <label className="mb-2 block text-lg font-light">
-                    I&apos;d like my trees to be planted in the following name:
-                  </label>
-
-                  <div className="flex items-center mb-4">
-                    <input
-                      type="checkbox"
-                      id="multipleNames"
-                      className="h-5 w-5 mr-3"
-                      checked={multipleNames}
-                      onChange={(e) => setMultipleNames(e.target.checked)}
-                    />
-                    <label htmlFor="multipleNames" className="text-gray-700">
-                      Dedicate to multiple people?
-                    </label>
-                  </div>
-
-                  {multipleNames && (
-                    <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
-                      <button
-                        type="button"
-                        className={`${nameEntryMethod === "manual"
-                          ? "bg-green-500 shadow-sm text-white ring-green-700"
-                          : "text-green-600 hover:bg-green-100"
-                          } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                        onClick={() => setNameEntryMethod("manual")}
-                      >
-                        Add Manually
-                      </button>
-                      <button
-                        type="button"
-                        className={`${nameEntryMethod === "csv"
-                          ? "bg-green-500 shadow-sm text-white ring-green-700"
-                          : "text-green-600 hover:bg-green-100"
-                          } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                        onClick={() => setNameEntryMethod("csv")}
-                      >
-                        Bulk Upload CSV
-                      </button>
-                    </div>
-                  )}
-
-                  {multipleNames && nameEntryMethod === "manual" ? (
-                    <div className="space-y-4">
-                      {errors["totalTrees"] && (
-                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                          <p className="text-red-700">{errors["totalTrees"]}</p>
-                        </div>
-                      )}
-                      {dedicatedNames.map((name, index) => (
-                        <UserDetailsForm
-                          key={index}
-                          data={name}
-                          index={index}
-                          onUpdate={(field, value) => handleNameChange(index, field, value)}
-                          maxTrees={Number(formData.numberOfTrees) - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
-                          errors={errors}
-                          canRemove={index > 0}
-                          onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
+                  {/* 3. Number of Trees*/}
+                  <div className="space-y-2">
+                    <div className="border border-gray-300 rounded-lg p-6 bg-white shadow-sm">
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="mb-2 block text-lg font-light whitespace-nowrap">
+                          Number of trees you would like to gift *
+                        </label>
+                        <input
+                          type="number"
+                          name="numberOfTrees"
+                          min="1"
+                          className={`w-50 rounded-md border ${errors.numberOfTrees ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                          required
+                          disabled={rpPaymentSuccess}
+                          value={formData.numberOfTrees}
+                          onChange={handleInputChange}
                         />
-                      ))}
-                      <button
-                        type="button"
-                        onClick={handleAddName}
-                        className="flex items-center text-green-700 hover:text-green-900 mt-2"
-                        disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === ""}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        Add another name
-                      </button>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
+                        {[2, 5, 10, 14, 50, 100].map((count) => (
+                          <button
+                            key={count}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                numberOfTrees: count.toString()
+                              }));
+                            }}
+                            className={`px-4 py-2 rounded-md ${formData.numberOfTrees === count.toString()
+                              ? 'bg-green-600 text-white'
+                              : 'bg-gray-100 hover:bg-gray-200'
+                              }`}
+                          >
+                            {count} TREES
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const input = document.querySelector('input[name="numberOfTrees"]') as HTMLInputElement;
+                            if (input) {
+                              input.focus();
+                              input.select();
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-md ${![2, 5, 10, 14, 50, 100].includes(Number(formData.numberOfTrees))
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-100 hover:bg-gray-200'
+                            }`}
+                        >
+                          Other
+                        </button>
+                      </div>
+                      <p className="mt-6 text-sm text-gray-600">
+                        Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
+                        {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
+                      </p>
                     </div>
-                  ) : multipleNames && nameEntryMethod === "csv" ? (
-                    <div className="space-y-4 border border-gray-200 rounded-md p-4">
-                      <div className="space-y-4">
-                        {errors["totalTrees"] && (
-                          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                            <p className="text-red-700">{errors["totalTrees"]}</p>
-                          </div>
-                        )}
-                        <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
-                        <p className="text-sm text-gray-600">
-                          <button
-                            type="button"
-                            onClick={downloadSampleCsv}
-                            className="text-blue-600 hover:underline"
-                          >
-                            Download sample CSV
-                          </button>
-                        </p>
+                  </div>
 
-                        {/* CSV Upload */}
-                        <div className="flex gap-2">
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            accept=".csv"
-                            onChange={handleCsvUpload}
-                            className="hidden"
-                          />
-                          <button
-                            value={undefined}
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
-                          >
-                            Select CSV File
-                          </button>
-                          {csvFile && (
-                            <span className="self-center text-sm">
-                              {csvFile.name}
-                            </span>
-                          )}
-                        </div>
+                  <div>
+                    <Recipients
+                      dedicatedNames={dedicatedNames}
+                      errors={errors}
+                      formData={formData}
+                      handleNameChange={handleNameChange}
+                      handleAddName={handleAddName}
+                      handleRemoveName={handleRemoveName}
+                    />
+                  </div>
 
-                        {/* Image Upload Section */}
-                        <div className="pt-2">
-                          <label className="block text-sm font-medium mb-1">
-                            Upload Recipient Images
-                          </label>
-                          <input
-                            type="file"
-                            id="recipient-images"
-                            multiple
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="recipient-images"
-                            className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
-                          >
-                            <UploadIcon className="w-4 h-4" />
-                            Select Images
-                          </label>
-                          <p className="mt-1 text-xs text-gray-500">
-                            Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
-                          </p>
+                  {/* Occasion Details */}
+                  <div className="space-y-6 mt-2">
+                    <h2 className="text-2xl font-semibold">{getOccasionQuestion()}</h2>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-lg font-light mb-2">Occasion Type</label>
+                      <div className="relative">
+                        <select
+                          id="eventType"
+                          name="eventType"
+                          value={eventType || ""}
+                          onChange={(e) => {
+                            setEventType(e.target.value);
+                          }}
+                          className="appearance-none w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700 bg-white transition-colors duration-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
+                        >
+                          <option value="" disabled>Select an event type</option>
+                          <option value="1">Birthday</option>
+                          <option value="2">Memorial</option>
+                          <option value="3">Wedding</option>
+                          <option value="4">Wedding Anniversary</option>
+                          <option value="5">Festival Celebration</option>
+                          <option value="6">General Gift</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
                         </div>
                       </div>
-
-                      {csvErrors.length > 0 && (
-                        <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                          <h4 className="font-medium text-red-700">CSV Errors:</h4>
-                          <ul className="list-disc pl-5 text-red-600">
-                            {csvErrors.map((error, i) => (
-                              <li key={i} className="text-sm">{error}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {csvPreview.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="font-medium">
-                            Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
-                          </h4>
-                          <div className="max-h-96 overflow-y-auto border rounded-md">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Email</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Phone</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
-                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {paginatedData.map((recipient, i) => (
-                                  <tr key={i}>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_name || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_email || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_phone || '-'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
-                                    <td className="px-4 py-2 whitespace-nowrap">
-                                      {recipient.image && (
-                                        typeof recipient.image === 'string' ? (
-                                          <img
-                                            src={recipient.image}
-                                            className="h-10 w-10 rounded-full object-cover"
-                                            alt={`${recipient.recipient_name}'s profile`}
-                                          />
-                                        ) : (
-                                          <div className="flex items-center">
-                                            <span className="text-sm text-gray-500">Ready to upload</span>
-                                            <button
-                                              onClick={() => {
-                                                // Add image upload handler here
-                                              }}
-                                              className="ml-2 text-sm text-blue-600 hover:underline"
-                                            >
-                                              Upload
-                                            </button>
-                                          </div>
-                                        )
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                          <div className="flex justify-between items-center mt-2">
-                            <button
-                              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                              disabled={currentPage === 0}
-                              className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                            >
-                              Previous
-                            </button>
-
-                            <button
-                              onClick={() => setCurrentPage(p =>
-                                Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
-                              )}
-                              disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
-                              className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                            >
-                              Next
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  ) : (
-                    <div className="space-y-4">
+
+                    <div>
+                      <label className="block text-lg font-light mb-2">Occasion Name</label>
                       <input
                         type="text"
-                        placeholder="Recipient name"
-                        className={`w-full rounded-md border ${errors['dedicatedName-0'] ? 'border-red-500' : 'border-gray-300'
-                          } px-4 py-3 text-gray-700`}
-                        value={dedicatedNames[0].recipient_name}
-                        onChange={(e) => {
-                          handleNameChange(0, "recipient_name", e.target.value);
-                          if (!isAssigneeDifferent) {
-                            handleNameChange(0, "assignee_name", e.target.value);
-                          }
-                        }}
+                        id="eventName"
+                        name="eventName"
+                        placeholder="Occasion Name"
+                        value={eventName || ""}
+                        onChange={(e) => setEventName(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
                       />
-                      {errors['dedicatedName-0'] && (
-                        <p className="mt-1 text-sm text-red-600">{errors['dedicatedName-0']}</p>
-                      )}
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <input
-                          type="email"
-                          placeholder="Recipient Email (optional)"
-                          className={`w-full rounded-md border ${errors['dedicatedEmail-0'] ? 'border-red-500' : 'border-gray-300'
-                            } px-4 py-3 text-gray-700`}
-                          value={dedicatedNames[0].recipient_email}
-                          onChange={(e) => {
-                            handleNameChange(0, "recipient_email", e.target.value)
-                            if (!isAssigneeDifferent) {
-                              handleNameChange(0, "assignee_email", e.target.value)
-                            }
-                          }}
-                        />
-                        {errors['dedicatedEmail-0'] && (
-                          <p className="mt-1 text-sm text-red-600">{errors['dedicatedEmail-0']}</p>
-                        )}
-                        <input
-                          type="tel"
-                          placeholder="Recipient Phone (optional)"
-                          className={`w-full rounded-md border ${errors['dedicatedPhone-0'] ? 'border-red-500' : 'border-gray-300'
-                            } px-4 py-3 text-gray-700`}
-                          value={dedicatedNames[0].recipient_phone}
-                          onChange={(e) => {
-                            handleNameChange(0, "recipient_phone", e.target.value)
-                            if (!isAssigneeDifferent) {
-                              handleNameChange(0, "assignee_phone", e.target.value)
-                            }
-                          }}
-                          pattern="[0-9]{10,15}"
-                          title="10-15 digit phone number"
-                        />
-                        {errors['dedicatedPhone-0'] && (
-                          <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
-                        )}
-                      </div>
-                      <div className="mt-6">
-                        <label className="flex items-center space-x-3 mb-4">
-                          <input
-                            type="checkbox"
-                            checked={isAssigneeDifferent}
-                            onChange={(e) => setIsAssigneeDifferent(e.target.checked)}
-                            className="h-5 w-5"
-                          />
-                          <span>Assign trees to someone else?</span>
-                        </label>
-
-                        {isAssigneeDifferent && (
-                          <div className="border border-gray-200 rounded-md p-4 space-y-4">
-                            <h3 className="font-medium">Assignee Details</h3>
-                            <input
-                              type="text"
-                              placeholder="Assignee Name *"
-                              value={dedicatedNames[0].assignee_name}
-                              onChange={(e) => handleNameChange(0, "assignee_name", e.target.value)}
-                              className="w-full rounded-md border border-gray-300 px-4 py-3"
-                              required
-                            />
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <input
-                                type="email"
-                                placeholder="Assignee Email (optional)"
-                                value={dedicatedNames[0].assignee_email}
-                                onChange={(e) => handleNameChange(0, "assignee_email", e.target.value)}
-                                className="w-full rounded-md border border-gray-300 px-4 py-3"
-                              />
-                              <input
-                                type="tel"
-                                placeholder="Assignee Phone (optional)"
-                                value={dedicatedNames[0].assignee_phone}
-                                onChange={(e) => handleNameChange(0, "assignee_phone", e.target.value)}
-                                className="w-full rounded-md border border-gray-300 px-4 py-3"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium mb-1">Relation *</label>
-                              <select
-                                value={dedicatedNames[0].relation}
-                                onChange={(e) => handleNameChange(0, "relation", e.target.value)}
-                                className="w-full rounded-md border border-gray-300 px-4 py-3"
-                              >
-                                <option value="father">Father</option>
-                                <option value="mother">Mother</option>
-                                <option value="uncle">Uncle</option>
-                                <option value="aunt">Aunt</option>
-                                <option value="grandfather">Grandfather</option>
-                                <option value="grandmother">Grandmother</option>
-                                <option value="son">Son</option>
-                                <option value="daughter">Daughter</option>
-                                <option value="wife">Wife</option>
-                                <option value="husband">Husband</option>
-                                <option value="grandson">Grandson</option>
-                                <option value="granddaughter">Granddaughter</option>
-                                <option value="brother">Brother</option>
-                                <option value="sister">Sister</option>
-                                <option value="cousin">Cousin</option>
-                                <option value="friend">Friend</option>
-                                <option value="colleague">Colleague</option>
-                                <option value="other">Other</option>
-                              </select>
-                            </div>
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  )}
-                </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-semibold">Help us craft a beautiful gift card for you!</h3>
-
-                     {/* Preview section - now comes first */}
-                     <div className="border border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
-                        {isGeneratingPreview ? (
-                         <div className="text-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                           <p className="mt-2 text-gray-600">Generating your card preview...</p>
-                          </div>
-                 ) : previewUrl ? (
-                     <div className="w-full h-full aspect-[4/3] sm:aspect-[16/9]">
-                     <iframe
-                        src={previewUrl}
-                        className="w-full h-full border-none rounded-md"
-                        title="Gift card preview"
-                        style={{ minHeight: '250px', height: "100%", width: "100%" }}
-                      />
-                   </div>
-                ) : (
-                      <p className="text-gray-500 py-16">Your card preview will appear here</p>
-                   )}
-                 </div>
-
-                 {/* New line below the preview section */}
-                 <p className="text-xs text-gray-500 mt-2">
-                     The illustrations on the final gift card will differ from the template above depending upon the trees planted.
-                 </p>
-
-                 {/* Message inputs section - now comes after preview */}
-                  <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Primary Message</label>
-                      <textarea
-                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                         rows={windowWidth < 640 ? 5 : 3}
-                         value={primaryMessage}
-                         onChange={(e) => setPrimaryMessage(e.target.value)}
-                         maxLength={270}
-                         placeholder="A tree has been planted in your name at our conservation site..."
+                      <label className="block text-lg font-light mb-2">Gifted By</label>
+                      <input
+                        type="text"
+                        id="plantedBy"
+                        name="plantedBy"
+                        placeholder="Gifted By"
+                        value={plantedBy || ""}
+                        onChange={(e) => setPlantedBy(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                          {270 - primaryMessage.length} characters remaining
-                      </p>
-                  </div>
-
-                   <div>
-                      <label className="block text-sm font-medium mb-1">Secondary Message</label>
-                        <textarea
-                           className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                           rows={windowWidth < 640 ? 4 : 2}
-                           value={secondaryMessage}
-                           onChange={(e) => setSecondaryMessage(e.target.value)}
-                           maxLength={125}
-                           placeholder="We invite you to visit and witness your tree's growth..."
-                         />
-                         <p className="text-xs text-gray-500 mt-1">
-                          {125 - secondaryMessage.length} characters remaining
-                         </p>
-                    </div>
-                  <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    className="px-4 py-2 border border-gray-300 rounded-md"
-                    onClick={() => {
-                    setPrimaryMessage(eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary);
-                    setSecondaryMessage(defaultMessages.secondary);
-                   }}
-                  >
-                    Reset to Default
-                 </button>
-               <button
-                  type="button"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md"
-                  onClick={handleGeneratePreview}
-                 disabled={isGeneratingPreview}
-                >
-                  {isGeneratingPreview ? 'Generating...' : 'Preview'}
-              </button>
-               </div>
-              </div>
-             </div>
-
-                {/* 6. Personal Information */}
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Your details</h2>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center">
-                      <label className="w-48 text-gray-700">Gifted by*:</label>
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          name="fullName"
-                          className={`w-full rounded-md border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
-                          required
-                          value={formData.fullName}
-                          onChange={handleInputChange}
-                          onBlur={(e) => {
-                            const error = validateField(e.target.name, e.target.value);
-                            setErrors(prev => ({ ...prev, fullName: error }));
-                          }}
-                          placeholder="Type your name"
-                        />
-                        {errors.fullName && (
-                          <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-                        )}
-                      </div>
                     </div>
 
-                    <div className="flex items-center">
-                      <label className="w-48 text-gray-700">Email ID*:</label>
-                      <div className="flex-1">
-                        <input
-                          type="email"
-                          name="email"
-                          className={`w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
-                          required
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          onBlur={(e) => {
-                            const error = validateField(e.target.name, e.target.value);
-                            setErrors(prev => ({ ...prev, email: error }));
-                          }}
-                          placeholder="Type your email id"
-                        />
-                        {errors.email && (
-                          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <label className="w-48 text-gray-700">Mobile number*:</label>
-                      <div className="flex-1">
-                        <input
-                          type="tel"
-                          name="phone"
-                          className={`w-full rounded-md border ${errors.phone ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          onBlur={(e) => {
-                            const error = validateField(e.target.name, e.target.value);
-                            setErrors(prev => ({ ...prev, phone: error }));
-                          }}
-                          placeholder="Type your mobile number"
-                          pattern="[0-9]{10,15}"
-                          title="10-15 digit phone number"
-                        />
-                        {errors.phone && (
-                          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <label className="w-48 text-gray-700">PAN number*:</label>
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          name="panNumber"
-                          className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700 uppercase placeholder:text-gray-400 placeholder:normal-case`}
-                          value={formData.panNumber}
-                          onChange={handleInputChange}
-                          placeholder="Enter your PAN number"
-                          pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
-                          maxLength={10}
-                        />
-                        {errors.panNumber && (
-                          <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
-                        )}
-                      </div>
+                    <div>
+                      <label className="block text-lg font-light mb-2">Date of Occasion</label>
+                      <input
+                        type="date"
+                        id="giftedOn"
+                        name="giftedOn"
+                        value={giftedOn ? giftedOn.toISOString().split('T')[0] : ""}
+                        onChange={(e) => setGiftedOn(e.target.value ? new Date(e.target.value) : new Date())}
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                      />
                     </div>
                   </div>
-                </div>
 
-                {/* 7. Payment Information */}
-                <div className="space-y-6">
-                  <Script
-                    src="https://checkout.razorpay.com/v1/checkout.js"
-                    strategy="lazyOnload"
-                    onLoad={() => setRazorpayLoaded(true)}
+                  <GiftCardPreview
+                    giftRequestId={giftRequestId ?? undefined}
+                    userName={dedicatedNames[0]?.recipient_name}
+                    giftedBy={plantedBy ?? undefined}
+                    primaryMessage={primaryMessage}
+                    windowWidth={windowWidth}
+                    setPrimaryMessage={setPrimaryMessage}
+                    eventType={eventType}
                   />
-                  {/* <h2 className="text-2xl font-semibold">Payment Information</h2> */}
+
+                  {/* 6. Personal Information */}
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-semibold">Finally, help us with your (sponsor) details</h2>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">Gifted by*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            name="fullName"
+                            className={`w-full rounded-md border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                            required
+                            value={formData.fullName}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, fullName: error }));
+                            }}
+                            placeholder="Type your name"
+                          />
+                          {errors.fullName && (
+                            <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">Email ID*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="email"
+                            name="email"
+                            className={`w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                            required
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, email: error }));
+                            }}
+                            placeholder="Type your email id"
+                          />
+                          {errors.email && (
+                            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">Mobile number*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="tel"
+                            name="phone"
+                            className={`w-full rounded-md border ${errors.phone ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            onBlur={(e) => {
+                              const error = validateField(e.target.name, e.target.value);
+                              setErrors(prev => ({ ...prev, phone: error }));
+                            }}
+                            placeholder="Type your mobile number"
+                            pattern="[0-9]{10,15}"
+                            title="10-15 digit phone number"
+                          />
+                          {errors.phone && (
+                            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="w-48 text-gray-700">PAN number*:</label>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            name="panNumber"
+                            className={`w-full rounded-md border ${errors.panNumber ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700 uppercase placeholder:text-gray-400 placeholder:normal-case`}
+                            value={formData.panNumber}
+                            onChange={handleInputChange}
+                            placeholder="Enter your PAN number"
+                            pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                            maxLength={10}
+                          />
+                          {errors.panNumber && (
+                            <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 7. Payment Information */}
+                  {/*  <div className="space-y-6">
+                  <h2 className="text-2xl font-semibold">Payment Information</h2> */}
 
                   {/* <div>
                     <label className="mb-2 block text-lg font-light">
@@ -1901,7 +1463,7 @@ export default function GiftTreesPage() {
                         {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
                       </Button>
                     </div>
-                  )} */}
+                  )} 
 
                   {!isAboveLimit && !rpPaymentSuccess && (
                     <div className="flex justify-center">
@@ -1992,8 +1554,63 @@ export default function GiftTreesPage() {
                     )}
                   </Button>
                 </div>}
-              </form>
+              </form> */}
+                  <div className="flex justify-end mt-8">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const mainFormValid = Object.keys(formData).every(key => {
+                          if (key === "comments") return true;
+                          const value = formData[key as keyof typeof formData];
+                          // Check for mandatory fields
+                          if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
+                            return !!value;
+                          }
+                          return true;
+                        });
+
+                        if (mainFormValid) {
+                          setCurrentStep(2);
+                        } else {
+                          alert("Please fill all required fields");
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </form>
+
+              ) : (
+                currentStep === 2 && (
+                  <SummaryPaymentPage
+                    formData={formData}
+                    dedicatedNames={dedicatedNames}
+                    totalAmount={totalAmount}
+                    isAboveLimit={isAboveLimit}
+                    razorpayLoaded={razorpayLoaded}
+                    rpPaymentSuccess={rpPaymentSuccess}
+                    paymentProof={paymentProof}
+                    setPaymentProof={setPaymentProof}
+                    isProcessing={isProcessing}
+                    isLoading={isLoading}
+                    setCurrentStep={setCurrentStep}
+                    handleRazorpayPayment={handleRazorpayPayment}
+                    handleSubmit={handleSubmit}
+                    eventType={eventType}
+                    eventName={eventName}
+                    giftedOn={giftedOn}
+                    plantedBy={plantedBy}
+                  />
+                )
+              )}
             </ScrollReveal>
+            <Script
+              src="https://checkout.razorpay.com/v1/checkout.js"
+              strategy="lazyOnload"
+              onLoad={() => setRazorpayLoaded(true)}
+            />
           </div>
         </div>
       </div>

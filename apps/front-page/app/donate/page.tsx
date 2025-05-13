@@ -264,17 +264,20 @@ export default function DonatePage() {
             errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
           }
 
-          validRecipients.push({
+          const user: any = {
             recipient_name: String(row.recipient_name),
             recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
-            assignee_name: row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
-            assignee_email: row.assignee_email ? String(row.assignee_email) : row.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-            assignee_phone: row.assignee_phone ? String(row.assignee_phone) : '',
             relation: row.relation ? String(row.relation) : 'other'
-          });
+          }
+
+          user.assignee_name = row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
+            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
+            user.assignee_phone = row.assignee_phone ? String(row.assignee_phone) : '',
+
+            validRecipients.push(user);
         });
 
         setCsvErrors(errors);
@@ -302,7 +305,7 @@ export default function DonatePage() {
   };
 
   const downloadSampleCsv = () => {
-    const url = "https://docs.google.com/spreadsheets/d/1DDM5nyrvP9YZ09B60cwWICa_AvbgThUx-yeDVzT4Kw4/gviz/tq?tqx=out:csv&sheet=Sheet1";
+    const url = "https://docs.google.com/spreadsheets/d/106tLjWvjpKLGuAuCSDu-KFw4wmfLkP9UwoSbJ0hRXgU/gviz/tq?tqx=out:csv&sheet=Sheet1";
     const fileName = "UserDetails.csv";
 
     fetch(url)
@@ -318,8 +321,7 @@ export default function DonatePage() {
       .catch(error => console.error("Download failed:", error));
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsLoading(true);
     setIsSubmitting(true);
 
@@ -475,6 +477,10 @@ export default function DonatePage() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (rpPaymentSuccess && !isLoading) handleSubmit();
+  }, [rpPaymentSuccess, handleSubmit])
 
   const handleAddName = () => {
     if (dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "") {
@@ -972,9 +978,9 @@ export default function DonatePage() {
                               <input
                                 type="number"
                                 min="0"
-                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700"
+                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
                                 disabled={donationMethod !== 'trees'}
-                                value={donationTreeCount}
+                                value={donationMethod !== 'trees' ? 0 : donationTreeCount}
                                 onChange={(e) => setDonationTreeCount(Number(e.target.value))}
                               />
                               <span>Trees</span>
@@ -995,9 +1001,9 @@ export default function DonatePage() {
                               <input
                                 type="number"
                                 min="1500"
-                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700"
+                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
                                 disabled={donationMethod !== 'amount'}
-                                value={donationAmount}
+                                value={donationMethod !== 'amount' ? 0 : donationAmount}
                                 onChange={(e) => {
                                   const amount = parseInt(e.target.value);
                                   if (isNaN(amount) || amount < 1500) setDonationAmount(1500);
@@ -1275,9 +1281,6 @@ export default function DonatePage() {
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Email</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Phone</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                     </tr>
@@ -1288,9 +1291,6 @@ export default function DonatePage() {
                                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name}</td>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_name || '-'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_email || '-'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.assignee_phone || '-'}</td>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
                                         <td className="px-4 py-2 whitespace-nowrap">
                                           {recipient.image && (
