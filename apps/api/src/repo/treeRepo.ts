@@ -115,6 +115,19 @@ class TreeRepository {
     return await Tree.findByPk(treeId);
   };
 
+  public static async updateDashboardImage(
+    treeId: number, 
+    imageUrl: string
+  ): Promise<void> {
+    await Tree.update(
+      { 
+        dashboard_image: imageUrl,
+        updated_at: new Date()
+      },
+      { where: { id: treeId } }
+    );
+  }
+
   public static async addTree(data: any): Promise<Tree> {
 
     // Check if tree type exists
