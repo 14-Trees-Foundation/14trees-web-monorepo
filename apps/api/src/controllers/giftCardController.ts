@@ -1482,6 +1482,7 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
         sapling_id: saplingId,
         plant_type: plantType,
         user_name: userName,
+        gifted_by: giftedBy,
         primary_message: primaryMessage,
         logo,
         logo_message: logoMessage,
@@ -1498,6 +1499,7 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
 
     let message = primaryMessage;
     if (userName) message.replace("{recipient}", userName);
+    if (giftedBy) message.replace("{giftedBy}", giftedBy);
     const record = {
         sapling: saplingId ? saplingId : '00000',
         message: message,
@@ -1528,6 +1530,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 
     const {
         user_name: userName,
+        gifted_by: giftedBy,
         sapling_id: saplingId,
         slide_id: slideId,
         primary_message: primaryMessage,
@@ -1536,8 +1539,9 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
         trees_count: treeCount,
     } = req.body;
 
-    let message = treeCount ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage;
+    let message = (treeCount && treeCount > 1) ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage;
     if (userName) message = message.replace("{recipient}", userName);
+    if (giftedBy) message = message.replace("{giftedBy}", giftedBy);
     const record = {
         sapling: saplingId ? saplingId : '00000',
         message: message, 
