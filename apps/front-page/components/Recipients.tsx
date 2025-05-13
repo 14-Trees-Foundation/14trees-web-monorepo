@@ -40,6 +40,7 @@ const Recipients: React.FC<RecipientsProps> = ({
 
             {dedicatedNames.map((user, index) => {
                 return <Recipient
+                    key={index}
                     index={index}
                     maxTrees={Number(formData.numberOfTrees) - dedicatedNames.filter((item, idx) => idx != index).map(user => user.trees_count).reduce((prev, curr) => prev + curr, 0)}
                     errors={errors}
