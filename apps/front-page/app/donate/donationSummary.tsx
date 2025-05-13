@@ -68,18 +68,18 @@ export const SummaryPaymentPage = ({
 
   const handleCompleteDonation = (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     // Validate payment proof for bank transfers
     if (isAboveLimit && !paymentProof) {
       alert("Please upload payment proof for bank transfer");
       return;
     }
-    
+
     // Create a synthetic form event
     const syntheticEvent = {
-      preventDefault: () => {},
+      preventDefault: () => { },
     } as React.FormEvent;
-    
+
     handleSubmit(syntheticEvent);
   };
 
@@ -125,36 +125,36 @@ export const SummaryPaymentPage = ({
 
         {/* Dedication Info */}
         {dedicatedNames[0]?.recipient_name && (
-  <div className="space-y-4">
-    <h3 className="text-lg font-semibold">Trees will be assigned to</h3>
-    <div className="overflow-x-auto">
-      <table className="min-w-full border rounded">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-4 py-2 text-left border-b">Recipient</th>
-            <th className="px-4 py-2 text-left border-b">Recipient Email</th>
-            <th className="px-4 py-2 text-left border-b">Trees</th>
-            <th className="px-4 py-2 text-left border-b">Assignee</th>
-            <th className="px-4 py-2 text-left border-b">Assignee Email</th>
-            <th className="px-4 py-2 text-left border-b">Assignee&apos;s Relation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dedicatedNames.map((recipient, i) => (
-            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className="px-4 py-2 border-b">{recipient.recipient_name}</td>
-              <td className="px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
-              <td className="px-4 py-2 border-b">{recipient.trees_count}</td>
-              <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
-              <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
-              <td className="px-4 py-2 border-b">{recipient.relation || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Trees will be assigned to</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border rounded">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 text-left border-b">Recipient</th>
+                    <th className="px-4 py-2 text-left border-b">Recipient Email</th>
+                    <th className="px-4 py-2 text-left border-b">Trees</th>
+                    <th className="px-4 py-2 text-left border-b">Assignee</th>
+                    <th className="px-4 py-2 text-left border-b">Assignee Email</th>
+                    <th className="px-4 py-2 text-left border-b">Assignee&apos;s Relation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dedicatedNames.map((recipient, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-4 py-2 border-b">{recipient.recipient_name}</td>
+                      <td className="px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
+                      <td className="px-4 py-2 border-b">{recipient.trees_count}</td>
+                      <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
+                      <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
+                      <td className="px-4 py-2 border-b">{recipient.relation || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Back Button */}
         <button
@@ -209,20 +209,20 @@ export const SummaryPaymentPage = ({
                 Upload Payment Confirmation (Screenshot/Pdf)*
               </label>
               <input
-              value={undefined}
-              type="file"
-              accept="image/*,.pdf"
-              className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-              required={isAboveLimit}
-              onChange={(e) => {
-              setPaymentProof(e.target.files?.[0] || null);
-              }}
-             />
-            {paymentProof && (
-              <p className="mt-1 text-sm text-gray-600">
-                {paymentProof.name}
-              </p>
-            )}
+                value={undefined}
+                type="file"
+                accept="image/*,.pdf"
+                className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                required={isAboveLimit}
+                onChange={(e) => {
+                  setPaymentProof(e.target.files?.[0] || null);
+                }}
+              />
+              {paymentProof && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {paymentProof.name}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -232,7 +232,7 @@ export const SummaryPaymentPage = ({
           <div className="pt-6 flex justify-center">
             <Button
               type="button"
-              onClick={handleCompleteDonation} 
+              onClick={handleCompleteDonation}
               className="bg-green-800 text-white hover:bg-green-900 w-[500px] py-6 text-lg"
               size="xl"
               disabled={isLoading}
