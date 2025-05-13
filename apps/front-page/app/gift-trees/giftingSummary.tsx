@@ -13,7 +13,7 @@ interface SummaryPaymentProps {
     recipient_name: string;
     recipient_email?: string;
     recipient_phone?: string;
-    trees_count: number;
+    treeCount: number;
     assignee_name?: string;
     assignee_email?: string;
   }>;
@@ -108,7 +108,7 @@ export const SummaryPaymentPage = ({
             <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
               <td className="px-4 py-2 border-b">{recipient.recipient_name}</td>
               <td className="px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
-              <td className="px-4 py-2 border-b">{recipient.trees_count}</td>
+              <td className="px-4 py-2 border-b">{recipient.treeCount}</td>
               <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
               <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
             </tr>

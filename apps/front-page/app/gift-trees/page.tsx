@@ -124,6 +124,11 @@ export default function GiftTreesPage() {
   //   return 0;
   // };
 
+  const totalAssignedTrees = dedicatedNames.reduce(
+    (sum, item) => sum + Number(item.treeCount || 0),
+    0
+  );
+
   const calculateGiftingAmount = (): number => {
     return 2000;
   };
@@ -298,6 +303,7 @@ export default function GiftTreesPage() {
   const validateDedicatedNames = () => {
     let isValid = true;
     const newErrors: Record<string, string> = {};
+    const seenNames = new Set();
 
     // Calculate total trees count
     const totalTrees = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 1), 0);
@@ -309,6 +315,13 @@ export default function GiftTreesPage() {
     }
 
     dedicatedNames.forEach((name, index) => {
+      const normalizedName = name.recipient_name.toLowerCase().trim();
+    if (seenNames.has(normalizedName)) {
+      newErrors[`dedicatedName-${index}`] = "Duplicate recipient name";
+      isValid = false;
+    } else if (normalizedName) {
+      seenNames.add(normalizedName);
+    }
       if (!name.recipient_name.trim()) {
         newErrors[`dedicatedName-${index}`] = "Name is required";
         isValid = false;
@@ -669,12 +682,38 @@ export default function GiftTreesPage() {
     }
   };
 
+  const isDuplicateRecipient = (name: string, email: string) => {
+    return dedicatedNames.some(recipient => 
+      recipient.recipient_name.toLowerCase() === name.toLowerCase() || 
+      (email && recipient.recipient_email.toLowerCase() === email.toLowerCase())
+    );
+  };
+
+  
+
   // Rest of your existing functions (unchanged)
   const handleAddName = () => {
-    // check if the last name is empty
-    if (dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "") {
+    const lastRecipient = dedicatedNames[dedicatedNames.length - 1];
+    
+    // Check if the last name is empty
+    if (lastRecipient.recipient_name.trim() === "") {
       return;
     }
+  
+    // Check for duplicates
+    if (isDuplicateRecipient(lastRecipient.recipient_name, lastRecipient.recipient_email)) {
+      setErrors(prev => ({
+        ...prev,
+        duplicateRecipient: "This recipient already exists"
+      }));
+      return;
+    }
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.duplicateRecipient;
+      return newErrors;
+    });
+
     setDedicatedNames([...dedicatedNames, { recipient_name: "", recipient_email: "", recipient_phone: "", assignee_name: "", assignee_email: "", assignee_phone: "", relation: "", trees_count: 1 }]);
   };
 
@@ -954,6 +993,7 @@ export default function GiftTreesPage() {
         setIsUpdating(false);
       }
     };
+
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1287,36 +1327,52 @@ export default function GiftTreesPage() {
                       const maxTrees = Math.min(remainingTrees, Number(formData.numberOfTrees));
                       return (
                         <div key={index} className="border rounded-lg p-6 space-y-4 bg-white shadow-sm">
-                          <h3 className="font-medium text-lg">Recipient {index + 1}</h3>
-
+                          <div className="flex justify-between items-center">
+                           <h3 className="font-medium text-lg">Recipient {index + 1}</h3>
+                            {index > 0 && (
+                               <button
+                                 type="button"
+                                 onClick={() => handleRemoveName(index)}
+                                 className="text-red-600 hover:text-red-800"
+                                >
+                              Remove
+                               </button>
+                               )}
+                             </div>
+                           <div className="relative border p-4 rounded-md mb-4">
                           {/* Number of Trees for this recipient - First field */}
+                        
                           <div className="flex items-center gap-4">
-                            <label className="block text-gray-700 whitespace-nowrap">Number of trees:</label>
-                            <input
-                              type="number"
-                              min="1"
-                              max={maxTrees}
-                              className={`w-32 rounded-md border ${errors[`treeCount-${index}`] ? 'border-red-500' : 'border-gray-300'} px-4 py-3 text-gray-700`}
-                              value={name.treeCount || ''}
-                              onChange={(e) => {
-                                const value = Math.min(
-                                  Number(e.target.value),
-                                  maxTrees
-                                );
-                                handleNameChange(index, "treeCount", value > 0 ? value.toString() : '');
-                              }}
-                              required
-                            />
-                            {errors[`treeCount-${index}`] && (
-                              <p className="mt-1 text-sm text-red-600">{errors[`treeCount-${index}`]}</p>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500 -mt-3">
-                            {index === 0 && dedicatedNames.length === 1
-                              ? `Maximum: ${formData.numberOfTrees} trees`
-                              : `Remaining: ${remainingTrees} trees available`}
-                          </p>
-
+                          <label className="block text-gray-700 whitespace-nowrap">Number of trees:</label>
+                             <div className="flex flex-col gap-1">
+                                    <input
+                                      type="number"
+                                       min="1"
+                                       max={maxTrees}
+                                       className={`w-32 rounded-md border ${errors[`treeCount-${index}`] ? 'border-red-500' : 'border-gray-300'} px-4 py-3 text-gray-700`}
+                                      value={name.treeCount || ''}
+                                      onChange={(e) => {
+                                             const value = Math.min(
+                                               Number(e.target.value),
+                                               maxTrees
+                                               );
+                                                handleNameChange(index, "treeCount", value > 0 ? value.toString() : '');
+                                                }}
+                                                 required
+                                                />
+                                    <p className="text-sm text-gray-500">
+                                      {index === 0
+                                        ? `Maximum: ${formData.numberOfTrees} trees`
+                                        : `Remaining: ${Math.max(
+                                          0,
+                                        Number(formData.numberOfTrees || 0) - totalAssignedTrees
+                                        )} trees available`}
+                                     </p>
+                                     </div>
+                                        {errors[`treeCount-${index}`] && (
+                                        <p className="text-sm text-red-600">{errors[`treeCount-${index}`]}</p>
+                                        )}
+                                      </div>
                           {/* Recipient Name */}
                           <div>
                             <label className="block text-gray-700 mb-1">Recipient name:</label>
@@ -1333,15 +1389,6 @@ export default function GiftTreesPage() {
                                   }
                                 }}
                               />
-                              {index > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveName(index)}
-                                  className="text-red-600 hover:text-red-800 px-3 py-2"
-                                >
-                                  Remove
-                                </button>
-                              )}
                             </div>
                             {errors[`dedicatedName-${index}`] && (
                               <p className="mt-1 text-sm text-red-600">{errors[`dedicatedName-${index}`]}</p>
@@ -1366,6 +1413,7 @@ export default function GiftTreesPage() {
                             {errors[`dedicatedEmail-${index}`] && (
                               <p className="mt-1 text-sm text-red-600">{errors[`dedicatedEmail-${index}`]}</p>
                             )}
+                          </div>
                           </div>
 
                           {/* Assignee Section */}
@@ -1418,6 +1466,11 @@ export default function GiftTreesPage() {
                       </svg>
                       Add another recipient
                     </button>
+                    {errors.duplicateRecipient && (
+                       <div className="text-red-500 text-sm mt-2">
+                           {errors.duplicateRecipient}
+                        </div>
+                    )}
                   </div>
 
                   {/* Occasion Details */}
