@@ -317,12 +317,11 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
                     if (userTreeCount[key] > 1) primaryMessage = getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
                 }
 
+                primaryMessage = primaryMessage.replace("{recipient}", (giftCard as any).recipient_name || "");
                 const record = {
                     slideId: templateId,
-                    name: (giftCard as any).recipient_name || "",
                     sapling: (giftCard as any).sapling_id,
-                    content1: primaryMessage,
-                    content2: giftCardRequest.secondary_message,
+                    message: primaryMessage,
                     logo: giftCardRequest.logo_url,
                     logo_message: giftCardRequest.logo_message
                 }
