@@ -23,6 +23,72 @@ import {
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 // import { DropDown } from "ui";
 
+function getDonationAction() {
+  return (
+    <div className="relative w-full">
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger className="bg-green-800 w-full text-white px-4 py-2 rounded-md cursor-pointer">
+          Donate
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+          <Link href="/donate" className="header-link">
+            <DropdownMenuItem
+              className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+            >
+              Personal Donation
+            </DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Corporate Donation (coming soon)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Donation for a campaign (coming soon)
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div >
+  );
+}
+
+function getGiftTreesAction() {
+  return (
+    <div className="relative w-full">
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger className="bg-green-800 w-full text-white px-4 py-2 rounded-md cursor-pointer">
+          Gift Trees
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+          <Link href="/gift-trees " className="header-link">
+            <DropdownMenuItem
+              className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+            >
+              Personal Gifting
+            </DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Corporate Gifting (coming soon)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Pre-purchased Gift cards (coming soon)
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div >
+  );
+}
+
 export default function Header() {
   // const [theme, setTheme] = useState<"light" | "dark">("light");
   const setAppTheme = (theme: "light" | "dark") => {
@@ -72,12 +138,14 @@ export default function Header() {
                   Volunteer
                 </Button>
               </Link>
-              <Link href="/donate">
-                <Button className="bg-green-800 w-full mt-2">Donate</Button>
-              </Link>
-              <Link href="/gift-trees">
-                <Button className="bg-green-800 w-full mt-2">Gift Trees</Button>
-              </Link>
+
+              <div className="relative w-full mt-2">
+                {getDonationAction()}
+              </div>
+
+              <div className="relative w-full mt-2">
+                {getGiftTreesAction()}
+              </div>
             </div>
           </details>
 
@@ -94,12 +162,14 @@ export default function Header() {
                 Volunteer
               </Button>
             </Link>
-            <Link href="/donate">
-              <Button className="bg-green-800 mr-3">Donate</Button>
-            </Link>
-            <Link href="/gift-trees">
-              <Button className="bg-green-800">Gift Trees</Button>
-            </Link>
+
+            <div className="mr-3">
+              {getDonationAction()}
+            </div>
+
+            <div className="mr-3">
+              {getGiftTreesAction()}
+            </div>
           </div>
         </div>
       </nav>
