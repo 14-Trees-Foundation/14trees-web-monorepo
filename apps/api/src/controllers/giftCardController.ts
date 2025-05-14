@@ -663,7 +663,7 @@ const upsertGiftRequestUsersAndRelations = async (users: any[], giftCardRequestI
             email: user.recipient_email,
             phone: user.recipient_phone,
         }
-        const recipient = await UserRepository.upsertUser(recipientUser);
+        const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
 
         // assigned To
         const assigneeUser = {
@@ -672,7 +672,7 @@ const upsertGiftRequestUsersAndRelations = async (users: any[], giftCardRequestI
             email: user.assignee_email,
             phone: user.assignee_phone,
         }
-        const assignee = await UserRepository.upsertUser(assigneeUser);
+        const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
 
         if (recipient.id !== assignee.id && user.relation?.trim()) {
             await UserRelationRepository.createUserRelation({
@@ -836,7 +836,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
                 phone: user.gifted_to_phone,
                 birth_Date: user.gifted_to_dob,
             }
-            const giftedTo = await UserRepository.upsertUser(giftedToUser);
+            const giftedTo = await UserRepository.upsertUserByEmailAndName(giftedToUser);
 
             // assigned To
             const assignedToUser = {
@@ -846,7 +846,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
                 phone: user.assigned_to_phone,
                 birth_Date: user.assigned_to_dob,
             }
-            const assignedTo = await UserRepository.upsertUser(assignedToUser);
+            const assignedTo = await UserRepository.upsertUserByEmailAndName(assignedToUser);
 
             if (giftedTo.id !== assignedTo.id && user.relation?.trim()) {
                 await UserRelationRepository.createUserRelation({

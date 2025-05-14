@@ -655,9 +655,9 @@ async function addGiftRequestUsers(payload: GiftRequestPayload, giftRequestId: n
     const usersData: GiftRequestUserCreationAttributes[] = [];
 
     for (const user of payload.recipients) {
-        const recipient = await UserRepository.upsertUser({ name: user.recipientName, email: user.recipientEmail, phone: user.recipientPhone, communication_email: user.recipientCommEmail });
+        const recipient = await UserRepository.upsertUserByEmailAndName({ name: user.recipientName, email: user.recipientEmail, phone: user.recipientPhone, communication_email: user.recipientCommEmail });
         let assignee = recipient;
-        if (user.assigneeName) assignee = await UserRepository.upsertUser({ name: user.assigneeName, email: user.assigneeEmail, phone: user.assigneePhone, communication_email: user.assigneeCommEmail });
+        if (user.assigneeName) assignee = await UserRepository.upsertUserByEmailAndName({ name: user.assigneeName, email: user.assigneeEmail, phone: user.assigneePhone, communication_email: user.assigneeCommEmail });
 
         if (recipient.id !== assignee.id && user.relation?.trim()) {
             await UserRelationRepository.createUserRelation({

@@ -518,7 +518,7 @@ export class DonationService {
                 email: user.recipient_email,
                 phone: user.recipient_phone,
             }
-            const recipient = await UserRepository.upsertUser(recipientUser);
+            const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
 
             // assigneee
             const assigneeUser = {
@@ -527,7 +527,7 @@ export class DonationService {
                 email: user.assignee_email,
                 phone: user.assignee_phone,
             }
-            const assignee = await UserRepository.upsertUser(assigneeUser);
+            const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
 
             if (recipient.id !== assignee.id && user.relation?.trim()) {
                 await UserRelationRepository.createUserRelation({
@@ -616,7 +616,7 @@ export class DonationService {
             email: user.recipient_email,
             phone: user.recipient_phone,
         }
-        const recipient = await UserRepository.upsertUser(recipientUser);
+        const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
 
         // assigneee
         const assigneeUser = {
@@ -625,7 +625,7 @@ export class DonationService {
             email: user.assignee_email,
             phone: user.assignee_phone,
         }
-        const assignee = await UserRepository.upsertUser(assigneeUser);
+        const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
 
         if (recipient.id !== assignee.id && user.relation?.trim()) {
             await UserRelationRepository.createUserRelation({
