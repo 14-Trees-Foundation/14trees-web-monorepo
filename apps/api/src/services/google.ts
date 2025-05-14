@@ -115,6 +115,29 @@ export class GoogleSpreadsheet {
         });
     }
 
+    public async insertRowData(spreadsheetId: string, sheetName: string, rowData: string[]) {
+        try {
+            await this.sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: sheetName,
+                valueInputOption: 'RAW',
+                insertDataOption: 'INSERT_ROWS',
+                requestBody: {
+                    values: [rowData],
+                },
+            });
+            console.log("Row inserted successfully.");
+        } catch (error: any) {
+            if (error?.response?.data) {
+                console.log("Insert error:", JSON.stringify(error.response.data));
+            } else {
+                console.log("Insert error:", error);
+            }
+        }
+    }
+
+
+
     public async updateRowDataInSheet(spreadsheetId: string, sheetName: string, updatedValues: string[][]) {
         await this.sheets.spreadsheets.values.update({
             spreadsheetId,
