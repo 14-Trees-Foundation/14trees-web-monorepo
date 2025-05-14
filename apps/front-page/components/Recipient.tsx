@@ -39,7 +39,7 @@ const Recipeint: React.FC<RecipeintProps> = ({ maxTrees, index, user, errors, ha
 
             <div className="relative border space-y-4 p-4 rounded-md mb-4">
                 {/* Number of Trees */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center flex-wrap gap-4">
                     <label className="block text-gray-700 whitespace-nowrap">Number of trees:</label>
                     <div className="flex flex-col gap-1">
                         <input
@@ -51,7 +51,7 @@ const Recipeint: React.FC<RecipeintProps> = ({ maxTrees, index, user, errors, ha
                             value={user.trees_count || ""}
                             onChange={(e) => {
                                 const value = Math.min(Number(e.target.value), maxTrees);
-                                handleNameChange(index, "trees_count", value > 0 ? value.toString() : "");
+                                handleNameChange(index, "trees_count", value > 0 ? value : 0);
                             }}
                             required
                         />

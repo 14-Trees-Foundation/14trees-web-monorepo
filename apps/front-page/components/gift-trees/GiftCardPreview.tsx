@@ -50,8 +50,8 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
         const timeoutId = setTimeout(() => {
             const eventMessage = eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary;
             const message = primaryMessage === "" || primaryMessage === defaultMessages.primary || primaryMessage === defaultMessages.memorial || primaryMessage === defaultMessages.birthday
-            ? eventMessage
-            : primaryMessage;
+                ? eventMessage
+                : primaryMessage;
 
             dataRef.current.primaryMessage = message;
             dataRef.current.eventType = eventType;
@@ -128,14 +128,14 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
             <h3 className="text-2xl font-semibold">Help us craft a beautiful gift card for you!</h3>
 
             {/* Preview Section */}
-            <div className="border border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
+            <div className="border min-h-[250px] border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
                 {isGeneratingPreview ? (
-                    <div className="text-center py-8">
+                    <div className="min-h-[250px] text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
                         <p className="mt-2 text-gray-600">Generating your card preview...</p>
                     </div>
                 ) : previewUrl ? (
-                    <div className="w-full h-full aspect-[4/3] sm:aspect-[16/9]">
+                    <div className="w-full h-full min-h-[250px] aspect-[4/3] sm:aspect-[16/9]">
                         <iframe
                             src={previewUrl}
                             className="w-full h-full border-none rounded-md"

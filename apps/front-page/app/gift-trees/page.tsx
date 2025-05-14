@@ -523,8 +523,8 @@ export default function GiftTreesPage() {
                 gifted_trees: user.trees_count,
                 recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
                 assignee_name: user.assignee_name || user.recipient_name,
-                assignee_email: user.assignee_email || 
-                  (user.assignee_name 
+                assignee_email: user.assignee_email ||
+                  (user.assignee_name
                     ? user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
                     : user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees")
               })),
@@ -889,7 +889,7 @@ export default function GiftTreesPage() {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white p-6 m-5 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <h3 className="text-xl font-bold text-green-600 mb-4">Gift Trees Request Successful!</h3>
           <p className="mb-2">Your gift trees request has been submitted successfully.</p>
           {giftRequestId && (
@@ -962,7 +962,7 @@ export default function GiftTreesPage() {
                 <p className="text-red-600 text-sm">{updateError}</p>
               )}
 
-              <div className="flex justify-end space-x-4">
+              <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
                   onClick={() => setShowSuccessDialog(false)}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
@@ -979,8 +979,7 @@ export default function GiftTreesPage() {
               </div>
             </div>
           ) : (
-            <div className="text-center">
-              <p className="text-green-600 mb-4">Thank you for providing additional information!</p>
+            <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-center">
               <button
                 onClick={() => setShowSuccessDialog(false)}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
@@ -1029,171 +1028,38 @@ export default function GiftTreesPage() {
             <ScrollReveal>
               {currentStep === 1 ? (
                 <form className="space-y-8">
-                  {/* 1. Personal Information 
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Your Information</h2>
+
+                  {/* Number of Trees */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="mb-2 block text-lg font-light">Full name *</label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        className={`w-full rounded-md border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} px-4 py-3 text-gray-700`}
-                        required
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        onBlur={(e) => {
-                          const error = validateField(e.target.name, e.target.value);
-                          setErrors(prev => ({ ...prev, fullName: error }));
-                        }}
-                      />
-                      {errors.fullName && (
-                        <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-lg font-light">Email *</label>
-                      <input
-                        type="email"
-                        name="email"
-                        className={`w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-4 py-3 text-gray-700`}
-                        required
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        onBlur={(e) => {
-                          const error = validateField(e.target.name, e.target.value);
-                          setErrors(prev => ({ ...prev, email: error }));
-                        }}
-                      />
-                      {errors.email && (
-                        <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-lg font-light">Phone number</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        className={`w-full rounded-md border ${errors.phone ? 'border-red-500' : 'border-gray-300'} px-4 py-3 text-gray-700`}
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        onBlur={(e) => {
-                          const error = validateField(e.target.name, e.target.value);
-                          setErrors(prev => ({ ...prev, phone: error }));
-                        }}
-                        pattern="[0-9]{10,15}"
-                        title="10-15 digit phone number"
-                      />
-                      {errors.phone && (
-                        <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                    <div className="border border-gray-300 rounded-lg p-4 sm:p-6 bg-white shadow-sm">
 
-                 2. Tree Planting Options 
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Tree Planting Options</h2>
-                  <p className="font-medium">
-                    Please select your preference (if you want to spread your trees over multiple options, please submit a fresh request indicating the tree count for each option).
-                  </p>
-
-                  <div className="space-y-3">
-                    {[
-                      { value: "foundation", label: "I'd like my trees to be planted on 14 Trees Foundations land preserve. The cost is Rs 3,000 (USD $40) per tree (inclusive of land cost)" },
-                      { value: "public", label: "I'd like my trees to be planted on public land (gram panchayat or public school land). The cost is Rs. 2000 (USD $23) per tree." },
-                    ].map((option) => (
-                      <label key={option.value} className="flex items-start space-x-3">
-                        <input
-                          type="radio"
-                          name="treeLocation"
-                          value={option.value}
-                          disabled={rpPaymentSuccess}
-                          className="mt-1 h-5 w-5"
-                          onChange={() => setTreeLocation(option.value)}
-                          checked={treeLocation === option.value}
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-
-                  {treeLocation === "foundation" && (
-                    <div className="space-y-4 pl-6">
-                      <p className="font-medium">(If you selected Foundations land preserve) I&apos;d like my trees to be planted on</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          "Visitor's grove",
-                          "Family grove",
-                          "Memorial grove",
-                          "Social/professional group grove",
-                          "School/College alumni grove",
-                          "Corporate grove",
-                          "Conference grove",
-                          "Other"
-                        ].map((option) => (
-                          <label key={option} className="flex items-center space-x-3">
-                            <input
-                              type="radio"
-                              name="groveType"
-                              value={option}
-                              className="h-5 w-5"
-                              disabled={rpPaymentSuccess}
-                              onChange={(e) => {
-                                setGroveType(e.target.value);
-                                if (option !== "Other") setOtherGroveType("");
-                              }}
-                              checked={groveType === option}
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-                      </div>
-                      {groveType === "Other" && (
-                        <div className="mt-2">
-                          <input
-                            type="text"
-                            placeholder="Please specify"
-                            className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                            value={otherGroveType}
-                            onChange={(e) => setOtherGroveType(e.target.value)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div> */}
-
-                  {/* 3. Number of Trees*/}
-                  <div className="space-y-2">
-                    <div className="border border-gray-300 rounded-lg p-6 bg-white shadow-sm">
-                      <div className="flex items-center justify-between gap-4">
-                        <label className="mb-2 block text-lg font-light whitespace-nowrap">
+                      {/* Label + Input */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                        <label className="text-base sm:text-lg font-light">
                           Number of trees you would like to gift *
                         </label>
                         <input
                           type="number"
                           name="numberOfTrees"
                           min="1"
-                          className={`w-50 rounded-md border ${errors.numberOfTrees ? 'border-red-500' : 'border-gray-300'} px-4 py-2 text-gray-700`}
+                          className={`w-full sm:w-60 rounded-md border px-4 py-2 text-gray-700 ${errors.numberOfTrees ? 'border-red-500' : 'border-gray-300'}`}
                           required
                           disabled={rpPaymentSuccess}
                           value={formData.numberOfTrees}
                           onChange={handleInputChange}
                         />
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
+
+                      {/* Predefined buttons + Other */}
+                      <div className="flex flex-wrap gap-2 mt-4">
                         {[2, 5, 10, 14, 50, 100].map((count) => (
                           <button
                             key={count}
                             type="button"
-                            onClick={() => {
-                              setFormData(prev => ({
-                                ...prev,
-                                numberOfTrees: count.toString()
-                              }));
-                            }}
-                            className={`px-4 py-2 rounded-md ${formData.numberOfTrees === count.toString()
+                            onClick={() =>
+                              setFormData(prev => ({ ...prev, numberOfTrees: count.toString() }))
+                            }
+                            className={`px-4 py-2 rounded-md text-sm sm:text-base ${formData.numberOfTrees === count.toString()
                               ? 'bg-green-600 text-white'
                               : 'bg-gray-100 hover:bg-gray-200'
                               }`}
@@ -1204,13 +1070,15 @@ export default function GiftTreesPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            const input = document.querySelector('input[name="numberOfTrees"]') as HTMLInputElement;
+                            const input = document.querySelector(
+                              'input[name="numberOfTrees"]'
+                            ) as HTMLInputElement;
                             if (input) {
                               input.focus();
                               input.select();
                             }
                           }}
-                          className={`px-4 py-2 rounded-md ${![2, 5, 10, 14, 50, 100].includes(Number(formData.numberOfTrees))
+                          className={`px-4 py-2 rounded-md text-sm sm:text-base ${![2, 5, 10, 14, 50, 100].includes(Number(formData.numberOfTrees))
                             ? 'bg-green-600 text-white'
                             : 'bg-gray-100 hover:bg-gray-200'
                             }`}
@@ -1218,7 +1086,9 @@ export default function GiftTreesPage() {
                           Other
                         </button>
                       </div>
-                      <p className="mt-6 text-sm text-gray-600">
+
+                      {/* Total Amount */}
+                      <p className="mt-4 text-sm sm:text-base text-gray-600">
                         Total Amount: ₹{totalAmount.toLocaleString('en-IN')}
                         {isAboveLimit && " (Above Razorpay limit - Bank Transfer recommended)"}
                       </p>
@@ -1240,17 +1110,16 @@ export default function GiftTreesPage() {
                   <div className="space-y-6 mt-2">
                     <h2 className="text-2xl font-semibold">{getOccasionQuestion()}</h2>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Occasion Type */}
                     <div>
-                      <label className="block text-lg font-light mb-2">Occasion Type</label>
+                      <label className="block text-base sm:text-lg font-light mb-2">Occasion Type</label>
                       <div className="relative">
                         <select
                           id="eventType"
                           name="eventType"
                           value={eventType || ""}
-                          onChange={(e) => {
-                            setEventType(e.target.value);
-                          }}
+                          onChange={(e) => setEventType(e.target.value)}
                           className="appearance-none w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700 bg-white transition-colors duration-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                         >
                           <option value="" disabled>Select an event type</option>
@@ -1262,15 +1131,16 @@ export default function GiftTreesPage() {
                           <option value="6">General Gift</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
                         </div>
                       </div>
                     </div>
 
+                    {/* Occasion Name */}
                     <div>
-                      <label className="block text-lg font-light mb-2">Occasion Name</label>
+                      <label className="block text-base sm:text-lg font-light mb-2">Occasion Name</label>
                       <input
                         type="text"
                         id="eventName"
@@ -1282,8 +1152,9 @@ export default function GiftTreesPage() {
                       />
                     </div>
 
+                    {/* Gifted By */}
                     <div>
-                      <label className="block text-lg font-light mb-2">Gifted By</label>
+                      <label className="block text-base sm:text-lg font-light mb-2">Gifted By</label>
                       <input
                         type="text"
                         id="plantedBy"
@@ -1295,8 +1166,9 @@ export default function GiftTreesPage() {
                       />
                     </div>
 
+                    {/* Date of Occasion */}
                     <div>
-                      <label className="block text-lg font-light mb-2">Date of Occasion</label>
+                      <label className="block text-base sm:text-lg font-light mb-2">Date of Occasion</label>
                       <input
                         type="date"
                         id="giftedOn"
@@ -1307,6 +1179,7 @@ export default function GiftTreesPage() {
                       />
                     </div>
                   </div>
+
 
                   <GiftCardPreview
                     giftRequestId={giftRequestId ?? undefined}
@@ -1322,9 +1195,9 @@ export default function GiftTreesPage() {
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold">Finally, help us with your (sponsor) details</h2>
                     <div className="grid grid-cols-1 gap-4">
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Gifted by*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="text"
                             name="fullName"
@@ -1344,9 +1217,9 @@ export default function GiftTreesPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Email ID*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="email"
                             name="email"
@@ -1366,9 +1239,9 @@ export default function GiftTreesPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Mobile number*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="tel"
                             name="phone"
@@ -1389,9 +1262,9 @@ export default function GiftTreesPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">PAN number*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="text"
                             name="panNumber"
@@ -1410,154 +1283,6 @@ export default function GiftTreesPage() {
                     </div>
                   </div>
 
-                  {/* 7. Payment Information */}
-                  {/*  <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold">Payment Information</h2> */}
-
-                  {/* <div>
-                    <label className="mb-2 block text-lg font-light">
-                      Payment Method *
-                    </label>
-                    <div className="space-y-3 mb-4">
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="radio"
-                          name="paymentOption"
-                          value="razorpay"
-                          checked={paymentOption === "razorpay" && !isAboveLimit}
-                          onChange={() => setPaymentOption("razorpay")}
-                          disabled={isAboveLimit || rpPaymentSuccess}
-                        />
-                        <span>
-                          Razorpay (UPI/Card/Net Banking)
-                          {isAboveLimit && " - Not available for amounts above ₹1,00,000"}
-                        </span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="radio"
-                          name="paymentOption"
-                          value="bank-transfer"
-                          checked={paymentOption === "bank-transfer" || isAboveLimit}
-                          onChange={() => setPaymentOption("bank-transfer")}
-                          disabled={rpPaymentSuccess}
-                        />
-                        <span>Bank Transfer {isAboveLimit && "(Recommended for large gifting)"}</span>
-                      </label>
-                    </div>
-
-                    {isAboveLimit && (
-                      <p className="text-yellow-600 bg-yellow-50 p-2 rounded-md">
-                        For gifting trees above ₹1,00,000, please use Bank Transfer.
-                      </p>
-                    )}
-                  </div>
-                  
-
-                  {paymentOption === "razorpay" && !isAboveLimit && !rpPaymentSuccess && (
-                    <div className="flex justify-center">
-                      <Button
-                        type="button"
-                        onClick={handleRazorpayPayment}
-                        disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
-                        className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
-                          }`}
-                      >
-                        {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
-                      </Button>
-                    </div>
-                  )} 
-
-                  {!isAboveLimit && !rpPaymentSuccess && (
-                    <div className="flex justify-center">
-                      <Button
-                        type="button"
-                        onClick={handleRazorpayPayment}
-                        disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
-                        className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
-                          }`}
-                      >
-                        {isProcessing ? 'Processing...' : 'Pay Securely via Razorpay'}
-                      </Button>
-                    </div>
-                  )}
-
-                  {isAboveLimit && (
-                    <div className="bg-gray-100 p-4 rounded-md flex flex-col sm:flex-row gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold mb-2">Bank Transfer Details:</h3>
-                        <p className="mb-1">Account Name: 14 Trees Foundation</p>
-                        <p className="mb-1">Account Number: 007305012197</p>
-                        <p className="mb-1">IFSC Code: ICIC0000073</p>
-                        <p className="mb-1">Bank: ICICI Bank</p>
-                        <p className="mb-1">Branch: Gurinovir park, IT1 road, Aundh, Pune 411007</p>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <Image
-                          src="/images/QRCode.png"
-                          alt="Scan to pay via UPI/Bank Transfer"
-                          width={150}
-                          height={150}
-                          className="border border-gray-300 rounded-md mb-2"
-                        />
-                        <p className="text-sm text-gray-600">Scan to pay via UPI</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {isAboveLimit && (
-                    <div>
-                      <label className="mb-2 block text-lg font-light">
-                        Upload Payment Confirmation *
-                      </label>
-                      <input
-                        value={undefined}
-                        type="file"
-                        accept="image/*,.pdf"
-                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        required={isAboveLimit}
-                        onChange={(e) => {
-                          setPaymentProof(e.target.files?.[0] || null);
-                        }}
-                      />
-                      {paymentProof && (
-                        <p className="mt-1 text-sm text-gray-600">
-                          {paymentProof.name}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {!isAboveLimit && rpPaymentSuccess && multipleNames && Number(formData.numberOfTrees) != dedicatedNames.map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0) && (
-                  <div className="pt-6 flex justify-center">
-                    <p className="text-gray-600">
-                      Only gifting {dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0)} trees out of {formData.numberOfTrees} trees. You can choose to provide all the recipients now or can do it later.
-                    </p>
-                  </div>
-                )}
-
-                {(isAboveLimit || rpPaymentSuccess) && <div className="pt-6 flex justify-center">
-                  <Button
-                    type="submit"
-                    className="bg-green-800 text-white hover:bg-green-900 w-[500px] py-6 text-lg"
-                    size="xl"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </div>
-                    ) : (
-                      "Submit Request"
-                    )}
-                  </Button>
-                </div>}
-              </form> */}
                   <div className="flex justify-end mt-8">
                     <button
                       type="button"
