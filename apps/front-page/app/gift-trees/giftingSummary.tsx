@@ -97,29 +97,35 @@ export const SummaryPaymentPage = ({
         {dedicatedNames[0]?.recipient_name && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Trees will be assigned to</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full border rounded">
+
+            {/* Horizontal scroll on small screens */}
+            <div className="w-full overflow-x-auto">
+              <table className="min-w-[600px] w-full border border-gray-200 rounded text-sm">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-2 text-left border-b">Recipient</th>
-                    <th className="px-4 py-2 text-left border-b">Recipient Email</th>
-                    <th className="px-4 py-2 text-left border-b">Trees</th>
-                    {hasDifferentAssignee && <>
-                      <th className="px-4 py-2 text-left border-b">Assignee</th>
-                      <th className="px-4 py-2 text-left border-b">Assignee Email</th>
-                    </>}
+                    <th className="whitespace-nowrap px-4 py-2 text-left border-b">Recipient</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left border-b">Recipient Email</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left border-b">Trees</th>
+                    {hasDifferentAssignee && (
+                      <>
+                        <th className="whitespace-nowrap px-4 py-2 text-left border-b">Assignee</th>
+                        <th className="whitespace-nowrap px-4 py-2 text-left border-b">Assignee Email</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {dedicatedNames.map((recipient, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-4 py-2 border-b">{recipient.recipient_name}</td>
-                      <td className="px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
-                      <td className="px-4 py-2 border-b">{recipient.trees_count}</td>
-                      {hasDifferentAssignee && <>
-                        <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
-                        <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
-                      </>}
+                      <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_name}</td>
+                      <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
+                      <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.trees_count}</td>
+                      {hasDifferentAssignee && (
+                        <>
+                          <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
+                          <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -127,6 +133,7 @@ export const SummaryPaymentPage = ({
             </div>
           </div>
         )}
+
 
         <button
           type="button"
