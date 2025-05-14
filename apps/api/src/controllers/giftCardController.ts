@@ -29,7 +29,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
@@ -112,6 +112,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        sponsor_name: sponsorName,
+        sponsor_email: sponsorEmail
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -215,6 +217,27 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (changed) await giftCard.save();
+
+        if (requestType === 'Gift Cards') {
+            try {
+                
+                // Create sponsor user object directly from request body
+                const sponsorUser = {
+                    id: sponsorId,
+                    name: sponsorName,
+                    email: sponsorEmail,
+                };
+                await sendGiftRequestAcknowledgement(
+                    giftCard,
+                    sponsorUser
+                );
+            } catch (emailError) {
+                console.error("[ERROR] Failed to send gift acknowledgment email:", {
+                    error: emailError,
+                    stack: emailError instanceof Error ? emailError.stack : undefined
+                });
+            }
+        }
 
         const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
         res.status(status.success).json({
