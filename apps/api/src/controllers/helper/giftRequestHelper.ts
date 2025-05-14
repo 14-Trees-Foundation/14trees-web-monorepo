@@ -5,12 +5,13 @@ import { GiftRequestUser, GiftRequestUserCreationAttributes } from "../../models
 import { GiftCardsRepository } from "../../repo/giftCardsRepo";
 import TreeRepository from "../../repo/treeRepo";
 import { UserRepository } from "../../repo/userRepo";
+import { PaymentRepository } from "../../repo/paymentsRepo";
 import runWithConcurrency, { Task } from "../../helpers/consurrency";
 import { convertPdfToImage } from "../../helpers/pdfToImage";
 import PlantTypeTemplateRepository from "../../repo/plantTypeTemplateRepo";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, createSlide, deleteUnwantedSlides, getSlideThumbnail, reorderSlides } from "./slides";
 import { uploadFileToS3, uploadImageUrlToS3 } from "./uploadtos3";
-import { copyFile, downloadSlide } from "../../services/google";
+import { copyFile, downloadSlide, GoogleDoc } from "../../services/google";
 import { TemplateType } from "../../models/email_template";
 import { EmailTemplateRepository } from "../../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../../services/gmail/gmail";
@@ -18,6 +19,8 @@ import { UserGroupRepository } from "../../repo/userGroupRepo";
 import { UserRelationRepository } from "../../repo/userRelationsRepo";
 import { GroupRepository } from "../../repo/groupRepo";
 import { Group } from "../../models/group";
+import moment from "moment";
+import { formatNumber, numberToWords } from "../../helpers/utils"
 import { AlbumRepository } from "../../repo/albumRepo";
 
 export const defaultGiftMessages = {
@@ -352,8 +355,100 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
     await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 }
 
+export const sendGiftRequestAcknowledgement = async (
+    giftRequest: any,
+    sponsorUser: any,
+    testMails?: string[],
+    ccMails?: string[]
+): Promise<void> => {
 
-export const sendMailsToSponsors = async ( giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[] ) => {
+    try {
+
+        let panNumber = "";
+        if (giftRequest.payment_id) {
+            const payment = await PaymentRepository.getPayment(giftRequest.payment_id);
+            panNumber = payment?.pan_number || "";
+        }
+
+        // Generate 80G receipt if applicable
+        let fileUrl = "";
+        const giftReceiptId = new Date().getFullYear() + "/" + giftRequest.id;
+        if (giftRequest.amount_donated) {
+            const docService = new GoogleDoc();
+            const receiptId = await docService.get80GRecieptFileId({
+                "{Name}": sponsorUser.name,
+                "{FY}": "Year " + (new Date().getFullYear() - 1) + "-" + ((new Date().getFullYear()) % 100),
+                "{Rec}": giftReceiptId,
+                "{Date}": moment(new Date(giftRequest.created_at)).format('MMMM DD, YYYY'),
+                "{AmountW}": numberToWords(giftRequest.amount_donated || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+                "{PAN}": panNumber,
+                "{Amt}": formatNumber(giftRequest.amount_donated || 0),
+                "{CO}": "",
+                "{SG}": "",
+                "{OT}": "✓",
+            }, giftReceiptId);
+
+            const resp = await docService.download(receiptId);
+            fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}/${giftReceiptId}`);
+        }
+
+        console.log('[INFO] Preparing email data');
+        const emailData = {
+            sponsorDetails: {
+                name: sponsorUser.name,
+                email: sponsorUser.email,
+                phone: sponsorUser.phone,
+                panNumber: panNumber,
+            },
+            giftDetails: {
+                date: new Date(giftRequest.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }),
+                quantity: giftRequest.no_of_cards,
+                eventName: giftRequest.event_name,
+                eventType: giftRequest.event_type,
+                message: giftRequest.primary_message,
+                groupName: giftRequest.group_name,
+                amount: giftRequest.amount_donated ? formatNumber(giftRequest.amount_donated) : undefined,
+            }
+        };
+
+        const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+        const mailIds = (testMails && testMails.length !== 0) ? testMails : [sponsorUser.email];
+
+        const templateName = 'gifting-ack.html';
+
+        // Prepare attachments if there's a donation amount
+        const attachments = giftRequest.amount_donated ? [{
+            filename: giftReceiptId + " " + sponsorUser.name + ".pdf",
+            path: fileUrl,
+        }] : undefined;
+
+        await sendDashboardMail(
+            templateName,
+            emailData,
+            mailIds,
+            ccMailIds,
+            attachments,
+            'Thank You for Your Gift Request to 14 Trees'
+        );
+
+    } catch (error) {
+        console.error('[ERROR] Exception in sendGiftRequestAcknowledgement:', {
+            error: error,
+            stack: error instanceof Error ? error.stack : undefined
+        });
+
+        throw error;
+    } finally {
+        console.log('[INFO] Completed sendGiftRequestAcknowledgement processing');
+    }
+};
+
+
+export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
     const emailData: any = {
         trees: [] as any[],
         user_email: giftCardRequest.user_email,
@@ -415,7 +510,7 @@ export const sendMailsToSponsors = async ( giftCardRequest: any, giftCards: any[
                 updated_at: new Date()
             },
             {
-                id: giftCardRequest.id 
+                id: giftCardRequest.id
             }
         );
     }
@@ -650,7 +745,7 @@ async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCard
 }
 
 async function addGiftRequestUsers(payload: GiftRequestPayload, giftRequestId: number): Promise<GiftRequestUser[]> {
-    
+
     // create gift request user
     const usersData: GiftRequestUserCreationAttributes[] = [];
 
@@ -691,6 +786,8 @@ async function generateAndSendGiftCards(giftRequest: GiftCardRequest, giftCardsC
     giftCardsCallBack(images, giftRequest.id);
 }
 
+
+
 export async function sendGiftRequestRecipientsMail(giftRequestId: number) {
 
     const giftRequestsResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftRequestId }]);
@@ -727,4 +824,5 @@ export async function generateGiftCardTemplate(record: any, plantType?: string, 
     const slideId = await createSlide(pId, templateId, record, keepImages);
 
     return { slideId, pId };
+
 }
