@@ -10,7 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation } from '../models/donation';
+import { Donation, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
 import { Tree } from '../models/tree';
 import { User } from '../models/user';
 import { WhereOptions } from 'sequelize';
@@ -28,7 +28,17 @@ export const getDonations = async (req: Request, res: Response) => {
 
     try {
         let result = await DonationRepository.getDonations(offset, limit, filters, orderBy);
-        res.status(status.success).send(result);
+        res.status(status.success).send({
+            offset: result.offset,
+            total: Number(result.total),
+            results: result.results.map((item: any) => {
+                return {
+                    ...item,
+                    booked: Number(item.booked),
+                    assigned: Number(item.assigned),
+                }
+            })
+        });
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonations", error)
         return res.status(status.error).json({
@@ -534,6 +544,14 @@ export const assignTrees = async (req: Request, res: Response) => {
             await DonationService.autoAssignTrees(donation_id);
         } else {
             await DonationService.assignTrees(donation_id, user_trees)
+        }
+
+        const donation: any = await DonationRepository.getDonation(donation_id);
+
+        if (Number(donation.assigned) === donation.trees_count) {
+            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_OrderFulfilled }); 
+        } else {
+            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted }); 
         }
     
         return res.status(status.success).send();

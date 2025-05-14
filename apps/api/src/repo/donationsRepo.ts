@@ -32,10 +32,14 @@ export class DonationRepository {
                     d.*,
                     u.name as user_name,
                     u.email as user_email,
-                    u.phone as user_phone
+                    u.phone as user_phone,
+                    count(t.mapped_to_user) as booked,
+                    count(t.assigned_to) as assigned
                 FROM "14trees_2".donations d
                 LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                LEFT JOIN "14trees_2".trees t ON t.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+                GROUP BY d.id, u.id
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
@@ -50,7 +54,6 @@ export class DonationRepository {
                 sequelize.query(getQuery, {
                     replacements: replacements,
                     type: QueryTypes.SELECT,
-                    model: Donation // Add this line
                 }),
                 sequelize.query(countQuery, {
                     replacements: replacements,
@@ -61,7 +64,7 @@ export class DonationRepository {
             return {
                 offset: offset,
                 total: parseInt((donationsCount[0] as any).count),
-                results: donations as Donation[]
+                results: donations as any[]
             };
         } catch (error) {
             console.error('[ERROR] DonationRepository::getDonations:', error);
@@ -111,7 +114,7 @@ export class DonationRepository {
         }
     }
 
-    public static async updateDonation(donationId: number, updateData: any): Promise<Donation> {
+    public static async updateDonation(donationId: number, updateData: Partial<DonationAttributes>): Promise<Donation> {
 
         try {
             // Find the donation by its primary key (id)

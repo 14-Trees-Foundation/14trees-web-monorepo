@@ -1,5 +1,5 @@
 import { LandCategory } from "../models/common";
-import { ContributionOption, Donation, DonationCreationAttributes } from "../models/donation";
+import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_AckSent, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
@@ -43,6 +43,7 @@ interface CreateDonationRequest {
     visit_date: Date | null;
     donation_type: 'adopt' | 'donate';
     donation_method?: 'trees' | 'amount';
+    status?: DonationStatus,
 }
 
 export class DonationService {
@@ -63,6 +64,7 @@ export class DonationService {
             comments,
             donation_type,
             donation_method,
+            status,
         } = data;
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
@@ -85,7 +87,8 @@ export class DonationService {
             payment_id: payment_id || null,
             created_by: sponsorUser.id,
             contribution_options: continution_options || null,
-            comments: comments || null
+            comments: comments || null,
+            status: status || DonationStatus_UserSubmitted,
         };
         const donation = await DonationRepository.createdDonation(
             request
@@ -715,7 +718,10 @@ export class DonationService {
             );
 
             if (statusMessage) {
+                await DonationRepository.updateDonation(donation.id, { mail_error: statusMessage });
                 console.error("[ERROR] DonationService::sendDonationAcknowledgement", statusMessage);
+            } else {
+                await DonationRepository.updateDonation(donation.id, { mail_status: DonationMailStatus_AckSent });
             }
 
         } catch (error) {
