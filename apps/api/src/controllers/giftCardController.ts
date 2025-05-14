@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
@@ -32,6 +32,7 @@ import GiftRequestHelper from "../helpers/giftRequests";
 import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
+import RazorpayService from "../services/razorpay/razorpay";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -76,7 +77,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             ...giftCardRequest,
             plot_ids: (giftCardRequest as any).plot_ids.filter((plot_id: any) => plot_id !== null),
             presentation_ids: (giftCardRequest as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
-            payment_status: validatedAmount === totalAmount
+            payment_status: validatedAmount === totalAmount || giftCardRequest.amount_received === totalAmount
                 ? "Fully paid"
                 : validatedAmount < paidAmount
                     ? "Pending validation"
@@ -138,6 +139,32 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         visitId = visit.id;
     }
 
+    let sponsorshipType: SponsorshipType = 'Unverified';
+    let amountReceived: number = 0;
+    let donationDate: Date | null = null;
+    if (paymentId) {
+        const payment: any = await PaymentRepository.getPayment(paymentId);
+        if (payment && payment.payment_history) {
+            const paymentHistory: PaymentHistory[] = payment.payment_history;
+            paymentHistory.forEach(payment => {
+                if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+            })
+        }
+
+        if (payment?.order_id) {
+            const razorpayService = new RazorpayService();
+            const payments = await razorpayService.getPayments(payment.order_id);
+            payments?.forEach(item => {
+                amountReceived += Number(item.amount)/100;
+            })
+        }
+
+        if (amountReceived > 0) {
+            sponsorshipType = 'Donation Received';
+            donationDate = new Date();
+        }
+    }
+
     const request: GiftCardRequestCreationAttributes = {
         request_id: requestId,
         user_id: userId,
@@ -164,6 +191,9 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType ? requestType : null,
         visit_id: visitId,
+        sponsorship_type: sponsorshipType,
+        donation_date: donationDate,
+        amount_received: amountReceived,
     }
 
     try {
