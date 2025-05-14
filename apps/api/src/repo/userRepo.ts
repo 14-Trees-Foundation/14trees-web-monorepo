@@ -4,7 +4,7 @@ import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { sequelize } from '../config/postgreDB';
 
-export const getUserId = (name:string, email: string) => {
+export const getUserId = (name: string, email: string) => {
     let userId = name.toLowerCase() + email.toLowerCase();
     userId = userId.replace(/[^A-Z0-9@.]+/ig, "");
 
@@ -14,7 +14,7 @@ export const getUserId = (name:string, email: string) => {
 export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttributes => {
     let userId = getUserId(reqBody.name, reqBody.email)
     const birthDate = new Date(reqBody.birth_date);
-    return  {
+    return {
         name: reqBody.name.trim(),
         phone: reqBody.phone ? reqBody.phone.trim() : null,
         email: reqBody.email.trim(),
@@ -23,8 +23,8 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
         created_at: new Date(),
         updated_at: new Date(),
         communication_email: reqBody.communication_email?.trim() && !reqBody.communication_email.trim().endsWith("@14trees")
-                                ? reqBody.communication_email.trim()
-                                : null
+            ? reqBody.communication_email.trim()
+            : null
     } as UserCreationAttributes;
 }
 
@@ -131,13 +131,15 @@ export class UserRepository {
     }
 
     public static async searchUsers(searchStr: string, offset: number, limit: number): Promise<User[]> {
-        const whereClause: WhereOptions<User> = { [Op.or]: [
-            { name: {[Op.iLike]:`%${searchStr}%` } },
-            { phone: {[Op.iLike]:`%${searchStr}%` } },
-            { email: {[Op.iLike]:`%${searchStr}%` } },
-            { communication_email: {[Op.iLike]:`%${searchStr}%` } },
-        ]};
-    
+        const whereClause: WhereOptions<User> = {
+            [Op.or]: [
+                { name: { [Op.iLike]: `%${searchStr}%` } },
+                { phone: { [Op.iLike]: `%${searchStr}%` } },
+                { email: { [Op.iLike]: `%${searchStr}%` } },
+                { communication_email: { [Op.iLike]: `%${searchStr}%` } },
+            ]
+        };
+
         return await User.findAll({
             where: whereClause,
             offset,
@@ -148,7 +150,7 @@ export class UserRepository {
     public static async getUser(name: string, email: string): Promise<User | null> {
         const userId = getUserId(name, email);
         return await User.findOne({
-            where: { user_id: userId},
+            where: { user_id: userId },
         });
     }
 
@@ -175,7 +177,7 @@ export class UserRepository {
             WHERE ${condition}
             GROUP BY u.id;
         `
-    
+
         return await sequelize.query(getQuery, {
             replacements: replacement,
             type: QueryTypes.SELECT
@@ -205,13 +207,46 @@ export class UserRepository {
                 email: obj.email
             }
         });
-        
+
         if (users.length > 0) {
             if (data.id) return await users[0].update(obj);
             return users[0];
         }
-        
+
         return await User.create(obj);
     }
 
+    public static async upsertUserByEmailAndName(data: any): Promise<User> {
+        let obj: UserCreationAttributes = getUserDocumentFromRequestBody(data);
+        const users = await User.findAll({
+            where: {
+                email: obj.email
+            }
+        });
+
+        if (users.length > 0) {
+
+            if (data.id)
+                return await users[0].update(obj);
+
+            else if (users[0].name !== obj.name && !obj.email.endsWith("@14trees")) {
+                obj.communication_email = obj.email;
+                obj.email = obj.name.split(" ").join(".") + "@14trees";
+
+                const user = await User.findOne({
+                    where: {
+                        email: obj.email
+                    }
+                });
+
+                if (user)
+                    return user.update(obj);
+
+                return await User.create(obj);
+            }
+            return users[0];
+        }
+
+        return await User.create(obj);
+    }
 }

@@ -48,60 +48,6 @@ export const getDonations = async (req: Request, res: Response) => {
     }
 }
 
-// const upsertDonationUsers = async (donation: Donation, users: any[]) => {
-//     const donationUsers: DonationUserCreationAttributes[] = [];
-//     const existingDonationUsers: DonationUser[] = await DonationUserRepository.getDonationUsers(donation.id);
-
-//     for (const user of users) {
-//         const recipientData = {
-//             id: user.recipient,
-//             name: user.recipient_name,
-//             phone: user.recipient_phone,
-//             email: user.recipient_email,
-//         };
-//         const recipient = await UserRepository.upsertUser(recipientData);
-
-//         const assigneeData = {
-//             id: user.assignee,
-//             name: user.assignee_name,
-//             phone: user.assignee_phone,
-//             email: user.assignee_email,
-//         };
-//         const assignee = await UserRepository.upsertUser(assigneeData);
-
-//         if (recipient.id !== assignee.id && user.relation?.trim()) {
-//             await UserRelationRepository.createUserRelation({
-//                 primary_user: recipient.id,
-//                 secondary_user: assignee.id,
-//                 relation: user.relation.trim(),
-//                 created_at: new Date(),
-//                 updated_at: new Date(),
-//             })
-//         }
-
-//         if (user.id && existingDonationUsers.find((donationUser) => donationUser.id === user.id)) {
-//             await DonationUserRepository.updateDonationUsers({
-//                 recipient: recipient.id,
-//                 assignee: assignee.id,
-//                 gifted_trees: user.count,
-//                 updated_at: new Date(),
-//             }, { id: user.id });
-//         } else {
-//             donationUsers.push({
-//                 recipient: recipient.id,
-//                 assignee: assignee.id,
-//                 donation_id: donation.id,
-//                 gifted_trees: user.count,
-//                 profile_image_url: user.image_url || null,
-//                 created_at: new Date(),
-//                 updated_at: new Date(),
-//             });
-//         }
-//     }
-
-//     if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers);
-// }
-
 export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
