@@ -11,7 +11,13 @@ export const ContributionOption_CSR: ContributionOption = 'CSR';
 export const ContributionOption_VOLUNTEER: ContributionOption = 'Volunteer';
 export const ContributionOption_SHARE: ContributionOption = 'Share';
 
+export type DonationStatus = 'UserSubmitted' | 'OrderFulfilled';
+export const DonationStatus_UserSubmitted: DonationStatus = 'UserSubmitted';
+export const DonationStatus_OrderFulfilled: DonationStatus = 'OrderFulfilled';
 
+export type DonationMailStatus = 'AckSent' | 'DashboardsSent';
+export const DonationMailStatus_AckSent: DonationMailStatus = 'AckSent';
+export const DonationMailStatus_DashboardsSent: DonationMailStatus = 'DashboardsSent';
 
 interface DonationAttributes {
   id: number;
@@ -33,9 +39,12 @@ interface DonationAttributes {
   tags: string[] | null;
   donation_type: DonationType;
   donation_method: DonationMethod | null;
+  status: DonationStatus;
+  mail_status: DonationMailStatus | null;
+  mail_error: string | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' |  'amount_donated' | 'visit_date'| 'donation_method'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' |  'amount_donated' | 'visit_date'| 'donation_method' | 'status' | 'mail_error' | 'mail_status'> { }
 
 @Table({ 
     tableName: 'donations',
@@ -158,6 +167,26 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     allowNull: true 
   })
   visit_date!: Date | null;
+
+  @Column({
+    type: DataType.ENUM('UserSubmitted', 'OrderFulfilled'),
+    allowNull: false,
+    defaultValue: DonationStatus_UserSubmitted,
+  })
+  status!: DonationStatus;
+
+  @Column({
+    type: DataType.ENUM('AckSent', 'DashboardsSent'),
+    allowNull: true
+  })
+  mail_status!: DonationMailStatus | null;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true
+  })
+  mail_error!: string | null;
+
 }
 
 export { Donation }
