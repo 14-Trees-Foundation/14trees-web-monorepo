@@ -67,7 +67,6 @@ export default function GiftTreesPage() {
   const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
@@ -523,7 +522,11 @@ export default function GiftTreesPage() {
                 ...user,
                 gifted_trees: user.trees_count,
                 recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-                assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+                assignee_name: user.assignee_name || user.recipient_name,
+                assignee_email: user.assignee_email || 
+                  (user.assignee_name 
+                    ? user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+                    : user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees")
               })),
             })
           });
@@ -888,7 +891,7 @@ export default function GiftTreesPage() {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <h3 className="text-xl font-bold text-green-600 mb-4">Gift Trees Request Successful!</h3>
-          <p className="mb-2">Your gift trees request has been processed successfully.</p>
+          <p className="mb-2">Your gift trees request has been submitted successfully.</p>
           {giftRequestId && (
             <p className="mb-2">
               <strong>Gift Trees Request ID:</strong> {giftRequestId}
@@ -923,7 +926,7 @@ export default function GiftTreesPage() {
 
               {/* Additional Involvement Section */}
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">Besides making a monetary contribution, I&apos;d also like to:</p>
+                <p className="text-sm text-gray-600">Besides gifting, I would also like to:</p>
                 <div className="space-y-2">
                   {involvementOptions.map((option) => (
                     <label key={option.value} className="flex items-center space-x-3">
@@ -1589,7 +1592,6 @@ export default function GiftTreesPage() {
                     dedicatedNames={dedicatedNames}
                     totalAmount={totalAmount}
                     isAboveLimit={isAboveLimit}
-                    razorpayLoaded={razorpayLoaded}
                     rpPaymentSuccess={rpPaymentSuccess}
                     paymentProof={paymentProof}
                     setPaymentProof={setPaymentProof}
@@ -1606,11 +1608,6 @@ export default function GiftTreesPage() {
                 )
               )}
             </ScrollReveal>
-            <Script
-              src="https://checkout.razorpay.com/v1/checkout.js"
-              strategy="lazyOnload"
-              onLoad={() => setRazorpayLoaded(true)}
-            />
           </div>
         </div>
       </div>

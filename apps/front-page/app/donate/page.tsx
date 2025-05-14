@@ -69,7 +69,6 @@ export default function DonatePage() {
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
@@ -1508,7 +1507,6 @@ export default function DonatePage() {
                     dedicatedNames={dedicatedNames}
                     paymentOption={paymentOption}
                     isAboveLimit={isAboveLimit}
-                    razorpayLoaded={razorpayLoaded}
                     rpPaymentSuccess={rpPaymentSuccess}
                     paymentProof={paymentProof}
                     setPaymentProof={setPaymentProof}
@@ -1526,11 +1524,6 @@ export default function DonatePage() {
         </div>
       </div>
       {showSuccessDialog && <SuccessDialog />}
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
-        onLoad={() => setRazorpayLoaded(true)}
-      />
     </div>
   );
 }
