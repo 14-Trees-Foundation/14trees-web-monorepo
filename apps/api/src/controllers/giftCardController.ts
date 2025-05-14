@@ -112,8 +112,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
-        sponsor_name: sponsorName,
-        sponsor_email: sponsorEmail
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -218,14 +216,19 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
         if (changed) await giftCard.save();
 
+        const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
+        res.status(status.success).json({
+            ...(giftCards.results[0]),
+            presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
+        });
+
         if (requestType === 'Gift Cards') {
             try {
-                
                 // Create sponsor user object directly from request body
                 const sponsorUser = {
-                    id: sponsorId,
-                    name: sponsorName,
-                    email: sponsorEmail,
+                    id: userId,
+                    name: (giftCards.results[0] as any).user_name,
+                    email: (giftCards.results[0] as any).user_email,
                 };
                 await sendGiftRequestAcknowledgement(
                     giftCard,
@@ -238,12 +241,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
                 });
             }
         }
-
-        const giftCards = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCard.id }])
-        res.status(status.success).json({
-            ...(giftCards.results[0]),
-            presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
-        });
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
