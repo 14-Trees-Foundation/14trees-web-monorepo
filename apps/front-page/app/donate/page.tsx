@@ -762,7 +762,7 @@ export default function DonatePage() {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white p-6 m-5 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
           <p className="mb-2">Your donation request has been submitted successfully.</p>
           {donationId && (
@@ -960,47 +960,51 @@ export default function DonatePage() {
 
                       {treeLocation === "donate" && (
                         <div className="space-y-4 pl-6">
-                          <div className="space-y-2">
-                            <label className="flex items-center space-x-3">
-                              <input
-                                type="radio"
-                                name="donationMethod"
-                                value="trees"
-                                className="h-5 w-5"
-                                checked={donationMethod === "trees"}
-                                onChange={() => {
-                                  setDonationMethod("trees");
-                                  setDonationAmount(1500);
-                                }}
-                              />
-                              <span>I want to donate</span>
+                          <div className="space-y-4">
+                            {/* Option 1: Donate Trees */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  name="donationMethod"
+                                  value="trees"
+                                  className="h-5 w-5"
+                                  checked={donationMethod === "trees"}
+                                  onChange={() => {
+                                    setDonationMethod("trees");
+                                    setDonationAmount(1500);
+                                  }}
+                                />
+                                <span>I want to donate</span>
+                              </label>
                               <input
                                 type="number"
                                 min="0"
-                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
+                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
                                 disabled={donationMethod !== 'trees'}
                                 value={donationMethod !== 'trees' ? 0 : donationTreeCount}
                                 onChange={(e) => setDonationTreeCount(Number(e.target.value))}
                               />
-                              <span>Trees</span>
-                            </label>
+                              <span className="text-sm">Trees</span>
+                            </div>
 
-                            <label className="flex items-center space-x-3">
-                              <input
-                                type="radio"
-                                name="donationMethod"
-                                value="amount"
-                                className="h-5 w-5"
-                                checked={donationMethod === "amount"}
-                                onChange={() => {
-                                  setDonationMethod("amount");
-                                }}
-                              />
-                              <span>I want to donate</span>
+                            {/* Option 2: Donate Amount */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  name="donationMethod"
+                                  value="amount"
+                                  className="h-5 w-5"
+                                  checked={donationMethod === "amount"}
+                                  onChange={() => setDonationMethod("amount")}
+                                />
+                                <span>I want to donate</span>
+                              </label>
                               <input
                                 type="number"
                                 min="1500"
-                                className="w-20 min-w-[150px] rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
+                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
                                 disabled={donationMethod !== 'amount'}
                                 value={donationMethod !== 'amount' ? 0 : donationAmount}
                                 onChange={(e) => {
@@ -1009,9 +1013,10 @@ export default function DonatePage() {
                                   else setDonationAmount(amount);
                                 }}
                               />
-                              <span>Rupees</span>
-                            </label>
+                              <span className="text-sm">Rupees</span>
+                            </div>
                           </div>
+
 
                           {donationMethod === "trees" && (
                             <div className="font-medium">
@@ -1026,9 +1031,9 @@ export default function DonatePage() {
                   {treeLocation !== "" && <div className="mt-6 space-y-6">
                     <h2 className="text-2xl font-semibold">Your details</h2>
                     <div className="grid grid-cols-1 gap-4">
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Donated by*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="text"
                             name="fullName"
@@ -1048,9 +1053,9 @@ export default function DonatePage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Email ID*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="email"
                             name="email"
@@ -1070,9 +1075,9 @@ export default function DonatePage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Mobile number*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="tel"
                             name="phone"
@@ -1093,9 +1098,9 @@ export default function DonatePage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">PAN number*:</label>
-                        <div className="flex-1">
+                        <div className="min-w-[200px] flex-1">
                           <input
                             type="text"
                             name="panNumber"
