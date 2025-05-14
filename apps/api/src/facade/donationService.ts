@@ -16,7 +16,6 @@ import moment from "moment";
 import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
-import numWords from 'num-words';
 
 interface DonationUserRequest {
     recipient_name: string
@@ -135,7 +134,7 @@ export class DonationService {
             TotalAmt: amount_donated?.toString() || '',
             PAN: pan || '',
             Amount: amount_donated?.toString() || '',
-            AmountW: amount_donated ? numWords(amount_donated) : '',
+            AmountW: amount_donated ? numberToWords(amount_donated).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '',
           };
     
           // 3. Create row based on headers
