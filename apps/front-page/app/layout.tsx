@@ -5,6 +5,7 @@ import "~/index.css";
 import { Inter } from "next/font/google";
 import NavHeader from "components/NavHeader";
 import Footer from "components/Footer";
+import Script from "next/script";
 
 const font = Inter({ subsets: ["latin"] });
 // const font = Roboto({ weight: ["100", "300", "400", "700"], subsets: ["latin"] , display: "swap"});
@@ -18,10 +19,16 @@ export default function HomeLayout({
 }): JSX.Element {
   return (
     <html lang="en">
+      <head>
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
+      </head>
       <body className={font.className}>
         <NavHeader />
         <div className="mt-18">{children}</div>
-        <Footer/>
+        <Footer />
       </body>
     </html>
   );

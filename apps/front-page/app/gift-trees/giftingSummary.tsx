@@ -1,5 +1,6 @@
 import { Button } from "ui/components/button";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface SummaryPaymentProps {
   formData: {
@@ -18,7 +19,6 @@ interface SummaryPaymentProps {
   }>;
   totalAmount: number;
   isAboveLimit: boolean;
-  razorpayLoaded: boolean;
   rpPaymentSuccess: boolean;
   paymentProof: File | null;
   setPaymentProof: (file: File | null) => void;
@@ -39,7 +39,6 @@ export const SummaryPaymentPage = ({
   dedicatedNames,
   totalAmount,
   isAboveLimit,
-  razorpayLoaded,
   rpPaymentSuccess,
   paymentProof,
   setPaymentProof,
@@ -53,6 +52,13 @@ export const SummaryPaymentPage = ({
   giftedOn,
   plantedBy,
 }: SummaryPaymentProps) => {
+
+  const [hasDifferentAssignee, setHasDifferentAssignee] = useState(false);
+
+  useEffect(() => {
+    const differentAssignee = dedicatedNames.some(user => user.assignee_name !== "" && user.assignee_name !== user.recipient_name);
+    setHasDifferentAssignee(differentAssignee);
+  }, [dedicatedNames])
 
 
   const handleCompleteGifting = (e: React.MouseEvent) => {
@@ -98,8 +104,10 @@ export const SummaryPaymentPage = ({
                     <th className="px-4 py-2 text-left border-b">Recipient</th>
                     <th className="px-4 py-2 text-left border-b">Recipient Email</th>
                     <th className="px-4 py-2 text-left border-b">Trees</th>
-                    <th className="px-4 py-2 text-left border-b">Assignee</th>
-                    <th className="px-4 py-2 text-left border-b">Assignee Email</th>
+                    {hasDifferentAssignee && <>
+                      <th className="px-4 py-2 text-left border-b">Assignee</th>
+                      <th className="px-4 py-2 text-left border-b">Assignee Email</th>
+                    </>}
                   </tr>
                 </thead>
                 <tbody>
@@ -108,8 +116,10 @@ export const SummaryPaymentPage = ({
                       <td className="px-4 py-2 border-b">{recipient.recipient_name}</td>
                       <td className="px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
                       <td className="px-4 py-2 border-b">{recipient.trees_count}</td>
-                      <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
-                      <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
+                      {hasDifferentAssignee && <>
+                        <td className="px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
+                        <td className="px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
+                      </>}
                     </tr>
                   ))}
                 </tbody>
@@ -134,7 +144,7 @@ export const SummaryPaymentPage = ({
             <Button
               type="button"
               onClick={handleRazorpayPayment}
-              disabled={isProcessing || !razorpayLoaded || rpPaymentSuccess}
+              disabled={isProcessing || rpPaymentSuccess}
               className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
             >
