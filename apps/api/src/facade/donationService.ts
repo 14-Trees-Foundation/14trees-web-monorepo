@@ -765,4 +765,52 @@ export class DonationService {
             throw new Error("Failed to send acknowledgement email");
         }
     }
+
+    public static async sendDonationNotificationToBackOffice(
+        donation: Donation,
+        sponsorUser: User,
+        testMails?: string[]
+    ): Promise<void> {
+        try {
+            // Prepare email content with donation details
+            const emailData = {
+                donationId: donation.id,
+                sponsorName: sponsorUser.name,
+                sponsorEmail: sponsorUser.email,
+                donationAmount: formatNumber(donation.amount_donated || 0),
+                donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+                treesCount: donation.trees_count || 0
+            };
+        
+            // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
+            const mailIds = (testMails && testMails.length !== 0) ?
+                testMails :
+                ['backoffice@14trees.org'];
+            
+            // Set the email template to be used
+            const templateName = 'backoffice_donation.html';
+            
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                undefined, // no CC recipients
+                [], // no attachments
+                'New Donation Received - Notification'
+            );
+        
+            // Handle email sending result
+            if (statusMessage) {
+                throw new Error(`Email sending failed with status: ${statusMessage}`);
+            }
+        
+        } catch (error) {
+            // Throw a more specific error based on the caught exception
+            const errorMessage = error instanceof Error ? 
+                `Failed to send donation notification: ${error.message}` :
+                'Failed to send donation notification due to an unknown error';
+                
+            throw new Error(errorMessage);
+        }
+    }
 }
