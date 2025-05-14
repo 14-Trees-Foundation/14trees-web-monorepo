@@ -15,6 +15,8 @@ import { formatNumber, numberToWords } from "../helpers/utils";
 import moment from "moment";
 import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
+import { GoogleSpreadsheet } from "../services/google";
+import numWords from 'num-words';
 
 interface DonationUserRequest {
     recipient_name: string
@@ -105,6 +107,46 @@ export class DonationService {
             throw new Error("Failed to save donation users!")
         })
     }
+
+    public static async insertDonationIntoGoogleSheet(
+        sponsor_name: string,
+        sponsor_email: string,
+        amount_donated: number,
+        pan: string
+      ): Promise<void> {
+        const spreadsheetId = '12cIX-3-EReUq6tLWRUl-eMHdvRilccbK4mrubQ2b38E';
+        const sheetName = 'Donations FY 25-26';
+    
+        const sheet = new GoogleSpreadsheet();
+    
+        try {
+          // 1. Read headers from first row
+          const headerRes = await sheet.getSpreadsheetData(spreadsheetId, `${sheetName}!1:1`);
+          const headers: string[] = headerRes?.data?.values?.[0] || [];
+    
+          // 2. Construct data object
+          const donationData = {
+            Date: new Date().toISOString(),
+            Name: sponsor_name,
+            Email: sponsor_email,
+            TotalAmt: amount_donated?.toString() || '',
+            PAN: pan || '',
+            Amount: amount_donated?.toString() || '',
+            AmountW: amount_donated ? numWords(amount_donated) : '',
+          };
+    
+          // 3. Create row based on headers
+          const row = headers.map((header: string) => donationData[header as keyof typeof donationData] || '');
+    
+          // 4. Insert row
+          await sheet.insertRowData(spreadsheetId, sheetName, row);
+          console.log('✅ Donation inserted into Google Sheet');
+        } catch (error) {
+          console.error('❌ Failed to insert donation:', error);
+        }
+      }
+
+    
 
     /**
      * Tree Reservation 

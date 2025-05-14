@@ -96,7 +96,7 @@ export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
     const {
-        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove,
+        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, pan,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
         comments, users,  donation_type, donation_method, visit_date, amount_donated,
     } = data;
@@ -190,6 +190,16 @@ export const createDonation = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails
+    }
+    try {
+        await DonationService.insertDonationIntoGoogleSheet(
+            sponsor_name,
+            sponsor_email,
+            amount_donated,
+            pan
+        );
+    } catch (error) {
+        console.error("[ERROR] DonationsController::insertDonationIntoGoogleSheet:", error);
     }
     
     if (!usersCreated)
