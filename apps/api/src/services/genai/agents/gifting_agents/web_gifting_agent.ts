@@ -22,7 +22,7 @@ Guidelines for Handling User Requests:
     - When the user greets you or starts a conversation (e.g., "Hi", "Hello", "Hey"), you should respond by briefly and clearly listing your key capabilities, taking into account the scope of tools available. This helps set the context for how you can assist them.
     - When the user query is unclear or ambiguous, don't leave them guessing. Instead, respond with a helpful message that:
         - Clarifies the ambiguity (e.g., “Can you tell me more about what you're trying to do?”), 
-        - AND lists a few clear examples of the kinds of tasks you can help with, based on your capabilities and tools.
+        - AND list a few clear examples of the kinds of tasks you can help with, based on your capabilities and tools.
 
 1. Collecting Required Information
     - Identify all mandatory fields required to fulfill the request.
@@ -57,18 +57,37 @@ Guidelines for Handling User Requests:
     - Avoid technical jargon—explain things in simple terms.
     - Provide step-by-step guidance to keep the interaction smooth.
 
-7. You must always return the final output by calling the function named "response"
-    - Use the following arguments for the "response" function:
-        - "text_output": A markdown-formatted explanation or result message for the user.
-        - sponsor_details: A JSON object containing:
-            - name: Name of the sponsor user, or null if not captured.
-            - email: Email of the sponsor user, or null if not captured.
+7. Always structure the response of the tool: Every time you receive a response from a tool, always call the function named "structure_response".
+    - Use the following arguments for the "structure_response" function:
+        - "text_output": A markdown-formatted response of the tool.
+        - "sponsor_details": A JSON object containing:
+            - name: Name of the sponsor user, or ZZZ if not captured.
+            - email: Email of the sponsor user, or YYY if not captured.
 
-🔁 Never skip the final "response" call — it is mandatory once the process is complete.
+8. Never skip the function call "structure_response" — it is mandatory to call whenever a tool is invoked and a response is received.
 
 
 Your goal is to assist users efficiently while ensuring accuracy and predictability in fulfilling their requests.
 `;
+
+// - Every time the user provides any input (even partial), always call the function named "verify_tool_inputs" immediately.
+
+// 2. How to call verify_tool_inputs:
+//     - tool_name: The name of the tool for which we are collecting input.
+//     - input_data: A JSON object containing **only the fields** the user has provided so far.  
+//     - Even if the user provides **only partial** information, include it inside "input_data".
+//     - If the user has not provided a certain field, simply omit it from input_data (do not put null or undefined).
+//     - Never leave input_data empty if any input is provided.
+
+// 7. Structure final response: Every time you want to respond to the user with a message m, always call the function named "structure_response".
+//     - Use the following arguments for the "structure_response" function:
+//         - "text_output": A markdown-formatted explanation or result message m.
+//         - "sponsor_details": A JSON object containing:
+//             - name: Name of the sponsor user, or ZZZ if not captured.
+//             - email: Email of the sponsor user, or YYY if not captured.
+
+// 8. Never skip the function call "structure_response" — it is mandatory once the response is ready to be sent to the user.
+
 
 const messages = [
     SystemMessagePromptTemplate.fromTemplate(systemMessage),
@@ -83,7 +102,7 @@ const tools = [...getGiftingTools(), dateTool];
 const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
 const responseSchema = z.object({
-    text_output: z.string().describe("Markdown formatted text/message to be displayed/conwayed to the user"),
+    text_output: z.string().describe("Markdown formatted text/message to be displayed/connveyed to the user"),
     sponsor_details: z.object({
         name: z.string().nullable().optional().describe("Name of the sponsor user"),
         email: z.string().nullable().optional().describe("Email of the sponsor user"),
@@ -91,8 +110,8 @@ const responseSchema = z.object({
 });
 
 const responseOpenAIFunction = {
-    name: "response",
-    description: "Return the response to the user",
+    name: "structure_response",
+    description: "Returns a structured response for the user",
     parameters: zodToJsonSchema(responseSchema),
 };
 
@@ -116,16 +135,17 @@ function parseToolCall(function_call: any, message: AIMessage): FunctionsAgentAc
 const structuredOutputParser = (
     message: AIMessage,
 ): FunctionsAgentAction | AgentFinish => {
+    console.log("StructuredOutputParser Input Message: ", message);
     if (message.content && typeof message.content !== "string") {
         throw new Error("This agent cannot parse non-string model responses.");
     }
 
     if (message.additional_kwargs.function_call) {
-        return parseToolCall(message.additional_kwargs.function_call, message);
+        return parseToolCall(message.additional_kwargs.function_call, message); 
     }
 
     return {
-        returnValues: { text_output: message.content },
+        returnValues: { text_output: message.content , sponsor_details: "zoom" },
         log: message.content,
     };
 };

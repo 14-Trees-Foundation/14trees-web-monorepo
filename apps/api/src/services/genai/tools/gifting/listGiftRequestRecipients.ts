@@ -5,22 +5,24 @@ import { GiftCardsRepository } from "../../../../repo/giftCardsRepo";
 
 // Define Main Request Schema
 const ListGiftRequestRecipientsSchema = z.object({
-    request_id: z.number().describe("The request id of the gift")
+    request_id: z.number().describe("Unique id of the gift request")
 });
 
 const description = `
-Retrieve the list of recipients associated with a specific Gift Trees Request.
+Description:
+Retrieves the list of recipients associated with a specific Gift Trees Request.
 
-Use this to:
-- View recipient details for a gift request.
-- Verify who has been included in the gifting.
+Use this tool to:
+Get detailed information about all recipients linked to a particular gifting request.
+Confirm which individuals were included in a specific tree gifting.
 
-Requires the GiftTreesRequest ID to return recipient information.
+Required input:
+gift_trees_request_id (number): The unique identifier of the Gift Trees Request.
 `;
 
 
 const listGiftRequestRecipients = new DynamicStructuredTool({
-    name: "list_gift_request_recipients",
+    name: "get_gift_recipients_by_request_id",
     description: description,
     schema: ListGiftRequestRecipientsSchema,
     func: async (data): Promise<string> => {

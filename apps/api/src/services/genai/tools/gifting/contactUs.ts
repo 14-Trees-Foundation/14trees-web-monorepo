@@ -1,18 +1,13 @@
 import { DynamicTool } from "langchain/tools";
 
 const description = `
-Provides contact information for the support team.
-
-- For gifting-related queries, a dedicated support number is available.
-- For site visit coordination, a separate contact number is provided.
-- For general inquiries, use the general support number.
-- Additionally, a support email is available for all types of requests.
-
-Use this tool when the user asks for help, contact details, or support-related information.
+Provides support contact information based on the user's query. 
+Use this tool when the user asks for help, contact details, or support-related information. 
+It returns dedicated phone numbers for gifting-related queries, site visit coordination, and general inquiries, along with a support email address for all types of requests.",
 `;
 
 const contactUsInfo = new DynamicTool({
-    name: "get_contact_info",
+    name: "get_support_contact_info",
     description: description,
     func: async (data): Promise<string> => {
         

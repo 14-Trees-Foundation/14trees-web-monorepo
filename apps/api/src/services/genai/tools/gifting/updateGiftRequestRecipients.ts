@@ -8,36 +8,40 @@ import { GiftRequestUserCreationAttributes } from "../../../../models/gift_reque
 
 // Define Main Request Schema
 const UpdateGiftRequestRecipientsSchema = z.object({
-    request_id: z.number().describe("The request id of the gift"),
+    request_id: z.number().describe("Unique id of the gift request"),
     update_recipients: z.array(z.object({
-        recipient_id: z.number().describe("The id of the recipient"),
-        email: z.string().describe("The email of the recipient"),
-        name: z.string().describe("The name of the recipient"),
-        communication_email: z.string().optional().nullable().describe("The communication email of the recipient"),
-    })).optional().nullable().describe("The list of recipients to be updated"),
+        recipient_id: z.number().describe("Id of the recipient"),
+        email: z.string().describe("Email of the recipient"),
+        name: z.string().describe("Name of the recipient"),
+        communication_email: z.string().optional().nullable().describe("Communication email of the recipient"),
+    })).optional().nullable().describe("List of recipients to be updated"),
     delete_recipients: z.array(z.object({
-        recipient_id: z.number().describe("The id of the recipient to be deleted"),
-    })).optional().nullable().describe("The list of recipients to be deleted"),
+        recipient_id: z.number().describe("Id of the recipient to be deleted"),
+    })).optional().nullable().describe("List of recipients to be deleted"),
     create_recipients: z.array(z.object({
-        gifted_trees: z.number().default(1).nullable().describe("The number of trees to gift to the recipient"),
-        email: z.string().describe("The email of the recipient"),
-        name: z.string().describe("The name of the recipient"),
-        communication_email: z.string().optional().nullable().describe("The communication email of the recipient"),
-    })).optional().nullable().describe("The list of recipients to be created"),
-}).describe("The data to update the gift request recipients");
+        gifted_trees: z.number().default(1).nullable().describe("Number of trees to gift to the recipient"),
+        email: z.string().describe("Email of the recipient"),
+        name: z.string().describe("Name of the recipient"),
+        communication_email: z.string().optional().nullable().describe("Communication email of the recipient"),
+    })).optional().nullable().describe("List of recipients to be created"),
+}).describe("Data to update gift request recipients");
 
 
 const description = `
-Manage the recipients of a gift tree request by adding new recipients, editing their details, or removing existing ones.
+Manage the recipients of a gift tree request by adding, updating, or removing recipient information.
 
-Use this tool when:
-- You want to add new recipients to a gift request.
-- You need to update recipient names or email addresses.
-- You want to remove recipients from an existing request.
+Use this tool to:
+- Add new recipients to a gift request.
+- Update existing recipient details such as name or email address.
+- Remove recipients from an existing gifting request.
 
-Requires: gift request ID and recipient details.
+Required input: gift request ID and recipient details.
 `;
 
+// Required input:
+// gift_trees_request_id (number): The unique identifier of the Gift Trees Request.
+// action (string): The operation to perform — add, update, or remove.
+// recipient_details (object): Details of the recipient(s), including at least name and email.
 
 const updateGiftRequestRecipients = new DynamicStructuredTool({
     name: "update_gift_request_recipients",

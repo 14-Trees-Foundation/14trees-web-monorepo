@@ -25,14 +25,14 @@ export const RecipientSchema = z.object({
 
 // Define Main Request Schema
 const CreateGiftTreesRequestSchema = z.object({
-    sponsor_details: z.object({
-        name: z.string().describe("Name of the sponsor or person gifting the trees"),
-        email: z.string().describe("Email of the sponsor or person gifting the trees"),
-    }).describe("Details of the sponsor or person gifting the trees"),
     recipient_details: z.object({
         recipients_count: z.number().describe("Number of recipients to gift trees to"),
         recipients: z.array(RecipientSchema),
     }).describe("Details of the recipients to gift trees to"),
+    sponsor_details: z.object({
+        name: z.string().describe("Name of the sponsor or person gifting the trees"),
+        email: z.string().describe("Email of the sponsor or person gifting the trees"),
+    }).describe("Details of the sponsor or person gifting the trees"),
     occasion_details: z.object({
         occasion_type: z.nativeEnum(OccasionType).default(OccasionType.GENERAL_GIFT),
         occasion_name: z.string().optional().nullable().describe("Name of the occasion for gifting trees"),

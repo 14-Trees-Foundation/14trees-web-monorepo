@@ -8,8 +8,8 @@ import handlebars from 'handlebars';
 const credentialsPath = path.join(process.env.GMAIL_CREDENTIALS || '', '/credentials.json');
 const tokensPath = path.join(process.env.GMAIL_CREDENTIALS || '', '/token.json');
 
-const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
-const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+// const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+// const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
 
 // Define types for credentials and tokens
 interface Credentials {
@@ -29,15 +29,16 @@ interface Tokens {
 }
 
 // Load the credentials and tokens with types
-const creds: Credentials = credentials;
-const token: Tokens = tokens;
+// const creds: Credentials = credentials;
+// const token: Tokens = tokens;
 
 const getGmailService = (): gmail_v1.Gmail => {
-  const { client_secret, client_id, redirect_uris } = creds.installed;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-  oAuth2Client.setCredentials(token);
-  const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
-  return gmail;
+  // const { client_secret, client_id, redirect_uris } = creds.installed;
+  // const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+  // oAuth2Client.setCredentials(token);
+  // const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
+  // return gmail;
+  return null as any; // Placeholder for the actual Gmail service
 };
 
 const encodeMessage = (message: string): string => {
