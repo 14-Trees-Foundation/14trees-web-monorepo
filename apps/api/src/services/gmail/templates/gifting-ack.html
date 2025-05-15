@@ -21,17 +21,27 @@
 
         <p>Thank you so much for your generous gift request dated {{giftDetails.date}} to 14 Trees Foundation!</p>
 
-        <p>Your gift of {{giftDetails.quantity}} tree(s) will help transform barren lands into thriving biodiverse forests full of
-          native flora and fauna. Each tree you've gifted will grow to offset carbon emissions, support local ecosystems,
-          and contribute to sustainable livelihoods in the community.</p>
+        <p>Your gift of {{giftDetails.quantity}} tree(s) will help transform barren lands into biodiverse forests full
+          of native flora and fauna. Each tree you've gifted will grow to offset carbon emissions, support local
+          ecosystems, and contribute to sustainable livelihoods in the community.</p>
 
-        <p>We're honored that you've chosen to share the gift of trees with {{recipientDetails.name}}. This living gift will
-          continue to grow and benefit our planet for years to come. The recipient will receive details about their special gift
-          and can follow its journey as part of our reforestation efforts.</p>
+        {{#if giftDetails.remainingTrees}}
+        <p>
+          It looks like you haven't provided recipient details for {{giftDetails.remainingTrees}} out of
+          {{giftDetails.quantity}} {{pluralize giftDetails.quantity "tree" ""}}.
+          If you need assistance, feel free to reach out to us at <a
+            href="mailto:contact@14trees.org">contact@14trees.org</a>.
+        </p>
+        {{/if}}
 
-        <p>You can track the impact of your gift and find more ways to be involved at <a href="https://14trees.org">14Trees</a>.</p>
+        <p>This living gift will continue to grow and benefit our planet for years to come. The recipient will receive
+          details about their special gift and can follow its journey as part of our reforestation efforts.</p>
 
-        <p>Attached is the 80G receipt for your contribution. The 10BE certificates will be emailed after the end of current financial year.</p>
+        <p>You can track the impact of your gift and find more ways to be involved at <a
+            href="https://14trees.org">14Trees</a>.</p>
+
+        <p>Attached is the 80G receipt for your contribution. The 10BE certificates will be emailed after the end of
+          current financial year.</p>
       </td>
     </tr>
     <tr>

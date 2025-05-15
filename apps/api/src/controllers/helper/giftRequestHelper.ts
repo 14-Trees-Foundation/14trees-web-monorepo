@@ -358,6 +358,7 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
 export const sendGiftRequestAcknowledgement = async (
     giftRequest: any,
     sponsorUser: any,
+    remainingTrees: number,
     testMails?: string[],
     ccMails?: string[]
 ): Promise<void> => {
@@ -406,6 +407,7 @@ export const sendGiftRequestAcknowledgement = async (
                     month: 'long',
                     day: 'numeric'
                 }),
+                remainingTrees: remainingTrees,
                 quantity: giftRequest.no_of_cards,
                 eventName: giftRequest.event_name,
                 eventType: giftRequest.event_type,
