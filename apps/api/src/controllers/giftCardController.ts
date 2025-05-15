@@ -112,6 +112,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        remaining_trees: remainingTrees // Just for sending mail to sponsor
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -232,7 +233,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
                 };
                 await sendGiftRequestAcknowledgement(
                     giftCard,
-                    sponsorUser
+                    sponsorUser,
+                    remainingTrees || 0,
                 );
             } catch (emailError) {
                 console.error("[ERROR] Failed to send gift acknowledgment email:", {
