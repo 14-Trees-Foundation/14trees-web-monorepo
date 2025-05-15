@@ -441,10 +441,7 @@ export default function GiftTreesPage() {
       return true;
     });
     const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
-    const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
-    if (users.length === 1 && !multipleNames) {
-      users[0].trees_count = parseInt(formData.numberOfTrees);
-    }
+    const users = dedicatedNames.filter(user => user.recipient_name.trim() != "");
 
     if (!mainFormValid || !dedicatedNamesValid) {
       console.log(errors);
@@ -490,7 +487,8 @@ export default function GiftTreesPage() {
         event_name: eventName,
         event_type: eventType,
         planted_by: plantedBy,
-        gifted_on: giftedOn
+        gifted_on: giftedOn,
+        remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests`, {

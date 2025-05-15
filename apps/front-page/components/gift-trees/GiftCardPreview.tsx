@@ -181,6 +181,21 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
                     </p>
                 </div>
 
+                {!primaryMessage.includes("{recipient}") && (
+                    <div className="pt-6 flex justify-center">
+                        <p className="text-red-600">
+                            Missing {`"{recipient}"`} placeholder in your tree card message. Recipient&apos;s name will not be visible in the generate tree card.
+                        </p>
+                    </div>
+                )}
+                {eventType != '2' && eventType != '6' && !primaryMessage.includes("{giftedBy}") && (
+                    <div className="pt-6 flex justify-center">
+                        <p className="text-red-600">
+                            Missing {`"{giftedBy}"`} placeholder in your tree card message. Gifted By will not be visible in the generate tree card.
+                        </p>
+                    </div>
+                )}
+
                 <div className="flex flex-wrap gap-3">
                     <button
                         type="button"
