@@ -1773,5 +1773,8 @@ routes.get('/transactions/tree-cards/download/:transaction_id', transactions.dow
 
 routes.post('/gen-ai', verifyToken, genAi.serveUserQuery);
 
+
+routes.post('/adhoc-tree-cards', giftCards.generateAdhocTreeCards);
+
 export default routes;
 
