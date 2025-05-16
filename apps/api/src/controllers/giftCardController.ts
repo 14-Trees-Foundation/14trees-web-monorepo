@@ -32,6 +32,7 @@ import GiftRequestHelper from "../helpers/giftRequests";
 import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
+import GiftCardsService from "../facade/giftCardsService";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -2151,6 +2152,27 @@ export const generateFundRequest = async (req: Request, res: Response) => {
         res.status(status.success).send({ url: s3Resp.location });
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::generateFundRequest", error);
+        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+}
+
+
+export const generateAdhocTreeCards = async (req: Request, res: Response) => {
+    const { sapling_ids } = req.body;
+    if (!sapling_ids || !Array.isArray(sapling_ids)) {
+        return res.status(status.bad).json({
+            message: 'Array of sapling ids required!'
+        })
+    }
+
+    try {
+        const presentationId = await GiftCardsService.generateTreeCardsForSaplings(sapling_ids);
+
+        return res.status(status.created).send({
+            url: `https://docs.google.com/presentation/d/${presentationId}/view`
+        })
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::generateAdhocTreeCards", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
     }
 }
