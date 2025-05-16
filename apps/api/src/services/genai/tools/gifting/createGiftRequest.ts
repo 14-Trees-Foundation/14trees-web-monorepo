@@ -40,10 +40,7 @@ const CreateGiftTreesRequestSchema = z.object({
         gifted_on: z.string().optional().nullable().describe("Date of the occasion for gifting trees. Default: Today's date"),
         memory_images: z.array(z.string()).optional().nullable().describe("Optional images to show on personalized dashboard. Ask user to upload images, When user uploads images, you will receive s3 image URLs."),
     }).optional().nullable().describe("Details of the occasion for gifting trees"),
-    card_messages: z.object({
-        primary_message: z.string().optional().nullable().describe("First message statements, maximum of 270 characters for tree cards"),
-        secondary_message: z.string().optional().nullable().describe("Seccond message statements, maximum of 125 characters for tree cards"),
-    }).optional().nullable().describe("Personalized messages to show on tree cards"),
+    card_message: z.string().optional().nullable().describe("Card message statements, maximum of 430 characters for tree cards. The message should have \"{recipient}\" placeholder to replace with actual name of recipient.\n\nSample Message:\n" + defaultGiftMessages.primary),
     force_create: z.boolean().default(false).nullable().describe("Force create gift request even if it already exists"),
 });
 
@@ -115,8 +112,8 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
                 eventType: data.occasion_details?.occasion_type,
                 giftedBy: data.occasion_details?.gifted_by ? data.occasion_details.gifted_by : data.sponsor_details.name,
                 giftedOn: data.occasion_details?.gifted_on ? data.occasion_details.gifted_on : new Date().toISOString(),
-                primaryMessage: data.card_messages?.primary_message ? data.card_messages.primary_message : data.occasion_details?.occasion_type === '1' ? defaultGiftMessages.birthday : data.occasion_details?.occasion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary,
-                secondaryMessage: data.card_messages?.secondary_message ? data.card_messages.secondary_message : defaultGiftMessages.secondary,
+                primaryMessage: data.card_message ? data.card_message : data.occasion_details?.occasion_type === '1' ? defaultGiftMessages.birthday : data.occasion_details?.occasion_type === '2' ? defaultGiftMessages.memorial : defaultGiftMessages.primary,
+                secondaryMessage: defaultGiftMessages.secondary,
                 recipients: recipients,
                 memoryImages: data.occasion_details?.memory_images,
                 source: 'WhatsApp'

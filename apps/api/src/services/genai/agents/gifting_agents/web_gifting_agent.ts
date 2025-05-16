@@ -165,6 +165,7 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
     const executor = AgentExecutor.fromAgentAndTools({
         agent: runnableAgent,
         tools: tools,
+        returnIntermediateSteps: true,
     });
 
     const result = await executor.invoke({
@@ -172,9 +173,19 @@ export const interactWithGiftingAgent = async (query: string, history: BaseMessa
         history: history,
     });
 
+    let context: string = "";
+    for (const step of (result as any)?. intermediateSteps) {
+        if (step?.action && step.action?.tool) {
+            context += "Action: " + step.action.tool + "\n";
+            context += "Observation: " + step.observation + "\n";
+            context += "\n---\n"
+        }
+    }
+
     return {
         text_output: result.text_output || result.output,
         sponsor_details: result.sponsor_details,
+        context,
     }
 }
 
