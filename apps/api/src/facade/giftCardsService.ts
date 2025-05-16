@@ -1,13 +1,8 @@
+import { defaultGiftMessages } from "../controllers/helper/giftRequestHelper";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, deleteUnwantedSlides, reorderSlides } from "../controllers/helper/slides";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 import TreeRepository from "../repo/treeRepo";
 import { copyFile } from "../services/google";
-
-const defaultMessage = "Dear {recipient},\n\n"
-    + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
-    + "\n\n"
-    + 'We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future.'
-
 
 class GiftCardsService {
 
@@ -54,12 +49,12 @@ class GiftCardsService {
             const templateId = slideIds[i];
             const tree = trees[i];
 
-            let primaryMessage = defaultMessage;
-            primaryMessage = primaryMessage.replace("{recipient}", tree.assignedTo || "");
             const record = {
                 slideId: templateId,
+                name: tree.assignedTo || "",
                 sapling: tree.saplingId,
-                message: primaryMessage,
+                content1: defaultGiftMessages.primary,
+                content2: defaultGiftMessages.secondary,
                 logo: null,
                 logo_message: ""
             }
