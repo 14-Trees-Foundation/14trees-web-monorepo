@@ -198,42 +198,41 @@ export const deleteDonation = async (req: Request, res: Response) => {
 
 export const updateDonation = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const updateFields: string[] = req.body.updateFields; // Fields to update (mask)
-    const updateData = req.body.data; // New data
-
+    const updateFields = Array.isArray(req.body.updateFields) ? req.body.updateFields : typeof req.body.updateFields === 'string' ? [req.body.updateFields]: [];
+    const updateData = req.body.data;
+  
     const donationId = parseInt(id);
-    if (isNaN(donationId))
-        return res.status(status.bad).json({
-            message: 'Invalid donation ID'
-        });
-    
-    if (!updateFields || !updateData) {
-      return res.status(400).json({ message: "Invalid request format" });
+    if (isNaN(donationId) || updateFields.length === 0 || !updateData || typeof updateData !== 'object') {
+      return res.status(400).json({ message: 'Invalid request format or donation ID' });
     }
-
-    // Build dynamic update object
-    let updateObject: Record<string, any> = {};
-    updateFields.forEach((field) => {
-      if (updateData[field] !== undefined) {
-        updateObject[field] = updateData[field];
+    const updateObject: Record<string, any> = {};
+    updateFields.forEach((field: string) => {
+        if (updateData[field] !== undefined) {
+          updateObject[field] = updateData[field];
+        }
+      });
+  
+    // Normalize array fields
+    ['contribution_options'].forEach(field => {
+      if (updateObject[field] !== undefined && updateObject[field] !== null && !Array.isArray(updateObject[field])) {
+        updateObject[field] = [updateObject[field]];
       }
     });
-
     try {
-        const updatedDonation = await DonationRepository.updateDonation(donationId, updateObject);
+      const updatedDonation = await DonationRepository.updateDonation(donationId, updateObject);
 
-        // Get full donation details with joins
-        const result = await DonationRepository.getDonations(0, 1, [
-            { columnField: 'id', operatorValue: 'equals', value: updatedDonation.id }
-        ]);
-
-        res.status(status.success).json(
-            result.results.length === 1 ? result.results[0] : updatedDonation
-        );
+       // Get full donation details with joins
+      const result = await DonationRepository.getDonations(0, 1, [
+        { columnField: 'id', operatorValue: 'equals', value: updatedDonation.id }
+      ]);
+  
+      res.status(status.success).json(
+        result.results.length === 1 ? result.results[0] : updatedDonation
+      );
     } catch (error) {
-        console.error("[ERROR] DonationsController::updateDonation:", error);
-        res.status(status.error).json({
-            message: 'Failed to update donation'
+      console.error('[ERROR] DonationsController::updateDonation:', error);
+      res.status(status.error).json({
+         message: 'Failed to update donation'
         });
     }
 };

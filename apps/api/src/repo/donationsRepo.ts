@@ -9,8 +9,9 @@ export class DonationRepository {
    
     public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
         try {
-            let whereConditions: string = "";
+            let whereConditions: string[] = [];
             let replacements: any = {};
+            let replacementIndex = 0;
     
             if (filters && filters.length > 0) {
                 filters.forEach(filter => {
@@ -18,14 +19,41 @@ export class DonationRepository {
                     if (filter.columnField === "user_name") {
                         columnField = "u.name";
                     }
-                    const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
-                    whereConditions = whereConditions + " " + condition + " AND";
-                    replacements = { ...replacements, ...replacement };
+    
+                    // Special handling for array fields
+                    if (filter.columnField === "contribution_options" || filter.columnField === "tags") {
+                        const values = Array.isArray(filter.value) 
+                            ? filter.value 
+                            : [filter.value];
+                        
+                        // For single value, use direct ANY comparison
+                        if (values.length === 1) {
+                            const replacementKey = `array_${replacementIndex++}`;
+                            whereConditions.push(`:${replacementKey} = ANY(${columnField})`);
+                            replacements[replacementKey] = values[0];
+                        } 
+                    } 
+                    // Standard handling for other fields
+                    else {
+                        const { condition, replacement } = getSqlQueryExpression(
+                            columnField,
+                            filter.operatorValue,
+                            filter.columnField,
+                            filter.value
+                        );
+                        whereConditions.push(condition);
+                        replacements = { ...replacements, ...replacement };
+                    }
                 });
-                whereConditions = whereConditions.substring(0, whereConditions.length - 3);
             }
-
-            const sortOrderQuery = orderBy && orderBy.length > 0 ? orderBy.map(order => `d.${order.column} ${order.order}`).join(', ') : 'd.id DESC';
+    
+            const whereClause = whereConditions.length > 0 
+                ? whereConditions.join(' AND ') 
+                : '1=1';
+    
+            const sortOrderQuery = orderBy && orderBy.length > 0 
+                ? orderBy.map(order => `d.${order.column} ${order.order}`).join(', ') 
+                : 'd.id DESC';
     
             const getQuery = `
                 SELECT 
@@ -38,7 +66,7 @@ export class DonationRepository {
                 FROM "14trees_2".donations d
                 LEFT JOIN "14trees_2".users u ON u.id = d.user_id
                 LEFT JOIN "14trees_2".trees t ON t.donation_id = d.id
-                WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+                WHERE ${whereClause}
                 GROUP BY d.id, u.id
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
@@ -47,13 +75,13 @@ export class DonationRepository {
                 SELECT COUNT(*) 
                 FROM "14trees_2".donations d
                 LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-                WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+                WHERE ${whereClause};
             `;
     
             const [donations, donationsCount] = await Promise.all([
                 sequelize.query(getQuery, {
                     replacements: replacements,
-                    type: QueryTypes.SELECT,
+                    type: QueryTypes.SELECT
                 }),
                 sequelize.query(countQuery, {
                     replacements: replacements,
