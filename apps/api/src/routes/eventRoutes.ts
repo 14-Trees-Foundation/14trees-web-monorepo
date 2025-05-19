@@ -12,6 +12,7 @@ routes.post('/get', events.getEvents);
 routes.delete('/:id', events.deleteEvent);
 routes.post('/' , events.addEvent);
 routes.put('/:id' , events.updateEvent);
+routes.get('/messages/:event_id' , events.getEventMessages);
 // routes.get("/birthday", events.getBirthdayEvent);
 // routes.get("/org", events.getOverallOrgDashboard);
 // routes.get("/plot", events.getOverallPlotDashboard);
