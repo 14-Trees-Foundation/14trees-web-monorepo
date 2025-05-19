@@ -43,6 +43,7 @@ import DuplicateTreeSync from "../models/duplicate_tree_sync";
 import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { PlotPlantType } from "../models/plot_plant_type";
+import { EventMessage } from "../models/event_message";
 
 
 class Database {
@@ -86,6 +87,7 @@ class Database {
         UserTree,
         DeletedProfileUserTree,
         Event,
+        EventMessage,
         CorpEvent,
         Site,
         Group,

@@ -352,6 +352,23 @@ export const updateEvent = async (req: Request, res: Response) => {
   }
 }
 
+export const getEventMessages = async (req: Request, res: Response) => {
+  const event_link: string = req.params.event_id;
+  try {
+    const eventResp = await EventRepository.getEvents(0, 1, [{ columnField: 'link', operatorValue: 'equals', value: event_link }]);
+    if (eventResp.results.length == 1) {
+      const event = eventResp.results[0];
+      const messages = await EventRepository.getEventMessages(event.id);
+      return res.status(status.success).send(messages);
+    }
+
+    return res.status(status.notfound).send({ message: "Event you are looking for doesn't exists." })
+  } catch(error: any) {
+    console.log("[ERROR]", "EventsController::getEventMessages", error);
+    return res.status(status.error).send({ message: "Something went wrong. Please try again latter!" });
+  }
+}
+
 export const addCorpEvent = async (req: Request, res: Response) => {
   const fields = req.body;
 
