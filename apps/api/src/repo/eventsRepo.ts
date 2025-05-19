@@ -3,6 +3,7 @@ import { Event, EventAttributes, EventCreationAttributes } from '../models/event
 import { WhereOptions } from 'sequelize';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { getWhereOptions } from '../controllers/helper/filters';
+import { EventMessage } from '../models/event_message';
 
 
 export class EventRepository {
@@ -47,6 +48,15 @@ export class EventRepository {
   public static async deleteEvent(id: string): Promise<void> {
     const resp = await Event.destroy({ where: { id: id } });
     console.log("Delete event response for event id: %s", id, resp);
+  }
+
+  public static async getEventMessages(eventId: number): Promise<EventMessage[]> {
+
+    const messages = await EventMessage.findAll({
+      where: { event_id: eventId }
+    });
+
+    return messages;
   }
 }
 
