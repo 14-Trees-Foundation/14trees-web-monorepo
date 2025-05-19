@@ -18,7 +18,7 @@ const datasource = new DataSource({
   host: process.env.POSTGRES_HOST || "your-host",
   port: Number(process.env.POSTGRES_PORT) || 5432,
   username: process.env.POSTGRES_READER_USER || "your-user",
-  password: process.env.POSTGRES_READER_PASSWORD,
+  password: process.env.POSTGRES_READER_PD,
   database: process.env.POSTGRES_DB || "defaultdb",
   schema: "14trees_2", // Schema specified here
   ssl: true,
@@ -93,61 +93,67 @@ const llm = new ChatOpenAI({
 });
 
 export const query14TreesAgent = async (
-  query: string, 
-  history: BaseMessage[] = [],
-  requestId: string = uuidv4() // Auto-generate if not provided
-): Promise<{ 
-  output: string; 
-  success: boolean;
-  requestId: string;
-}> => {
-  try {
-    // Initialize SQL database connection - no tables specified, will access all in schema
-    const db = await SqlDatabase.fromDataSourceParams({ 
-      appDataSource: datasource
-    });
-
-    // Create SQL toolkit
-    const sqlToolkit = new SqlToolkit(db, llm);
-    const tools = sqlToolkit.getTools();
-
-    // Create agent
-    const agent = await createOpenAIToolsAgent({ 
-      llm, 
-      tools, 
-      prompt 
-    });
-
-    const agentExecutor = new AgentExecutor({
-      agent,
-      tools,
-      verbose: process.env.NODE_ENV === 'development',
-      maxIterations: 7, // Slightly higher for complex tree queries
-      handleParsingErrors: true
-    });
-
-    console.log(`[RequestID: ${requestId}] Processing query: ${query.substring(0, 50)}...`);
-
-    const result = await agentExecutor.invoke({ 
-      input: query, 
-      history: history 
-    });
-
-    return {
-      output: format14TreesOutput(result["output"]),
-      success: true,
-      requestId: requestId
-    };
-
-  } catch (error) {
-    console.error(`[RequestID: ${requestId}] Query failed:`, error);
-    return {
-      output: "Sorry, I couldn't process your tree planting query. Please try again with more specific details.",
-      success: false,
-      requestId: requestId
-    };
+    query: string, 
+    history: BaseMessage[] = [],
+    requestId: string = uuidv4()
+  ): Promise<{ 
+    text_output: string; 
+    success: boolean;
+    requestId: string;
+  }> => {
+    try {
+      const db = await SqlDatabase.fromDataSourceParams({ 
+        appDataSource: datasource
+      });
+  
+      const sqlToolkit = new SqlToolkit(db, llm);
+      const tools = sqlToolkit.getTools();
+  
+      const agent = await createOpenAIToolsAgent({ 
+        llm, 
+        tools, 
+        prompt 
+      });
+  
+      const agentExecutor = new AgentExecutor({
+        agent,
+        tools,
+        verbose: process.env.NODE_ENV === 'development',
+        maxIterations: 20, // Increased from 7 to 20
+        handleParsingErrors: true
+      });
+  
+      console.log(`[RequestID: ${requestId}] Processing query: ${query.substring(0, 50)}...`);
+  
+      const result = await agentExecutor.invoke({ 
+        input: query, 
+        history: history 
+      });
+  
+      // Check for max iterations message
+      if (result.output.includes("Agent stopped due to max iterations")) {
+        return {
+          text_output: "Please provide a more specific/detailed query",
+          success: false,
+          requestId: requestId
+        };
+      }
+  
+      return {
+        text_output: format14TreesOutput(result["output"]),
+        success: true,
+        requestId: requestId
+      };
+  
+    } catch (error) {
+      console.error(`[RequestID: ${requestId}] Query failed:`, error);
+      return {
+        text_output: "Sorry, I couldn't process your tree planting query. Please try again with more specific details.",
+        success: false,
+        requestId: requestId
+      };
+    }
   }
-}
 
 // Specialized formatter for 14trees data
 function format14TreesOutput(rawOutput: string): string {

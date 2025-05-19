@@ -29,7 +29,7 @@ export const handle14TreesQuery = async (req: Request, res: Response) => {
         const requestId = request_id || generateRequestId();
 
         // Process the query with 14trees agent
-        const { output, success, requestId: responseRequestId } = await query14TreesAgent(
+        const { text_output, success, requestId: responseRequestId } = await query14TreesAgent(
             message, 
             messageHistory,
             requestId
@@ -37,7 +37,7 @@ export const handle14TreesQuery = async (req: Request, res: Response) => {
 
         return res.status(status.success).send({
             success,
-            output,
+            text_output,
             request_id: responseRequestId,
             ...(process.env.NODE_ENV === 'development' && {
                 debug: {
