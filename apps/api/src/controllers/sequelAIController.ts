@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { query14TreesAgent } from '../services/genai/agents/14trees/sequel_agent'
 import { status } from "../helpers/status";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { generateRequestId } from '../services/genai/agents/14trees/sequel_agent';
 
 export const handle14TreesQuery = async (req: Request, res: Response) => {
     try {
@@ -25,8 +24,8 @@ export const handle14TreesQuery = async (req: Request, res: Response) => {
                     : new AIMessage(item.text);
             });
 
-        // Use provided request_id or generate new one
-        const requestId = request_id || generateRequestId();
+        // Use provided request_id
+        const requestId = request_id;
 
         // Process the query with 14trees agent
         const { text_output, success, requestId: responseRequestId } = await query14TreesAgent(
@@ -61,31 +60,3 @@ export const handle14TreesQuery = async (req: Request, res: Response) => {
         });
     }
 }
-
-// Type definitions for TypeScript
-interface TreesQueryRequest {
-    message: string;
-    history?: Array<{
-        sender: 'user' | 'ai';
-        text: string;
-    }>;
-    request_id?: string;
-}
-
-interface TreesQueryResponse {
-    success: boolean;
-    output: string;
-    request_id: string;
-    message?: string;
-    debug?: {
-        input: string;
-        history_length: number;
-        request_id: string;
-    };
-    error?: {
-        message: string;
-        stack?: string;
-    };
-}
-
-export type { TreesQueryRequest, TreesQueryResponse };

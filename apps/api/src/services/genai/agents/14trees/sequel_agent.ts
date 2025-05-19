@@ -1,16 +1,15 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
-import { 
-  ChatPromptTemplate, 
-  HumanMessagePromptTemplate, 
-  MessagesPlaceholder, 
-  SystemMessagePromptTemplate 
+import {
+  ChatPromptTemplate,
+  HumanMessagePromptTemplate,
+  MessagesPlaceholder,
+  SystemMessagePromptTemplate
 } from "@langchain/core/prompts";
 import { BaseMessage } from "@langchain/core/messages";
 import { SqlDatabase } from "langchain/sql_db";
 import { DataSource } from "typeorm";
 import { SqlToolkit } from "langchain/agents/toolkits/sql";
-import { v4 as uuidv4 } from 'uuid';
 
 // Database connection configuration
 const datasource = new DataSource({
@@ -46,13 +45,7 @@ You are an expert assistant for the 14trees_2 database with deep knowledge of:
 
 3. USER MANAGEMENT
 - Users, groups, and permissions
-- Event participation
 - Shift assignments
-
-4. OPERATIONAL DATA
-- Suppliers and payments
-- Visit tracking and images
-- Sync history and logs
 
 ## Key Tables & Relationships
 - trees ↔ plots ↔ sites (core planting hierarchy)
@@ -84,97 +77,75 @@ const messages = [
 const prompt = ChatPromptTemplate.fromMessages(messages);
 
 // Initialize LLM with optimized settings
-const llm = new ChatOpenAI({ 
-  model: "gpt-4o", 
+const llm = new ChatOpenAI({
+  model: "gpt-4o",
   temperature: 0.1,
-  configuration: { 
+  configuration: {
     apiKey: process.env.OPENAI_API_KEY,
   }
 });
 
 export const query14TreesAgent = async (
-    query: string, 
-    history: BaseMessage[] = [],
-    requestId: string = uuidv4()
-  ): Promise<{ 
-    text_output: string; 
-    success: boolean;
-    requestId: string;
-  }> => {
-    try {
-      const db = await SqlDatabase.fromDataSourceParams({ 
-        appDataSource: datasource
-      });
-  
-      const sqlToolkit = new SqlToolkit(db, llm);
-      const tools = sqlToolkit.getTools();
-  
-      const agent = await createOpenAIToolsAgent({ 
-        llm, 
-        tools, 
-        prompt 
-      });
-  
-      const agentExecutor = new AgentExecutor({
-        agent,
-        tools,
-        verbose: process.env.NODE_ENV === 'development',
-        maxIterations: 20, // Increased from 7 to 20
-        handleParsingErrors: true
-      });
-  
-      console.log(`[RequestID: ${requestId}] Processing query: ${query.substring(0, 50)}...`);
-  
-      const result = await agentExecutor.invoke({ 
-        input: query, 
-        history: history 
-      });
-  
-      // Check for max iterations message
-      if (result.output.includes("Agent stopped due to max iterations")) {
-        return {
-          text_output: "Please provide a more specific/detailed query",
-          success: false,
-          requestId: requestId
-        };
-      }
-  
+  query: string,
+  history: BaseMessage[] = [],
+  requestId: string // Must be provided by frontend now
+): Promise<{
+  text_output: string;
+  success: boolean;
+  requestId: string;
+}> => {
+  try {
+    const db = await SqlDatabase.fromDataSourceParams({
+      appDataSource: datasource
+    });
+
+    const sqlToolkit = new SqlToolkit(db, llm);
+    const tools = sqlToolkit.getTools();
+
+    const agent = await createOpenAIToolsAgent({
+      llm,
+      tools,
+      prompt
+    });
+
+    const agentExecutor = new AgentExecutor({
+      agent,
+      tools,
+      verbose: process.env.NODE_ENV === 'development',
+      maxIterations: 20,
+      handleParsingErrors: true
+    });
+
+    console.log(`[RequestID: ${requestId}] Processing query: ${query.substring(0, 50)}...`);
+
+    const result = await agentExecutor.invoke({
+      input: query,
+      history: history
+    });
+
+    if (result.output.includes("Agent stopped due to max iterations")) {
       return {
-        text_output: format14TreesOutput(result["output"]),
-        success: true,
-        requestId: requestId
-      };
-  
-    } catch (error) {
-      console.error(`[RequestID: ${requestId}] Query failed:`, error);
-      return {
-        text_output: "Sorry, I couldn't process your tree planting query. Please try again with more specific details.",
+        text_output: "Please provide a more specific/detailed query",
         success: false,
-        requestId: requestId
+        requestId
       };
     }
-  }
 
-// Specialized formatter for 14trees data
-function format14TreesOutput(rawOutput: string): string {
-  // Format tree/plot data
-  if (rawOutput.includes("tree_id") || rawOutput.includes("plot_id")) {
-    return `🌳 Tree Planting Data:\n${rawOutput}\n`;
-  }
-  
-  // Format donation/gift data
-  if (rawOutput.includes("donation_id") || rawOutput.includes("gift_card_id")) {
-    return `💳 Donation/Gift Data:\n${rawOutput}\n`;
-  }
-  
-  // Format user data
-  if (rawOutput.includes("user_id") || rawOutput.includes("group_id")) {
-    return `👤 User Data:\n${rawOutput}\n`;
-  }
+    return {
+      text_output: result.output,
+      success: true,
+      requestId
+    };
 
-  // Default formatting
-  return rawOutput;
-}
+  } catch (error) {
+    console.error(`[RequestID: ${requestId}] Query failed:`, error);
+    return {
+      text_output: "Sorry, I couldn't process your tree planting query. Please try again with more specific details.",
+      success: false,
+      requestId
+    };
+  }
+};
 
 // Type definitions
 export interface TreesAgentResult {
@@ -182,6 +153,3 @@ export interface TreesAgentResult {
   success: boolean;
   requestId: string;
 }
-
-// Helper to generate new chat sessions
-export const generateRequestId = (): string => uuidv4();
