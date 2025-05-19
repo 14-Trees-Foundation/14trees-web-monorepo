@@ -150,11 +150,11 @@ export const createDonation = async (req: Request, res: Response) => {
         // Don't fail the request if email sending fails
     }
     try {
-        await DonationService.insertDonationIntoGoogleSheet(
+        DonationService.insertDonationIntoGoogleSheet(
+            donation,
             sponsor_name,
             sponsor_email,
-            amount_donated,
-            pan
+            amount_donated
         );
     } catch (error) {
         console.error("[ERROR] DonationsController::insertDonationIntoGoogleSheet:", error);
