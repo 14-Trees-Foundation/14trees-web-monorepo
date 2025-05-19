@@ -104,7 +104,7 @@ export default function DonatePage() {
         : donationAmount;
     }
     setTotalAmount(amount);
-    setIsAboveLimit(amount > 100000);
+    setIsAboveLimit(amount > 500000);
   }, [treeLocation, adoptedTreeCount, donationMethod, donationTreeCount, donationAmount]);
 
   useEffect(() => {
@@ -535,7 +535,7 @@ export default function DonatePage() {
 
   const handleRazorpayPayment = async () => {
     if (isAboveLimit) {
-      alert("Please use Bank Transfer for donations above ₹1,00,000");
+      alert("Please use Bank Transfer for donations above ₹5,00,000");
       return;
     }
 
@@ -770,7 +770,7 @@ export default function DonatePage() {
               <strong>Donation ID:</strong> {donationId}
             </p>
           )}
-          <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (Sometimes the email lands up in the Spam/Junk folder, please ensure to check it.) This email will also contain the link to your tree dashboard if you have donated for planting trees, which will show the latest picture of the plant/tree, location on the map and other details.
+          <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (Sometimes the email lands up in the Spam/Junk folder, please ensure to check it.)
           </p>
           <p className="mb-5">In case of any issue please  call +91 98458 05881 or write to us at contact@14trees.org
           </p>
@@ -923,6 +923,7 @@ export default function DonatePage() {
                               <label className="block text-sm font-medium text-gray-700 mb-1">Number of Trees</label>
                               <input
                                 type="number"
+                                inputMode="numeric"
                                 min="0"
                                 placeholder="Number of trees"
                                 className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
@@ -979,6 +980,7 @@ export default function DonatePage() {
                               </label>
                               <input
                                 type="number"
+                                inputMode="numeric"
                                 min="0"
                                 className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
                                 disabled={donationMethod !== 'trees'}
@@ -1004,14 +1006,26 @@ export default function DonatePage() {
                               <input
                                 type="number"
                                 min="1500"
-                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
+                                inputMode="numeric"
+                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100 appearance-none" // Removes up/down arrows
                                 disabled={donationMethod !== 'amount'}
-                                value={donationMethod !== 'amount' ? 0 : donationAmount}
+                                value={donationMethod !== 'amount' ? 0 : donationAmount || ""}
                                 onChange={(e) => {
-                                  const amount = parseInt(e.target.value);
-                                  if (isNaN(amount) || amount < 1500) setDonationAmount(1500);
-                                  else setDonationAmount(amount);
+                                  const value = e.target.value.replace(/\D/g, "");
+                                  const amount = parseInt(value, 10);
+
+                                  if (!isNaN(amount)) {
+                                    setDonationAmount(amount);
+                                  } else {
+                                    setDonationAmount(0);
+                                  }
                                 }}
+                                onBlur={() => {
+                                  if (donationAmount < 1500) {
+                                    setDonationAmount(1500);
+                                  }
+                                }}
+                                placeholder="1500"
                               />
                               <span className="text-sm">Rupees</span>
                             </div>
