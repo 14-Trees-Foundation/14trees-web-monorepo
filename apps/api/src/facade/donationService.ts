@@ -111,44 +111,56 @@ export class DonationService {
     }
 
     public static async insertDonationIntoGoogleSheet(
+        donation: Donation,
         sponsor_name: string,
         sponsor_email: string,
         amount_donated: number,
-        pan: string
-      ): Promise<void> {
+    ): Promise<void> {
         const spreadsheetId = '12cIX-3-EReUq6tLWRUl-eMHdvRilccbK4mrubQ2b38E';
-        const sheetName = 'Donations FY 25-26';
-    
-        const sheet = new GoogleSpreadsheet();
-    
-        try {
-          // 1. Read headers from first row
-          const headerRes = await sheet.getSpreadsheetData(spreadsheetId, `${sheetName}!1:1`);
-          const headers: string[] = headerRes?.data?.values?.[0] || [];
-    
-          // 2. Construct data object
-          const donationData = {
-            Date: new Date().toISOString(),
-            Name: sponsor_name,
-            Email: sponsor_email,
-            TotalAmt: amount_donated?.toString() || '',
-            PAN: pan || '',
-            Amount: amount_donated?.toString() || '',
-            AmountW: amount_donated ? numberToWords(amount_donated).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '',
-          };
-    
-          // 3. Create row based on headers
-          const row = headers.map((header: string) => donationData[header as keyof typeof donationData] || '');
-    
-          // 4. Insert row
-          await sheet.insertRowData(spreadsheetId, sheetName, row);
-          console.log('✅ Donation inserted into Google Sheet');
-        } catch (error) {
-          console.error('❌ Failed to insert donation:', error);
-        }
-      }
+        const sheetName = 'WebsiteTxns';
 
-    
+        const sheet = new GoogleSpreadsheet();
+
+        try {
+
+            let panNumber = ""
+            if (donation.payment_id) {
+                const payment = await PaymentRepository.getPayment(donation.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
+
+            // 1. Read headers from first row
+            const headerRes = await sheet.getSpreadsheetData(spreadsheetId, `${sheetName}!1:1`);
+            const headers: string[] = headerRes?.data?.values?.[0] || [];
+
+            const date = new Date();
+            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;;
+
+            // 2. Construct data object
+            const donationData = {
+                Rec: date.getFullYear() + "/" + donation.id,
+                Date: moment(date).format("DD/MM/YYYY"),
+                Name: sponsor_name,
+                Email: sponsor_email,
+                "Total Amt": amount_donated ? formatNumber(amount_donated) : '',
+                PAN: panNumber || '',
+                Amount: amount_donated ? formatNumber(amount_donated) : '',
+                AmountW: amount_donated ? numberToWords(amount_donated).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '',
+                FY: "Year " + (FY - 1) + "-" + (FY % 100)
+            };
+
+            // 3. Create row based on headers
+            const row = headers.map((header: string) => donationData[header as keyof typeof donationData] || '');
+
+            // 4. Insert row
+            await sheet.insertRowData(spreadsheetId, sheetName, row);
+            console.log('✅ Donation inserted into Google Sheet');
+        } catch (error) {
+            console.error('❌ Failed to insert donation:', error);
+        }
+    }
+
+
 
     /**
      * Tree Reservation 
@@ -701,11 +713,13 @@ export class DonationService {
                 panNumber = payment?.pan_number || "";
             }
 
-            const donationReceiptId = new Date().getFullYear() + "/" + donation.id;
+            const date = new Date();
+            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+            const donationReceiptId = date.getFullYear() + "/" + donation.id;
             const docService = new GoogleDoc();
             const receiptId = await docService.get80GRecieptFileId({
                 "{Name}": sponsorUser.name,
-                "{FY}": "Year " + (new Date().getFullYear() - 1) + "-" + ((new Date().getFullYear())%100),
+                "{FY}": "Year " + (FY - 1) + "-" + (FY % 100),
                 "{Rec}": donationReceiptId,
                 "{Date}": moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                 "{AmountW}": numberToWords(donation.amount_donated || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
@@ -717,7 +731,7 @@ export class DonationService {
             }, donationReceiptId);
 
             const resp = await docService.download(receiptId);
-            
+
             const fileUrl = await uploadFileToS3('cards', resp, `donations/${donation.id}/${donationReceiptId}`);
 
             const emailData = {
@@ -729,7 +743,7 @@ export class DonationService {
                 },
                 donationDetails: {
                     amount: formatNumber(donation.amount_donated || 0),
-                    date:  moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+                    date: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                     treesCount: donation.trees_count,
                     donationType: donation.donation_type === 'donate'
                         ? donation.trees_count
@@ -786,15 +800,15 @@ export class DonationService {
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                 treesCount: donation.trees_count || 0
             };
-        
+
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
                 ['backoffice@14trees.org'];
-            
+
             // Set the email template to be used
             const templateName = 'backoffice_donation.html';
-            
+
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
@@ -803,18 +817,18 @@ export class DonationService {
                 [], // no attachments
                 'New Donation Received - Notification'
             );
-        
+
             // Handle email sending result
             if (statusMessage) {
                 throw new Error(`Email sending failed with status: ${statusMessage}`);
             }
-        
+
         } catch (error) {
             // Throw a more specific error based on the caught exception
-            const errorMessage = error instanceof Error ? 
+            const errorMessage = error instanceof Error ?
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
-                
+
             throw new Error(errorMessage);
         }
     }
