@@ -104,7 +104,7 @@ export default function DonatePage() {
         : donationAmount;
     }
     setTotalAmount(amount);
-    setIsAboveLimit(amount > 100000);
+    setIsAboveLimit(amount > 500000);
   }, [treeLocation, adoptedTreeCount, donationMethod, donationTreeCount, donationAmount]);
 
   useEffect(() => {
@@ -535,7 +535,7 @@ export default function DonatePage() {
 
   const handleRazorpayPayment = async () => {
     if (isAboveLimit) {
-      alert("Please use Bank Transfer for donations above ₹1,00,000");
+      alert("Please use Bank Transfer for donations above ₹5,00,000");
       return;
     }
 
