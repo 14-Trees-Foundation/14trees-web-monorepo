@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
 } from "ui/components/dropdown-menu";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useRouter } from "next/router";
 // import { DropDown } from "ui";
 
 function getDonationAction() {
@@ -139,13 +140,25 @@ export default function Header() {
                 </Button>
               </Link>
 
-              <div className="relative w-full mt-2">
+              <Link href="/donate">
+                <Button variant="secondary" className="w-full mt-2">
+                  Donate
+                </Button>
+              </Link>
+
+              <Link href="/gift-trees">
+                <Button variant="secondary" className="w-full mt-2">
+                  Gift Trees
+                </Button>
+              </Link>
+
+              {/* <div className="relative w-full mt-2">
                 {getDonationAction()}
               </div>
 
               <div className="relative w-full mt-2">
                 {getGiftTreesAction()}
-              </div>
+              </div> */}
             </div>
           </details>
 
@@ -163,13 +176,25 @@ export default function Header() {
               </Button>
             </Link>
 
-            <div className="mr-3">
+            <Link href="/donate">
+              <Button className="mr-3" variant="secondary">
+                Donate
+              </Button>
+            </Link>
+
+            <Link href="/gift-trees">
+              <Button className="mr-3" variant="secondary">
+                Gift Trees
+              </Button>
+            </Link>
+
+            {/* <div className="mr-3">
               {getDonationAction()}
             </div>
 
             <div className="mr-3">
               {getGiftTreesAction()}
-            </div>
+            </div> */}
           </div>
         </div>
       </nav>
@@ -237,13 +262,13 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
   return (
     <>
       {!navItem.sub ? (
-        <Link href={navItem.link} title={navItem.name} className="header-link">
+        <Link href={navItem.link} title={navItem.name} className="header-link text-base md:text-lg">
           {navItem.name}
         </Link>
       ) : (
         <div className="">
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="inline-flex whitespace-nowrap">
+            <DropdownMenuTrigger className="inline-flex items-center whitespace-nowrap text-base md:text-lg">
               {navItem.name} <ChevronDownIcon className="inline h-5 w-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>

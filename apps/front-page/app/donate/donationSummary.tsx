@@ -136,8 +136,8 @@ export const SummaryPaymentPage = ({
               <table className="min-w-full border rounded">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-2 text-left border-b">Recipient</th>
-                    <th className="px-4 py-2 text-left border-b">Recipient Email</th>
+                    <th className="px-4 py-2 text-left border-b">Assignee</th>
+                    <th className="px-4 py-2 text-left border-b">Assignee Email</th>
                     <th className="px-4 py-2 text-left border-b">Trees</th>
                     {hasDifferentAssignee && <>
                       <th className="px-4 py-2 text-left border-b">Assignee</th>
@@ -147,7 +147,7 @@ export const SummaryPaymentPage = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {dedicatedNames.map((recipient, i) => (
+                  {dedicatedNames.filter(recipient => recipient.recipient_name.trim() !== "").map((recipient, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-4 py-2 border-b">{recipient.recipient_name}</td>
                       <td className="px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>

@@ -79,7 +79,7 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
       <div className="grid gap-4 md:grid-cols-2">
         <UserFormField
           type="text"
-          label={`Recipient Name ${index + 1}`}
+          label={`Assignee Name ${index + 1}`}
           name="recipient_name"
           value={data.recipient_name}
           onChange={(value) => {
@@ -94,7 +94,7 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
         
         <UserFormField
           type="email"
-          label="Recipient Email"
+          label="Assignee Email"
           name="recipient_email"
           value={data.recipient_email}
           onChange={(value) => {
@@ -108,7 +108,7 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
         
         <UserFormField
           type="tel"
-          label="Recipient Phone"
+          label="Assignee Phone"
           name="recipient_phone"
           value={data.recipient_phone}
           onChange={(value) => {
@@ -131,7 +131,7 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
         />
       </div>
       
-      <div className="mt-6">
+      {/* <div className="mt-6">
         <label className="flex items-center space-x-3 mb-4">
           <input
             type="checkbox"
@@ -187,7 +187,7 @@ export const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
             />
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };
