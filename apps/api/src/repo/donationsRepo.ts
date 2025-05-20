@@ -167,8 +167,9 @@ export class DonationRepository {
             SELECT t.id, t.sapling_id, t.assigned_to as assignee, t.gifted_to as recipient, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
-            ur.relation
+            ur.relation, du.mail_sent
             FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
             LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
             LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
@@ -185,6 +186,7 @@ export class DonationRepository {
         const countQuery = `
             SELECT count(t.id)
             FROM "14trees_2".trees t
+            LEFT JOIN "14trees_2".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
             LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
             LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id    
