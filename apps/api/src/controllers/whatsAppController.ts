@@ -196,13 +196,11 @@ async function handleDataExchange(decryptedBody: any) {
         }
         
     } else if (decryptedBody.screen === 'GIFT_MESSAGES') {
-        const { primary_message, secondary_message, slide_id: slideId } = decryptedBody.data;
+        const { primary_message, slide_id: slideId } = decryptedBody.data;
 
         const record = {
-            name: "<User's Name>",
             sapling: '00000',
-            content1: primary_message,
-            content2: secondary_message,
+            message: primary_message,
             logo_message: ''
         }
 

@@ -32,10 +32,14 @@ export class DonationRepository {
                     d.*,
                     u.name as user_name,
                     u.email as user_email,
-                    u.phone as user_phone
+                    u.phone as user_phone,
+                    count(t.mapped_to_user) as booked,
+                    count(t.assigned_to) as assigned
                 FROM "14trees".donations d
                 LEFT JOIN "14trees".users u ON u.id = d.user_id
+                LEFT JOIN "14trees".trees t ON t.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+                GROUP BY d.id, u.id
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
@@ -50,7 +54,6 @@ export class DonationRepository {
                 sequelize.query(getQuery, {
                     replacements: replacements,
                     type: QueryTypes.SELECT,
-                    model: Donation // Add this line
                 }),
                 sequelize.query(countQuery, {
                     replacements: replacements,
@@ -61,7 +64,7 @@ export class DonationRepository {
             return {
                 offset: offset,
                 total: parseInt((donationsCount[0] as any).count),
-                results: donations as Donation[]
+                results: donations as any[]
             };
         } catch (error) {
             console.error('[ERROR] DonationRepository::getDonations:', error);
@@ -111,7 +114,7 @@ export class DonationRepository {
         }
     }
 
-    public static async updateDonation(donationId: number, updateData: any): Promise<Donation> {
+    public static async updateDonation(donationId: number, updateData: Partial<DonationAttributes>): Promise<Donation> {
 
         try {
             // Find the donation by its primary key (id)
@@ -164,8 +167,9 @@ export class DonationRepository {
             SELECT t.id, t.sapling_id, t.assigned_to as assignee, t.gifted_to as recipient, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
-            ur.relation
+            ur.relation, du.mail_sent
             FROM "14trees".trees t
+            LEFT JOIN "14trees".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
             LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
             LEFT JOIN "14trees".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
@@ -182,6 +186,7 @@ export class DonationRepository {
         const countQuery = `
             SELECT count(t.id)
             FROM "14trees".trees t
+            LEFT JOIN "14trees".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
             LEFT JOIN "14trees".users ru ON ru.id = t.gifted_to
             LEFT JOIN "14trees".users au ON au.id = t.assigned_to
             LEFT JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id    
