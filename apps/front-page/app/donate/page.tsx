@@ -245,19 +245,19 @@ export default function DonatePage() {
 
         data.forEach((row, index) => {
           if (!row.recipient_name) {
-            errors.push(`Row ${index + 1}: Recipient Name is optional`);
+            errors.push(`Row ${index + 1}: Assignee Name is not optional`);
             return;
           }
 
           if (row.recipient_email && !validationPatterns.email.test(String(row.recipient_email))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Email format`);
+            errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
           }
           if (row.assignee_email && !validationPatterns.email.test(String(row.assignee_email))) {
             errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
           }
 
           if (row.recipient_phone && !validationPatterns.phone.test(String(row.recipient_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Phone number (10-15 digits required)`);
+            errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
           }
           if (row.assignee_phone && !validationPatterns.phone.test(String(row.assignee_phone))) {
             errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
@@ -778,7 +778,7 @@ export default function DonatePage() {
               <strong>Donation ID:</strong> {donationId}
             </p>
           )}
-          <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (Sometimes the email lands up in the spam/junk folder, please ensure to check it.)
+          <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (sometimes the email lands up in the spam/junk folder, please ensure to check it.)
           </p>
           <p className="mb-5">In case of any issue, please call +91 98458 05881 or write to us at contact@14trees.org
           </p>
@@ -929,7 +929,7 @@ export default function DonatePage() {
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Number of Trees: <span className="text-gray-500">3000 INR per tree</span>
+                                Number of Trees:
                               </label>
                               <input
                                 type="number"
@@ -944,6 +944,7 @@ export default function DonatePage() {
                                   else setAdoptedTreeCount(number);
                                 }}
                               />
+                              <p className="text-sm text-gray-500 mt-1">3000 INR per tree</p>
                             </div>
                           </div>
                           <div className="mt-2">
@@ -1312,9 +1313,9 @@ export default function DonatePage() {
                                 <table className="min-w-full divide-y divide-gray-200">
                                   <thead className="bg-gray-50">
                                     <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Email</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Phone</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                     </tr>
