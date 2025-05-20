@@ -18,6 +18,8 @@ export function startAppV2ErrorLogsCronJob() {
     
             for (const log of logs) {
                 if (log.logs.includes('Network Error')) continue;
+                if (log.logs.includes("Cannot read property 'location' of undefined")) continue;
+                if (log.logs.includes("No location provider available")) continue;
                 await sendDiscordMessage(JSON.stringify(log, null, 2));
             }
         } catch (error) {
