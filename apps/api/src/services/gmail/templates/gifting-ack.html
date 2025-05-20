@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Thank You for Your Donation</title>
+  <title>Thank You for Your Gift Request</title>
 </head>
 
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; color: #333;">
@@ -12,26 +12,33 @@
     style="border-collapse: collapse; background: #ffffff; margin: 20px auto; border: 1px solid #dddddd;">
     <tr>
       <td style="padding: 20px; text-align: center; background-color: #4CAF50; color: white;">
-        <h1>Thank you for your generous contribution 🌱</h1>
+        <h1>Thank You for Your Thoughtful Gift 🌱</h1>
       </td>
     </tr>
     <tr>
       <td style="padding: 20px;">
-        <p>Dear <strong>{{userDetails.name}}</strong>,</p>
+        <p>Dear <strong>{{sponsorDetails.name}}</strong>,</p>
 
-        <p>Thank you so much for your generous contribution of Rs. {{donationDetails.amount}} dated
-          {{donationDetails.date}} to 14 Trees Foundation!</p>
+        <p>Thank you so much for your generous gift request dated {{giftDetails.date}} to 14 Trees Foundation!</p>
 
-        <p>As a direct result of your contribution, trees are being planted and nourished. Each of these trees that you
-          have brought into this world will, for its many living years, offset the devastating effects of carbon
-          consumption and climate change. They are transforming barren lands into thriving biodiverse forests full of
-          native flora and fauna, while adding to local livelihoods. Most importantly, your contribution allows us to
-          direct our energies solely towards sustainable ecological restoration unencumbered by short-term monetary
-          concerns.</p>
+        <p>Your gift of {{giftDetails.quantity}} tree(s) will help transform barren lands into biodiverse forests full
+          of native flora and fauna. Each tree you've gifted will grow to offset carbon emissions, support local
+          ecosystems, and contribute to sustainable livelihoods in the community.</p>
 
-        <p>We are immensely grateful and happy that you are joining us in restoring the beloved planet that we call home
-          and in saving it for future generations. You can follow our shared journey and find more ways of continuing to
-          be involved at <a href="https://14trees.org">14Trees</a>.</p>
+        {{#if giftDetails.remainingTrees}}
+        <p>
+          It looks like you haven't provided recipient details for {{giftDetails.remainingTrees}} out of
+          {{giftDetails.quantity}} {{pluralize giftDetails.quantity "tree" ""}}.
+          If you need assistance, feel free to reach out to us at <a
+            href="mailto:contact@14trees.org">contact@14trees.org</a>.
+        </p>
+        {{/if}}
+
+        <p>This living gift will continue to grow and benefit our planet for years to come. The recipient will receive
+          details about their special gift and can follow its journey as part of our reforestation efforts.</p>
+
+        <p>You can track the impact of your gift and find more ways to be involved at <a
+            href="https://14trees.org">14Trees</a>.</p>
 
         <p>Attached is the 80G receipt for your contribution. The 10BE certificates will be emailed after the end of
           current financial year.</p>

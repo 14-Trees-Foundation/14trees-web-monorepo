@@ -57,6 +57,14 @@ handlebars.registerHelper('eq', function (a, b) {
   return a === b;
 });
 
+handlebars.registerHelper('pluralize', function (count, singular, plural) {
+  if (plural === "") {
+    plural = singular + 's';
+  }
+
+  return count === 1 ? singular : plural;
+});
+
 const getHtmlTemplate = (templateName: string, emailData: any) => {
 
   const source = fs.readFileSync( process.env.SOURCE_PATH + '/services/gmail/templates/' + templateName, 'utf-8').toString();

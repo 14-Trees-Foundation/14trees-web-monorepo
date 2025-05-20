@@ -10,7 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation } from '../models/donation';
+import { Donation, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
 import { Tree } from '../models/tree';
 import { User } from '../models/user';
 import { WhereOptions } from 'sequelize';
@@ -28,7 +28,17 @@ export const getDonations = async (req: Request, res: Response) => {
 
     try {
         let result = await DonationRepository.getDonations(offset, limit, filters, orderBy);
-        res.status(status.success).send(result);
+        res.status(status.success).send({
+            offset: result.offset,
+            total: Number(result.total),
+            results: result.results.map((item: any) => {
+                return {
+                    ...item,
+                    booked: Number(item.booked),
+                    assigned: Number(item.assigned),
+                }
+            })
+        });
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonations", error)
         return res.status(status.error).json({
@@ -38,65 +48,11 @@ export const getDonations = async (req: Request, res: Response) => {
     }
 }
 
-// const upsertDonationUsers = async (donation: Donation, users: any[]) => {
-//     const donationUsers: DonationUserCreationAttributes[] = [];
-//     const existingDonationUsers: DonationUser[] = await DonationUserRepository.getDonationUsers(donation.id);
-
-//     for (const user of users) {
-//         const recipientData = {
-//             id: user.recipient,
-//             name: user.recipient_name,
-//             phone: user.recipient_phone,
-//             email: user.recipient_email,
-//         };
-//         const recipient = await UserRepository.upsertUser(recipientData);
-
-//         const assigneeData = {
-//             id: user.assignee,
-//             name: user.assignee_name,
-//             phone: user.assignee_phone,
-//             email: user.assignee_email,
-//         };
-//         const assignee = await UserRepository.upsertUser(assigneeData);
-
-//         if (recipient.id !== assignee.id && user.relation?.trim()) {
-//             await UserRelationRepository.createUserRelation({
-//                 primary_user: recipient.id,
-//                 secondary_user: assignee.id,
-//                 relation: user.relation.trim(),
-//                 created_at: new Date(),
-//                 updated_at: new Date(),
-//             })
-//         }
-
-//         if (user.id && existingDonationUsers.find((donationUser) => donationUser.id === user.id)) {
-//             await DonationUserRepository.updateDonationUsers({
-//                 recipient: recipient.id,
-//                 assignee: assignee.id,
-//                 gifted_trees: user.count,
-//                 updated_at: new Date(),
-//             }, { id: user.id });
-//         } else {
-//             donationUsers.push({
-//                 recipient: recipient.id,
-//                 assignee: assignee.id,
-//                 donation_id: donation.id,
-//                 gifted_trees: user.count,
-//                 profile_image_url: user.image_url || null,
-//                 created_at: new Date(),
-//                 updated_at: new Date(),
-//             });
-//         }
-//     }
-
-//     if (donationUsers.length !== 0) await DonationUserRepository.createDonationUsers(donationUsers);
-// }
-
 export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
     const {
-        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove,
+        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, tags,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
         comments, users,  donation_type, donation_method, visit_date, amount_donated,
     } = data;
@@ -153,6 +109,7 @@ export const createDonation = async (req: Request, res: Response) => {
         donation_method,
         visit_date,
         amount_donated,
+        tags
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
@@ -187,9 +144,21 @@ export const createDonation = async (req: Request, res: Response) => {
         if (comments) donation.comments = comments;
         
         DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+        // Send notification to back office
+        DonationService.sendDonationNotificationToBackOffice(donation, sponsorUser);
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails
+    }
+    try {
+        DonationService.insertDonationIntoGoogleSheet(
+            donation,
+            sponsor_name,
+            sponsor_email,
+            amount_donated
+        );
+    } catch (error) {
+        console.error("[ERROR] DonationsController::insertDonationIntoGoogleSheet:", error);
     }
     
     if (!usersCreated)
@@ -471,7 +440,9 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
         } else {
             await DonationService.reserveSelectedTrees(donation_id, tree_ids);
         }
-        return res.status(status.success).send();
+
+        const donation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -500,7 +471,8 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
             await DonationService.unreserveSelectedTrees(donation_id, tree_ids);
         }
     
-        return res.status(status.success).send();
+        const donation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -535,8 +507,17 @@ export const assignTrees = async (req: Request, res: Response) => {
         } else {
             await DonationService.assignTrees(donation_id, user_trees)
         }
+
+        const donation: any = await DonationRepository.getDonation(donation_id);
+
+        if (Number(donation.assigned) === donation.trees_count) {
+            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_OrderFulfilled }); 
+        } else {
+            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted }); 
+        }
     
-        return res.status(status.success).send();
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
@@ -566,7 +547,9 @@ export const unassignTrees = async (req: Request, res: Response) => {
         } else {
             await DonationService.unassignTrees(donation_id);
         }
-        return res.status(status.success).send();
+        
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
         return res.status(status.error).send({
@@ -736,14 +719,15 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         }
 
         // Prepare tree data for email
-        const treeData = trees.results.map(tree => ({
+        const treeData = trees.results.filter((tree: any) => !tree.mail_sent).map(tree => ({
             sapling_id: tree.sapling_id,
-            dashboard_link: `https://dashboard.14trees.org/profile/${tree.sapling_id}`,
-            planted_via: (tree as any).planted_via || '14 Trees',
+            dashboard_link: `${process.env.DASHBOARD_URL}/profile/${tree.sapling_id}`,
+            planted_via: (tree as any).planted_via,
             plant_type: (tree as any).plant_type || '',
             scientific_name: (tree as any).scientific_name || '',
             card_image_url: (tree as any).card_image_url || '',
             event_name: (tree as any).event_name || '',
+            recipient: (tree as any).recipient,
             assigned_to_name: (tree as any).assignee_name || 'Tree Planter', // Matches template
             assignee_name: (tree as any).assignee_name || '', // Keep for backward compatibility
             assignee_email: (tree as any).assignee_email || '',
@@ -766,12 +750,12 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         };
 
         // Initialize tracking variables
-        let recipientsMap: Map<string, typeof treeData> | null = null;
+        let recipientsMap: Map<number, typeof treeData> | null = null;
         let assigneesMap: Map<string, typeof treeData> | null = null;
         let sponsorEmailSuccess = false;
 
         // Send email to sponsor if enabled
-        if (email_sponsor) {
+        if (donation.mail_status !== 'DashboardsSent' && email_sponsor) {
             const sponsorEmailData = {
                 ...commonEmailData,
                 user_name: user.name,
@@ -792,26 +776,34 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             const statusMessage = await sendDashboardMail(
                 sponsorTemplates[0].template_name,
                 sponsorEmailData,
-                test_mails || [user.email],
+                test_mails?.length ? test_mails : [user.email],
                 sponsor_cc_mails || []
             );
 
             if (statusMessage) {
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_error: statusMessage,
+                    updated_at: new Date(),
+                })
                 return res.status(500).json({ error: `Failed to send sponsor email: ${statusMessage}` });
             }
             sponsorEmailSuccess = true;
+            await DonationRepository.updateDonation(donation.id, {
+                mail_status: 'DashboardsSent',
+                updated_at: new Date(),
+            })
         }
 
         // Send email to recipient if enabled
         if (email_recipient) {
-            recipientsMap = new Map<string, typeof treeData>();
+            recipientsMap = new Map<number, typeof treeData>();
             
             treeData.forEach(tree => {
-                if (tree.recipient_email) {
-                    if (!recipientsMap!.has(tree.recipient_email)) {
-                        recipientsMap!.set(tree.recipient_email, []);
+                if (tree.recipient) {
+                    if (!recipientsMap!.has(tree.recipient)) {
+                        recipientsMap!.set(tree.recipient, []);
                     }
-                    recipientsMap!.get(tree.recipient_email)?.push(tree);
+                    recipientsMap!.get(tree.recipient)?.push(tree);
                 }
             });
 
@@ -826,28 +818,40 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             }
 
             // Send to each recipient
-            for (const [recipientEmail, recipientTrees] of recipientsMap) {
+            for (const [recipient, recipientTrees] of recipientsMap) {
                 const recipientEmailData = {
                     ...commonEmailData,
                     user_name: recipientTrees[0].recipient_name,
                     assigned_to_name: recipientTrees[0].assignee_name,
-                    email: recipientEmail,
+                    self: recipientTrees[0].recipient_name == recipientTrees[0].assignee_name,
+                    email: recipientTrees[0].recipient_email,
                     trees: recipientTrees,
                     count: recipientTrees.length
                 };
 
+                if ((!test_mails || test_mails.length === 0) && (recipientTrees[0].recipient_email as string).includes("14trees")) continue;
                 const statusMessage = await sendDashboardMail(
                     recipientTemplates[0].template_name,
                     recipientEmailData,
-                    test_mails || [recipientEmail],
+                    test_mails?.length ? test_mails : [recipientTrees[0].recipient_email],
                     recipient_cc_mails || []
                 );
 
                 if (statusMessage) {
+                    await DonationUserRepository.updateDonationUsers({
+                        mail_error: statusMessage,
+                        updated_at: new Date(),
+                    }, { donation_id: donation.id, recipient: recipient });
+
                     return res.status(500).json({ 
-                        error: `Failed to send recipient email to ${recipientEmail}: ${statusMessage}` 
+                        error: `Failed to send recipient email to ${recipientTrees[0].recipient_email}: ${statusMessage}` 
                     });
                 }
+
+                await DonationUserRepository.updateDonationUsers({
+                    mail_status: true,
+                    updated_at: new Date(),
+                }, { donation_id: donation.id, recipient: recipient });
             }
         }
 

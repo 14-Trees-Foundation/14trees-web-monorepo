@@ -407,12 +407,12 @@ class GiftRequestHelper {
                         if (userTreeCount[key] > 1) primaryMessage = this.getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
                     }
     
+                    primaryMessage = primaryMessage.replace("{recipient}", (giftCard as any).recipient_name || "");
+                    primaryMessage = primaryMessage.replace("{giftedBy}", giftCardRequest.planted_by || "");
                     const record = {
                         slideId: templateId,
-                        name: (giftCard as any).recipient_name || "",
                         sapling: (giftCard as any).sapling_id,
-                        content1: primaryMessage,
-                        content2: messages ? messages.secondary_message : giftCardRequest.secondary_message,
+                        message: primaryMessage,
                         logo: giftCardRequest.logo_url,
                         logo_message: giftCardRequest.logo_message
                     }

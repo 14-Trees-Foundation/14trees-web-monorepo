@@ -717,6 +717,8 @@ class TreeRepository {
           columnField = 'p.id'
         } else if (filter.columnField === "plot") {
           columnField = 'p."name"'
+        } else if (filter.columnField === "site_name") {
+          columnField = 's."name_english"'
         } else if (filter.columnField === "plant_type") {
           columnField = 'pt."name"'
         } else if (filter.columnField === "category" || filter.columnField === "use" || filter.columnField === "tags") {
@@ -731,9 +733,10 @@ class TreeRepository {
     }
 
     let query = `
-      SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot
+      SELECT t.id, t.sapling_id, pt.name as plant_type, p.name as plot, s.name_english as site_name
       FROM "14trees".trees t
       JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".sites s ON s.id = p.site_id
       JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
       JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
@@ -761,6 +764,7 @@ class TreeRepository {
       SELECT count(t.id)
       FROM "14trees".trees t
       JOIN "14trees".plots p ON p.id = t.plot_id
+      LEFT JOIN "14trees".sites s ON s.id = p.site_id
       JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
       JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 

@@ -18,9 +18,7 @@ interface ServiceAccountCredentials {
 
 interface Record {
     sapling: string;
-    name: string;
-    content1: string;
-    content2: string;
+    message: string;
     logo?: string;
     logo_message: string;
 }
@@ -123,17 +121,12 @@ export const updateSlide = async (presentationId: string, slideId: string, recor
         const slide = response.data;
 
         const requests: any[] = [];
-        const nameUpdateRequest = getUpdateTextRequest(slide, 'NAME', 'Dear ' + record.name + ',', record.name ? false : true);
-        if (nameUpdateRequest) requests.push(...nameUpdateRequest);
 
         const treeIdUpdateRequest = getUpdateTextRequest(slide, 'SAPLING_ID', 'Tree ID: ' + record.sapling);
         if (treeIdUpdateRequest) requests.push(...treeIdUpdateRequest);
 
-        const content1UpdateRequest = getUpdateTextRequest(slide, 'CONTENT1', record.content1);
-        if (content1UpdateRequest) requests.push(...content1UpdateRequest);
-
-        const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
-        if (content2UpdateRequest) requests.push(...content2UpdateRequest);
+        const messageUpdateRequest = getUpdateTextRequest(slide, 'MESSAGE', record.message);
+        if (messageUpdateRequest) requests.push(...messageUpdateRequest);
 
         const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo ? record.logo_message : '', record.logo ? false : !keepImage);
         if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);
@@ -521,17 +514,11 @@ export const bulkUpdateSlides = async (presentationId: string, records: (Record 
                 throw new Error(`Slide with ID ${record.slideId} not found.`);
             }
 
-            const nameUpdateRequest = getUpdateTextRequest(slide, 'NAME', 'Dear ' + record.name + ',', record.name ? false : true);
-            if (nameUpdateRequest) requests.push(...nameUpdateRequest);
-
             const treeIdUpdateRequest = getUpdateTextRequest(slide, 'SAPLING_ID', 'Tree ID: ' + record.sapling);
             if (treeIdUpdateRequest) requests.push(...treeIdUpdateRequest);
 
-            const content1UpdateRequest = getUpdateTextRequest(slide, 'CONTENT1', record.content1);
-            if (content1UpdateRequest) requests.push(...content1UpdateRequest);
-
-            const content2UpdateRequest = getUpdateTextRequest(slide, 'CONTENT2', record.content2);
-            if (content2UpdateRequest) requests.push(...content2UpdateRequest);
+            const messageUpdateRequest = getUpdateTextRequest(slide, 'MESSAGE', record.message);
+            if (messageUpdateRequest) requests.push(...messageUpdateRequest);
 
             const logoMsgUpdateRequest = getUpdateTextRequest(slide, 'LOGO_TEXT', record.logo ? record.logo_message : '', record.logo ? false : !keepImage);
             if (logoMsgUpdateRequest) requests.push(...logoMsgUpdateRequest);

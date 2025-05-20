@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
@@ -29,9 +29,10 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
+import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
@@ -77,7 +78,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             ...giftCardRequest,
             plot_ids: (giftCardRequest as any).plot_ids.filter((plot_id: any) => plot_id !== null),
             presentation_ids: (giftCardRequest as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
-            payment_status: validatedAmount === totalAmount
+            payment_status: validatedAmount === totalAmount || giftCardRequest.amount_received === totalAmount
                 ? "Fully paid"
                 : validatedAmount < paidAmount
                     ? "Pending validation"
@@ -112,6 +113,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        remaining_trees: remainingTrees // Just for sending mail to sponsor
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -137,6 +139,32 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             site_id: 1197, // TBD site
         })
         visitId = visit.id;
+    }
+
+    let sponsorshipType: SponsorshipType = 'Unverified';
+    let amountReceived: number = 0;
+    let donationDate: Date | null = null;
+    if (paymentId) {
+        const payment: any = await PaymentRepository.getPayment(paymentId);
+        if (payment && payment.payment_history) {
+            const paymentHistory: PaymentHistory[] = payment.payment_history;
+            paymentHistory.forEach(payment => {
+                if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+            })
+        }
+
+        if (payment?.order_id) {
+            const razorpayService = new RazorpayService();
+            const payments = await razorpayService.getPayments(payment.order_id);
+            payments?.forEach(item => {
+                amountReceived += Number(item.amount)/100;
+            })
+        }
+
+        if (amountReceived > 0) {
+            sponsorshipType = 'Donation Received';
+            donationDate = new Date();
+        }
     }
 
     const request: GiftCardRequestCreationAttributes = {
@@ -165,6 +193,9 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType ? requestType : null,
         visit_id: visitId,
+        sponsorship_type: sponsorshipType,
+        donation_date: donationDate,
+        amount_received: amountReceived,
     }
 
     try {
@@ -192,6 +223,27 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             ...(giftCards.results[0]),
             presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
         });
+
+        // if (requestType === 'Gift Cards') {
+        //     try {
+        //         // Create sponsor user object directly from request body
+        //         const sponsorUser = {
+        //             id: userId,
+        //             name: (giftCards.results[0] as any).user_name,
+        //             email: (giftCards.results[0] as any).user_email,
+        //         };
+        //         await sendGiftRequestAcknowledgement(
+        //             giftCard,
+        //             sponsorUser,
+        //             remainingTrees || 0,
+        //         );
+        //     } catch (emailError) {
+        //         console.error("[ERROR] Failed to send gift acknowledgment email:", {
+        //             error: emailError,
+        //             stack: emailError instanceof Error ? emailError.stack : undefined
+        //         });
+        //     }
+        // }
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
@@ -634,7 +686,7 @@ const upsertGiftRequestUsersAndRelations = async (users: any[], giftCardRequestI
             email: user.recipient_email,
             phone: user.recipient_phone,
         }
-        const recipient = await UserRepository.upsertUser(recipientUser);
+        const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
 
         // assigned To
         const assigneeUser = {
@@ -643,7 +695,7 @@ const upsertGiftRequestUsersAndRelations = async (users: any[], giftCardRequestI
             email: user.assignee_email,
             phone: user.assignee_phone,
         }
-        const assignee = await UserRepository.upsertUser(assigneeUser);
+        const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
 
         if (recipient.id !== assignee.id && user.relation?.trim()) {
             await UserRelationRepository.createUserRelation({
@@ -807,7 +859,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
                 phone: user.gifted_to_phone,
                 birth_Date: user.gifted_to_dob,
             }
-            const giftedTo = await UserRepository.upsertUser(giftedToUser);
+            const giftedTo = await UserRepository.upsertUserByEmailAndName(giftedToUser);
 
             // assigned To
             const assignedToUser = {
@@ -817,7 +869,7 @@ export const createGiftCards = async (req: Request, res: Response) => {
                 phone: user.assigned_to_phone,
                 birth_Date: user.assigned_to_dob,
             }
-            const assignedTo = await UserRepository.upsertUser(assignedToUser);
+            const assignedTo = await UserRepository.upsertUserByEmailAndName(assignedToUser);
 
             if (giftedTo.id !== assignedTo.id && user.relation?.trim()) {
                 await UserRelationRepository.createUserRelation({
@@ -1526,8 +1578,8 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
         sapling_id: saplingId,
         plant_type: plantType,
         user_name: userName,
+        gifted_by: giftedBy,
         primary_message: primaryMessage,
-        secondary_message: secondaryMessage,
         logo,
         logo_message: logoMessage,
         is_personal: isPersonal
@@ -1541,11 +1593,12 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
         return;
     }
 
+    let message = primaryMessage;
+    if (userName) message.replace("{recipient}", userName);
+    if (giftedBy) message.replace("{giftedBy}", giftedBy);
     const record = {
-        name: userName ? userName : "<User's Name>",
         sapling: saplingId ? saplingId : '00000',
-        content1: primaryMessage,
-        content2: secondaryMessage,
+        message: message,
         logo: logo,
         logo_message: logoMessage
     }
@@ -1573,20 +1626,21 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
 
     const {
         user_name: userName,
+        gifted_by: giftedBy,
         sapling_id: saplingId,
         slide_id: slideId,
         primary_message: primaryMessage,
-        secondary_message: secondaryMessage,
         logo,
         logo_message: logoMessage,
         trees_count: treeCount,
     } = req.body;
 
+    let message = (treeCount && treeCount > 1) ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage;
+    if (userName) message = message.replace("{recipient}", userName);
+    if (giftedBy) message = message.replace("{giftedBy}", giftedBy);
     const record = {
-        name: userName ? userName : "<User's Name>",
         sapling: saplingId ? saplingId : '00000',
-        content1: treeCount ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage,
-        content2: secondaryMessage,
+        message: message, 
         logo: logo,
         logo_message: logoMessage
     }
