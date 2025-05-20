@@ -440,7 +440,9 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
         } else {
             await DonationService.reserveSelectedTrees(donation_id, tree_ids);
         }
-        return res.status(status.success).send();
+
+        const donation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -469,7 +471,8 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
             await DonationService.unreserveSelectedTrees(donation_id, tree_ids);
         }
     
-        return res.status(status.success).send();
+        const donation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -513,7 +516,8 @@ export const assignTrees = async (req: Request, res: Response) => {
             await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted }); 
         }
     
-        return res.status(status.success).send();
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
@@ -543,7 +547,9 @@ export const unassignTrees = async (req: Request, res: Response) => {
         } else {
             await DonationService.unassignTrees(donation_id);
         }
-        return res.status(status.success).send();
+        
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
         return res.status(status.error).send({
