@@ -45,6 +45,7 @@ interface CreateDonationRequest {
     donation_type: 'adopt' | 'donate';
     donation_method?: 'trees' | 'amount';
     status?: DonationStatus,
+    tags?: string[]
 }
 
 export class DonationService {
@@ -66,6 +67,7 @@ export class DonationService {
             donation_type,
             donation_method,
             status,
+            tags
         } = data;
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
@@ -90,6 +92,7 @@ export class DonationService {
             contribution_options: continution_options || null,
             comments: comments || null,
             status: status || DonationStatus_UserSubmitted,
+            tags: tags || null,
         };
         const donation = await DonationRepository.createdDonation(
             request
@@ -769,7 +772,7 @@ export class DonationService {
                     filename: donationReceiptId + " " + sponsorUser.name + ".pdf",
                     path: fileUrl,
                 }], // no attachments
-                'Donation Request Received'
+                'Donation request received'
             );
 
             if (statusMessage) {
