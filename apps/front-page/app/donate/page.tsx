@@ -245,42 +245,49 @@ export default function DonatePage() {
 
         data.forEach((row, index) => {
           if (!row.recipient_name) {
-            errors.push(`Row ${index + 1}: Recipient Name is optional`);
+            errors.push(`Row ${index + 1}: Assignee Name is not optional`);
             return;
           }
 
           if (row.recipient_email && !validationPatterns.email.test(String(row.recipient_email))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Email format`);
+            errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
           }
           if (row.assignee_email && !validationPatterns.email.test(String(row.assignee_email))) {
             errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
           }
 
           if (row.recipient_phone && !validationPatterns.phone.test(String(row.recipient_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Phone number (10-15 digits required)`);
+            errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
           }
           if (row.assignee_phone && !validationPatterns.phone.test(String(row.assignee_phone))) {
             errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
           }
 
           const user: any = {
-            recipient_name: String(row.recipient_name),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
+            recipient_name: String(row.recipient_name).trim(),
+            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name.trim().toLowerCase().split(" ").join('.') + "@14trees",
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
             relation: row.relation ? String(row.relation) : 'other'
           }
 
-          user.assignee_name = row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
-            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-            user.assignee_phone = row.assignee_phone ? String(row.assignee_phone) : '',
+          if (row.assignee_name?.trim()) {
+            user.assignee_name = String(row.assignee_name).trim();
+            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.trim().toLowerCase().split(" ").join('.') + "@14trees";
+            user.assignee_phone = row.assignee_phone ? String(row.assignee_phone) : '';
+          } else {
+            user.assignee_name = user.recipient_name;
+            user.assignee_email = user.recipient_email;
+            user.assignee_phone = user.recipient_phone;
+          }
 
-            validRecipients.push(user);
+          validRecipients.push(user);
         });
 
         setCsvErrors(errors);
         setCsvPreview(validRecipients);
+        setDedicatedNames(validRecipients);
       },
       error: (error) => {
         setCsvErrors([`Error parsing CSV: ${error.message}`]);
@@ -419,6 +426,7 @@ export default function DonatePage() {
           recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
           assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
         })),
+        tags: ["WebSite"],
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
@@ -770,9 +778,9 @@ export default function DonatePage() {
               <strong>Donation ID:</strong> {donationId}
             </p>
           )}
-          <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (Sometimes the email lands up in the Spam/Junk folder, please ensure to check it.)
+          <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (sometimes the email lands up in the spam/junk folder, please ensure to check it.)
           </p>
-          <p className="mb-5">In case of any issue please  call +91 98458 05881 or write to us at contact@14trees.org
+          <p className="mb-5">In case of any issue, please call +91 98458 05881 or write to us at contact@14trees.org
           </p>
 
           {!updateSuccess ? (
@@ -920,7 +928,9 @@ export default function DonatePage() {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Number of Trees</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Number of Trees:
+                              </label>
                               <input
                                 type="number"
                                 inputMode="numeric"
@@ -934,6 +944,7 @@ export default function DonatePage() {
                                   else setAdoptedTreeCount(number);
                                 }}
                               />
+                              <p className="text-sm text-gray-500 mt-1">3000 INR per tree</p>
                             </div>
                           </div>
                           <div className="mt-2">
@@ -985,7 +996,13 @@ export default function DonatePage() {
                                 className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
                                 disabled={donationMethod !== 'trees'}
                                 value={donationMethod !== 'trees' ? 0 : donationTreeCount}
-                                onChange={(e) => setDonationTreeCount(Number(e.target.value))}
+                                onChange={(e) => {
+                                  setDonationTreeCount(Number(e.target.value))
+                                  !multipleNames && setDedicatedNames(prev => {
+                                    prev[0].trees_count = Number(e.target.value) || 1;
+                                    return prev;
+                                  })
+                                }}
                               />
                               <span className="text-sm">Trees</span>
                             </div>
@@ -1296,9 +1313,9 @@ export default function DonatePage() {
                                 <table className="min-w-full divide-y divide-gray-200">
                                   <thead className="bg-gray-50">
                                     <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Email</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Phone</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                     </tr>
@@ -1340,6 +1357,7 @@ export default function DonatePage() {
                               </div>
                               <div className="flex justify-between items-center mt-2">
                                 <button
+                                  type="button"
                                   onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
                                   disabled={currentPage === 0}
                                   className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
@@ -1348,6 +1366,7 @@ export default function DonatePage() {
                                 </button>
 
                                 <button
+                                  type="button"
                                   onClick={() => setCurrentPage(p =>
                                     Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
                                   )}
@@ -1364,7 +1383,7 @@ export default function DonatePage() {
                         <div className="space-y-4">
                           <input
                             type="text"
-                            placeholder="Recipient name"
+                            placeholder="Assignee name"
                             className={`w-full rounded-md border ${errors['dedicatedName-0'] ? 'border-red-500' : 'border-gray-300'
                               } px-4 py-3 text-gray-700`}
                             value={dedicatedNames[0].recipient_name}
@@ -1381,7 +1400,7 @@ export default function DonatePage() {
                           <div className="grid gap-4 md:grid-cols-2">
                             <input
                               type="email"
-                              placeholder="Recipient Email (optional)"
+                              placeholder="Assignee Email (optional)"
                               className={`w-full rounded-md border ${errors['dedicatedEmail-0'] ? 'border-red-500' : 'border-gray-300'
                                 } px-4 py-3 text-gray-700`}
                               value={dedicatedNames[0].recipient_email}
@@ -1397,7 +1416,7 @@ export default function DonatePage() {
                             )}
                             <input
                               type="tel"
-                              placeholder="Recipient Phone (optional)"
+                              placeholder="Assignee Phone (optional)"
                               className={`w-full rounded-md border ${errors['dedicatedPhone-0'] ? 'border-red-500' : 'border-gray-300'
                                 } px-4 py-3 text-gray-700`}
                               value={dedicatedNames[0].recipient_phone}
@@ -1414,7 +1433,7 @@ export default function DonatePage() {
                               <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
                             )}
                           </div>
-                          <div className="mt-6">
+                          {/* <div className="mt-6">
                             <label className="flex items-center space-x-3 mb-4">
                               <input
                                 type="checkbox"
@@ -1481,7 +1500,7 @@ export default function DonatePage() {
                                 </div>
                               </div>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       )}
                     </div>
@@ -1503,6 +1522,13 @@ export default function DonatePage() {
 
                         if (mainFormValid) {
                           setCurrentStep(2);
+                          if (typeof window !== "undefined") {
+                            window.scrollTo({
+                              top: 0,
+                              behavior: "smooth",
+                            });
+                          }
+
                         } else {
                           alert("Please fill all required fields");
                         }
