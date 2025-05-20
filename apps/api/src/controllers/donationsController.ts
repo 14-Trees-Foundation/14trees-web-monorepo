@@ -52,7 +52,7 @@ export const createDonation = async (req: Request, res: Response) => {
 
     const data = req.body;
     const {
-        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, pan,
+        sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, tags,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
         comments, users,  donation_type, donation_method, visit_date, amount_donated,
     } = data;
@@ -109,6 +109,7 @@ export const createDonation = async (req: Request, res: Response) => {
         donation_method,
         visit_date,
         amount_donated,
+        tags
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
@@ -439,7 +440,9 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
         } else {
             await DonationService.reserveSelectedTrees(donation_id, tree_ids);
         }
-        return res.status(status.success).send();
+
+        const donation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -468,7 +471,8 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
             await DonationService.unreserveSelectedTrees(donation_id, tree_ids);
         }
     
-        return res.status(status.success).send();
+        const donation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -512,7 +516,8 @@ export const assignTrees = async (req: Request, res: Response) => {
             await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted }); 
         }
     
-        return res.status(status.success).send();
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
@@ -542,7 +547,9 @@ export const unassignTrees = async (req: Request, res: Response) => {
         } else {
             await DonationService.unassignTrees(donation_id);
         }
-        return res.status(status.success).send();
+        
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
         return res.status(status.error).send({
