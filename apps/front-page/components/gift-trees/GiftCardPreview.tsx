@@ -8,6 +8,9 @@ const defaultMessages = {
     primary: prefix + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.' + secondaryMessage,
     birthday: prefix + 'We are immensely delighted to share that a tree has been planted in your name on the occasion of your birthday by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     memorial: prefix + 'A tree has been planted in the memory of <name here> at the 14 Trees Foundation reforestation site. For many years, this tree will help rejuvenate local ecosystems, support local biodiversity and offset the harmful effects of climate change and global warming.' + secondaryMessage,
+    wedding: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate your special union at the 14 Trees Foundation, Pune.This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
+    anniversary: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate your Wedding Anniversary at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
+    festival: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate this joyous occasion at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     logo: 'Gifted by 14 Trees in partnership with'
 }
 
@@ -48,8 +51,8 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            const eventMessage = eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : defaultMessages.primary;
-            const message = primaryMessage === "" || primaryMessage === defaultMessages.primary || primaryMessage === defaultMessages.memorial || primaryMessage === defaultMessages.birthday
+            const eventMessage = eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : eventType === "3" ? defaultMessages.wedding : eventType === "4" ? defaultMessages.anniversary : eventType === "5" ? defaultMessages.festival : defaultMessages.primary;
+            const message = primaryMessage === "" || primaryMessage === defaultMessages.primary || primaryMessage === defaultMessages.memorial || primaryMessage === defaultMessages.birthday || primaryMessage === defaultMessages.wedding || primaryMessage === defaultMessages.anniversary || primaryMessage === defaultMessages.festival
                 ? eventMessage
                 : primaryMessage;
 
