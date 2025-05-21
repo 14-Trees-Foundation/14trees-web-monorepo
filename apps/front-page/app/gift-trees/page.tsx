@@ -92,7 +92,7 @@ export default function GiftTreesPage() {
     const perTreeAmount = calculateGiftingAmount();
     const total = perTreeAmount * Number(formData.numberOfTrees || 0);
     setTotalAmount(total);
-    setIsAboveLimit(total > 100000);
+    setIsAboveLimit(total > 500000);
 
     if (total > 100000) {
       setPaymentOption("bank-transfer");
@@ -688,7 +688,7 @@ export default function GiftTreesPage() {
 
   const handleRazorpayPayment = async () => {
     if (isAboveLimit) {
-      alert("Please use Bank Transfer for gifting trees above ₹1,00,000");
+      alert("Please use Bank Transfer for gifting trees above ₹5,00,000");
       return;
     }
 
