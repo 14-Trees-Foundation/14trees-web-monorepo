@@ -371,27 +371,29 @@ export const sendGiftRequestAcknowledgement = async (
             panNumber = payment?.pan_number || "";
         }
 
-        // Generate 80G receipt if applicable
-        let fileUrl = "";
-        const giftReceiptId = new Date().getFullYear() + "/" + giftRequest.id;
-        if (giftRequest.amount_donated) {
-            const docService = new GoogleDoc();
-            const receiptId = await docService.get80GRecieptFileId({
-                "{Name}": sponsorUser.name,
-                "{FY}": "Year " + (new Date().getFullYear() - 1) + "-" + ((new Date().getFullYear()) % 100),
-                "{Rec}": giftReceiptId,
-                "{Date}": moment(new Date(giftRequest.created_at)).format('MMMM DD, YYYY'),
-                "{AmountW}": numberToWords(giftRequest.amount_donated || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-                "{PAN}": panNumber,
-                "{Amt}": formatNumber(giftRequest.amount_donated || 0),
-                "{CO}": "",
-                "{SG}": "",
-                "{OT}": "✓",
-            }, giftReceiptId);
+        const amount = (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards;
 
-            const resp = await docService.download(receiptId);
-            fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}/${giftReceiptId}.pdf`);
-        }
+        // Generate 80G receipt if applicable
+        const date = new Date();
+        const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+        const giftReceiptId = date.getFullYear() + "/" + giftRequest.id;
+
+        const docService = new GoogleDoc();
+        const receiptId = await docService.get80GRecieptFileId({
+            "{Name}": sponsorUser.name,
+            "{FY}": "Year " + (FY - 1) + "-" + (FY%100),
+            "{Rec}": giftReceiptId,
+            "{Date}": moment(new Date(giftRequest.created_at)).format('MMMM DD, YYYY'),
+            "{AmountW}": numberToWords(amount || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+            "{PAN}": panNumber,
+            "{Amt}": formatNumber(amount || 0),
+            "{CO}": "",
+            "{SG}": "",
+            "{OT}": "✓",
+        }, giftReceiptId);
+
+        const resp = await docService.download(receiptId);
+        const fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}_80_G.pdf`);
 
         const emailData = {
             sponsorDetails: {
@@ -412,7 +414,7 @@ export const sendGiftRequestAcknowledgement = async (
                 eventType: giftRequest.event_type,
                 message: giftRequest.primary_message,
                 groupName: giftRequest.group_name,
-                amount: (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards,
+                amount: amount,
             }
         };
 
