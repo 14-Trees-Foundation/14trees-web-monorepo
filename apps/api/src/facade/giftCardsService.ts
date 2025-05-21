@@ -104,9 +104,14 @@ class GiftCardsService {
         }
 
         const data: any = {
+            "Req Id": giftRequest.id,
             Date: moment(giftRequest.created_at).format("DD/MM/YYYY"),
             Name: (giftRequest as any).user_name,
             Email: (giftRequest as any).user_email,
+            Phone: (giftRequest as any).user_phone,
+            Trees: giftRequest.no_of_cards,
+            "Gifted By": giftRequest.planted_by,
+            "Event Name": giftRequest.event_name,
             "Total Amt": formatNumber(totalAmount),
             PAN: panNumber,
             Amount: formatNumber(totalAmount),
