@@ -9,12 +9,17 @@ import { PlotPlantTypeRepository } from '../repo/plotPlantTypesRepo';
 import { PlotPlantTypeCreationAttributes } from '../models/plot_plant_type';
 import { TreesSnapshotRepository } from '../repo/treesSnapshotsRepo';
 import { GoogleSpreadsheet } from './google';
+import { ContributionOption_CSR, ContributionOption_VOLUNTEER, Donation, DonationMailStatus_Accounts, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_Volunteer } from '../models/donation';
+import { DonationService } from '../facade/donationService';
+import { DonationRepository } from '../repo/donationsRepo';
+import { FilterItem } from '../models/pagination';
+import { UserRepository } from '../repo/userRepo';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
         try {
             const logs = await LogsInfoRepository.getLogsInfo(Date.now() - 10 * 24 * 60 * 60 * 1000);
-    
+
             for (const log of logs) {
                 if (log.logs.includes('Network Error')) continue;
                 await sendDiscordMessage(JSON.stringify(log, null, 2));
@@ -37,7 +42,7 @@ export function cleanUpGiftCardLiveTemplates() {
             const templates = await PlantTypeTemplateRepository.getAll();
             const slideIds = templates.map(template => template.template_id);
             if (slideIds.length > 0) {
-                await deleteUnwantedSlides(livePresentationId, slideIds);    
+                await deleteUnwantedSlides(livePresentationId, slideIds);
             }
         } catch (error) {
             console.log('[ERROR]', 'CRON::cleanUpGiftCardLiveTemplates', error);
@@ -97,7 +102,7 @@ export function updatePlotPlantTypes() {
             }
 
             await PlotPlantTypeRepository.addPlotPlantTypes(newPlotPlantTypes);
-            
+
         } catch (error) {
             console.log('[ERROR]', 'CRON::updatePlotPlantTypes', error);
         }
@@ -160,18 +165,86 @@ export function updateTheAuditReport() {
             const auditedTreesData = await TreesSnapshotRepository.getPlotsWithAuditedTrees();
             for (const tree of auditedTreesData) {
                 const treeRow: any[] = [];
-                treeRow.push(tree.plot_id);          
-                treeRow.push(tree.plot_name);        
-                treeRow.push(tree.sapling_id);       
-                treeRow.push(tree.audit_date ? tree.audit_date : ''); 
-            
-                auditedTreesValues.push(treeRow);    
+                treeRow.push(tree.plot_id);
+                treeRow.push(tree.plot_name);
+                treeRow.push(tree.sapling_id);
+                treeRow.push(tree.audit_date ? tree.audit_date : '');
+
+                auditedTreesValues.push(treeRow);
             }
-            
+
             await spreadSheetClient.updateRowDataInSheet(spreadsheetId, auditedTreesSheetName, auditedTreesValues);
 
         } catch (error) {
             console.log('[ERROR]', 'CRON::updateTheAuditReport', error);
+        }
+    });
+}
+
+
+export function sendDonationMails() {
+
+    const task = cron.schedule('*/5 * * * *', async () => {
+
+        let donations: Donation[] = [];
+        try {
+            const filters: FilterItem[] = [
+                { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+            ]
+            const donationsResp = await DonationRepository.getDonations(0, -1, filters)
+            donations = donationsResp.results;
+        } catch (error: any) {
+            console.log("[ERROR]", 'CRON::sendDonationMails', error);
+            return;
+        }
+
+        for (const donation of donations) {
+            const sponsor: any = {
+                name: (donation as any).user_name,
+                email: (donation as any).user_email,
+            };
+
+            try {
+                if (!donation.mail_status?.includes(DonationMailStatus_BackOffice)) {
+                    try {
+                        await DonationService.sendDonationNotificationToBackOffice(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification to accounts:", error);
+                    }
+                }
+
+                if (!donation.mail_status?.includes(DonationMailStatus_Accounts)) {
+                    try {
+                        await DonationService.sendDonationNotificationToAccounts(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification to accounts:", error);
+                    }
+                }
+
+                if (
+                    donation.contribution_options?.includes(ContributionOption_VOLUNTEER) &&
+                    !donation.mail_status?.includes(DonationMailStatus_Volunteer)
+                ) {
+                    try {
+                        await DonationService.sendDonationNotificationForVolunteers(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification for volunteers:", error);
+                    }
+                }
+
+                if (
+                    donation.contribution_options?.includes(ContributionOption_CSR) &&
+                    !donation.mail_status?.includes(DonationMailStatus_CSR)
+                ) {
+                    try {
+                        await DonationService.sendDonationNotificationForCSR(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification for CSR:", error);
+                    }
+                }
+            } catch (error) {
+                console.error("[ERROR] Failed to process donation:", error);
+            }
         }
     });
 }

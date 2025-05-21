@@ -10,7 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
 import { Tree } from '../models/tree';
 import { User } from '../models/user';
 import { WhereOptions } from 'sequelize';
@@ -144,8 +144,6 @@ export const createDonation = async (req: Request, res: Response) => {
         if (comments) donation.comments = comments;
         
         DonationService.sendDonationAcknowledgement(donation, sponsorUser);
-        // Send notification to back office
-        DonationService.sendDonationNotificationToBackOffice(donation, sponsorUser);
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails
@@ -755,7 +753,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         let sponsorEmailSuccess = false;
 
         // Send email to sponsor if enabled
-        if (donation.mail_status !== 'DashboardsSent' && email_sponsor) {
+        if (!donation.mail_status?.includes(DonationMailStatus_DashboardsSent) && email_sponsor) {
             const sponsorEmailData = {
                 ...commonEmailData,
                 user_name: user.name,
@@ -789,7 +787,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             }
             sponsorEmailSuccess = true;
             await DonationRepository.updateDonation(donation.id, {
-                mail_status: 'DashboardsSent',
+                mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_DashboardsSent] : [DonationMailStatus_DashboardsSent],
                 updated_at: new Date(),
             })
         }
