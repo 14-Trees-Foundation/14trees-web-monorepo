@@ -144,8 +144,6 @@ export const createDonation = async (req: Request, res: Response) => {
         if (comments) donation.comments = comments;
         
         DonationService.sendDonationAcknowledgement(donation, sponsorUser);
-        // Send notification to back office
-        DonationService.sendDonationNotificationToBackOffice(donation, sponsorUser);
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails

@@ -791,11 +791,14 @@ export class DonationService {
     }
 
     public static async sendDonationNotificationToBackOffice(
-        donation: Donation,
+        donationId: number,
         sponsorUser: User,
         testMails?: string[]
     ): Promise<void> {
         try {
+
+            const donation = await DonationRepository.getDonation(donationId);
+
             // Prepare email content with donation details
             const emailData = {
                 donationId: donation.id,
@@ -839,18 +842,21 @@ export class DonationService {
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
 
-            await DonationRepository.updateDonation(donation.id, {
+            await DonationRepository.updateDonation(donationId, {
                 mail_error: "BackOffice: " + errorMessage,
             });
         }
     }
 
     public static async sendDonationNotificationToAccounts(
-        donation: Donation,
+        donationId: number,
         sponsorUser: User,
         testMails?: string[]
     ): Promise<void> {
         try {
+
+            const donation = await DonationRepository.getDonation(donationId);
+
             const emailData = {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
@@ -890,18 +896,21 @@ export class DonationService {
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
 
-            await DonationRepository.updateDonation(donation.id, {
+            await DonationRepository.updateDonation(donationId, {
                 mail_error: "Accounts: " + errorMessage,
             });
         }
     }
 
     public static async sendDonationNotificationForVolunteers(
-        donation: Donation,
+        donationId: number,
         sponsorUser: User,
         testMails?: string[]
     ): Promise<void> {
         try {
+
+            const donation = await DonationRepository.getDonation(donationId);
+
             const emailData = {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
@@ -912,7 +921,7 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dhruvin.m.09@14trees.org'];
+                ['backoffice@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'donation-volunteer.html';
@@ -941,18 +950,20 @@ export class DonationService {
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
 
-            await DonationRepository.updateDonation(donation.id, {
+            await DonationRepository.updateDonation(donationId, {
                 mail_error: "Volunteer: " + errorMessage,
             });
         }
     }
 
     public static async sendDonationNotificationForCSR(
-        donation: Donation,
+        donationId: number,
         sponsorUser: User,
         testMails?: string[]
     ): Promise<void> {
         try {
+            const donation = await DonationRepository.getDonation(donationId);
+
             const emailData = {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
@@ -963,7 +974,7 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dhruvin.m.09@14trees.org'];
+                ['backoffice@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'donation-csr.html';
@@ -992,7 +1003,7 @@ export class DonationService {
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
 
-            await DonationRepository.updateDonation(donation.id, {
+            await DonationRepository.updateDonation(donationId, {
                 mail_error: "CSR: " + errorMessage,
             });
         }
