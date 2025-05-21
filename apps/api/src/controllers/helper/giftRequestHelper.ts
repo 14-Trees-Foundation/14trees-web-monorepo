@@ -390,10 +390,9 @@ export const sendGiftRequestAcknowledgement = async (
             }, giftReceiptId);
 
             const resp = await docService.download(receiptId);
-            fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}/${giftReceiptId}`);
+            fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}/${giftReceiptId}.pdf`);
         }
 
-        console.log('[INFO] Preparing email data');
         const emailData = {
             sponsorDetails: {
                 name: sponsorUser.name,
@@ -413,7 +412,7 @@ export const sendGiftRequestAcknowledgement = async (
                 eventType: giftRequest.event_type,
                 message: giftRequest.primary_message,
                 groupName: giftRequest.group_name,
-                amount: giftRequest.amount_donated ? formatNumber(giftRequest.amount_donated) : undefined,
+                amount: (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards,
             }
         };
 
@@ -423,10 +422,10 @@ export const sendGiftRequestAcknowledgement = async (
         const templateName = 'gifting-ack.html';
 
         // Prepare attachments if there's a donation amount
-        const attachments = giftRequest.amount_donated ? [{
+        const attachments = [{
             filename: giftReceiptId + " " + sponsorUser.name + ".pdf",
             path: fileUrl,
-        }] : undefined;
+        }];
 
         await sendDashboardMail(
             templateName,
