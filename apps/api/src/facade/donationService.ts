@@ -1,5 +1,5 @@
 import { LandCategory } from "../models/common";
-import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_AckSent, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
+import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
@@ -779,7 +779,9 @@ export class DonationService {
                 await DonationRepository.updateDonation(donation.id, { mail_error: statusMessage });
                 console.error("[ERROR] DonationService::sendDonationAcknowledgement", statusMessage);
             } else {
-                await DonationRepository.updateDonation(donation.id, { mail_status: DonationMailStatus_AckSent });
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_AckSent] : [DonationMailStatus_AckSent],
+                });
             }
 
         } catch (error) {
@@ -816,23 +818,183 @@ export class DonationService {
                 templateName,
                 emailData,
                 mailIds,
-                undefined, // no CC recipients
+                undefined, // no CC
                 [], // no attachments
                 'New Donation Received - Notification'
             );
 
-            // Handle email sending result
             if (statusMessage) {
-                throw new Error(`Email sending failed with status: ${statusMessage}`);
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_error: "BackOffice: " + statusMessage,
+                });
+                return;
             }
 
+            await DonationRepository.updateDonation(donation.id, {
+                mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_BackOffice] : [DonationMailStatus_BackOffice],
+            });
         } catch (error) {
             // Throw a more specific error based on the caught exception
             const errorMessage = error instanceof Error ?
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
 
-            throw new Error(errorMessage);
+            await DonationRepository.updateDonation(donation.id, {
+                mail_error: "BackOffice: " + errorMessage,
+            });
+        }
+    }
+
+    public static async sendDonationNotificationToAccounts(
+        donation: Donation,
+        sponsorUser: User,
+        testMails?: string[]
+    ): Promise<void> {
+        try {
+            const emailData = {
+                donationId: donation.id,
+                sponsorName: sponsorUser.name,
+                sponsorEmail: sponsorUser.email,
+                donationAmount: formatNumber(donation.amount_donated || 0),
+                donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+            };
+
+            const mailIds = (testMails && testMails.length !== 0) ?
+                testMails :
+                ['accounts@14trees.org'];
+
+            // Set the email template to be used
+            const templateName = 'donation-accounts.html';
+
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                undefined, // no CC
+                [], // no attachments
+                'New Donation Received - Notification'
+            );
+
+            if (statusMessage) {
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_error: "Accounts: " + statusMessage,
+                });
+                return;
+            }
+
+            await DonationRepository.updateDonation(donation.id, {
+                mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_Accounts] : [DonationMailStatus_Accounts],
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ?
+                `Failed to send donation notification: ${error.message}` :
+                'Failed to send donation notification due to an unknown error';
+
+            await DonationRepository.updateDonation(donation.id, {
+                mail_error: "Accounts: " + errorMessage,
+            });
+        }
+    }
+
+    public static async sendDonationNotificationForVolunteers(
+        donation: Donation,
+        sponsorUser: User,
+        testMails?: string[]
+    ): Promise<void> {
+        try {
+            const emailData = {
+                donationId: donation.id,
+                sponsorName: sponsorUser.name,
+                sponsorEmail: sponsorUser.email,
+                donationAmount: formatNumber(donation.amount_donated || 0),
+                donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+            };
+
+            const mailIds = (testMails && testMails.length !== 0) ?
+                testMails :
+                ['dhruvin.m.09@14trees.org'];
+
+            // Set the email template to be used
+            const templateName = 'donation-volunteer.html';
+
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                undefined, // no CC
+                [], // no attachments
+                'New Donation Received - Notification'
+            );
+
+            if (statusMessage) {
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_error: "Volunteer: " + statusMessage,
+                });
+                return;
+            }
+
+            await DonationRepository.updateDonation(donation.id, {
+                mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_Volunteer] : [DonationMailStatus_Volunteer],
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ?
+                `Failed to send donation notification: ${error.message}` :
+                'Failed to send donation notification due to an unknown error';
+
+            await DonationRepository.updateDonation(donation.id, {
+                mail_error: "Volunteer: " + errorMessage,
+            });
+        }
+    }
+
+    public static async sendDonationNotificationForCSR(
+        donation: Donation,
+        sponsorUser: User,
+        testMails?: string[]
+    ): Promise<void> {
+        try {
+            const emailData = {
+                donationId: donation.id,
+                sponsorName: sponsorUser.name,
+                sponsorEmail: sponsorUser.email,
+                donationAmount: formatNumber(donation.amount_donated || 0),
+                donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+            };
+
+            const mailIds = (testMails && testMails.length !== 0) ?
+                testMails :
+                ['dhruvin.m.09@14trees.org'];
+
+            // Set the email template to be used
+            const templateName = 'donation-csr.html';
+
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                undefined, // no CC
+                [], // no attachments
+                'New Donation Received - Notification'
+            );
+
+            if (statusMessage) {
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_error: "CSR: " + statusMessage,
+                });
+                return;
+            }
+
+            await DonationRepository.updateDonation(donation.id, {
+                mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_CSR] : [DonationMailStatus_CSR],
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ?
+                `Failed to send donation notification: ${error.message}` :
+                'Failed to send donation notification due to an unknown error';
+
+            await DonationRepository.updateDonation(donation.id, {
+                mail_error: "CSR: " + errorMessage,
+            });
         }
     }
 }
