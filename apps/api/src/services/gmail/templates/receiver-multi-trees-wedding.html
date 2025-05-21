@@ -156,7 +156,8 @@
             <th>Tree Name</th>
             <th>Scientific Name</th>
             <th>Tree ID</th>
-            {{#if trees.[0].planted_via}}<th>Planted By</th>{{/if}}
+            {{#if event_name}}<th>Event</th>{{/if}}
+            <th>Dashboard Link</th>
           </tr>
           {{#each trees}}
           <tr>
@@ -164,7 +165,8 @@
             <td>{{plant_type}}</td>
             <td>{{scientific_name}}</td>
             <td>{{sapling_id}}</td>
-            {{#if trees.[0].planted_via}}<td>{{trees.[0].planted_via}}</td>{{/if}}
+            {{#if event_name}}<td>{{event_name}}</td>{{/if}}
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
           </tr>
           {{/each}}
         </table>

@@ -127,31 +127,41 @@
         <table class="info-table">
           <tr>
             <th>Name</th>
-            <td>{{assigned_to_name}}</td>
+            <td>{{trees.[0].assigned_to_name}}</td>
           </tr>
+          {{#if trees.[0].planted_via}}
+          <tr>
+            {{#if is_gift}}
+            <th>Gifted By</th>
+            {{else}}
+            <th>Planted By</th>
+            {{/if}}
+            <td>{{trees.[0].planted_via}}</td>
+          </tr>
+          {{/if}}
           <tr>
             <th>Tree Name</th>
-            <td>{{plant_type}}</td>
+            <td>{{trees.[0].plant_type}}</td>
           </tr>
           <tr>
             <th>Scientific Name</th>
-            <td>{{scientific_name}}</td>
+            <td>{{trees.[0].scientific_name}}</td>
           </tr>
           <tr>
             <th>Tree ID</th>
-            <td>{{sapling_id}}</td>
+            <td>{{trees.[0].sapling_id}}</td>
           </tr>
-          {{#if event_name}}
+          {{#if trees.[0].event_name}}
           <tr>
             <th>Event</th>
-            <td>{{event_name}}</td>
+            <td>{{trees.[0].event_name}}</td>
           </tr>
           {{/if}}
         </table>
       </div>
       <p>
-        Below's the link to your personalized dashboard.<br />
-        <a href="{{dashboard_link}}" class="dashboard-link">View Your Tree Dashboard</a>
+        Below's the link to tree dashboard.<br/>
+        <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
       </p>
       <p>
         Each tree planted carries with it the hope of a healthier ecosystem, the promise of cleaner air, and the
