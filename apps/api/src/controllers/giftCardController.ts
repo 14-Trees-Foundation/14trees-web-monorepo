@@ -1774,6 +1774,7 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
             secondary_message: secondaryMessage,
             logo_message: logoMessage,
             event_type: eventType,
+            gifted_by: giftedBy,
         });
 
     } catch (error: any) {
@@ -1859,6 +1860,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             secondary_message: secondaryMessage,
             logo_message: logoMessage,
             event_type: eventType,
+            gifted_by: giftedBy
         });
 
     } catch (error: any) {

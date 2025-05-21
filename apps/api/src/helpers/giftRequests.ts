@@ -408,7 +408,7 @@ class GiftRequestHelper {
                     }
     
                     primaryMessage = primaryMessage.replace("{recipient}", (giftCard as any).recipient_name || "");
-                    primaryMessage = primaryMessage.replace("{giftedBy}", giftCardRequest.planted_by || "");
+                    primaryMessage = primaryMessage.replace("{giftedBy}", messages?.gifted_by || giftCardRequest.planted_by || "");
                     const record = {
                         slideId: templateId,
                         sapling: (giftCard as any).sapling_id,
