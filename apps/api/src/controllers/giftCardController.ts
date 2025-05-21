@@ -243,6 +243,12 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
                     stack: emailError instanceof Error ? emailError.stack : undefined
                 });
             }
+
+            try {
+                await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
+            } catch (error: any) {
+                console.log("[ERROR]", "GiftCardController::addGiftRequestToGoogleSpreadsheet", error);
+            }
         }
 
     } catch (error: any) {
