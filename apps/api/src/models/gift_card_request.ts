@@ -17,6 +17,7 @@ export type GiftMessages = {
     secondary_message: string;
     logo_message: string;
     event_type: string;
+    gifted_by?: string;
 }
 
 interface GiftCardRequestAttributes {
