@@ -1123,10 +1123,10 @@ export default function GiftTreesPage() {
                           <option value="" disabled>Select an event type</option>
                           <option value="1">Birthday</option>
                           <option value="2">Memorial</option>
-                          <option value="3">Wedding</option>
-                          <option value="4">Wedding Anniversary</option>
-                          <option value="5">Festival Celebration</option>
-                          <option value="6">General Gift</option>
+                          <option value="4">Wedding</option>
+                          <option value="5">Wedding Anniversary</option>
+                          <option value="6">Festival Celebration</option>
+                          <option value="3">General Gift</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                           <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
