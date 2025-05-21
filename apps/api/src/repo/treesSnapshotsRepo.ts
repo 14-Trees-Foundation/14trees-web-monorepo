@@ -126,7 +126,7 @@ export class TreesSnapshotRepository {
     public static async getPlotsWithAuditedTrees(): Promise<any[]> {
         const query = `
             SELECT 
-                p."name" AS plot_name,
+                p.id as plot_id, p."name" AS plot_name,
                 t.sapling_id,
                 latest_ts.image_date
             FROM "14trees".trees t
