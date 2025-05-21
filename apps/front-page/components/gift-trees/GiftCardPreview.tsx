@@ -140,7 +140,7 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
                             src={previewUrl}
                             className="w-full h-full border-none rounded-md"
                             title="Gift card preview"
-                            style={{ minHeight: "250px", height: "100%", width: "100%" }}
+                            style={{ minHeight: "250px", height: "100%", width: "100%", pointerEvents: 'none' }}
                         />
                     </div>
                 ) : (
