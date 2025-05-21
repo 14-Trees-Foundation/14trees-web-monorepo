@@ -173,7 +173,7 @@ export function updateTheAuditReport() {
                 treeRow.push(tree.plot_id);          
                 treeRow.push(tree.plot_name);        
                 treeRow.push(tree.sapling_id);       
-                treeRow.push(tree.audit_date ? tree.audit_date : ''); 
+                treeRow.push(tree.image_date ? tree.image_date : ''); 
             
                 auditedTreesValues.push(treeRow);    
             }
