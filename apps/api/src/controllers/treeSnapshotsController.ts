@@ -75,6 +75,7 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
         let result = await TreesSnapshotRepository.bulkAddTreesSnapshots(requests);
         res.status(status.success).send(result);
     } catch (error: any) {
+        console.log('[ERROR]', 'TreeSnapshots::addTreeSnapshots:', error);
         res.status(status.error).json({
             status: status.error,
             message: error.message,
