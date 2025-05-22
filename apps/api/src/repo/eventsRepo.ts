@@ -1,9 +1,10 @@
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { Event, EventAttributes, EventCreationAttributes } from '../models/events';
 import { WhereOptions } from 'sequelize';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
-import { getWhereOptions } from '../controllers/helper/filters';
+import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { EventMessage } from '../models/event_message';
+import { sequelize } from '../config/postgreDB';
 
 
 export class EventRepository {
@@ -14,21 +15,54 @@ export class EventRepository {
 
   public static async getEvents(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<Event>> {
 
-    let whereClause = {};
+    let whereConditions: string = "";
+    let replacements: any = {}
+
     if (filters && filters.length > 0) {
       filters.forEach(filter => {
-        whereClause = { ...whereClause, ...getWhereOptions(filter.columnField, filter.operatorValue, filter.value) }
+        let columnField = "e." + filter.columnField
+        if (filter.columnField === "site_name") {
+          columnField = "s.name_english"
+        }
+        const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
+        whereConditions = whereConditions + " " + condition + " AND";
+        replacements = { ...replacements, ...replacement }
       })
+      whereConditions = whereConditions.substring(0, whereConditions.length - 3);
     }
 
-    const count = await Event.count({ where: whereClause });
-    const events = await Event.findAll({
-      where: whereClause,
-      offset: offset,
-      limit: limit
+    const getQuery = `
+      SELECT e.*, s.name_english as site_name
+      FROM "14trees_2".events e
+      LEFT JOIN "14trees_2".sites s ON s.id = e.site_id
+      WHERE e."name" IS NOT NULL AND e.link IS NOT NULL AND ${whereConditions !== "" ? whereConditions : "1=1"}
+      ORDER BY e.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+    `
+
+    const countQuery = `
+      SELECT COUNT(*) 
+      FROM "14trees_2".events e
+      LEFT JOIN "14trees_2".sites s ON s.id = e.site_id
+      WHERE e."name" IS NOT NULL AND e.link IS NOT NULL AND ${whereConditions !== "" ? whereConditions : "1=1"};
+    `
+
+    const events: any[] = await sequelize.query(getQuery, {
+      type: QueryTypes.SELECT,
+      replacements: replacements,
     })
 
-    return { results: events, total: count, offset: offset };
+    const countResp: any[] = await sequelize.query(countQuery, {
+      type: QueryTypes.SELECT,
+      replacements: replacements,
+    })
+
+    const totalResults = parseInt(countResp[0].count)
+
+    return {
+      offset: offset,
+      total: totalResults,
+      results: events
+    };
   }
 
   public static async updateEvent(eventData: EventAttributes): Promise<Event> {
