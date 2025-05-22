@@ -10,7 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
 import { Tree } from '../models/tree';
 import { User } from '../models/user';
 import { WhereOptions } from 'sequelize';
@@ -144,8 +144,6 @@ export const createDonation = async (req: Request, res: Response) => {
         if (comments) donation.comments = comments;
         
         DonationService.sendDonationAcknowledgement(donation, sponsorUser);
-        // Send notification to back office
-        DonationService.sendDonationNotificationToBackOffice(donation, sponsorUser);
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         // Don't fail the request if email sending fails
@@ -749,13 +747,14 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             event_type: event_type
         };
 
+        res.status(200).json();
+
         // Initialize tracking variables
         let recipientsMap: Map<number, typeof treeData> | null = null;
         let assigneesMap: Map<string, typeof treeData> | null = null;
-        let sponsorEmailSuccess = false;
 
         // Send email to sponsor if enabled
-        if (donation.mail_status !== 'DashboardsSent' && email_sponsor) {
+        if (!donation.mail_status?.includes(DonationMailStatus_DashboardsSent) && email_sponsor) {
             const sponsorEmailData = {
                 ...commonEmailData,
                 user_name: user.name,
@@ -770,7 +769,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             });
 
             if (!sponsorTemplates?.length) {
-                return res.status(404).json({ error: 'Sponsor email template not found' });
+                throw new Error('Sponsor email template not found');
             }
 
             const statusMessage = await sendDashboardMail(
@@ -785,13 +784,12 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
                     mail_error: statusMessage,
                     updated_at: new Date(),
                 })
-                return res.status(500).json({ error: `Failed to send sponsor email: ${statusMessage}` });
+            } else {
+                await DonationRepository.updateDonation(donation.id, {
+                    mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_DashboardsSent] : [DonationMailStatus_DashboardsSent],
+                    updated_at: new Date(),
+                })
             }
-            sponsorEmailSuccess = true;
-            await DonationRepository.updateDonation(donation.id, {
-                mail_status: 'DashboardsSent',
-                updated_at: new Date(),
-            })
         }
 
         // Send email to recipient if enabled
@@ -814,7 +812,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             });
 
             if (!recipientTemplates?.length) {
-                return res.status(404).json({ error: 'Recipient email template not found' });
+                throw new Error('Recipient email template not found');
             }
 
             // Send to each recipient
@@ -842,16 +840,12 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
                         mail_error: statusMessage,
                         updated_at: new Date(),
                     }, { donation_id: donation.id, recipient: recipient });
-
-                    return res.status(500).json({ 
-                        error: `Failed to send recipient email to ${recipientTrees[0].recipient_email}: ${statusMessage}` 
-                    });
+                } else {
+                    await DonationUserRepository.updateDonationUsers({
+                        mail_sent: true,
+                        updated_at: new Date(),
+                    }, { donation_id: donation.id, recipient: recipient });
                 }
-
-                await DonationUserRepository.updateDonationUsers({
-                    mail_status: true,
-                    updated_at: new Date(),
-                }, { donation_id: donation.id, recipient: recipient });
             }
         }
 
@@ -875,7 +869,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             });
 
             if (!assigneeTemplates?.length) {
-                return res.status(404).json({ error: 'Assignee email template not found' });
+                throw new Error('Assignee email template not found');
             }
 
             // Send to each assignee
@@ -890,42 +884,16 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
                     count: assigneeTrees.length
                 };
 
-                const statusMessage = await sendDashboardMail(
+                await sendDashboardMail(
                     assigneeTemplates[0].template_name,
                     assigneeEmailData,
                     test_mails || [assigneeEmail],
                     assignee_cc_mails || []
                 );
-
-                if (statusMessage) {
-                    return res.status(500).json({ 
-                        error: `Failed to send assignee email to ${assigneeEmail}: ${statusMessage}` 
-                    });
-                }
             }
         }
-
-        return res.status(200).json({ 
-            message: 'Emails processed successfully',
-            details: {
-                sponsor_sent: email_sponsor && sponsorEmailSuccess,
-                recipient_sent: email_recipient && !!recipientsMap?.size,
-                assignee_sent: email_assignee && !!assigneesMap?.size,
-                recipient_count: email_recipient ? recipientsMap?.size || 0 : 0,
-                assignee_count: email_assignee ? assigneesMap?.size || 0 : 0
-            }
-        });
     } catch (error) {
         console.error('Error sending donation emails:', error);
         console.error('Error stack:', (error as Error).stack);
-        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        return res.status(500).json({ 
-            error: 'Internal server error',
-            details: {
-                sponsor_sent: false,
-                recipient_sent: false,
-                assignee_sent: false
-            }
-        });
     }
 };

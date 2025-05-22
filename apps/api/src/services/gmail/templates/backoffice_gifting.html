@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Donation Received</title>
+    <title>New Gifting Request Received</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +11,6 @@
             padding: 20px;
             background-color: #f4f4f4;
         }
-
         .container {
             max-width: 600px;
             margin: auto;
@@ -21,34 +19,25 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
         h2 {
             color: #2e7d32;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-
-        table,
-        th,
-        td {
+        table, th, td {
             border: 1px solid #ddd;
         }
-
-        th,
-        td {
+        th, td {
             padding: 10px;
             text-align: left;
         }
-
         th {
             background-color: #2e7d32;
             color: #ffffff;
         }
-
         .footer {
             margin-top: 20px;
             font-size: 14px;
@@ -56,48 +45,45 @@
         }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <h2>New Donation Received</h2>
+        <h2>New Gifting Request Received</h2>
         <p>Dear Back Office Team,</p>
-        <p>A new donation has been received with the following details:</p>
-
+        <p>A new gifting request has been received with the following details:</p>
+        
         <table>
             <tr>
                 <th>Field</th>
                 <th>Value</th>
             </tr>
             <tr>
-                <td>Donation ID</td>
-                <td>{{donationId}}</td>
+                <td>Gifting ID</td>
+                <td>{{giftCardRequestId}}</td>
             </tr>
             <tr>
                 <td>Sponsor Name</td>
                 <td>{{sponsorName}}</td>
             </tr>
             <tr>
-                <td><strong>Sponsor Phone:</strong></td>
-                <td>{{sponsorPhone}}</td>
-            </tr>
-            <tr>
                 <td>Sponsor Email</td>
                 <td>{{sponsorEmail}}</td>
             </tr>
             <tr>
+                <td><strong>Sponsor Phone:</strong></td>
+                <td>{{sponsorPhone}}</td>
+            </tr>
+            <tr>
                 <td>Donation Amount</td>
-                <td>{{donationAmount}}</td>
+                <td>{{giftCardAmount}}</td>
             </tr>
         </table>
-
-        <p>Please process this donation accordingly.</p>
-
+        
+        <p>Please process this gift request accordingly.</p>
+        
         <div class="footer">
             <p>Best regards,<br>
-                <strong>14 Trees Foundation</strong>
-            </p>
+            <strong>14 Trees Foundation</strong></p>
         </div>
     </div>
 </body>
-
 </html>

@@ -93,7 +93,7 @@ export const updateTransactionFields = async (transactionId: number, filteredDat
  * @returns Result of the regeneration operation
  */
 export const regenerateGiftCardTemplates = async (transactionId: number, mask: string[]) => {
-    const templateFields = ['primary_message', 'secondary_message', 'logo_message', 'name'];
+    const templateFields = ['primary_message', 'secondary_message', 'logo_message', 'name', 'gifted_by'];
     const shouldRegenerateTemplates = mask.some(field => templateFields.includes(field));
     
     if (!shouldRegenerateTemplates) {
@@ -138,6 +138,7 @@ export const regenerateGiftCardTemplates = async (transactionId: number, mask: s
             secondary_message: transaction.secondary_message,
             logo_message: transaction.logo_message,
             event_type: transaction.occasion_type || '3',
+            gifted_by: transaction.gifted_by || '',
         });
 
         return { regenerated: true };

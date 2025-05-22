@@ -15,9 +15,13 @@ export type DonationStatus = 'UserSubmitted' | 'OrderFulfilled';
 export const DonationStatus_UserSubmitted: DonationStatus = 'UserSubmitted';
 export const DonationStatus_OrderFulfilled: DonationStatus = 'OrderFulfilled';
 
-export type DonationMailStatus = 'AckSent' | 'DashboardsSent';
+export type DonationMailStatus = 'AckSent' | 'DashboardsSent' | 'BackOffice' | 'Accounts' | 'Volunteer' | 'CSR';
 export const DonationMailStatus_AckSent: DonationMailStatus = 'AckSent';
 export const DonationMailStatus_DashboardsSent: DonationMailStatus = 'DashboardsSent';
+export const DonationMailStatus_BackOffice: DonationMailStatus = 'BackOffice';
+export const DonationMailStatus_Accounts: DonationMailStatus = 'Accounts';
+export const DonationMailStatus_Volunteer: DonationMailStatus = 'Volunteer';
+export const DonationMailStatus_CSR: DonationMailStatus = 'CSR';
 
 interface DonationAttributes {
   id: number;
@@ -27,28 +31,28 @@ interface DonationAttributes {
   grove: string;
   grove_type_other: string | null;
   trees_count: number;
-  pledged_area_acres: number| null;
+  pledged_area_acres: number | null;
   contribution_options: ContributionOption[] | null;
   names_for_plantation: string | null;
   comments: string | null;
   created_by: number;
   amount_donated: number | null;
-  visit_date: Date | null; 
+  visit_date: Date | null;
   created_at: Date;
   updated_at: Date;
   tags: string[] | null;
   donation_type: DonationType;
   donation_method: DonationMethod | null;
   status: DonationStatus;
-  mail_status: DonationMailStatus | null;
+  mail_status: DonationMailStatus[] | null;
   mail_error: string | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' |  'amount_donated' | 'visit_date'| 'donation_method' | 'status' | 'mail_error' | 'mail_status'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status'> { }
 
-@Table({ 
-    tableName: 'donations',
-    timestamps: false,
+@Table({
+  tableName: 'donations',
+  timestamps: false,
 })
 class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   implements DonationAttributes {
@@ -60,33 +64,33 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   })
   id!: number;
 
-  @Column({ 
+  @Column({
     type: DataType.INTEGER,
     allowNull: false
   })
   user_id!: number;
 
-  @Column({ 
+  @Column({
     type: DataType.INTEGER,
     allowNull: true
   })
   payment_id!: number | null;
 
-  @Column({ 
+  @Column({
     type: DataType.TEXT,
     allowNull: false
   })
   category!: LandCategory;
 
-  @Column({ 
+  @Column({
     type: DataType.TEXT,
     allowNull: true
   })
   grove!: string;
 
-  @Column({ 
+  @Column({
     type: DataType.STRING,
-    allowNull: true 
+    allowNull: true
   })
   grove_type_other!: string | null;
 
@@ -96,43 +100,43 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   })
   trees_count!: number;
 
-  @Column({ 
+  @Column({
     type: DataType.FLOAT,
     allowNull: true
   })
   pledged_area_acres!: number | null;
 
-  @Column({ 
+  @Column({
     type: DataType.ARRAY(DataType.STRING),
     allowNull: false
   })
   contribution_options!: ContributionOption[] | null;
 
-  @Column({ 
+  @Column({
     type: DataType.STRING,
     allowNull: true
   })
   names_for_plantation!: string | null;
 
-  @Column({ 
+  @Column({
     type: DataType.STRING,
     allowNull: true
   })
   comments!: string | null;
 
-  @Column({ 
+  @Column({
     type: DataType.INTEGER,
     allowNull: false
   })
   created_by!: number;
 
-  @Column({ 
+  @Column({
     type: DataType.DATE,
     allowNull: false
   })
   created_at!: Date;
 
-  @Column({ 
+  @Column({
     type: DataType.DATE,
     allowNull: false
   })
@@ -158,13 +162,13 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
 
   @Column({
     type: DataType.DECIMAL(12, 2),
-    allowNull: true 
+    allowNull: true
   })
   amount_donated!: number | null;
 
   @Column({
     type: DataType.DATE,
-    allowNull: true 
+    allowNull: true
   })
   visit_date!: Date | null;
 
@@ -176,10 +180,10 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   status!: DonationStatus;
 
   @Column({
-    type: DataType.ENUM('AckSent', 'DashboardsSent'),
+    type: DataType.ARRAY(DataType.ENUM('AckSent', 'DashboardsSent', 'BackOffice', 'Accounts', 'Volunteer', 'CSR')),
     allowNull: true
   })
-  mail_status!: DonationMailStatus | null;
+  mail_status!: DonationMailStatus[] | null;
 
   @Column({
     type: DataType.STRING,

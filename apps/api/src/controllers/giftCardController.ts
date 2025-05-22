@@ -224,26 +224,32 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
         });
 
-        // if (requestType === 'Gift Cards') {
-        //     try {
-        //         // Create sponsor user object directly from request body
-        //         const sponsorUser = {
-        //             id: userId,
-        //             name: (giftCards.results[0] as any).user_name,
-        //             email: (giftCards.results[0] as any).user_email,
-        //         };
-        //         await sendGiftRequestAcknowledgement(
-        //             giftCard,
-        //             sponsorUser,
-        //             remainingTrees || 0,
-        //         );
-        //     } catch (emailError) {
-        //         console.error("[ERROR] Failed to send gift acknowledgment email:", {
-        //             error: emailError,
-        //             stack: emailError instanceof Error ? emailError.stack : undefined
-        //         });
-        //     }
-        // }
+        if (requestType === 'Gift Cards') {
+            try {
+                // Create sponsor user object directly from request body
+                const sponsorUser = {
+                    id: userId,
+                    name: (giftCards.results[0] as any).user_name,
+                    email: (giftCards.results[0] as any).user_email,
+                };
+                await sendGiftRequestAcknowledgement(
+                    giftCard,
+                    sponsorUser,
+                    remainingTrees || 0,
+                );
+            } catch (emailError) {
+                console.error("[ERROR] Failed to send gift acknowledgment email:", {
+                    error: emailError,
+                    stack: emailError instanceof Error ? emailError.stack : undefined
+                });
+            }
+
+            try {
+                await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
+            } catch (error: any) {
+                console.log("[ERROR]", "GiftCardController::addGiftRequestToGoogleSpreadsheet", error);
+            }
+        }
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
@@ -1811,6 +1817,7 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
             secondary_message: secondaryMessage,
             logo_message: logoMessage,
             event_type: eventType,
+            gifted_by: giftedBy,
         });
 
     } catch (error: any) {
@@ -1896,6 +1903,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             secondary_message: secondaryMessage,
             logo_message: logoMessage,
             event_type: eventType,
+            gifted_by: giftedBy
         });
 
     } catch (error: any) {
