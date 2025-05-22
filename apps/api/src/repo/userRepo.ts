@@ -173,7 +173,7 @@ export class UserRepository {
                 jsonb_agg(distinct jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_image)) AS assigned_trees
             FROM "14trees_2".users u
             left JOIN "14trees_2".trees t ON t.assigned_to = u.id
-            left JOIN "14trees_2".trees mt ON mt.mapped_to_user = u.id
+            left JOIN "14trees_2".trees mt ON mt.sponsored_by_user = u.id
             WHERE ${condition}
             GROUP BY u.id;
         `
