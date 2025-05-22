@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>New Donation Notification</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 20px; color: #333;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <tr>
+      <td style="padding: 20px; text-align: center; background-color: #4CAF50; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+        <h2>New Donation Received!</h2>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px;">
+        <p>Hello Account Team,</p>
+        <p>We have received a new donation. Please find the details below:</p>
+
+        <table cellpadding="8" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 6px;">
+          <tr>
+            <td><strong>Donation ID:</strong></td>
+            <td>{{donationId}}</td>
+          </tr>
+          <tr>
+            <td><strong>Sponsor Name:</strong></td>
+            <td>{{sponsorName}}</td>
+          </tr>
+          <tr>
+            <td><strong>Sponsor Email:</strong></td>
+            <td>{{sponsorEmail}}</td>
+          </tr>
+          <tr>
+            <td><strong>Sponsor Phone:</strong></td>
+            <td>{{sponsorPhone}}</td>
+          </tr>
+          <tr>
+            <td><strong>Donation Amount:</strong></td>
+            <td>{{donationAmount}}</td>
+          </tr>
+          <tr>
+            <td><strong>Donation Date:</strong></td>
+            <td>{{donationDate}}</td>
+          </tr>
+        </table>
+
+        <p style="margin-top: 20px;">Please update the records accordingly.</p>
+
+        <p>Best regards,<br/>Donation System</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 10px; text-align: center; font-size: 12px; color: #888;">
+        This is an automated message. Please do not reply.
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

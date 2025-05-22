@@ -10,6 +10,14 @@ import { PlotPlantTypeRepository } from '../repo/plotPlantTypesRepo';
 import { PlotPlantTypeCreationAttributes } from '../models/plot_plant_type';
 import { TreesSnapshotRepository } from '../repo/treesSnapshotsRepo';
 import { GoogleSpreadsheet } from './google';
+import { ContributionOption_CSR, ContributionOption_VOLUNTEER, Donation, DonationMailStatus_Accounts, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_Volunteer } from '../models/donation';
+import { DonationService } from '../facade/donationService';
+import { DonationRepository } from '../repo/donationsRepo';
+import { FilterItem } from '../models/pagination';
+import { UserRepository } from '../repo/userRepo';
+import GiftCardsService from '../facade/giftCardsService';
+import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from '../models/gift_card_request';
+import { GiftCardsRepository } from '../repo/giftCardsRepo';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -40,7 +48,7 @@ export function cleanUpGiftCardLiveTemplates() {
             const templates = await PlantTypeTemplateRepository.getAll();
             const slideIds = templates.map(template => template.template_id);
             if (slideIds.length > 0) {
-                await deleteUnwantedSlides(livePresentationId, slideIds);    
+                await deleteUnwantedSlides(livePresentationId, slideIds);
             }
         } catch (error) {
             console.log('[ERROR]', 'CRON::cleanUpGiftCardLiveTemplates', error);
@@ -107,7 +115,7 @@ export function updatePlotPlantTypes() {
             }
 
             await PlotPlantTypeRepository.addPlotPlantTypes(newPlotPlantTypes);
-            
+
         } catch (error) {
             console.log('[ERROR]', 'CRON::updatePlotPlantTypes', error);
         }
@@ -177,11 +185,146 @@ export function updateTheAuditReport() {
             
                 auditedTreesValues.push(treeRow);    
             }
-            
+
             await spreadSheetClient.updateRowDataInSheet(spreadsheetId, auditedTreesSheetName, auditedTreesValues);
 
         } catch (error) {
             console.log('[ERROR]', 'CRON::updateTheAuditReport', error);
+        }
+    });
+}
+
+
+export function sendDonationMails() {
+
+    const task = cron.schedule('*/5 * * * *', async () => {
+
+        let donations: Donation[] = [];
+        try {
+            const filters: FilterItem[] = [
+                { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+            ]
+            const donationsResp = await DonationRepository.getDonations(0, -1, filters)
+            donations = donationsResp.results;
+        } catch (error: any) {
+            console.log("[ERROR]", 'CRON::sendDonationMails', error);
+            return;
+        }
+
+        for (const donation of donations) {
+            const sponsor: any = {
+                name: (donation as any).user_name,
+                email: (donation as any).user_email,
+                phone: (donation as any).user_phone,
+            };
+
+            try {
+                if (!donation.mail_status?.includes(DonationMailStatus_BackOffice)) {
+                    try {
+                        await DonationService.sendDonationNotificationToBackOffice(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification to accounts:", error);
+                    }
+                }
+
+                if (!donation.mail_status?.includes(DonationMailStatus_Accounts)) {
+                    try {
+                        await DonationService.sendDonationNotificationToAccounts(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification to accounts:", error);
+                    }
+                }
+
+                if (
+                    donation.contribution_options?.includes(ContributionOption_VOLUNTEER) &&
+                    !donation.mail_status?.includes(DonationMailStatus_Volunteer)
+                ) {
+                    try {
+                        await DonationService.sendDonationNotificationForVolunteers(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification for volunteers:", error);
+                    }
+                }
+
+                if (
+                    donation.contribution_options?.includes(ContributionOption_CSR) &&
+                    !donation.mail_status?.includes(DonationMailStatus_CSR)
+                ) {
+                    try {
+                        await DonationService.sendDonationNotificationForCSR(donation.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send donation notification for CSR:", error);
+                    }
+                }
+            } catch (error) {
+                console.error("[ERROR] Failed to process donation:", error);
+            }
+        }
+    });
+}
+
+export function sendGiftCardMails() {
+    const task = cron.schedule('*/1 * * * *', async () => {
+        let giftCardRequests: GiftCardRequest[] = [];
+        try {
+            const filters: FilterItem[] = [
+                { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 15 * 60 * 1000).toISOString() },
+            ]
+            const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
+            giftCardRequests = giftCardsResp.results;
+        } catch (error: any) {
+            console.log("[ERROR]", 'CRON::sendGiftCardMails', error);
+            return;
+        }
+
+        for (const giftCardRequest of giftCardRequests) {
+            const sponsor: any = {
+                name: (giftCardRequest as any).user_name,
+                email: (giftCardRequest as any).user_email,
+                phone: (giftCardRequest as any).user_phone,
+            };
+
+            try {
+                if (!giftCardRequest.mail_status?.includes(GiftReqMailStatus_BackOffice)) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationToBackOffice(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification to backoffice:", error);
+                    }
+                }
+
+                if (!giftCardRequest.mail_status?.includes(GiftReqMailStatus_Accounts)) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationToAccounts(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification to accounts:", error);
+                    }
+                }
+
+                if (
+                    giftCardRequest.contribution_options?.includes(ContributionOption_VOLUNTEER) &&
+                    !giftCardRequest.mail_status?.includes(GiftReqMailStatus_Volunteer)
+                ) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationForVolunteers(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification for volunteers:", error);
+                    }
+                }
+
+                if (
+                    giftCardRequest.contribution_options?.includes(ContributionOption_CSR) &&
+                    !giftCardRequest.mail_status?.includes(GiftReqMailStatus_CSR)
+                ) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationForCSR(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification for CSR:", error);
+                    }
+                }
+            } catch (error) {
+                console.error("[ERROR] Failed to process gift card request:", error);
+            }
         }
     });
 }

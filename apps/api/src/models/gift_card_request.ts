@@ -12,11 +12,20 @@ export type GiftCardRequestValidationError = 'MISSING_LOGO' | 'MISSING_USER_DETA
 export type GiftCardRequestType = 'Gift Cards' | 'Normal Assignment' | 'Visit' | 'Test' | 'Promotion'
 export type SponsorshipType = 'Unverified' | 'Pledged' | 'Promotional' | 'Unsponsored Visit' | 'Donation Received'
 
+export type GiftReqMailStatus = 'AckSent' | 'DashboardsSent' | 'BackOffice' | 'Accounts' | 'Volunteer' | 'CSR';
+export const GiftReqMailStatus_AckSent: GiftReqMailStatus = 'AckSent';
+export const GiftReqMailStatus_DashboardsSent: GiftReqMailStatus = 'DashboardsSent';
+export const GiftReqMailStatus_BackOffice: GiftReqMailStatus = 'BackOffice';
+export const GiftReqMailStatus_Accounts: GiftReqMailStatus = 'Accounts';
+export const GiftReqMailStatus_Volunteer: GiftReqMailStatus = 'Volunteer';
+export const GiftReqMailStatus_CSR: GiftReqMailStatus = 'CSR';
+
 export type GiftMessages = {
     primary_message: string;
     secondary_message: string;
     logo_message: string;
     event_type: string;
+    gifted_by?: string;
 }
 
 interface GiftCardRequestAttributes {
@@ -56,11 +65,13 @@ interface GiftCardRequestAttributes {
     donation_date: Date | null,
     contribution_options: string[] | null,
     comments: string | null,
-    mail_sent: boolean;  
+    mail_sent: boolean;
+    mail_status: GiftReqMailStatus[] | null;
+    mail_error: string | null;
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments' | 'mail_sent'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments' | 'mail_sent' | 'mail_status' | 'mail_error'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -235,9 +246,21 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
     comments!: string | null;
 
     @Column({
+        type: DataType.ARRAY(DataType.ENUM('AckSent', 'DashboardsSent', 'BackOffice', 'Accounts', 'Volunteer', 'CSR')),
+        allowNull: true
+    })
+    mail_status!: GiftReqMailStatus[] | null;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    mail_error!: string | null;
+
+    @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
-        defaultValue: false 
+        defaultValue: false
     })
     mail_sent!: boolean;
 
