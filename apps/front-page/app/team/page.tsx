@@ -1,9 +1,9 @@
 import { TeamRow } from "~/data/content/Team";
-import TeamContent from "~/data/content/Team/Team.json";
+// import TeamContent from "~/data/content/Team/Team.json";
 import Person from "components/Person";
 
 // @ts-ignore
-const TeamList = TeamContent as TeamRow[];
+const TeamList = [] as TeamRow[];
 
 const Team = () => {
   const team_members = TeamList.map((v) => ({

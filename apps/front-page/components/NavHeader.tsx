@@ -21,7 +21,74 @@ import {
   DropdownMenuItem,
 } from "ui/components/dropdown-menu";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useRouter } from "next/router";
 // import { DropDown } from "ui";
+
+function getDonationAction() {
+  return (
+    <div className="relative w-full">
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger className="bg-green-800 w-full text-white px-4 py-2 rounded-md cursor-pointer">
+          Donate
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+          <Link href="/donate" className="header-link">
+            <DropdownMenuItem
+              className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+            >
+              Personal Donation
+            </DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Corporate Donation (coming soon)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Donation for a campaign (coming soon)
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div >
+  );
+}
+
+function getGiftTreesAction() {
+  return (
+    <div className="relative w-full">
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger className="bg-green-800 w-full text-white px-4 py-2 rounded-md cursor-pointer">
+          Gift Trees
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+          <Link href="/gift-trees " className="header-link">
+            <DropdownMenuItem
+              className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+            >
+              Personal Gifting
+            </DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Corporate Gifting (coming soon)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="py-2 px-4 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            Pre-purchased Gift cards (coming soon)
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div >
+  );
+}
 
 export default function Header() {
   // const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -49,44 +116,91 @@ export default function Header() {
   // }, []);
   return (
     <div className="fixed top-0 z-20 w-full">
-      <nav className="mx-auto flex items-center justify-between bg-[#ffffffdf] p-1 shadow-md shadow-[#48484826] backdrop-blur-lg">
-        <Link
-          href={"/"}
-          className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight"
-        >
-          14 Trees Foundation
-          <Image
-            className="mx-1"
-            src={logo}
-            height="32"
-            width="32"
-            alt="logo"
-          />
-        </Link>
-        <div className="flex-grow md:hidden">
-          <ChevronDownIcon className="h-6 w-6" onClick={toggleMobileMenu} />
-        </div>
-        <div className="inline-flex px-1 py-1">
-          <div className="mx-4 hidden items-center overflow-hidden md:inline-flex">
-            <NavItemsDesktop items={navItems} />
+      <nav className="relative z-50 bg-[#ffffffdf] px-4 py-2 md:px-6 md:py-3 shadow-md shadow-[#48484826] backdrop-blur-lg">
+        <div className="mx-auto flex items-center justify-between">
+          <Link
+            href="/"
+            className="mx-3 inline-flex items-center whitespace-nowrap text-xl font-semibold tracking-tight"
+          >
+            14 Trees Foundation
+            <Image className="mx-1" src={logo} height="32" width="32" alt="logo" />
+          </Link>
+
+          {/* Mobile menu trigger */}
+          <details className="relative md:hidden">
+            <summary className="list-none cursor-pointer px-4">
+              <ChevronDownIcon className="h-6 w-6" />
+            </summary>
+
+            <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 z-50">
+              <NavItemsDesktop items={navItems} />
+              <Link href="/volunteer">
+                <Button variant="secondary" className="w-full mt-2">
+                  Volunteer
+                </Button>
+              </Link>
+
+              <Link href="/donate">
+                <Button variant="secondary" className="w-full mt-2">
+                  Donate
+                </Button>
+              </Link>
+
+              <Link href="/gift-trees">
+                <Button variant="secondary" className="w-full mt-2">
+                  Gift Trees
+                </Button>
+              </Link>
+
+              {/* <div className="relative w-full mt-2">
+                {getDonationAction()}
+              </div>
+
+              <div className="relative w-full mt-2">
+                {getGiftTreesAction()}
+              </div> */}
+            </div>
+          </details>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center">
+            <div className="flex-grow md:hidden">
+              <ChevronDownIcon className="h-6 w-6" onClick={toggleMobileMenu} />
+            </div>
+            <div className="mx-4 hidden items-center overflow-hidden md:inline-flex">
+              <NavItemsDesktop items={navItems} />
+            </div>
+            <Link href="/volunteer">
+              <Button className="mr-3" variant="secondary">
+                Volunteer
+              </Button>
+            </Link>
+
+            <Link href="/donate">
+              <Button className="mr-3" variant="secondary">
+                Donate
+              </Button>
+            </Link>
+
+            <Link href="/gift-trees">
+              <Button className="mr-3" variant="secondary">
+                Gift Trees
+              </Button>
+            </Link>
+
+            {/* <div className="mr-3">
+              {getDonationAction()}
+            </div>
+
+            <div className="mr-3">
+              {getGiftTreesAction()}
+            </div> */}
           </div>
-          <Link href={"/volunteer"}>
-            <Button className="mr-3 hidden md:block" variant={"secondary"}>
-              Volunteer
-            </Button>
-          </Link>
-          <Link href={"/donate"}>
-            <Button className="bg-green-800">Donate</Button>
-          </Link>
-          {/* <button className="h-6 w-6 m-2" onClick={() => setAppTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
-          </button> */}
         </div>
       </nav>
       <nav
-        className={`grid w-full grid-cols-2 bg-[#ffffffdf] shadow-md shadow-[#48484826] backdrop-blur-lg ${
-          mobileMenuOpen ? "block" : "hidden"
-        }`}
+        className={`grid w-full grid-cols-2 bg-[#ffffffdf] shadow-md shadow-[#48484826] backdrop-blur-lg ${mobileMenuOpen ? "block" : "hidden"
+          }`}
       >
         <NavItemsMobile items={navItems} onClick={toggleMobileMenu} />
       </nav>
@@ -148,13 +262,13 @@ const Item = ({ navItem }: { navItem: NavItem }) => {
   return (
     <>
       {!navItem.sub ? (
-        <Link href={navItem.link} title={navItem.name} className="header-link">
+        <Link href={navItem.link} title={navItem.name} className="header-link text-base md:text-lg">
           {navItem.name}
         </Link>
       ) : (
         <div className="">
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="inline-flex whitespace-nowrap">
+            <DropdownMenuTrigger className="inline-flex items-center whitespace-nowrap text-base md:text-lg">
               {navItem.name} <ChevronDownIcon className="inline h-5 w-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>

@@ -35,6 +35,12 @@ module.exports = {
   env: {
     NEXT_PUBLIC_RAZORPAY_KEY: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
   },
+  // Disable CSS optimization and hashing
+  optimizeFonts: false,
+  swcMinify: false,
+  experimental: {
+    optimizeCss: false,
+  },
   redirects: async () => {
     return [
       {
@@ -43,12 +49,12 @@ module.exports = {
           "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/14trees_80g.pdf",
         permanent: true,
       },
-      {
-        source: "/donate",
-        destination:
-          "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform",
-        permanent: true,
-      },
+//      {
+//        source: "/donate",
+//        destination:
+//          "https://docs.google.com/forms/d/e/1FAIpQLSfumyti7x9f26BPvUb0FDYzI2nnuEl5HA63EO8svO3DG2plXg/viewform",
+//        permanent: true,
+//      },
       {
         source: "/volunteer",
         destination:
@@ -60,6 +66,16 @@ module.exports = {
   // canvas false
   webpack: (config) => {
     config.resolve.alias.canvas = false;
+    // Disable CSS hashing
+    config.module.rules.forEach((rule) => {
+      if (rule.oneOf) {
+        rule.oneOf.forEach((one) => {
+          if (one.sideEffects === false && `${one.test}`.includes('css')) {
+            one.sideEffects = true;
+          }
+        });
+      }
+    });
     return config;
   },
 };
