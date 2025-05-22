@@ -148,7 +148,7 @@ class GiftCardsService {
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dhruvin.m.09@gmail.com'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'backoffice_gifting.html';
@@ -205,7 +205,7 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dhruvin.m.09@gmail.com'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'gifting-accounts.html';
@@ -261,7 +261,7 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dhruvin.m.09@gmail.com'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'gifting-volunteer.html';
@@ -317,7 +317,7 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dhruvin.m.09@gmail.com'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'gifting-csr.html';
