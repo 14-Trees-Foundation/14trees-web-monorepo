@@ -40,19 +40,22 @@ class VesselDetail extends Model<VesselDetailAttributes, VesselDetailCreationAtt
 
   @Column({
     type: DataType.DATEONLY,
-    allowNull: false
+    allowNull: false,
+    field: 'date'
   })
   date!: Date;
 
   @Column({
     type: DataType.TIME,
-    allowNull: false
+    allowNull: false,
+    field: 'time'
   })
   time!: string;
 
   @Column({
     type: DataType.STRING(100),
-    allowNull: false
+    allowNull: false,
+    field: 'location'
   })
   location!: string;
 

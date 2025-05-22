@@ -3,11 +3,11 @@ import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface CylinderPerformanceAttributes {
-  imo_number: string;
   cylinder_number: number;
   max_pressure_bar: number;
-  compression_pressure: number;
   exhaust_temp: number;
+  voyage_no: number;
+  compression_pressure_bar: number;
 }
 
 interface CylinderPerformanceCreationAttributes extends Optional<CylinderPerformanceAttributes, never> {}
@@ -21,16 +21,10 @@ class CylinderPerformance extends Model<CylinderPerformanceAttributes, CylinderP
   implements CylinderPerformanceAttributes {
 
   @Column({
-    type: DataType.STRING(10),
-    primaryKey: true,
-    allowNull: false
-  })
-  imo_number!: string;
-
-  @Column({
     type: DataType.INTEGER,
     primaryKey: true,
-    allowNull: false
+    allowNull: false,
+    field: 'cylinder_number'
   })
   cylinder_number!: number;
 
@@ -44,16 +38,23 @@ class CylinderPerformance extends Model<CylinderPerformanceAttributes, CylinderP
   @Column({
     type: DataType.DECIMAL(10,5),
     allowNull: false,
-    field: 'compression_pressure'
-  })
-  compression_pressure!: number;
-
-  @Column({
-    type: DataType.DECIMAL(10,5),
-    allowNull: false,
     field: 'exhaust_temp'
   })
   exhaust_temp!: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'voyage_no'
+  })
+  voyage_no!: number;
+
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: false,
+    field: 'compression_pressure_bar'
+  })
+  compression_pressure_bar!: number;
 }
 
 export { CylinderPerformance };

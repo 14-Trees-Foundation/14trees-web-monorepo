@@ -3,7 +3,7 @@ import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface FuelLubricantAttributes {
-  imo_number: string;
+  voyage_no: number;
   fuel_type_used: string;
   sulfur_content: number;
   lubricant_type: string;
@@ -21,11 +21,12 @@ class FuelLubricant extends Model<FuelLubricantAttributes, FuelLubricantCreation
   implements FuelLubricantAttributes {
 
   @Column({
-    type: DataType.STRING(10),
+    type: DataType.INTEGER,
     primaryKey: true,
-    allowNull: false
+    allowNull: false,
+    field: 'voyage_no'
   })
-  imo_number!: string;
+  voyage_no!: number;
 
   @Column({
     type: DataType.STRING(10),

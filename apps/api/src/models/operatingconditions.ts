@@ -3,7 +3,7 @@ import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface OperatingConditionsAttributes {
-  imo_number: string;
+  voyage_no: number;
   engine_load: number;
   engine_rpm: number;
   shaft_power: number;
@@ -27,12 +27,12 @@ class OperatingConditions extends Model<
 > implements OperatingConditionsAttributes {
 
   @Column({
-    type: DataType.STRING(10),
+    type: DataType.INTEGER,
     primaryKey: true,
     allowNull: false,
-    field: 'imo_number'
+    field: 'voyage_no'
   })
-  imo_number!: string;
+  voyage_no!: number;
 
   @Column({
     type: DataType.DECIMAL(5,2),
