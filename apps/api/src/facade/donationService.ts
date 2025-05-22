@@ -163,7 +163,7 @@ export class DonationService {
             // 2. Construct data object
             const donationData = {
                 Mode: paymentProof,
-                Rec: (FY+1) + "/" + donation.id,
+                Rec: FY + "/" + donation.id,
                 Date: moment(date).format("DD/MM/YYYY"),
                 Name: sponsor_name,
                 Email: sponsor_email,
@@ -740,7 +740,7 @@ export class DonationService {
 
             const date = new Date();
             const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-            const donationReceiptId = (FY+1) + "/" + donation.id;
+            const donationReceiptId = FY + "/" + donation.id;
             const docService = new GoogleDoc();
             const receiptId = await docService.get80GRecieptFileId({
                 "{Name}": sponsorUser.name,
