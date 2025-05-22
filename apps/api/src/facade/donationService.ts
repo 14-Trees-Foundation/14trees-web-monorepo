@@ -16,6 +16,7 @@ import moment from "moment";
 import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
+import RazorpayService from "../services/razorpay/razorpay";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -127,9 +128,29 @@ export class DonationService {
         try {
 
             let panNumber = ""
+            let paymentProof = "";
             if (donation.payment_id) {
-                const payment = await PaymentRepository.getPayment(donation.payment_id);
+                const payment: any = await PaymentRepository.getPayment(donation.payment_id);
                 panNumber = payment?.pan_number || "";
+
+                if (payment?.payment_history && payment.payment_history.length > 0) {
+                    paymentProof = payment.payment_history[0].payment_proof || "";
+                } else if (payment?.order_id) {
+                    const razorpayService = new RazorpayService();
+                    const payments = await razorpayService.getPayments(payment.order_id);
+                    if (payments && payments.length > 0) {
+                        const data: any = payments[0].acquirer_data;
+                        if (data) {
+                            const keys = Object.keys(data);
+                            for (const key of keys) {
+                                if (key.endsWith("transaction_id")) {
+                                    paymentProof = data[key];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // 1. Read headers from first row
@@ -141,7 +162,8 @@ export class DonationService {
 
             // 2. Construct data object
             const donationData = {
-                Rec: date.getFullYear() + "/" + donation.id,
+                Mode: paymentProof,
+                Rec: (FY+1) + "/" + donation.id,
                 Date: moment(date).format("DD/MM/YYYY"),
                 Name: sponsor_name,
                 Email: sponsor_email,
@@ -718,7 +740,7 @@ export class DonationService {
 
             const date = new Date();
             const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-            const donationReceiptId = date.getFullYear() + "/" + donation.id;
+            const donationReceiptId = (FY+1) + "/" + donation.id;
             const docService = new GoogleDoc();
             const receiptId = await docService.get80GRecieptFileId({
                 "{Name}": sponsorUser.name,
@@ -804,6 +826,7 @@ export class DonationService {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                 treesCount: donation.trees_count || 0
@@ -861,6 +884,7 @@ export class DonationService {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
             };
@@ -915,6 +939,7 @@ export class DonationService {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
             };
@@ -968,6 +993,7 @@ export class DonationService {
                 donationId: donation.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
             };

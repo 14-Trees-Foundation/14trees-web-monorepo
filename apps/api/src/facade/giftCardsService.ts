@@ -141,6 +141,7 @@ class GiftCardsService {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
@@ -199,6 +200,7 @@ class GiftCardsService {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
@@ -255,6 +257,7 @@ class GiftCardsService {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
@@ -311,6 +314,7 @@ class GiftCardsService {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
                 sponsorEmail: sponsorUser.email,
+                sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };

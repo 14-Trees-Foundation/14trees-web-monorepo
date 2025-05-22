@@ -210,6 +210,7 @@ export class UserRepository {
 
         if (users.length > 0) {
             if (data.id) return await users[0].update(obj);
+            if (obj.phone != users[0].phone) return await users[0].update(obj);
             return users[0];
         }
 

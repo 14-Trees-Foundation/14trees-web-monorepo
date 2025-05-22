@@ -205,6 +205,7 @@ export function sendDonationMails() {
             const sponsor: any = {
                 name: (donation as any).user_name,
                 email: (donation as any).user_email,
+                phone: (donation as any).user_phone,
             };
 
             try {
@@ -270,6 +271,7 @@ export function sendGiftCardMails() {
             const sponsor: any = {
                 name: (giftCardRequest as any).user_name,
                 email: (giftCardRequest as any).user_email,
+                phone: (giftCardRequest as any).user_phone,
             };
 
             try {
