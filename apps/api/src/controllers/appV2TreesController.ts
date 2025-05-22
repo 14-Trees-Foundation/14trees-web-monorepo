@@ -273,6 +273,8 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         let response: any = null; 
         if (existingTree) {
             sapling.tree.updated_at = new Date();
+            sapling.tree.tags = JSON.parse((sapling.tree.tags as any) || '[]');
+            sapling.tree.memory_images = JSON.parse((sapling.tree.memory_images as any) || '[]');
             const savedData = await existingTree.update(sapling.tree);
             const str = JSON.stringify(savedData);
             const json = JSON.parse(str);
