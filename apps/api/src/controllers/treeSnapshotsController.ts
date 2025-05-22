@@ -30,6 +30,7 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
     const { sapling_id, user_id, images } = req.body
     const userId = parseInt(user_id);
     if (!userId || isNaN(userId)) {
+        console.log("[ERROR]", 'TreeSnapshots::addTreeSnapshots:', "missing user id", req.body)
         res.status(status.error).json({
             status: status.error,
             message: "User id is required",
@@ -38,6 +39,7 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
     }
 
     if (!sapling_id || sapling_id.length === 0) {
+        console.log("[ERROR]", 'TreeSnapshots::addTreeSnapshots:', "missing sapling id", req.body)
         res.status(status.error).json({
             status: status.error,
             message: "Sapling id is required",
