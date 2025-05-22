@@ -84,8 +84,8 @@ export default function DonatePage() {
   const [donationId, setDonationId] = useState<string | null>(null);
   const [donationType, setDonationType] = useState<"adopt" | "donate">("adopt");
   const [donationMethod, setDonationMethod] = useState<"trees" | "amount">("trees");
-  const [donationTreeCount, setDonationTreeCount] = useState<number>(1);
-  const [donationAmount, setDonationAmount] = useState<number>(1500);
+  const [donationTreeCount, setDonationTreeCount] = useState<number>(14);
+  const [donationAmount, setDonationAmount] = useState<number>(5000);
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   const itemsPerPage = 10;
@@ -720,7 +720,7 @@ export default function DonatePage() {
     const [updateError, setUpdateError] = useState<string | null>(null);
 
     const involvementOptions = [
-      { display: "Plan a visit to the project site and plant trees by my own hands", value: "Planning visit" },
+      { display: "Plan a visit to the project site", value: "Planning visit" },
       { display: "Explore possibility of CSR contribution through my company or my employer", value: "CSR" },
       { display: "Volunteer my time, energy and expertise to grow this initiative further", value: "Volunteer" },
       { display: "Share the mission of 'Project 14 trees' with my friends and family", value: "Share" }
@@ -771,8 +771,8 @@ export default function DonatePage() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 m-5 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <h3 className="text-xl font-bold text-green-600 mb-4">Donation Successful!</h3>
-          <p className="mb-2">Your donation request has been submitted successfully.</p>
+          <h3 className="text-xl font-bold text-green-600 mb-4">Thank you for making a difference!</h3>
+          <p className="mb-2">Your donation has been received.</p>
           {donationId && (
             <p className="mb-2">
               <strong>Donation ID:</strong> {donationId}
@@ -841,8 +841,14 @@ export default function DonatePage() {
             </div>
           ) : (
             <div className="text-center">
-              <p className="text-green-600 mb-4">Thank you for providing additional information!</p>
-              <button
+             {additionalInvolvement.includes("Volunteer") ? (
+               <p className="text-green-600 mb-4">
+                     Thank you for choosing to volunteer with us. We truly value your willingness to engage. Your support makes a real difference!
+               </p>
+              ) : (
+                   <p className="text-green-600 mb-4">Thank you for providing additional information!</p>
+                  )}
+                 <button
                 onClick={() => setShowSuccessDialog(false)}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
