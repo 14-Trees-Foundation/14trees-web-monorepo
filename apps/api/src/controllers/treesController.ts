@@ -417,8 +417,7 @@ export const getMappedTreesForGroup = async (req: Request, res: Response) => {
 
     return res.status(status.success).json({
       group_name: group.name,
-      results: trees,
-      total: trees.total,
+      ...trees
     });
 
   } catch (error: any) {
