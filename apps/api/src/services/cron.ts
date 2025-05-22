@@ -15,7 +15,7 @@ import { DonationRepository } from '../repo/donationsRepo';
 import { FilterItem } from '../models/pagination';
 import { UserRepository } from '../repo/userRepo';
 import GiftCardsService from '../facade/giftCardsService';
-import { GiftCardRequest } from '../models/gift_card_request';
+import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from '../models/gift_card_request';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
 
 export function startAppV2ErrorLogsCronJob() {
@@ -252,12 +252,12 @@ export function sendDonationMails() {
     });
 }
 
-// export function sendGiftCardMails() {
- //   const task = cron.schedule('*/5 * * * *', async () => {
- /*       let giftCardRequests: GiftCardRequest[] = [];
+export function sendGiftCardMails() {
+    const task = cron.schedule('*/1 * * * *', async () => {
+        let giftCardRequests: GiftCardRequest[] = [];
         try {
             const filters: FilterItem[] = [
-                { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+                { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 15 * 60 * 1000).toISOString() },
             ]
             const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
             giftCardRequests = giftCardsResp.results;
@@ -273,7 +273,7 @@ export function sendDonationMails() {
             };
 
             try {
-                if (!giftCardRequest.mail_status?.includes(GiftCardMailStatus_BackOffice)) {
+                if (!giftCardRequest.mail_status?.includes(GiftReqMailStatus_BackOffice)) {
                     try {
                         await GiftCardsService.sendGiftingNotificationToBackOffice(giftCardRequest.id, sponsor);
                     } catch (error) {
@@ -281,7 +281,7 @@ export function sendDonationMails() {
                     }
                 }
 
-                if (!giftCardRequest.mail_status?.includes(GiftCardMailStatus_Accounts)) {
+                if (!giftCardRequest.mail_status?.includes(GiftReqMailStatus_Accounts)) {
                     try {
                         await GiftCardsService.sendGiftingNotificationToAccounts(giftCardRequest.id, sponsor);
                     } catch (error) {
@@ -291,7 +291,7 @@ export function sendDonationMails() {
 
                 if (
                     giftCardRequest.contribution_options?.includes(ContributionOption_VOLUNTEER) &&
-                    !giftCardRequest.mail_status?.includes(GiftCardMailStatus_Volunteer)
+                    !giftCardRequest.mail_status?.includes(GiftReqMailStatus_Volunteer)
                 ) {
                     try {
                         await GiftCardsService.sendGiftingNotificationForVolunteers(giftCardRequest.id, sponsor);
@@ -302,7 +302,7 @@ export function sendDonationMails() {
 
                 if (
                     giftCardRequest.contribution_options?.includes(ContributionOption_CSR) &&
-                    !giftCardRequest.mail_status?.includes(GiftCardMailStatus_CSR)
+                    !giftCardRequest.mail_status?.includes(GiftReqMailStatus_CSR)
                 ) {
                     try {
                         await GiftCardsService.sendGiftingNotificationForCSR(giftCardRequest.id, sponsor);
@@ -315,4 +315,4 @@ export function sendDonationMails() {
             }
         }
     });
-} */
+}
