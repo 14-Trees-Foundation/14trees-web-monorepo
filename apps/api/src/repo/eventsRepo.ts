@@ -33,16 +33,16 @@ export class EventRepository {
 
     const getQuery = `
       SELECT e.*, s.name_english as site_name
-      FROM "14trees_2".events e
-      LEFT JOIN "14trees_2".sites s ON s.id = e.site_id
+      FROM "14trees".events e
+      LEFT JOIN "14trees".sites s ON s.id = e.site_id
       WHERE e."name" IS NOT NULL AND e.link IS NOT NULL AND ${whereConditions !== "" ? whereConditions : "1=1"}
       ORDER BY e.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
     `
 
     const countQuery = `
       SELECT COUNT(*) 
-      FROM "14trees_2".events e
-      LEFT JOIN "14trees_2".sites s ON s.id = e.site_id
+      FROM "14trees".events e
+      LEFT JOIN "14trees".sites s ON s.id = e.site_id
       WHERE e."name" IS NOT NULL AND e.link IS NOT NULL AND ${whereConditions !== "" ? whereConditions : "1=1"};
     `
 
