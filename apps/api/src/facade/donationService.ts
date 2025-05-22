@@ -772,7 +772,7 @@ export class DonationService {
                     filename: donationReceiptId + " " + sponsorUser.name + ".pdf",
                     path: fileUrl,
                 }], // no attachments
-                'Donation request received'
+                ' Thank You for Your Donation to 14Trees Foundation!'
             );
 
             if (statusMessage) {
