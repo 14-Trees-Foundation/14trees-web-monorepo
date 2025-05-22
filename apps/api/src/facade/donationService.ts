@@ -812,7 +812,7 @@ export class DonationService {
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['backoffice@14trees.org'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'backoffice_donation.html';
@@ -867,7 +867,7 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['accounts@14trees.org'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'donation-accounts.html';
@@ -921,7 +921,7 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['backoffice@14trees.org'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'donation-volunteer.html';
@@ -974,7 +974,7 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['backoffice@14trees.org'];
+                ['vivekpbhagwat@gmail.com'];
 
             // Set the email template to be used
             const templateName = 'donation-csr.html';
