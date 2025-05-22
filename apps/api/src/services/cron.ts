@@ -14,6 +14,9 @@ import { DonationService } from '../facade/donationService';
 import { DonationRepository } from '../repo/donationsRepo';
 import { FilterItem } from '../models/pagination';
 import { UserRepository } from '../repo/userRepo';
+import GiftCardsService from '../facade/giftCardsService';
+import { GiftCardRequest } from '../models/gift_card_request';
+import { GiftCardsRepository } from '../repo/giftCardsRepo';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -248,3 +251,68 @@ export function sendDonationMails() {
         }
     });
 }
+
+// export function sendGiftCardMails() {
+ //   const task = cron.schedule('*/5 * * * *', async () => {
+ /*       let giftCardRequests: GiftCardRequest[] = [];
+        try {
+            const filters: FilterItem[] = [
+                { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+            ]
+            const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
+            giftCardRequests = giftCardsResp.results;
+        } catch (error: any) {
+            console.log("[ERROR]", 'CRON::sendGiftCardMails', error);
+            return;
+        }
+
+        for (const giftCardRequest of giftCardRequests) {
+            const sponsor: any = {
+                name: (giftCardRequest as any).user_name,
+                email: (giftCardRequest as any).user_email,
+            };
+
+            try {
+                if (!giftCardRequest.mail_status?.includes(GiftCardMailStatus_BackOffice)) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationToBackOffice(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification to backoffice:", error);
+                    }
+                }
+
+                if (!giftCardRequest.mail_status?.includes(GiftCardMailStatus_Accounts)) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationToAccounts(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification to accounts:", error);
+                    }
+                }
+
+                if (
+                    giftCardRequest.contribution_options?.includes(ContributionOption_VOLUNTEER) &&
+                    !giftCardRequest.mail_status?.includes(GiftCardMailStatus_Volunteer)
+                ) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationForVolunteers(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification for volunteers:", error);
+                    }
+                }
+
+                if (
+                    giftCardRequest.contribution_options?.includes(ContributionOption_CSR) &&
+                    !giftCardRequest.mail_status?.includes(GiftCardMailStatus_CSR)
+                ) {
+                    try {
+                        await GiftCardsService.sendGiftingNotificationForCSR(giftCardRequest.id, sponsor);
+                    } catch (error) {
+                        console.error("[ERROR] Failed to send gift card notification for CSR:", error);
+                    }
+                }
+            } catch (error) {
+                console.error("[ERROR] Failed to process gift card request:", error);
+            }
+        }
+    });
+} */
