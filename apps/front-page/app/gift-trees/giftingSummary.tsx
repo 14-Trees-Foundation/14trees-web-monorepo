@@ -1,6 +1,6 @@
 import { Button } from "ui/components/button";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SummaryPaymentProps {
   formData: {
@@ -54,6 +54,20 @@ export const SummaryPaymentPage = ({
 }: SummaryPaymentProps) => {
 
   const [hasDifferentAssignee, setHasDifferentAssignee] = useState(false);
+  const targetRef = useRef<HTMLDivElement>(null);
+
+  const scrollToDiv = () => {
+    const el = targetRef.current;
+    if (el) {
+      const yOffset = -100;
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    scrollToDiv()
+  }, [targetRef])
 
   useEffect(() => {
     const differentAssignee = dedicatedNames.some(user => user.assignee_name !== "" && user.assignee_name !== user.recipient_name);
@@ -75,7 +89,7 @@ export const SummaryPaymentPage = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div ref={targetRef} className="space-y-8">
       <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
         <h2 className="text-2xl font-bold text-green-800">Order Summary</h2>
 
