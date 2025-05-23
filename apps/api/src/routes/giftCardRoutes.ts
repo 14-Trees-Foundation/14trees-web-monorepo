@@ -1210,6 +1210,10 @@ routes.post('/card/redeem', giftCards.redeemGiftCard);
 routes.post('/card/redeem-multi', giftCards.redeemMultipleGiftCard);
 
 
+
+routes.post('/card/bulk-redeem', giftCards.bulkRedeemGiftCard);
+
+
 /**
  * @swagger
  * /gift-cards/assign:
