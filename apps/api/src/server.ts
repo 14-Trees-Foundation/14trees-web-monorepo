@@ -48,6 +48,7 @@ import swaggerJSDoc from "swagger-jsdoc";
 import supplierRoutes from "./routes/supplierRoutes";
 import buyersRoutes from "./routes/buyersRoutes";
 import lightHouseRoutes from "./routes/lightHouseRoutes";
+import shipmentRoutes from "./routes/shipmentRoutes"
 
 interface ResponseError extends Error {
   status?: number;
@@ -135,6 +136,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/suppliers", supplierRoutes);
   app.use("/api/buyers", buyersRoutes);
   app.use("/api/light-house", lightHouseRoutes);
+  app.use("/api/shipment", shipmentRoutes);
 
   app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
 

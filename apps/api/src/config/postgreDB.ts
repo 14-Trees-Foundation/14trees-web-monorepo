@@ -44,6 +44,10 @@ import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { Supplier } from "../models/suppliers";
 import {Buyer} from "../models/buyers";
+import { CylinderPerformance } from "../models/cylinderperformance"
+import {OperatingConditions} from "../models/operatingconditions"
+import {FuelLubricant} from "../models/fuelLubricant"
+import {VesselDetail} from "../models/vesselDetails"
 
 class Database {
   public sequelize: Sequelize;
@@ -122,6 +126,10 @@ class Database {
         MailSub,
         Supplier,
         Buyer,
+        CylinderPerformance,
+        OperatingConditions,
+        FuelLubricant,
+        VesselDetail,
       ]
     });
 
