@@ -55,11 +55,14 @@ export class GroupRepository {
         const query = `
             SELECT 
                 g.*,
-                COUNT(t.id) as sponsored_trees
+                COUNT(distinct st.id) as sponsored_trees,
+                COUNT(distinct mt.id) as reserved_trees
             FROM 
                 "14trees".groups g
             LEFT JOIN 
-                "14trees".trees t ON t.mapped_to_group = g.id
+                "14trees".trees mt ON mt.mapped_to_group = g.id
+            LEFT JOIN 
+                "14trees".trees st ON st.sponsored_by_group = g.id
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
             GROUP BY 
                 g.id

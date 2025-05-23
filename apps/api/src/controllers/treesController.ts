@@ -8,6 +8,7 @@ import { sequelize } from "../config/postgreDB";
 import { FilterItem } from "../models/pagination";
 import { Tree } from "../models/tree";
 import { SortOrder } from "../models/common";
+import { GroupRepository } from "../repo/groupRepo";
 
 /*
   Model - Tree
@@ -371,7 +372,7 @@ export const getMappedTreesForUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const trees = await TreeRepository.getTrees(offset, limit, [{ operatorValue: 'equals', value: userId, columnField: 'mapped_to_user' }, { operatorValue: 'isNotEmpty', value: userId, columnField: 'assigned_to' }]);
+    const trees = await TreeRepository.getTrees(offset, limit, [{ operatorValue: 'equals', value: userId, columnField: 'sponsored_by_user' }, { operatorValue: 'isNotEmpty', value: userId, columnField: 'assigned_to' }]);
     res.status(status.success).send(trees);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getMappedTreesForUser", error);
@@ -382,6 +383,52 @@ export const getMappedTreesForUser = async (req: Request, res: Response) => {
   }
 
 }
+
+export const getMappedTreesForGroup = async (req: Request, res: Response) => {
+  const { offset, limit } = getOffsetAndLimitFromRequest(req);
+  const { group_id } = req.params;
+  const groupId = parseInt(group_id);
+  console.log("groupId:", groupId);
+
+  if (isNaN(groupId)) {
+    return res.status(status.bad).json({
+      status: status.bad,
+      message: "Invalid Group!",
+    });
+  }
+
+  try {
+    const group = await GroupRepository.getGroup(groupId);
+    if (!group) {
+      return res.status(status.notfound).json({
+        status: status.notfound,
+        message: "Group not found.",
+      });
+    }
+
+    const trees = await TreeRepository.getTrees(offset, limit, [
+      { operatorValue: 'equals', value: groupId, columnField: 'sponsored_by_group' },
+      { operatorValue: 'isNotEmpty', value: groupId,  columnField: 'assigned_to' }
+    ]);
+
+    console.log("Filter applied:", [
+      { operatorValue: 'equals', value: groupId, columnField: 'sponsored_by_group' },
+    ])
+
+    return res.status(status.success).json({
+      group_name: group.name,
+      ...trees
+    });
+
+  } catch (error: any) {
+    console.error("[ERROR] TreesController::getMappedTreesForGroup", error);
+    return res.status(status.error).json({
+      status: status.error,
+      message: "Something went wrong. Please try again later.",
+    });
+  }
+};
+
 
 export const treePlantedByCorporate = async (req: Request, res: Response) => {
   const group_id: string = req.query?.group_id as string;
