@@ -282,5 +282,6 @@ routes.delete('/:id', users.deleteUser);
  *               example: "Something went wrong. Please try again after some time!"
  */
 routes.post("/combine", users.combineUsers);
+routes.get('/birthdays', users.getBirthdayNotifications);
 
 export default routes;

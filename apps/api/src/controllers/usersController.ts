@@ -219,6 +219,55 @@ export const deleteUser = async (req: Request, res: Response) => {
     }
 };
 
+export const getBirthdayNotifications = async (req: Request, res: Response) => {
+  try {
+    // Safely handle query parameters
+    const userIdsParam = req.query.user_ids;
+    let userIds: number[] = [];
+    
+    if (typeof userIdsParam === 'string') {
+      userIds = userIdsParam.split(',').map(id => {
+        const num = Number(id);
+        return isNaN(num) ? null : num;
+      }).filter((id): id is number => id !== null);
+    } else if (Array.isArray(userIdsParam)) {
+      userIds = userIdsParam.map(id => {
+        const num = Number(id);
+        return isNaN(num) ? null : num;
+      }).filter((id): id is number => id !== null);
+    }
+
+    // Get users and filter for upcoming birthdays
+    const users = await UserRepository.getUsersWithBirthdays(userIds);
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    const notifications = users
+      .filter(user => {
+        if (!user.birth_date) return false;
+        
+        try {
+          const birthDate = new Date(user.birth_date);
+          birthDate.setFullYear(today.getFullYear());
+          return birthDate >= today && birthDate <= nextWeek;
+        } catch {
+          return false;
+        }
+      })
+      .map(user => ({
+        id: `birthday-${user.id}`,
+        message: `${user.name}'s birthday on ${new Date(user.birth_date!).toLocaleDateString()}`,
+        date: user.birth_date
+      }));
+
+    res.status(200).json(notifications);
+  } catch (error) {
+    console.error('Error in getBirthdayNotifications:', error);
+    res.status(500).json({ error: "Failed to fetch birthdays" });
+  }
+};
+
 
 export const combineUsers = async (req: Request, res: Response) => {
 

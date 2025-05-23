@@ -200,6 +200,27 @@ export class UserRepository {
         return result.map((user: any) => user.num);
     }
 
+    public static async getUsersWithBirthdays(userIds: number[] = []): Promise<User[]> {
+        let whereClause = 'WHERE birth_date IS NOT NULL';
+        const replacements: any = {};
+      
+        if (userIds.length > 0) {
+          whereClause += ' AND id IN (:userIds)';
+          replacements.userIds = userIds;
+        }
+      
+        const query = `
+          SELECT id, name, birth_date 
+          FROM "14trees_2".users
+          ${whereClause}
+        `;
+      
+        return sequelize.query(query, {
+          replacements,
+          type: QueryTypes.SELECT
+        });
+      }
+
     public static async upsertUser(data: any): Promise<User> {
         let obj: UserCreationAttributes = getUserDocumentFromRequestBody(data);
         const users = await User.findAll({
