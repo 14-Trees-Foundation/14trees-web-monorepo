@@ -553,6 +553,7 @@ routes.get("/assigned/:user_id", trees.getAssignedTrees);
  *               example: "Something went wrong. Please try again after some time."
  */
 routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
+routes.get("/mapped/group/:group_id", trees.getMappedTreesForGroup);
 // routes.get("/plot/count", trees.countByPlot);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);
