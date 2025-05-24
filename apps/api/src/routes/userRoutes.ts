@@ -282,5 +282,55 @@ routes.delete('/:id', users.deleteUser);
  *               example: "Something went wrong. Please try again after some time!"
  */
 routes.post("/combine", users.combineUsers);
+/**
+ * @swagger
+ * /users/birthday/notifications:
+ *   get:
+ *     summary: Check for group member birthdays
+ *     description: Returns whether any users assigned to trees in the specified group have birthdays today.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: query
+ *         name: group_id
+ *         description: ID of the group to check for birthdays
+ *         required: true
+ *         type: integer
+ *         example: 5
+ *     responses:
+ *       200:
+ *         description: Birthday check completed successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             hasBirthday:
+ *               type: boolean
+ *               example: true
+ *             count:
+ *               type: integer
+ *               example: 2
+ *             users:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 101
+ *                   name:
+ *                     type: string
+ *                     example: "Alice"
+ *       400:
+ *         description: Missing or invalid group_id
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Database query failed"
+ */
+routes.get('/birthday/notifications', users.checkGroupBirthdays);
 
 export default routes;
