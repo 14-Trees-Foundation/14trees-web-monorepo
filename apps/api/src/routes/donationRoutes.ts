@@ -149,6 +149,10 @@ routes.post('/requests/get', donations.getDonations);
  *               example: "Failed to create donation"
  */
 routes.post('/requests' , donations.createDonation);
+
+
+routes.post('/requests/payment-success', donations.paymentSuccessForDonation);
+
 routes.delete('/requests/:id' , donations.deleteDonation);
 routes.put('/requests/:id' , donations.updateDonation);
 // routes.post('/work-order/:donation_id' , donations.createWorkOrder);
