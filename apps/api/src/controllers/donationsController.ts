@@ -1,4 +1,4 @@
-import { status } from "../helpers/status"; 
+import { status } from "../helpers/status";
 import { DonationRepository } from "../repo/donationsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
@@ -54,7 +54,7 @@ export const createDonation = async (req: Request, res: Response) => {
     const {
         sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, tags,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
-        comments, users,  donation_type, donation_method, visit_date, amount_donated,
+        comments, users, donation_type, donation_method, visit_date, amount_donated,
     } = data;
 
     // Validate sponsor details
@@ -63,32 +63,32 @@ export const createDonation = async (req: Request, res: Response) => {
             message: 'Invalid sponsor name or email. Please provide valid details!'
         });
 
-        if (donation_type === 'adopt') {
-            if (!visit_date) {
-                return res.status(status.bad).json({
-                    message: 'Visit date is required for tree adoption'
-                });
-            }
-        } else if (donation_type === 'donate') {
-            if (donation_method === 'amount' && !amount_donated) {
-                return res.status(status.bad).json({
-                    message: 'Amount is required for monetary donations'
-                });
-            }
-            if (donation_method === 'trees' && !trees_count) {
-                return res.status(status.bad).json({
-                    message: 'Tree count is required for tree donations'
-                });
-            }
-        } else {
+    if (donation_type === 'adopt') {
+        if (!visit_date) {
             return res.status(status.bad).json({
-                message: 'Invalid donation type'
+                message: 'Visit date is required for tree adoption'
             });
-
         }
+    } else if (donation_type === 'donate') {
+        if (donation_method === 'amount' && !amount_donated) {
+            return res.status(status.bad).json({
+                message: 'Amount is required for monetary donations'
+            });
+        }
+        if (donation_method === 'trees' && !trees_count) {
+            return res.status(status.bad).json({
+                message: 'Tree count is required for tree donations'
+            });
+        }
+    } else {
+        return res.status(status.bad).json({
+            message: 'Invalid donation type'
+        });
+
+    }
 
     // Validate tree plantaion details
-    if ( !category)
+    if (!category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
         });
@@ -97,7 +97,7 @@ export const createDonation = async (req: Request, res: Response) => {
     const donation = await DonationService.createDonation({
         sponsor_name,
         sponsor_email,
-        sponsor_phone, 
+        sponsor_phone,
         trees_count,
         pledged_area_acres,
         payment_id,
@@ -128,26 +128,7 @@ export const createDonation = async (req: Request, res: Response) => {
             usersCreated = false;
         })
     }
-    
-    // Send acknowledgement email after donation is created
-    try {
-        // Fetch the user directly by using UserRepository
-        const sponsorUser = await UserRepository.upsertUser({
-            name: sponsor_name,
-            email: sponsor_email,
-            phone: sponsor_phone
-        });
-        
-        // Update donation with additional fields if they were provided in the request
-        if (grove_type_other) donation.grove_type_other = grove_type_other;
-        if (names_for_plantation) donation.names_for_plantation = names_for_plantation;
-        if (comments) donation.comments = comments;
-        
-        DonationService.sendDonationAcknowledgement(donation, sponsorUser);
-    } catch (error) {
-        console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
-        // Don't fail the request if email sending fails
-    }
+
     try {
         DonationService.insertDonationIntoGoogleSheet(
             donation,
@@ -158,14 +139,35 @@ export const createDonation = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("[ERROR] DonationsController::insertDonationIntoGoogleSheet:", error);
     }
-    
+
     if (!usersCreated)
         return res.status(status.error).send({
             message: "Failed to save recipient details."
         })
-    
+
     return res.status(status.created).send(donation);
 };
+
+export const paymentSuccessForDonation = async (req: Request, res: Response) => {
+    const { donation_id } = req.body;
+
+    try {
+
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        const usersResp = await UserRepository.getUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
+        ])
+        const sponsorUser = usersResp.results[0];
+
+        DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+
+        res.status(status.success).send({});
+    } catch (error) {
+        console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
+        res.status(status.error).send({ message: "Failed to send acknowlegment email!" })
+    }
+}
 
 export const deleteDonation = async (req: Request, res: Response) => {
     try {
@@ -205,17 +207,17 @@ export const updateDonation = async (req: Request, res: Response) => {
         return res.status(status.bad).json({
             message: 'Invalid donation ID'
         });
-    
+
     if (!updateFields || !updateData) {
-      return res.status(400).json({ message: "Invalid request format" });
+        return res.status(400).json({ message: "Invalid request format" });
     }
 
     // Build dynamic update object
     let updateObject: Record<string, any> = {};
     updateFields.forEach((field) => {
-      if (updateData[field] !== undefined) {
-        updateObject[field] = updateData[field];
-      }
+        if (updateData[field] !== undefined) {
+            updateObject[field] = updateData[field];
+        }
     });
 
     try {
@@ -426,9 +428,9 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
     if (!donation_id)
         return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
 
-    if (!auto_reserve && (!tree_ids || tree_ids.length === 0)) 
+    if (!auto_reserve && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
-    
+
     if (auto_reserve && (!plots || plots.length === 0))
         return res.status(status.bad).send({ message: "Plese provided plots to reserve trees from." })
 
@@ -460,7 +462,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
     if (!donation_id)
         return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
 
-    if (!unreserve_all && (!tree_ids || tree_ids.length === 0)) 
+    if (!unreserve_all && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
     try {
         if (unreserve_all) {
@@ -468,7 +470,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
         } else {
             await DonationService.unreserveSelectedTrees(donation_id, tree_ids);
         }
-    
+
         const donation = await DonationRepository.getDonation(donation_id);
         return res.status(status.success).send(donation);
     } catch (error: any) {
@@ -496,7 +498,7 @@ export const assignTrees = async (req: Request, res: Response) => {
     if (!donation_id)
         return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
 
-    if (!auto_assign && (!user_trees || user_trees.length === 0)) 
+    if (!auto_assign && (!user_trees || user_trees.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
 
     try {
@@ -509,11 +511,11 @@ export const assignTrees = async (req: Request, res: Response) => {
         const donation: any = await DonationRepository.getDonation(donation_id);
 
         if (Number(donation.assigned) === donation.trees_count) {
-            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_OrderFulfilled }); 
+            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_OrderFulfilled });
         } else {
-            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted }); 
+            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted });
         }
-    
+
         const updatedDonation = await DonationRepository.getDonation(donation_id);
         return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
@@ -545,7 +547,7 @@ export const unassignTrees = async (req: Request, res: Response) => {
         } else {
             await DonationService.unassignTrees(donation_id);
         }
-        
+
         const updatedDonation = await DonationRepository.getDonation(donation_id);
         return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
@@ -579,8 +581,8 @@ export const getDonationTrees = async (req: Request, res: Response) => {
 }
 
 export const getDonationReservationStats = async (req: Request, res: Response) => {
-    const { donation_id } =  req.query;
-    
+    const { donation_id } = req.query;
+
     if (!donation_id || isNaN(parseInt(donation_id as string))) {
         return res.status(status.bad).json({
             status: status.bad,
@@ -673,14 +675,14 @@ export const getDonationTags = async (req: Request, res: Response) => {
 }
 
 export const sendEmailForDonation = async (req: Request, res: Response) => {
-    const { 
-        donation_id, 
-        test_mails, 
+    const {
+        donation_id,
+        test_mails,
         sponsor_cc_mails,
         recipient_cc_mails,
-        assignee_cc_mails, 
-        event_type = 'default',  
-        email_sponsor = true, 
+        assignee_cc_mails,
+        event_type = 'default',
+        email_sponsor = true,
         email_recipient = false,
         email_assignee = false
     } = req.body;
@@ -700,11 +702,11 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         const userResult = await UserRepository.getUsers(0, 1, [
             { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
         ]);
-        
+
         if (!userResult?.results?.length) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         const user = userResult.results[0];
 
         // Get trees associated with the donation
@@ -763,9 +765,9 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             };
 
             const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
-            const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({ 
-                event_type, 
-                template_type: sponsorTemplateType 
+            const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
+                event_type,
+                template_type: sponsorTemplateType
             });
 
             if (!sponsorTemplates?.length) {
@@ -795,7 +797,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         // Send email to recipient if enabled
         if (email_recipient) {
             recipientsMap = new Map<number, typeof treeData>();
-            
+
             treeData.forEach(tree => {
                 if (tree.recipient) {
                     if (!recipientsMap!.has(tree.recipient)) {
@@ -852,7 +854,7 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         // Send email to assignee if enabled
         if (email_assignee) {
             assigneesMap = new Map<string, typeof treeData>();
-            
+
             treeData.forEach(tree => {
                 if (tree.assignee_email) {
                     if (!assigneesMap!.has(tree.assignee_email)) {
