@@ -1,17 +1,11 @@
 "use client";
 
-import { Button } from "ui/components/button";
-import Link from "next/link";
-import { motion } from "framer-motion";
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
 import { useState, useEffect, useRef } from "react";
-import Script from 'next/script';
-import Image from 'next/image';
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
-import CsvUpload from "components/CsvUpload";
 import { UploadIcon } from "lucide-react";
 import { getUniqueRequestId } from "~/utils";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
@@ -48,7 +42,7 @@ export default function DonatePage() {
     assignee_email: "",
     assignee_phone: "",
     relation: "",
-    trees_count: 1
+    trees_count: 14
   }]);
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,17 +58,14 @@ export default function DonatePage() {
     panNumber: "",
     comments: ""
   });
-  const [pledgeType, setPledgeType] = useState<"trees" | "acres">("trees");
   const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
-  const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
   const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<Record<string, File>>({});
-  const [imageUploadProgress, setImageUploadProgress] = useState<Record<string, number>>({});
   const [visitDate, setVisitDate] = useState<string>("");
   const [adoptedTreeCount, setAdoptedTreeCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -94,6 +85,8 @@ export default function DonatePage() {
     (currentPage + 1) * itemsPerPage
   );
 
+  const hasTableErrors = csvPreview.some(row => Array.isArray(row._errors) && row._errors.length > 0);
+
   useEffect(() => {
     let amount = 0;
     if (treeLocation === "adopt") {
@@ -103,7 +96,6 @@ export default function DonatePage() {
         ? 1500 * (donationTreeCount || 0)
         : donationAmount;
     }
-    setTotalAmount(amount);
     setIsAboveLimit(amount > 500000);
   }, [treeLocation, adoptedTreeCount, donationMethod, donationTreeCount, donationAmount]);
 
@@ -125,9 +117,9 @@ export default function DonatePage() {
   };
 
   const validationPatterns = {
-    name: /^[A-Za-z\s.'-]*$/, // Allow empty for optional fields
+    name: /^[A-Za-z\s.'\-&]*$/, // Allow empty for optional fields
     email: /^[^\s@]+@[^\s@]+\.[^\s@]*$/,
-    phone: /^[0-9]{10,15}$/,
+    phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
     number: /^[0-9]+(\.[0-9]+)?$/
   };
@@ -172,9 +164,12 @@ export default function DonatePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
-    const error = validateField(name, value);
+    // Always store PAN number in uppercase
+    const processedValue = name === "panNumber" ? value.toUpperCase() : value;
+
+    const error = validateField(name, processedValue);
     setErrors(prev => ({ ...prev, [name]: error }));
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
 
   const validateDedicatedNames = () => {
@@ -182,9 +177,13 @@ export default function DonatePage() {
     const newErrors: Record<string, string> = {};
 
     dedicatedNames.forEach((name, index) => {
-      if (!name.recipient_name.trim()) {
+      // If multipleNames is true, recipient_name is required
+      if (multipleNames && !name.recipient_name.trim()) {
+        newErrors[`dedicatedName-${index}`] = "Name is required";
+        isValid = false;
+      } else if (!multipleNames && !name.recipient_name.trim()) {
         newErrors[`dedicatedName-${index}`] = "Name is optional";
-        isValid = true; // Allow empty
+        isValid = true; // Allow empty for single entry
       } else if (!validationPatterns.name.test(name.recipient_name)) {
         newErrors[`dedicatedName-${index}`] = "Please enter a valid name";
         isValid = false;
@@ -243,34 +242,44 @@ export default function DonatePage() {
         const errors: string[] = [];
         const validRecipients: DedicatedName[] = [];
 
-        data.forEach((row, index) => {
-          if (!row.recipient_name) {
-            errors.push(`Row ${index + 1}: Assignee Name is not optional`);
-            return;
-          }
+        // Calculate total trees from CSV
+        const totalTreesInCsv = data.reduce((sum, row) => {
+          const trees = row.trees_count ? parseInt(String(row.trees_count)) : 1;
+          return sum + trees;
+        }, 0);
 
+        // Check if total trees exceed the donation tree count
+        if (totalTreesInCsv > donationTreeCount) {
+          errors.push(`Total number of trees in CSV (${totalTreesInCsv}) exceeds the selected number of trees (${donationTreeCount})`);
+        }
+
+        data.forEach((row, index) => {
+          const rowErrors: string[] = [];
+          if (!row.recipient_name || !row.recipient_name.trim()) {
+            rowErrors.push("Recipient name is required");
+          }
           if (row.recipient_email && !validationPatterns.email.test(String(row.recipient_email))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
+            rowErrors.push("Invalid Assignee Email format");
           }
           if (row.assignee_email && !validationPatterns.email.test(String(row.assignee_email))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
+            rowErrors.push("Invalid Assignee Email format");
           }
-
           if (row.recipient_phone && !validationPatterns.phone.test(String(row.recipient_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
+            rowErrors.push("Invalid Assignee Phone number (10-15 digits required)");
           }
           if (row.assignee_phone && !validationPatterns.phone.test(String(row.assignee_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
+            rowErrors.push("Invalid Assignee Phone number (10-15 digits required)");
           }
 
           const user: any = {
-            recipient_name: String(row.recipient_name).trim(),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name.trim().toLowerCase().split(" ").join('.') + "@14trees",
+            recipient_name: String(row.recipient_name || '').trim(),
+            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name ? row.recipient_name.trim().toLowerCase().split(" ").join('.') + "@14trees" : '',
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
-            relation: row.relation ? String(row.relation) : 'other'
-          }
+            relation: row.relation ? String(row.relation) : 'other',
+            _errors: rowErrors,
+          };
 
           if (row.assignee_name?.trim()) {
             user.assignee_name = String(row.assignee_name).trim();
@@ -287,7 +296,9 @@ export default function DonatePage() {
 
         setCsvErrors(errors);
         setCsvPreview(validRecipients);
-        setDedicatedNames(validRecipients);
+        if (errors.length === 0) {
+          setDedicatedNames(validRecipients);
+        }
       },
       error: (error) => {
         setCsvErrors([`Error parsing CSV: ${error.message}`]);
@@ -461,7 +472,7 @@ export default function DonatePage() {
         assignee_email: "",
         assignee_phone: "",
         relation: "",
-        trees_count: 1
+        trees_count: 14
       }]);
       setTreeLocation("");
 
@@ -474,6 +485,8 @@ export default function DonatePage() {
       setRpPaymentSuccess(false);
       setRazorpayOrderId(null);
       setRazorpayPaymentId(null);
+      setDonationAmount(5000);
+      setDonationTreeCount(14);
       setCurrentStep(1);
 
     } catch (err: any) {
@@ -501,11 +514,10 @@ export default function DonatePage() {
     newNames.splice(index, 1);
     setDedicatedNames(newNames);
 
-    const newErrors = { ...errors };
-    delete newErrors[`dedicatedName-${index}`];
-    delete newErrors[`dedicatedEmail-${index}`];
-    delete newErrors[`dedicatedPhone-${index}`];
-    setErrors(newErrors);
+    // Re-validate all dedicated names after removal
+    setTimeout(() => {
+      validateDedicatedNames();
+    }, 0);
   };
 
   const handleNameChange = (index: number, field: keyof DedicatedName, value: string | number) => {
@@ -515,8 +527,8 @@ export default function DonatePage() {
       return newNames;
     });
 
-    if (field === "recipient_name" && value) {
-      const error = !validationPatterns.name.test(value.toString())
+    if (field === "recipient_name") {
+      const error = !validationPatterns.name.test(value.toString()) || (multipleNames && value.toString().trim()==="")
         ? "Please enter a valid name"
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedName-${index}`]: error }));
@@ -531,14 +543,6 @@ export default function DonatePage() {
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedPhone-${index}`]: error }));
     }
-  };
-
-  const calculateDonationAmount = (): number => {
-    if (treeLocation === "adopt") return 3000;
-    if (treeLocation === "donate") {
-      return donationMethod === "trees" ? 1500 : 0;
-    }
-    return 0;
   };
 
   const handleRazorpayPayment = async () => {
@@ -698,18 +702,65 @@ export default function DonatePage() {
     if (!files || files.length === 0) return;
 
     const previewUrls: Record<string, string> = {};
+    const newCsvErrors = [...csvErrors];
+    const expectedImageNames = csvPreview.map((row, idx) => row.image ? String(row.image).toLowerCase() : null).filter(Boolean);
+    const uploadedImageNames = Array.from(files).map(file => file.name.toLowerCase());
 
+    // Check for images not in CSV or not matching assignee name if no image in CSV
     Array.from(files).forEach(file => {
-      const key = file.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/\s+/g, '_');
-      previewUrls[key] = URL.createObjectURL(file);
+      const fileName = file.name.toLowerCase();
+      let matched = false;
+      csvPreview.forEach((recipient, idx) => {
+        const imageNameInCsv = recipient.image ? String(recipient.image).toLowerCase() : null;
+        const assigneeName = recipient.recipient_name ? String(recipient.recipient_name).toLowerCase().replace(/\s+|_/g, '') : null;
+        const fileNameNoExt = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/\s+|_/g, '');
+        if (imageNameInCsv) {
+          // If image name is provided in CSV, only allow exact match
+          if (fileName === imageNameInCsv) {
+            matched = true;
+            // Remove any previous error for this row about image name mismatch
+            const rowErrorIdx = newCsvErrors.findIndex(err => err.includes(`Row ${idx + 1}:`) && err.includes('Image name does not match'));
+            if (rowErrorIdx !== -1) newCsvErrors.splice(rowErrorIdx, 1);
+            previewUrls[idx] = URL.createObjectURL(file);
+          }
+        } else if (assigneeName) {
+          // If no image name in CSV, allow if file name matches assignee name
+          if (fileNameNoExt === assigneeName) {
+            matched = true;
+            // Remove any previous error for this row about image name mismatch
+            const rowErrorIdx = newCsvErrors.findIndex(err => err.includes(`Row ${idx + 1}:`) && err.includes('Image name does not match'));
+            if (rowErrorIdx !== -1) newCsvErrors.splice(rowErrorIdx, 1);
+            previewUrls[idx] = URL.createObjectURL(file);
+          }
+        }
+      });
+      if (!matched) {
+        newCsvErrors.push(`Image '${file.name}' does not match any required image name or assignee name in the CSV.`);
+      }
     });
 
-    setCsvPreview(prev => prev.map(recipient => {
-      const imageKey = recipient.recipient_name.toLowerCase().replace(/\s+/g, '_');
-      return previewUrls[imageKey]
-        ? { ...recipient, image: previewUrls[imageKey] }
-        : recipient;
+    setCsvPreview(prev => prev.map((recipient, idx) => {
+      const imageNameInCsv = recipient.image ? String(recipient.image).toLowerCase() : null;
+      const assigneeName = recipient.recipient_name ? String(recipient.recipient_name).toLowerCase().replace(/\s+|_/g, '') : null;
+      let newImage = recipient.image;
+      if (imageNameInCsv) {
+        // Find uploaded file with exact name
+        const uploadedFile = Array.from(files).find(f => f.name.toLowerCase() === imageNameInCsv);
+        if (uploadedFile) {
+          newImage = URL.createObjectURL(uploadedFile);
+        }
+        // else, keep previous image (do not set to undefined)
+      } else if (assigneeName) {
+        // Find uploaded file matching assignee name
+        const uploadedFile = Array.from(files).find(f => f.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/\s+|_/g, '') === assigneeName);
+        if (uploadedFile) {
+          newImage = URL.createObjectURL(uploadedFile);
+        }
+        // else, keep previous image (do not set to undefined)
+      }
+      return { ...recipient, image: newImage };
     }));
+    setCsvErrors(newCsvErrors);
   };
 
   const SuccessDialog = () => {
@@ -873,7 +924,7 @@ export default function DonatePage() {
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of 14 native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
               </h6>
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
                 Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
@@ -1066,7 +1117,7 @@ export default function DonatePage() {
                   </div>
 
                   {treeLocation !== "" && <div className="mt-6 space-y-6">
-                    <h2 className="text-2xl font-semibold">Your details</h2>
+                    <h2 className="text-2xl font-semibold">Donor details</h2>
                     <div className="grid grid-cols-1 gap-4">
                       <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Donated by*:</label>
@@ -1169,7 +1220,27 @@ export default function DonatePage() {
                           id="multipleNames"
                           className="h-5 w-5 mr-3"
                           checked={multipleNames}
-                          onChange={(e) => setMultipleNames(e.target.checked)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const checked = e.target.checked;
+                            setMultipleNames(checked);
+                            if (!checked) {
+                              // Reset all multiple recipient data and keep only the first single recipient
+                              setCsvPreview([]);
+                              setCsvFile(null);
+                              setCsvErrors([]);
+                              setUploadedImages({});
+                              setDedicatedNames([{
+                                recipient_name: '',
+                                recipient_email: '',
+                                recipient_phone: '',
+                                assignee_name: '',
+                                assignee_email: '',
+                                assignee_phone: '',
+                                relation: '',
+                                trees_count: donationTreeCount
+                              }]);
+                            }
+                          }}
                         />
                         <label htmlFor="multipleNames" className="text-gray-700">
                           Dedicate to multiple people?
@@ -1223,8 +1294,9 @@ export default function DonatePage() {
                           <button
                             type="button"
                             onClick={handleAddName}
-                            className="flex items-center text-green-700 hover:text-green-900 mt-2"
-                            disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === ""}
+                            className={`flex items-center text-green-700 hover:text-green-900 mt-2 ${dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "" || dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount}
+                            title={dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'You have already assigned all the trees to users' : ''}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -1302,6 +1374,25 @@ export default function DonatePage() {
                           {csvErrors.length > 0 && (
                             <div className="bg-red-50 border-l-4 border-red-500 p-4">
                               <h4 className="font-medium text-red-700">CSV Errors:</h4>
+                              {(() => {
+                                // Count unique rows with errors
+                                const rowErrorNumbers = new Set(
+                                  csvErrors
+                                    .map(error => {
+                                      const match = error.match(/Row (\d+):/);
+                                      return match ? match[1] : null;
+                                    })
+                                    .filter(Boolean)
+                                );
+                                if (rowErrorNumbers.size > 0) {
+                                  return (
+                                    <p className="text-sm text-red-600 mb-2">
+                                      Out of {csvPreview.length} rows, {rowErrorNumbers.size} row{rowErrorNumbers.size > 1 ? 's' : ''} have errors
+                                    </p>
+                                  );
+                                }
+                                return null;
+                              })()}
                               <ul className="list-disc pl-5 text-red-600">
                                 {csvErrors.map((error, i) => (
                                   <li key={i} className="text-sm">{error}</li>
@@ -1324,40 +1415,62 @@ export default function DonatePage() {
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
                                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid</th>
                                     </tr>
                                   </thead>
                                   <tbody className="bg-white divide-y divide-gray-200">
-                                    {paginatedData.map((recipient, i) => (
-                                      <tr key={i}>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap">
-                                          {recipient.image && (
-                                            typeof recipient.image === 'string' ? (
-                                              <img
-                                                src={recipient.image}
-                                                className="h-10 w-10 rounded-full object-cover"
-                                                alt={`${recipient.recipient_name}'s profile`}
-                                              />
-                                            ) : (
-                                              <div className="flex items-center">
-                                                <span className="text-sm text-gray-500">Ready to upload</span>
-                                                <button
-                                                  onClick={() => {
-                                                    // Add image upload handler here
-                                                  }}
-                                                  className="ml-2 text-sm text-blue-600 hover:underline"
-                                                >
-                                                  Upload
-                                                </button>
-                                              </div>
-                                            )
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
+                                    {paginatedData.map((recipient, i) => {
+                                      const hasImageName = recipient.image && typeof recipient.image === 'string' && recipient.image.trim() !== '';
+                                      const hasImageUploaded = hasImageName && recipient.image && recipient.image.startsWith('blob:');
+                                      const hasErrors = Array.isArray(recipient._errors) && recipient._errors.length > 0;
+                                      // For image column
+                                      let imageCell;
+                                      if (hasImageName) {
+                                        if (hasImageUploaded) {
+                                          imageCell = (
+                                            <img
+                                              src={recipient.image as string}
+                                              className="h-10 w-10 rounded-full object-cover"
+                                              alt={`${recipient.recipient_name}'s profile`}
+                                            />
+                                          );
+                                        } else {
+                                          imageCell = <span className="text-sm text-gray-500">No image uploaded</span>;
+                                        }
+                                      } else {
+                                        imageCell = <span className="text-sm text-gray-500">Image not provided</span>;
+                                      }
+                                      // For valid column
+                                      let validCell;
+                                      if (hasErrors) {
+                                        validCell = (
+                                          <span
+                                            className="text-red-600 cursor-help"
+                                            title={Array.isArray(recipient._errors) ? recipient._errors.join(', ') : ''}
+                                          >
+                                            &#10006;
+                                          </span>
+                                        );
+                                      } else if (hasImageName) {
+                                        validCell = hasImageUploaded ? (
+                                          <span className="text-green-600">✓</span>
+                                        ) : (
+                                          <span className="text-red-600">✕</span>
+                                        );
+                                      } else {
+                                        validCell = <span className="text-green-600">✓</span>;
+                                      }
+                                      return (
+                                        <tr key={i} className={hasErrors ? "bg-red-50" : ""}>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name || <span className="italic text-gray-400">[Missing]</span>}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap">{imageCell}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap">{validCell}</td>
+                                        </tr>
+                                      );
+                                    })}
                                   </tbody>
                                 </table>
                               </div>
@@ -1439,135 +1552,83 @@ export default function DonatePage() {
                               <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
                             )}
                           </div>
-                          {/* <div className="mt-6">
-                            <label className="flex items-center space-x-3 mb-4">
-                              <input
-                                type="checkbox"
-                                checked={isAssigneeDifferent}
-                                onChange={(e) => setIsAssigneeDifferent(e.target.checked)}
-                                className="h-5 w-5"
-                              />
-                              <span>Assign trees to someone else?</span>
-                            </label>
-
-                            {isAssigneeDifferent && (
-                              <div className="border border-gray-200 rounded-md p-4 space-y-4">
-                                <h3 className="font-medium">Assignee Details</h3>
-                                <input
-                                  type="text"
-                                  placeholder="Assignee Name *"
-                                  value={dedicatedNames[0].assignee_name}
-                                  onChange={(e) => handleNameChange(0, "assignee_name", e.target.value)}
-                                  className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  required
-                                />
-                                <div className="grid gap-4 md:grid-cols-2">
-                                  <input
-                                    type="email"
-                                    placeholder="Assignee Email (optional)"
-                                    value={dedicatedNames[0].assignee_email}
-                                    onChange={(e) => handleNameChange(0, "assignee_email", e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  />
-                                  <input
-                                    type="tel"
-                                    placeholder="Assignee Phone (optional)"
-                                    value={dedicatedNames[0].assignee_phone}
-                                    onChange={(e) => handleNameChange(0, "assignee_phone", e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium mb-1">Relation *</label>
-                                  <select
-                                    value={dedicatedNames[0].relation}
-                                    onChange={(e) => handleNameChange(0, "relation", e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  >
-                                    <option value="father">Father</option>
-                                    <option value="mother">Mother</option>
-                                    <option value="uncle">Uncle</option>
-                                    <option value="aunt">Aunt</option>
-                                    <option value="grandfather">Grandfather</option>
-                                    <option value="grandmother">Grandmother</option>
-                                    <option value="son">Son</option>
-                                    <option value="daughter">Daughter</option>
-                                    <option value="wife">Wife</option>
-                                    <option value="husband">Husband</option>
-                                    <option value="grandson">Grandson</option>
-                                    <option value="granddaughter">Granddaughter</option>
-                                    <option value="brother">Brother</option>
-                                    <option value="sister">Sister</option>
-                                    <option value="cousin">Cousin</option>
-                                    <option value="friend">Friend</option>
-                                    <option value="colleague">Colleague</option>
-                                    <option value="other">Other</option>
-                                  </select>
-                                </div>
-                              </div>
-                            )}
-                          </div> */}
                         </div>
                       )}
                     </div>
                   )}
 
                   <div className="flex justify-end mt-8">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const mainFormValid = Object.keys(formData).every(key => {
-                          if (key === "comments") return true;
-                          const value = formData[key as keyof typeof formData];
-                          // Check for mandatory fields
-                          if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
-                            return !!value;
+                    <div className="w-full flex flex-col items-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Check for any errors in form, csv, or table
+                          const hasFormErrors = Object.entries(errors).some(
+                            ([key, value]) => key !== "comments" && value && value.trim() !== ""
+                          );
+                          if (hasTableErrors || hasFormErrors || csvErrors.length > 0) {
+                            alert('Please fix all errors in the form and table above before proceeding.');
+                            return;
                           }
-                          return true;
-                        });
+                          const mainFormValid = Object.keys(formData).every(key => {
+                            if (key === "comments") return true;
+                            const value = formData[key as keyof typeof formData];
+                            // Check for mandatory fields
+                            if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
+                              return !!value;
+                            }
+                            return true;
+                          });
 
-                        if (mainFormValid) {
-                          setCurrentStep(2);
-                          if (typeof window !== "undefined") {
-                            window.scrollTo({
-                              top: 0,
-                              behavior: "smooth",
-                            });
+                          if (mainFormValid) {
+                            setCurrentStep(2);
+                            // Use setTimeout to ensure the DOM has updated with the new step
+                            setTimeout(() => {
+                              const orderSummary = document.getElementById('order-summary');
+                              if (orderSummary) {
+                                orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }
+                            }, 100);
+                          } else {
+                            alert("Please fill all required fields");
                           }
-
-                        } else {
-                          alert("Please fill all required fields");
-                        }
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors"
-                    >
-                      Next →
-                    </button>
+                        }}
+                        className={`bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors ${hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
+                      >
+                        Next →
+                      </button>
+                      {(hasTableErrors || Object.values(errors).some(e => e && e.trim() !== "") || csvErrors.length > 0) && (
+                        <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding.</div>
+                      )}
+                    </div>
                   </div>
                 </form>
               ) : (
                 currentStep === 2 && (
-                  <SummaryPaymentPage
-                    formData={formData}
-                    treeLocation={treeLocation}
-                    visitDate={visitDate}
-                    adoptedTreeCount={adoptedTreeCount}
-                    donationMethod={donationMethod}
-                    donationTreeCount={donationTreeCount}
-                    donationAmount={donationAmount}
-                    dedicatedNames={dedicatedNames}
-                    paymentOption={paymentOption}
-                    isAboveLimit={isAboveLimit}
-                    rpPaymentSuccess={rpPaymentSuccess}
-                    paymentProof={paymentProof}
-                    setPaymentProof={setPaymentProof}
-                    isProcessing={isProcessing}
-                    isLoading={isLoading}
-                    setCurrentStep={setCurrentStep}
-                    handleRazorpayPayment={handleRazorpayPayment}
-                    handleSubmit={handleSubmit}
-                    setDonationId={setDonationId}
-                  />
+                  <div id="order-summary">
+                    <SummaryPaymentPage
+                      formData={formData}
+                      treeLocation={treeLocation}
+                      visitDate={visitDate}
+                      adoptedTreeCount={adoptedTreeCount}
+                      donationMethod={donationMethod}
+                      donationTreeCount={donationTreeCount}
+                      donationAmount={donationAmount}
+                      dedicatedNames={dedicatedNames}
+                      paymentOption={paymentOption}
+                      isAboveLimit={isAboveLimit}
+                      rpPaymentSuccess={rpPaymentSuccess}
+                      paymentProof={paymentProof}
+                      setPaymentProof={setPaymentProof}
+                      isProcessing={isProcessing}
+                      isLoading={isLoading}
+                      setCurrentStep={setCurrentStep}
+                      handleRazorpayPayment={handleRazorpayPayment}
+                      handleSubmit={handleSubmit}
+                      setDonationId={setDonationId}
+                    />
+                  </div>
                 )
               )}
             </ScrollReveal>

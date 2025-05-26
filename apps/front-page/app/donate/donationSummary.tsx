@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Button } from 'ui/components/button';
 
@@ -65,6 +65,20 @@ export const SummaryPaymentPage = ({
 }: SummaryPaymentProps) => {
 
   const [hasDifferentAssignee, setHasDifferentAssignee] = useState(false);
+  const targetRef = useRef<HTMLDivElement>(null);
+
+  const scrollToDiv = () => {
+    const el = targetRef.current;
+    if (el) {
+      const yOffset = -100; // Offset in px (header height)
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    scrollToDiv()
+  }, [targetRef])
 
   useEffect(() => {
     const differentAssignee = dedicatedNames.some(user => user.assignee_name !== "" && user.assignee_name !== user.recipient_name);
@@ -89,7 +103,7 @@ export const SummaryPaymentPage = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div ref={targetRef} className="space-y-8 scroll-mt-48">
       {/* Summary Section */}
       <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
         <h2 className="text-2xl font-bold text-green-800">Order Summary</h2>
@@ -121,7 +135,7 @@ export const SummaryPaymentPage = ({
 
         {/* Donor Info */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Your Details</h3>
+          <h3 className="text-lg font-semibold">Donor Details</h3>
           <p><span className="font-medium">Name:</span> {formData.fullName}</p>
           <p><span className="font-medium">Email:</span> {formData.email}</p>
           {formData.phone && <p><span className="font-medium">Phone:</span> {formData.phone}</p>}
