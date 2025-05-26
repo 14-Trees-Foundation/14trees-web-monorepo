@@ -217,6 +217,9 @@ routes.post('/requests/get', giftCards.getGiftCardRequests);
  */
 routes.post('/requests', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name: 'csv_file', maxCount: 1}]), giftCards.createGiftCardRequest);
 
+
+routes.post('/requests/payment-success', giftCards.paymentSuccessForGiftRequest);
+
 /**
  * @swagger
  * /gift-cards/requests/{id}:

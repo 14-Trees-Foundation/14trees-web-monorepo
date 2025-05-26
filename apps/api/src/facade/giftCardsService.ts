@@ -18,6 +18,14 @@ const defaultMessage = "Dear {recipient},\n\n"
 
 class GiftCardsService {
 
+    public static async getGiftCardsRequest(giftCardRequestId: number): Promise<GiftCardRequest> {
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }
+        ])
+
+        return resp.results[0];
+    }
+
     public static async generateTreeCardsForSaplings(saplingIds: string[]) {
 
         const treesResp = await TreeRepository.getTrees(0, -1, [

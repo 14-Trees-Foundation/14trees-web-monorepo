@@ -70,6 +70,7 @@ export class DonationService {
             status,
             tags
         } = data;
+        
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
@@ -78,6 +79,7 @@ export class DonationService {
             console.error("DonationService::createDonation", error);
             throw new Error("Failed to save sponsor details in the system!");
         });
+
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
             trees_count: trees_count || 0,
@@ -95,6 +97,7 @@ export class DonationService {
             status: status || DonationStatus_UserSubmitted,
             tags: tags || null,
         };
+
         const donation = await DonationRepository.createdDonation(
             request
         ).catch((error: any) => {
