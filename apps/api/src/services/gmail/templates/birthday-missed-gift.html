@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Missed Birthday Gift Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #c62828;
+        }
+        table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background: #c62828;
+            color: #fff;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Missed Birthday Gift Alert</h2>
+    <p>Hello {{dashboardName}} Team,</p>
+    <p>We noticed that the following employees had birthdays yesterday and may not have received their birthday gifts:</p>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Birth Date</th>
+            <th>Email</th>
+        </tr>
+        {{#each missedUsers}}
+        <tr>
+            <td>{{name}}</td>
+            <td>{{birth_date}}</td>
+            <td>{{email}}</td>
+        </tr>
+        {{/each}}
+    </table>
+
+    <p>Please take a moment to follow up and ensure they feel celebrated.</p>
+
+    <div class="footer">
+        <p>Warm regards,<br><strong>14 Trees Foundation</strong></p>
+    </div>
+</div>
+</body>
+</html>

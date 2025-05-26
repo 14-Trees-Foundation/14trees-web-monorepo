@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Upcoming Birthdays (Next 5 Days)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2e7d32;
+        }
+        table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background: #2e7d32;
+            color: #fff;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Upcoming Employee Birthdays</h2>
+    <p>Hello {{dashboardName}} Team,</p>
+    <p>The following employees have birthdays in the next 5 days:</p>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Birth Date</th>
+            <th>Email</th>
+        </tr>
+        {{#each birthdayUsers}}
+        <tr>
+            <td>{{name}}</td>
+            <td>{{birth_date}}</td>
+            <td>{{email}}</td>
+        </tr>
+        {{/each}}
+    </table>
+
+    <p>Don't miss the chance to wish them!</p>
+
+    <div class="footer">
+        <p>Best regards,<br><strong>14 Trees Foundation</strong></p>
+    </div>
+</div>
+</body>
+</html>

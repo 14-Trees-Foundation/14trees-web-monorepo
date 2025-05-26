@@ -318,3 +318,80 @@ export function sendGiftCardMails() {
         }
     });
 }
+
+export function sendBirthdayAndGiftCardAlerts() {
+    // 1. Monthly birthday notification on the 1st of every month at 8:00 AM
+    cron.schedule('0 8 1 * *', async () => {
+        console.log('[CRON] Monthly Birthday Email Reminder (1st of month)');
+        try {
+            const response = await GiftCardsService.sendBirthdayReminders({ isMonthlyReport: true }) as MonthlyBirthdayResponse;
+
+            if (!response?.success || !Array.isArray(response.results) || !response.results.length) return;
+
+            for (const { dashboard, recipients, birthdayUsers } of response.results) {
+                try {
+                    await GiftCardsService.sendMonthlyBirthdayNotificationEmail(
+                        dashboard,
+                        recipients,
+                        birthdayUsers
+                    );
+                } catch (error) {
+                    console.error('[ERROR] Failed to send monthly birthday email:', error);
+                }
+            }
+        } catch (error) {
+            console.error('[ERROR] CRON::MonthlyBirthdayReminder', error);
+        }
+    });
+
+    // 2. Daily birthday reminder for employees with birthdays in the next 5 days at 8:00 AM
+    cron.schedule('0 8 * * *', async () => {
+        console.log('[CRON] Daily Birthday Reminder (next 5 days)');
+        try {
+            const response = await GiftCardsService.sendBirthdayReminders({ isMonthlyReport: false }) as DailyBirthdayResponse;
+
+            if (!response?.success || !Array.isArray(response.data) || !response.data.length) return;
+
+            for (const { dashboard, recipients, groupUsers } of response.data) {
+                try {
+                    await GiftCardsService.sendUpcomingBirthdayNotificationEmail(
+                        dashboard,
+                        recipients,
+                        groupUsers
+                    );
+                } catch (error) {
+                    console.error('[ERROR] Failed to send daily birthday reminder:', error);
+                }
+            }
+        } catch (error) {
+            console.error('[ERROR] CRON::DailyBirthdayReminder', error);
+        }
+    });
+
+    // 3. Daily missed gift card alert at 9:00 AM
+    cron.schedule('0 9 * * *', async () => {
+        console.log('[CRON] Missed Gift Card Alert (daily)');
+        try {
+            const response = await GiftCardsService.sendMissedGiftAlerts() as MissedGiftAlertResponse;
+
+            if (!response?.success || !Array.isArray(response.results) || !response.results.length) return;
+
+            for (const { dashboard, recipients, missedGiftUsers } of response.results) {
+                try {
+                    await GiftCardsService.sendMissedGiftNotificationEmail(
+                        dashboard,
+                        recipients,
+                        missedGiftUsers,
+                    );
+                } catch (error) {
+                    console.error('[ERROR] Failed to send missed gift alert:', error);
+                }
+            }
+        } catch (error) {
+            console.error('[ERROR] CRON::MissedGiftCardAlert', error);
+        }
+    });
+}
+
+
+
