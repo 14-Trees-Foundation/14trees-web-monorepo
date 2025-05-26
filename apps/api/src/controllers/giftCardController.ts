@@ -113,7 +113,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
-        remaining_trees: remainingTrees // Just for sending mail to sponsor
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -226,25 +225,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
         if (requestType === 'Gift Cards') {
             try {
-                // Create sponsor user object directly from request body
-                const sponsorUser = {
-                    id: userId,
-                    name: (giftCards.results[0] as any).user_name,
-                    email: (giftCards.results[0] as any).user_email,
-                };
-                await sendGiftRequestAcknowledgement(
-                    giftCard,
-                    sponsorUser,
-                    remainingTrees || 0,
-                );
-            } catch (emailError) {
-                console.error("[ERROR] Failed to send gift acknowledgment email:", {
-                    error: emailError,
-                    stack: emailError instanceof Error ? emailError.stack : undefined
-                });
-            }
-
-            try {
                 await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
             } catch (error: any) {
                 console.log("[ERROR]", "GiftCardController::addGiftRequestToGoogleSpreadsheet", error);
@@ -256,6 +236,69 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         res.status(status.error).json({
             message: 'Something went wrong. Please try again later.'
         })
+    }
+}
+
+
+export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
+
+    const { gift_request_id, remaining_trees: remainingTrees } = req.body;
+
+    try {
+
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+
+        if (giftRequest.payment_id) {
+            let sponsorshipType: SponsorshipType = 'Unverified';
+            let amountReceived: number = 0;
+            let donationDate: Date | null = null;
+
+            const payment: any = await PaymentRepository.getPayment(giftRequest.payment_id);
+            if (payment && payment.payment_history) {
+                const paymentHistory: PaymentHistory[] = payment.payment_history;
+                paymentHistory.forEach(payment => {
+                    if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+                })
+            }
+
+            if (payment?.order_id) {
+                const razorpayService = new RazorpayService();
+                const payments = await razorpayService.getPayments(payment.order_id);
+                payments?.forEach(item => {
+                    amountReceived += Number(item.amount) / 100;
+                })
+            }
+
+            if (amountReceived > 0) {
+                sponsorshipType = 'Donation Received';
+                donationDate = new Date();
+            }
+
+            await GiftCardsRepository.updateGiftCardRequests({
+                sponsorship_type: sponsorshipType,
+                donation_date: donationDate,
+                amount_received: amountReceived,
+            }, { id: giftRequest.id })
+        }
+
+        const sponsorUser = {
+            id: giftRequest.user_id,
+            name: (giftRequest as any).user_name,
+            email: (giftRequest as any).user_email,
+        };
+        await sendGiftRequestAcknowledgement(
+            giftRequest,
+            sponsorUser,
+            remainingTrees || 0,
+        );
+
+        res.status(status.success).send();
+    } catch (emailError) {
+        console.error("[ERROR] Failed to send gift acknowledgment email:", {
+            error: emailError,
+            stack: emailError instanceof Error ? emailError.stack : undefined
+        });
+        res.status(status.error).send({ message: "Failed to update payment status in system!" })
     }
 }
 
