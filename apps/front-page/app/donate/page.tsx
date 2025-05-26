@@ -343,7 +343,6 @@ export default function DonatePage() {
     setIsSubmitting(true);
 
     const uniqueRequestId = getUniqueRequestId();
-    setDonationId(uniqueRequestId);
 
     // Handle payment based on selected option
 
@@ -498,10 +497,6 @@ export default function DonatePage() {
     }
   };
 
-  useEffect(() => {
-    if (rpPaymentSuccess && !isLoading) handleSubmit();
-  }, [rpPaymentSuccess, handleSubmit])
-
   const handleAddName = () => {
     if (dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "") {
       return;
@@ -528,7 +523,7 @@ export default function DonatePage() {
     });
 
     if (field === "recipient_name") {
-      const error = !validationPatterns.name.test(value.toString()) || (multipleNames && value.toString().trim()==="")
+      const error = !validationPatterns.name.test(value.toString()) || (multipleNames && value.toString().trim() === "")
         ? "Please enter a valid name"
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedName-${index}`]: error }));
@@ -566,28 +561,74 @@ export default function DonatePage() {
       if (amount <= 0) throw new Error("Invalid amount");
 
       let orderId = razorpayOrderId;
+      let paymentId = razorpayPaymentId;
       if (!orderId) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments`, {
+        const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'create',
             amount,
             pan_number: formData.panNumber,
-            donor_type: "Indian Citizen", // Assuming default for simplification
+            donor_type: "Indian Citizen",
             consent: true,
           })
         });
-        if (!response.ok) {
-          const errorData = await response.json();
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json();
           throw new Error(errorData.error || "Payment failed");
         }
 
-        const { order_id, id } = await response.json();
+        const { order_id, id } = await paymentResponse.json();
         setRazorpayPaymentId(id);
         setRazorpayOrderId(order_id);
         orderId = order_id;
+        paymentId = id;
       }
+
+      // First create the donation entry
+      const donationRequest = {
+        sponsor_name: formData.fullName,
+        sponsor_email: formData.email,
+        sponsor_phone: formData.phone,
+        category: treeLocation === "adopt" ? "Foundation" : "Public",
+        donation_type: treeLocation === "adopt" ? "adopt" : "donate",
+        donation_method: treeLocation === "donate" ? donationMethod : undefined,
+        payment_id: paymentId,
+        contribution_options: [],
+        comments: formData.comments,
+        amount_donated: amount,
+        ...(treeLocation === "adopt" && {
+          visit_date: visitDate,
+          trees_count: adoptedTreeCount,
+        }),
+        ...(treeLocation === "donate" && {
+          ...(donationMethod === "trees" && { trees_count: donationTreeCount }),
+          ...(donationMethod === "amount" && { amount_donated: donationAmount }),
+        }),
+        users: dedicatedNames.map(user => ({
+          ...user,
+          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
+          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+        })),
+        tags: ["WebSite"],
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(donationRequest)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Donation submission failed");
+      }
+
+      const responseData = await response.json();
+      setDonationId(responseData.id);
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -599,7 +640,6 @@ export default function DonatePage() {
           : `Donation for ${donationTreeCount} trees`,
         order_id: orderId,
         handler: async (response: any) => {
-          setRpPaymentSuccess(true);
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
             return;
@@ -610,15 +650,29 @@ export default function DonatePage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 action: 'verify',
-                payment_id: response.razorpay_payment_id,
+                razorpay_payment_id: response.razorpay_payment_id,
                 order_id: response.razorpay_order_id,
-                signature: response.razorpay_signature
+                razorpay_signature: response.razorpay_signature
               })
             });
             if (!verificationResponse.ok) throw new Error("Verification failed");
             alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
+          }
+
+          setShowSuccessDialog(true);
+
+          try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                donation_id: responseData.id
+              })
+            });
+          } catch (err) {
+            // 
           }
         },
         prefill: {
@@ -785,6 +839,40 @@ export default function DonatePage() {
       );
     };
 
+    const handleReset = () => {
+       // Only reset form after successful payment
+       setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        panNumber: "",
+        comments: ""
+      });
+      setDedicatedNames([{
+        recipient_name: "",
+        recipient_email: "",
+        recipient_phone: "",
+        assignee_name: "",
+        assignee_email: "",
+        assignee_phone: "",
+        relation: "",
+        trees_count: 14
+      }]);
+      setTreeLocation("");
+      setMultipleNames(false);
+      setPaymentOption("razorpay");
+      setCsvFile(null);
+      setCsvPreview([]);
+      setCsvErrors([]);
+      setErrors({});
+      setRpPaymentSuccess(true);
+      setRazorpayOrderId(null);
+      setRazorpayPaymentId(null);
+      setDonationAmount(5000);
+      setDonationTreeCount(14);
+      setCurrentStep(1);
+    }
+
     const handleUpdate = async () => {
       if (!donationId) return;
 
@@ -876,7 +964,7 @@ export default function DonatePage() {
 
               <div className="flex justify-end space-x-4">
                 <button
-                  onClick={() => setShowSuccessDialog(false)}
+                  onClick={() => { handleReset(); setShowSuccessDialog(false); }}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Skip
@@ -892,15 +980,15 @@ export default function DonatePage() {
             </div>
           ) : (
             <div className="text-center">
-             {additionalInvolvement.includes("Volunteer") ? (
-               <p className="text-green-600 mb-4">
-                     Thank you for choosing to volunteer with us. We truly value your willingness to engage. Your support makes a real difference!
-               </p>
+              {additionalInvolvement.includes("Volunteer") ? (
+                <p className="text-green-600 mb-4">
+                  Thank you for choosing to volunteer with us. We truly value your willingness to engage. Your support makes a real difference!
+                </p>
               ) : (
-                   <p className="text-green-600 mb-4">Thank you for providing additional information!</p>
-                  )}
-                 <button
-                onClick={() => setShowSuccessDialog(false)}
+                <p className="text-green-600 mb-4">Thank you for providing additional information!</p>
+              )}
+              <button
+                onClick={() => { handleReset(); setShowSuccessDialog(false); }}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 Close

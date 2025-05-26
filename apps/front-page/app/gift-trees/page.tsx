@@ -388,10 +388,18 @@ export default function GiftTreesPage() {
     const uniqueRequestId = getUniqueRequestId();
     setGiftRequestId(uniqueRequestId);
 
+    const amount = calculateGiftingAmount() * Number(formData.numberOfTrees);
     let paymentId: number | null = razorpayPaymentId || null;
+    let orderId: string | null = razorpayOrderId || null;
     if (isAboveLimit) {
       paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
       setRazorpayPaymentId(paymentId);
+    } else {
+      const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false);
+      paymentId = response.id;
+      orderId = response.order_id;
+      setRazorpayPaymentId(paymentId);
+      setRazorpayOrderId(orderId);
     }
 
     if (!paymentId) {
@@ -540,40 +548,67 @@ export default function GiftTreesPage() {
       }
 
       setGiftRequestId(responseData.id);
-      setShowSuccessDialog(true);
 
-      // Reset form
-      setFormData({
-        fullName: "",
-        email: "",
-        phone: "",
-        numberOfTrees: "",
-        panNumber: "",
-        comments: ""
-      });
-      setDedicatedNames([
-        {
-          recipient_name: "",
-          recipient_email: "",
-          recipient_phone: "",
-          assignee_name: "",
-          assignee_email: "",
-          assignee_phone: "",
-          relation: "",
-          trees_count: 1
-        }
-      ]);
-      setCurrentStep(1);
-      setTreeLocation("");
-      setMultipleNames(false);
-      setPaymentOption("razorpay");
-      setCsvFile(null);
-      setCsvPreview([]);
-      setCsvErrors([]);
-      setErrors({});
-      setRpPaymentSuccess(false);
-      setRazorpayOrderId(null);
-      setRazorpayPaymentId(null);
+      // handle razorpay payment
+      if (orderId) {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: amount * 100,
+          currency: 'INR',
+          name: "14 Trees Foundation",
+          description: `Gifting ${formData.numberOfTrees} trees`,
+          order_id: orderId,
+          handler: async (response: any) => {
+            setRpPaymentSuccess(true);
+            if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
+              alert('Payment verification failed - incomplete response');
+              return;
+            }
+            try {
+              setShowSuccessDialog(true);
+              const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'verify',
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              if (!verificationResponse.ok) throw new Error("Verification failed");
+              alert("Payment successful!");
+            } catch (err) {
+              console.error("Verification error:", err);
+            }
+
+            try {
+              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests/payment-success`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  gift_request_id: responseData.id,
+                  remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
+                })
+              });
+            } catch (err) {
+              // 
+            }
+          },
+          prefill: {
+            name: formData.fullName,
+            email: formData.email,
+            contact: formData.phone || ""
+          },
+          theme: { color: "#339933" }
+        };
+  
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          alert(`Payment failed: ${response.error.description}`);
+        });
+        rzp.open();
+      }
 
     } catch (err: any) {
       console.error("Gift trees request error:", err);
@@ -583,10 +618,6 @@ export default function GiftTreesPage() {
       setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (rpPaymentSuccess && !isLoading) handleSubmit();
-  }, [rpPaymentSuccess, handleSubmit])
 
   // Rest of your existing functions (unchanged)
   const handleAddName = () => {
@@ -850,6 +881,41 @@ export default function GiftTreesPage() {
       );
     };
 
+    const handleReset = () => {
+      // Reset form
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        numberOfTrees: "",
+        panNumber: "",
+        comments: ""
+      });
+      setDedicatedNames([
+        {
+          recipient_name: "",
+          recipient_email: "",
+          recipient_phone: "",
+          assignee_name: "",
+          assignee_email: "",
+          assignee_phone: "",
+          relation: "",
+          trees_count: 1
+        }
+      ]);
+      setCurrentStep(1);
+      setTreeLocation("");
+      setMultipleNames(false);
+      setPaymentOption("razorpay");
+      setCsvFile(null);
+      setCsvPreview([]);
+      setCsvErrors([]);
+      setErrors({});
+      setRpPaymentSuccess(false);
+      setRazorpayOrderId(null);
+      setRazorpayPaymentId(null);
+    }
+
     const handleUpdate = async () => {
       if (!giftRequestId) return;
 
@@ -962,7 +1028,7 @@ export default function GiftTreesPage() {
 
               <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
-                  onClick={() => setShowSuccessDialog(false)}
+                  onClick={() => {handleReset(); setShowSuccessDialog(false);}}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Skip
@@ -979,7 +1045,7 @@ export default function GiftTreesPage() {
           ) : (
             <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-center">
               <button
-                onClick={() => setShowSuccessDialog(false)}
+                onClick={() => {handleReset(); setShowSuccessDialog(false);}}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 Close
@@ -1321,7 +1387,6 @@ export default function GiftTreesPage() {
                     isProcessing={isProcessing}
                     isLoading={isLoading}
                     setCurrentStep={setCurrentStep}
-                    handleRazorpayPayment={handleRazorpayPayment}
                     handleSubmit={handleSubmit}
                     eventType={eventType}
                     eventName={eventName}
