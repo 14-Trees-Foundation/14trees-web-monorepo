@@ -135,7 +135,7 @@ export const SummaryPaymentPage = ({
 
         {/* Donor Info */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Your Details</h3>
+          <h3 className="text-lg font-semibold">Donor Details</h3>
           <p><span className="font-medium">Name:</span> {formData.fullName}</p>
           <p><span className="font-medium">Email:</span> {formData.email}</p>
           {formData.phone && <p><span className="font-medium">Phone:</span> {formData.phone}</p>}

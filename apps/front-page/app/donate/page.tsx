@@ -1,17 +1,11 @@
 "use client";
 
-import { Button } from "ui/components/button";
-import Link from "next/link";
-import { motion } from "framer-motion";
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
 import { useState, useEffect, useRef } from "react";
-import Script from 'next/script';
-import Image from 'next/image';
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
-import CsvUpload from "components/CsvUpload";
 import { UploadIcon } from "lucide-react";
 import { getUniqueRequestId } from "~/utils";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
@@ -48,7 +42,7 @@ export default function DonatePage() {
     assignee_email: "",
     assignee_phone: "",
     relation: "",
-    trees_count: 1
+    trees_count: 14
   }]);
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,17 +58,14 @@ export default function DonatePage() {
     panNumber: "",
     comments: ""
   });
-  const [pledgeType, setPledgeType] = useState<"trees" | "acres">("trees");
   const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
-  const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
   const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<Record<string, File>>({});
-  const [imageUploadProgress, setImageUploadProgress] = useState<Record<string, number>>({});
   const [visitDate, setVisitDate] = useState<string>("");
   const [adoptedTreeCount, setAdoptedTreeCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -105,7 +96,6 @@ export default function DonatePage() {
         ? 1500 * (donationTreeCount || 0)
         : donationAmount;
     }
-    setTotalAmount(amount);
     setIsAboveLimit(amount > 500000);
   }, [treeLocation, adoptedTreeCount, donationMethod, donationTreeCount, donationAmount]);
 
@@ -127,9 +117,9 @@ export default function DonatePage() {
   };
 
   const validationPatterns = {
-    name: /^[A-Za-z\s.'-]*$/, // Allow empty for optional fields
+    name: /^[A-Za-z\s.'\-&]*$/, // Allow empty for optional fields
     email: /^[^\s@]+@[^\s@]+\.[^\s@]*$/,
-    phone: /^[0-9]{10,15}$/,
+    phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
     number: /^[0-9]+(\.[0-9]+)?$/
   };
@@ -174,9 +164,12 @@ export default function DonatePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
-    const error = validateField(name, value);
+    // Always store PAN number in uppercase
+    const processedValue = name === "panNumber" ? value.toUpperCase() : value;
+
+    const error = validateField(name, processedValue);
     setErrors(prev => ({ ...prev, [name]: error }));
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
 
   const validateDedicatedNames = () => {
@@ -184,9 +177,13 @@ export default function DonatePage() {
     const newErrors: Record<string, string> = {};
 
     dedicatedNames.forEach((name, index) => {
-      if (!name.recipient_name.trim()) {
+      // If multipleNames is true, recipient_name is required
+      if (multipleNames && !name.recipient_name.trim()) {
+        newErrors[`dedicatedName-${index}`] = "Name is required";
+        isValid = false;
+      } else if (!multipleNames && !name.recipient_name.trim()) {
         newErrors[`dedicatedName-${index}`] = "Name is optional";
-        isValid = true; // Allow empty
+        isValid = true; // Allow empty for single entry
       } else if (!validationPatterns.name.test(name.recipient_name)) {
         newErrors[`dedicatedName-${index}`] = "Please enter a valid name";
         isValid = false;
@@ -475,7 +472,7 @@ export default function DonatePage() {
         assignee_email: "",
         assignee_phone: "",
         relation: "",
-        trees_count: 1
+        trees_count: 14
       }]);
       setTreeLocation("");
 
@@ -488,6 +485,8 @@ export default function DonatePage() {
       setRpPaymentSuccess(false);
       setRazorpayOrderId(null);
       setRazorpayPaymentId(null);
+      setDonationAmount(5000);
+      setDonationTreeCount(14);
       setCurrentStep(1);
 
     } catch (err: any) {
@@ -515,11 +514,10 @@ export default function DonatePage() {
     newNames.splice(index, 1);
     setDedicatedNames(newNames);
 
-    const newErrors = { ...errors };
-    delete newErrors[`dedicatedName-${index}`];
-    delete newErrors[`dedicatedEmail-${index}`];
-    delete newErrors[`dedicatedPhone-${index}`];
-    setErrors(newErrors);
+    // Re-validate all dedicated names after removal
+    setTimeout(() => {
+      validateDedicatedNames();
+    }, 0);
   };
 
   const handleNameChange = (index: number, field: keyof DedicatedName, value: string | number) => {
@@ -529,8 +527,8 @@ export default function DonatePage() {
       return newNames;
     });
 
-    if (field === "recipient_name" && value) {
-      const error = !validationPatterns.name.test(value.toString())
+    if (field === "recipient_name") {
+      const error = !validationPatterns.name.test(value.toString()) || (multipleNames && value.toString().trim()==="")
         ? "Please enter a valid name"
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedName-${index}`]: error }));
@@ -545,14 +543,6 @@ export default function DonatePage() {
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedPhone-${index}`]: error }));
     }
-  };
-
-  const calculateDonationAmount = (): number => {
-    if (treeLocation === "adopt") return 3000;
-    if (treeLocation === "donate") {
-      return donationMethod === "trees" ? 1500 : 0;
-    }
-    return 0;
   };
 
   const handleRazorpayPayment = async () => {
@@ -934,7 +924,7 @@ export default function DonatePage() {
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
               </h6>
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
                 Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
@@ -1127,7 +1117,7 @@ export default function DonatePage() {
                   </div>
 
                   {treeLocation !== "" && <div className="mt-6 space-y-6">
-                    <h2 className="text-2xl font-semibold">Your details</h2>
+                    <h2 className="text-2xl font-semibold">Donor details</h2>
                     <div className="grid grid-cols-1 gap-4">
                       <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">Donated by*:</label>
@@ -1247,7 +1237,7 @@ export default function DonatePage() {
                                 assignee_email: '',
                                 assignee_phone: '',
                                 relation: '',
-                                trees_count: 1
+                                trees_count: donationTreeCount
                               }]);
                             }
                           }}
@@ -1304,8 +1294,9 @@ export default function DonatePage() {
                           <button
                             type="button"
                             onClick={handleAddName}
-                            className="flex items-center text-green-700 hover:text-green-900 mt-2"
-                            disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === ""}
+                            className={`flex items-center text-green-700 hover:text-green-900 mt-2 ${dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "" || dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount}
+                            title={dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'You have already assigned all the trees to users' : ''}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -1561,74 +1552,6 @@ export default function DonatePage() {
                               <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
                             )}
                           </div>
-                          {/* <div className="mt-6">
-                            <label className="flex items-center space-x-3 mb-4">
-                              <input
-                                type="checkbox"
-                                checked={isAssigneeDifferent}
-                                onChange={(e) => setIsAssigneeDifferent(e.target.checked)}
-                                className="h-5 w-5"
-                              />
-                              <span>Assign trees to someone else?</span>
-                            </label>
-
-                            {isAssigneeDifferent && (
-                              <div className="border border-gray-200 rounded-md p-4 space-y-4">
-                                <h3 className="font-medium">Assignee Details</h3>
-                                <input
-                                  type="text"
-                                  placeholder="Assignee Name *"
-                                  value={dedicatedNames[0].assignee_name}
-                                  onChange={(e) => handleNameChange(0, "assignee_name", e.target.value)}
-                                  className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  required
-                                />
-                                <div className="grid gap-4 md:grid-cols-2">
-                                  <input
-                                    type="email"
-                                    placeholder="Assignee Email (optional)"
-                                    value={dedicatedNames[0].assignee_email}
-                                    onChange={(e) => handleNameChange(0, "assignee_email", e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  />
-                                  <input
-                                    type="tel"
-                                    placeholder="Assignee Phone (optional)"
-                                    value={dedicatedNames[0].assignee_phone}
-                                    onChange={(e) => handleNameChange(0, "assignee_phone", e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium mb-1">Relation *</label>
-                                  <select
-                                    value={dedicatedNames[0].relation}
-                                    onChange={(e) => handleNameChange(0, "relation", e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-3"
-                                  >
-                                    <option value="father">Father</option>
-                                    <option value="mother">Mother</option>
-                                    <option value="uncle">Uncle</option>
-                                    <option value="aunt">Aunt</option>
-                                    <option value="grandfather">Grandfather</option>
-                                    <option value="grandmother">Grandmother</option>
-                                    <option value="son">Son</option>
-                                    <option value="daughter">Daughter</option>
-                                    <option value="wife">Wife</option>
-                                    <option value="husband">Husband</option>
-                                    <option value="grandson">Grandson</option>
-                                    <option value="granddaughter">Granddaughter</option>
-                                    <option value="brother">Brother</option>
-                                    <option value="sister">Sister</option>
-                                    <option value="cousin">Cousin</option>
-                                    <option value="friend">Friend</option>
-                                    <option value="colleague">Colleague</option>
-                                    <option value="other">Other</option>
-                                  </select>
-                                </div>
-                              </div>
-                            )}
-                          </div> */}
                         </div>
                       )}
                     </div>
@@ -1639,9 +1562,12 @@ export default function DonatePage() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (hasTableErrors) {
-                            // Optionally, you can show an alert as well
-                            alert('Please fix all errors in the table above before proceeding.');
+                          // Check for any errors in form, csv, or table
+                          const hasFormErrors = Object.entries(errors).some(
+                            ([key, value]) => key !== "comments" && value && value.trim() !== ""
+                          );
+                          if (hasTableErrors || hasFormErrors || csvErrors.length > 0) {
+                            alert('Please fix all errors in the form and table above before proceeding.');
                             return;
                           }
                           const mainFormValid = Object.keys(formData).every(key => {
@@ -1667,12 +1593,13 @@ export default function DonatePage() {
                             alert("Please fill all required fields");
                           }
                         }}
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors"
+                        className={`bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors ${hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
                       >
                         Next →
                       </button>
-                      {hasTableErrors && (
-                        <div className="text-red-600 text-sm mt-2">Please fix all errors in the table above before proceeding.</div>
+                      {(hasTableErrors || Object.values(errors).some(e => e && e.trim() !== "") || csvErrors.length > 0) && (
+                        <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding.</div>
                       )}
                     </div>
                   </div>
