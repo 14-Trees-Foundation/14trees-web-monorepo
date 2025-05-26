@@ -25,7 +25,6 @@ interface SummaryPaymentProps {
   isProcessing: boolean;
   isLoading: boolean;
   setCurrentStep: (step: 1 | 2) => void;
-  handleRazorpayPayment: () => void;
   handleSubmit: (e: React.FormEvent) => void;
   eventType: string | null;
   eventName: string | null;
@@ -45,7 +44,6 @@ export const SummaryPaymentPage = ({
   isProcessing,
   isLoading,
   setCurrentStep,
-  handleRazorpayPayment,
   handleSubmit,
   eventType,
   eventName,
@@ -164,7 +162,7 @@ export const SummaryPaymentPage = ({
           <div className="flex justify-center">
             <Button
               type="button"
-              onClick={handleRazorpayPayment}
+              onClick={handleSubmit}
               disabled={isProcessing || rpPaymentSuccess}
               className={`bg-green-600 text-white w-[500px] py-4 mt-4 ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
