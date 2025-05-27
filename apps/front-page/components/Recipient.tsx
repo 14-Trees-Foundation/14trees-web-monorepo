@@ -66,7 +66,7 @@ const Recipeint: React.FC<RecipeintProps> = ({ maxTrees, index, user, errors, ha
                     <label className="block text-gray-700 mb-1">Recipient name:</label>
                     <input
                         type="text"
-                        placeholder="Type Recipient name"
+                        placeholder="The one who receives the card"
                         className={`w-full rounded-md border ${errors[`dedicatedName-${index}`] ? "border-red-500" : "border-gray-300"
                             } px-4 py-3 text-gray-700`}
                         value={user.recipient_name}
@@ -111,7 +111,7 @@ const Recipeint: React.FC<RecipeintProps> = ({ maxTrees, index, user, errors, ha
                         <h3 className="font-medium">Assignee Details</h3>
                         <input
                             type="text"
-                            placeholder="Assignee Name *"
+                            placeholder="The tree is planted in this person&apos;s name *"
                             value={user.assignee_name}
                             onChange={(e) => handleNameChange(index, "assignee_name", e.target.value)}
                             className="w-full rounded-md border border-gray-300 px-4 py-3"

@@ -136,7 +136,7 @@ export default function GiftTreesPage() {
   const validationPatterns = {
     name: /^[A-Za-z\s.'-]+$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    phone: /^[0-9]{10,15}$/,
+    phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
     number: /^[0-9]+(\.[0-9]+)?$/
   };
@@ -1043,9 +1043,14 @@ export default function GiftTreesPage() {
               </div>
             </div>
           ) : (
-            <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-center">
+            <div className="text-center">
+              
+              <p className="text-green-600 mb-4">
+                We truly value your willingness to engage. Your support makes a real difference!
+              </p>
+              
               <button
-                onClick={() => {handleReset(); setShowSuccessDialog(false);}}
+                onClick={() => { handleReset(); setShowSuccessDialog(false); }}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 Close
@@ -1128,7 +1133,7 @@ export default function GiftTreesPage() {
                               : 'bg-gray-100 hover:bg-gray-200'
                               }`}
                           >
-                            {count} TREES
+                            {count} Trees
                           </button>
                         ))}
                         <button
@@ -1316,7 +1321,7 @@ export default function GiftTreesPage() {
                               const error = validateField(e.target.name, e.target.value);
                               setErrors(prev => ({ ...prev, phone: error }));
                             }}
-                            placeholder="Type your mobile number"
+                            placeholder="Enter with country code, if outside India"
                             pattern="[0-9]{10,15}"
                             title="10-15 digit phone number"
                           />
@@ -1361,6 +1366,17 @@ export default function GiftTreesPage() {
                           return true;
                         });
 
+                        const treesCount = parseInt(formData.numberOfTrees);
+                        const treesAssigned = dedicatedNames.filter(user => user.recipient_name?.trim())
+                                                .map(user => user.trees_count)
+                                                .reduce((prev, curr) => prev + curr, 0);
+
+                        if (treesAssigned < treesCount) {
+                          if (treesAssigned !== 0) alert(`You have only assigned ${treesAssigned} out of ${treesCount} trees. Please assign all the trees to recipients!`);
+                          else alert(`You have not assigned any tree out of ${treesCount} ${treesCount === 1 ? "tree" : "trees"}. Please assign all the trees to recipients!`);
+                          return;
+                        }
+
                         if (mainFormValid) {
                           setCurrentStep(2);
                         } else {
@@ -1369,7 +1385,7 @@ export default function GiftTreesPage() {
                       }}
                       className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors"
                     >
-                      Next →
+                      Next
                     </button>
                   </div>
                 </form>
