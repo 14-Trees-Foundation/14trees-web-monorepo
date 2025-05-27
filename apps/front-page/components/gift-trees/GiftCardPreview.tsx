@@ -11,7 +11,7 @@ const defaultMessages = {
     wedding: prefix + 'We are delighted to share that a tree has been planted by {giftedBy} at the 14Trees Foundation, Pune, in your name to celebrate your special union. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     anniversary: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate your Wedding Anniversary by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     festival: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate this joyous occasion by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
-    retirement: prefix + 'We are delighted to share that a tree has been planted {giftedBy} at the 14 Trees Foundation, Pune, in your name to commemorate your retirement This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
+    retirement: prefix + 'We are delighted to share that a tree has been planted by {giftedBy} at the 14 Trees Foundation, Pune, in your name to commemorate your retirement. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     logo: 'Gifted by 14 Trees in partnership with'
 }
 
