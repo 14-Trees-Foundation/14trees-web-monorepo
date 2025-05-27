@@ -770,6 +770,7 @@ export class DonationService {
                     panNumber: panNumber,
                 },
                 donationDetails: {
+                    donationId: donation.id,
                     amount: formatNumber(donation.amount_donated || 0),
                     date: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                     treesCount: donation.trees_count,
