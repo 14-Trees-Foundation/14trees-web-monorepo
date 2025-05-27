@@ -15,6 +15,8 @@ import { Tree } from '../models/tree';
 import { User } from '../models/user';
 import { WhereOptions } from 'sequelize';
 import { EmailTemplate } from '../models/email_template';
+import RazorpayService from "../services/razorpay/razorpay";
+import { PaymentRepository } from "../repo/paymentsRepo";
 
 /*
     Model - Donation
@@ -117,8 +119,17 @@ export const createDonation = async (req: Request, res: Response) => {
         });
     })
 
-    let usersCreated = true; // Default to true, only set to false if users array exists but creation fails
     if (!donation) return;
+
+    if (donation.payment_id) {
+        const payment = await PaymentRepository.getPayment(donation.payment_id);
+        if (payment && payment.order_id) {
+            const razorpayService = new RazorpayService();
+            await razorpayService.updateOrder(payment.order_id, { "Donation Id": donation.id.toString() })
+        }
+    }
+
+    let usersCreated = true; // Default to true, only set to false if users array exists but creation fails
     if (users && users.length > 0) {
         await DonationService.createDonationUsers(
             donation.id,
