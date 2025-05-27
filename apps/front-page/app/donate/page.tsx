@@ -72,7 +72,7 @@ export default function DonatePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [donationId, setDonationId] = useState<string | null>(null);
+  const [donationId, setDonationId] = useState<number | null>(null);
   const [donationType, setDonationType] = useState<"adopt" | "donate">("adopt");
   const [donationMethod, setDonationMethod] = useState<"trees" | "amount">("trees");
   const [donationTreeCount, setDonationTreeCount] = useState<number>(14);
@@ -340,24 +340,7 @@ export default function DonatePage() {
   }
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    setIsSubmitting(true);
 
-    const uniqueRequestId = getUniqueRequestId();
-
-    // Handle payment based on selected option
-
-    let paymentId: number | null = razorpayPaymentId || null;
-    if (isAboveLimit) {
-      paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
-      setRazorpayPaymentId(paymentId);
-    }
-
-    if (!paymentId) {
-      setIsLoading(false);
-      setIsSubmitting(false);
-      return;
-    }
     const mainFormValid = Object.keys(formData).every(key => {
       if (key === "comments") {
         return true;
@@ -377,6 +360,7 @@ export default function DonatePage() {
 
       return true;
     });
+
     const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
     const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
     if (users.length === 1 && !multipleNames) {
@@ -391,22 +375,48 @@ export default function DonatePage() {
       return;
     }
 
+    setIsLoading(true);
+    setIsSubmitting(true);
+
+    const amount = treeLocation === "adopt"
+      ? 3000 * (adoptedTreeCount || 0)
+      : donationMethod === "trees"
+        ? 1500 * (donationTreeCount || 0)
+        : donationAmount;
+
+    const uniqueRequestId = getUniqueRequestId();
+
+    // Handle payment based on selected option
+    let paymentId: number | null = razorpayPaymentId || null;
+    let orderId: string | null = razorpayOrderId || null;
+    if (isAboveLimit) {
+      paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
+      setRazorpayPaymentId(paymentId);
+    } else if (!paymentId && !isAboveLimit) {
+      try {
+        const response = await apiClient.createPayment(
+          amount,
+          "Indian Citizen",
+          formData.panNumber,
+          true
+        );
+        paymentId = response.id;
+        orderId = response.order_id;
+        setRazorpayPaymentId(response.id);
+        setRazorpayOrderId(orderId);
+      } catch (error: any) {
+        alert("Failed to create your request. Please try again later!");
+        return;
+      }
+    }
+
+    if (!paymentId) {
+      setIsLoading(false);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      const recipientsWithImages = await Promise.all(
-        dedicatedNames.map(async (recipient) => {
-          const image = recipient.image;
-          if (image && typeof image !== 'string') {
-            try {
-              const imageUrl = await apiClient.uploadUserImage(image);
-              return { ...recipient, image_url: imageUrl };
-            } catch (error) {
-              console.error("Failed to upload image:", error);
-              return recipient;
-            }
-          }
-          return recipient;
-        })
-      );
 
       const donationRequest = {
         sponsor_name: formData.fullName,
@@ -440,54 +450,86 @@ export default function DonatePage() {
         tags: ["WebSite"],
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(donationRequest)
-      });
+      let responseData: any;
+      if (!donationId) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(donationRequest)
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Donation submission failed");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Donation submission failed");
+        }
+
+        responseData = await response.json();
+        setDonationId(responseData.id);
       }
 
-      const responseData = await response.json();
-      setDonationId(responseData.id);
-      setShowSuccessDialog(true);
 
-      setFormData({
-        fullName: "",
-        email: "",
-        phone: "",
-        panNumber: "",
-        comments: ""
-      });
-      setDedicatedNames([{
-        recipient_name: "",
-        recipient_email: "",
-        recipient_phone: "",
-        assignee_name: "",
-        assignee_email: "",
-        assignee_phone: "",
-        relation: "",
-        trees_count: 14
-      }]);
-      setTreeLocation("");
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount * 100,
+        currency: 'INR',
+        name: "14 Trees Foundation",
+        description: treeLocation === "adopt"
+          ? `Adoption of ${adoptedTreeCount} trees`
+          : `Donation for ${donationTreeCount} trees`,
+        order_id: orderId,
+        handler: async (response: any) => {
+          if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
+            alert('Payment verification failed - incomplete response');
+            return;
+          }
+          try {
+            const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'verify',
+                razorpay_payment_id: response.razorpay_payment_id,
+                order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            if (!verificationResponse.ok) throw new Error("Verification failed");
+            alert("Payment successful!");
+          } catch (err) {
+            console.error("Verification error:", err);
+          }
 
-      setMultipleNames(false);
-      setPaymentOption("razorpay");
-      setCsvFile(null);
-      setCsvPreview([]);
-      setCsvErrors([]);
-      setErrors({});
-      setRpPaymentSuccess(false);
-      setRazorpayOrderId(null);
-      setRazorpayPaymentId(null);
-      setDonationAmount(5000);
-      setDonationTreeCount(14);
-      setCurrentStep(1);
+          setShowSuccessDialog(true);
+
+          try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                donation_id: responseData.id
+              })
+            });
+          } catch (err) {
+            // 
+          }
+        },
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone || ""
+        },
+        theme: { color: "#339933" }
+      };
+
+      if (!isAboveLimit) {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          alert(`Payment failed: ${response.error.description}`);
+        });
+        rzp.open();
+      }
 
     } catch (err: any) {
       console.error("Donation error:", err);
@@ -747,7 +789,7 @@ export default function DonatePage() {
 
       return paymentId;
     } catch (err: any) {
-      alert(err.message || "Payment failed");
+      alert(err.message || "Payment to save payment details");
       return null;
     }
   }
@@ -872,6 +914,7 @@ export default function DonatePage() {
       setDonationAmount(5000);
       setDonationTreeCount(14);
       setCurrentStep(1);
+      setDonationId(null);
     }
 
     const handleUpdate = async () => {
@@ -1010,18 +1053,78 @@ export default function DonatePage() {
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
-              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
-              </h6>
-              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
-              </h6>
-              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
-                Support Our Reforestation
+              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                We don't just plant trees, we rebuild forests.
               </h2>
-              <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl">
-                {labels.site.description}
-              </h3>
+              <div className="mt-8 space-y-6">
+                <p className="text-grey-600 text-base md:text-lg leading-relaxed">
+                  By donating to <span className="font-semibold text-green-700">14Trees</span>, you're directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, which suffer from severe topsoil erosion and depleted groundwater.
+                </p>
+
+                <div className="bg-green-50 rounded-xl p-6 shadow-sm">
+                  <h3 className="text-xl font-semibold text-green-800 mb-4">Through our reforestation efforts we:</h3>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <li className="flex items-start space-x-3">
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
+                      <span className="text-grey-700">plant native tree species</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
+                      <span className="text-grey-700">do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
+                      <span className="text-grey-700">use only organic composts and no chemical pesticides</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
+                      <span className="text-grey-700">employ local rural population for all on-ground tasks</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
+                      <span className="text-grey-700">incubate microventures</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
+                      <span className="text-grey-700">leverage urban capital to scale-up</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-green-100">
+                  <h3 className="text-xl font-semibold text-green-800 mb-4">Our Impact till date:</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-green-600">1400+</span>
+                        <span className="text-grey-700">acres area under reforestation</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-green-600">2 lacs+</span>
+                        <span className="text-grey-700">trees planted</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-green-600">200+</span>
+                        <span className="text-grey-700">local rural people employed</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-green-600">400+</span>
+                        <span className="text-grey-700">species (Flora & Fauna)</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-green-600">13</span>
+                        <span className="text-grey-700">of 17 SDGs mapped</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-grey-600 text-base md:text-lg leading-relaxed italic">
+                  By funding <span className="font-semibold text-green-700">14Trees</span>, you're enabling long-term environmental healing and economic empowerment for those who depend most on the land.
+                </p>
+              </div>
             </div>
           </div>
         </MotionDiv>
@@ -1065,7 +1168,7 @@ export default function DonatePage() {
                           }}
                           checked={treeLocation === "adopt"}
                         />
-                        <span>I would like to adopt the trees planted during my visit to 14Trees in the past</span>
+                        <span>I would like to adopt the trees, I/we planted during my visit at 14 Trees in the past.</span>
                       </label>
                     </div>
 
@@ -1192,7 +1295,7 @@ export default function DonatePage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Date of visit: <span className="text-gray-500">- approx date / month is fine if you don&apos;t remember</span>
                           </label>
-                          <div 
+                          <div
                             className="relative cursor-pointer"
                             onClick={() => {
                               dateInputRef.current?.showPicker();
@@ -1738,9 +1841,7 @@ export default function DonatePage() {
                       isProcessing={isProcessing}
                       isLoading={isLoading}
                       setCurrentStep={setCurrentStep}
-                      handleRazorpayPayment={handleRazorpayPayment}
                       handleSubmit={handleSubmit}
-                      setDonationId={setDonationId}
                     />
                   </div>
                 )
