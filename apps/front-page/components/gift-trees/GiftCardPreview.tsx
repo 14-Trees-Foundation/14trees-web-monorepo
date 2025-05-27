@@ -8,9 +8,10 @@ const defaultMessages = {
     primary: prefix + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.' + secondaryMessage,
     birthday: prefix + 'We are immensely delighted to share that a tree has been planted in your name on the occasion of your birthday by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     memorial: prefix + 'A tree has been planted in the memory of <name here> at the 14 Trees Foundation reforestation site. For many years, this tree will help rejuvenate local ecosystems, support local biodiversity and offset the harmful effects of climate change and global warming.' + secondaryMessage,
-    wedding: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate your special union by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
+    wedding: prefix + 'We are delighted to share that a tree has been planted by {giftedBy} at the 14Trees Foundation, Pune, in your name to celebrate your special union. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     anniversary: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate your Wedding Anniversary by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     festival: prefix + 'We are delighted to share that a tree has been planted in your name to celebrate this joyous occasion by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
+    retirement: prefix + 'We are delighted to share that a tree has been planted by {giftedBy} at the 14 Trees Foundation, Pune, in your name to commemorate your retirement. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     logo: 'Gifted by 14 Trees in partnership with'
 }
 
@@ -22,6 +23,12 @@ interface GiftCardPreviewProps {
     windowWidth: number;
     setPrimaryMessage: (message: string) => void;
     eventType: string | null;
+    previewUrl: string | null;
+    setPreviewUrl: (url: string | null) => void;
+    presentationId: string | null;
+    setPresentationId: (id: string | null) => void;
+    slideId: string | null;
+    setSlideId: (id: string | null) => void;
 }
 
 const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
@@ -32,12 +39,15 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
     windowWidth,
     setPrimaryMessage,
     eventType,
+    previewUrl,
+    setPreviewUrl,
+    presentationId,
+    setPresentationId,
+    slideId,
+    setSlideId,
 }) => {
 
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
-    const [presentationId, setPresentationId] = useState<string | null>(null);
-    const [slideId, setSlideId] = useState<string | null>(null);
 
     const dataRef = useRef({
         primaryMessage: "",
@@ -51,8 +61,8 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            const eventMessage = eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : eventType === "4" ? defaultMessages.wedding : eventType === "5" ? defaultMessages.anniversary : eventType === "6" ? defaultMessages.festival : defaultMessages.primary;
-            const message = primaryMessage === "" || primaryMessage === defaultMessages.primary || primaryMessage === defaultMessages.memorial || primaryMessage === defaultMessages.birthday || primaryMessage === defaultMessages.wedding || primaryMessage === defaultMessages.anniversary || primaryMessage === defaultMessages.festival
+            const eventMessage = eventType === "1" ? defaultMessages.birthday : eventType === "2" ? defaultMessages.memorial : eventType === "4" ? defaultMessages.wedding : eventType === "5" ? defaultMessages.anniversary : eventType === "6" ? defaultMessages.festival : eventType === "7" ? defaultMessages.retirement : defaultMessages.primary;
+            const message = primaryMessage === "" || primaryMessage === defaultMessages.primary || primaryMessage === defaultMessages.memorial || primaryMessage === defaultMessages.birthday || primaryMessage === defaultMessages.wedding || primaryMessage === defaultMessages.anniversary || primaryMessage === defaultMessages.festival || primaryMessage === defaultMessages.retirement
                 ? eventMessage
                 : primaryMessage;
 
@@ -83,9 +93,21 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
         dataRef.current.primaryMessage = primaryMessage;
     }, [primaryMessage])
 
+
     const handleGeneratePreview = async () => {
         setIsGeneratingPreview(true);
         try {
+            // Replace {recipient} placeholder with actual name for preview only
+            const previewMessage = primaryMessage.replace(
+                /\{recipient\}/g,
+                userName || "Recipient"
+            );
+
+            // Replace {giftedBy} placeholder if it exists
+            const finalPreviewMessage = giftedBy
+                ? previewMessage.replace(/\{giftedBy\}/g, giftedBy)
+                : previewMessage;
+
             const endpoint = presentationId && slideId
                 ? `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/update-template`
                 : `${process.env.NEXT_PUBLIC_API_URL}/gift-cards/generate-template`;
@@ -107,7 +129,6 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
 
             const data = await response.json();
             if (response.ok) {
-
                 if (data.presentation_id && !dataRef.current.presentationId) {
                     dataRef.current.presentationId = data.presentation_id;
                     dataRef.current.slideId = data.slide_id;
