@@ -1053,78 +1053,18 @@ export default function DonatePage() {
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
-              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-                We don't just plant trees, we rebuild forests.
+              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+              </h6>
+              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
+              </h6>
+              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
+                Support Our Reforestation
               </h2>
-              <div className="mt-8 space-y-6">
-                <p className="text-grey-600 text-base md:text-lg leading-relaxed">
-                  By donating to <span className="font-semibold text-green-700">14Trees</span>, you're directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, which suffer from severe topsoil erosion and depleted groundwater.
-                </p>
-
-                <div className="bg-green-50 rounded-xl p-6 shadow-sm">
-                  <h3 className="text-xl font-semibold text-green-800 mb-4">Through our reforestation efforts we:</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <li className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
-                      <span className="text-grey-700">plant native tree species</span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
-                      <span className="text-grey-700">do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge</span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
-                      <span className="text-grey-700">use only organic composts and no chemical pesticides</span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
-                      <span className="text-grey-700">employ local rural population for all on-ground tasks</span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
-                      <span className="text-grey-700">incubate microventures</span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-600">✓</span>
-                      <span className="text-grey-700">leverage urban capital to scale-up</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-green-100">
-                  <h3 className="text-xl font-semibold text-green-800 mb-4">Our Impact till date:</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-green-600">1400+</span>
-                        <span className="text-grey-700">acres area under reforestation</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-green-600">2 lacs+</span>
-                        <span className="text-grey-700">trees planted</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-green-600">200+</span>
-                        <span className="text-grey-700">local rural people employed</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-green-600">400+</span>
-                        <span className="text-grey-700">species (Flora & Fauna)</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-green-600">13</span>
-                        <span className="text-grey-700">of 17 SDGs mapped</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-grey-600 text-base md:text-lg leading-relaxed italic">
-                  By funding <span className="font-semibold text-green-700">14Trees</span>, you're enabling long-term environmental healing and economic empowerment for those who depend most on the land.
-                </p>
-              </div>
+              <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl">
+                {labels.site.description}
+              </h3>
             </div>
           </div>
         </MotionDiv>
