@@ -415,6 +415,7 @@ export const sendGiftRequestAcknowledgement = async (
                 message: giftRequest.primary_message,
                 groupName: giftRequest.group_name,
                 amount: amount,
+                requestId: giftRequest.id,
             }
         };
 
