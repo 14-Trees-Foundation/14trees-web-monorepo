@@ -1358,7 +1358,12 @@ export default function GiftTreesPage() {
                       </div>
 
                       <div className="flex items-center flex-wrap">
-                        <label className="w-48 text-gray-700">PAN number*:</label>
+                        <label className="w-48 text-gray-700">
+                          PAN number*:
+                          <Tooltip title="PAN number is required for us to map and issue 80G receipt to the donor.">
+                            <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
+                          </Tooltip>
+                          </label>
                         <div className="min-w-[200px] flex-1">
                           <input
                             type="text"
