@@ -185,7 +185,7 @@ export const SummaryPaymentPage = ({
           onClick={() => setCurrentStep(1)}
           className="mt-4 text-green-600 hover:text-green-800 underline"
         >
-          ← Back to Edit
+          Back to Edit
         </button>
       </div>
 

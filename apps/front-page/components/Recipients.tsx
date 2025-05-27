@@ -82,9 +82,9 @@ const Recipients: React.FC<RecipientsProps> = ({
             </button>
 
             {Number(formData.numberOfTrees) != dedicatedNames.map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0) && (
-                <div className="pt-6 flex justify-center">
+                <div className="pt-6">
                     <p className="text-red-600">
-                        Only gifting {Number(dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0))} { Number(dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0)) == 1 ? "tree" : "trees"} out of {formData.numberOfTrees} trees. You can choose to provide all the recipients now or can do it later. Instructions will be shared over your email id.
+                        Only gifting {Number(dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0))} { Number(dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0)) == 1 ? "tree" : "trees"} out of {formData.numberOfTrees} trees.
                     </p>
                 </div>
             )}

@@ -37,6 +37,9 @@ export default function GiftTreesPage() {
   const [eventType, setEventType] = useState<string | null>(null); // New state for event type
   const [giftedOn, setGiftedOn] = useState<Date>(new Date()); // New state for gifted on
   const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [presentationId, setPresentationId] = useState<string | null>(null);
+  const [slideId, setSlideId] = useState<string | null>(null);
   const [treeLocation, setTreeLocation] = useState("");
   const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
@@ -136,7 +139,7 @@ export default function GiftTreesPage() {
   const validationPatterns = {
     name: /^[A-Za-z\s.'-]+$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    phone: /^[0-9]{10,15}$/,
+    phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
     number: /^[0-9]+(\.[0-9]+)?$/
   };
@@ -602,7 +605,7 @@ export default function GiftTreesPage() {
           },
           theme: { color: "#339933" }
         };
-  
+
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', (response: any) => {
           alert(`Payment failed: ${response.error.description}`);
@@ -887,22 +890,21 @@ export default function GiftTreesPage() {
         fullName: "",
         email: "",
         phone: "",
-        numberOfTrees: "",
+        numberOfTrees: "10", // Reset to default value
         panNumber: "",
         comments: ""
       });
-      setDedicatedNames([
-        {
-          recipient_name: "",
-          recipient_email: "",
-          recipient_phone: "",
-          assignee_name: "",
-          assignee_email: "",
-          assignee_phone: "",
-          relation: "",
-          trees_count: 1
-        }
-      ]);
+      setDedicatedNames([{
+        recipient_name: "",
+        recipient_email: "",
+        assignee_name: "",
+        assignee_email: "",
+        relation: "",
+        trees_count: 1
+      }]);
+      setEventName(null);
+      setEventType(null);
+      setPlantedBy(null);
       setCurrentStep(1);
       setTreeLocation("");
       setMultipleNames(false);
@@ -914,6 +916,16 @@ export default function GiftTreesPage() {
       setRpPaymentSuccess(false);
       setRazorpayOrderId(null);
       setRazorpayPaymentId(null);
+      setPreviewUrl(null);
+      setPresentationId(null);
+      setSlideId(null);
+      setEventName(null);
+      setEventType(null);
+      setGiftedOn(new Date());
+      setPlantedBy(null);
+      setPrimaryMessage("");
+      setSecondaryMessage("");
+      setShowSuccessDialog(false);
     }
 
     const handleUpdate = async () => {
@@ -1028,7 +1040,7 @@ export default function GiftTreesPage() {
 
               <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
-                  onClick={() => {handleReset(); setShowSuccessDialog(false);}}
+                  onClick={() => { handleReset(); setShowSuccessDialog(false); }}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Skip
@@ -1043,9 +1055,14 @@ export default function GiftTreesPage() {
               </div>
             </div>
           ) : (
-            <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-center">
+            <div className="text-center">
+              
+              <p className="text-green-600 mb-4">
+                We truly value your willingness to engage. Your support makes a real difference!
+              </p>
+              
               <button
-                onClick={() => {handleReset(); setShowSuccessDialog(false);}}
+                onClick={() => { handleReset(); setShowSuccessDialog(false); }}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 Close
@@ -1128,7 +1145,7 @@ export default function GiftTreesPage() {
                               : 'bg-gray-100 hover:bg-gray-200'
                               }`}
                           >
-                            {count} TREES
+                            {count} Trees
                           </button>
                         ))}
                         <button
@@ -1193,6 +1210,7 @@ export default function GiftTreesPage() {
                           <option value="5">Wedding Anniversary</option>
                           <option value="6">Festival Celebration</option>
                           <option value="3">General Gift</option>
+                          <option value="7">Retirement</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                           <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
@@ -1253,6 +1271,12 @@ export default function GiftTreesPage() {
                     windowWidth={windowWidth}
                     setPrimaryMessage={setPrimaryMessage}
                     eventType={eventType}
+                    previewUrl={previewUrl}
+                    setPreviewUrl={setPreviewUrl}
+                    presentationId={presentationId}
+                    setPresentationId={setPresentationId}
+                    slideId={slideId}
+                    setSlideId={setSlideId}
                   />
 
                   {/* 6. Personal Information */}
@@ -1316,7 +1340,7 @@ export default function GiftTreesPage() {
                               const error = validateField(e.target.name, e.target.value);
                               setErrors(prev => ({ ...prev, phone: error }));
                             }}
-                            placeholder="Type your mobile number"
+                            placeholder="Enter with country code, if outside India"
                             pattern="[0-9]{10,15}"
                             title="10-15 digit phone number"
                           />
@@ -1361,6 +1385,17 @@ export default function GiftTreesPage() {
                           return true;
                         });
 
+                        const treesCount = parseInt(formData.numberOfTrees);
+                        const treesAssigned = dedicatedNames.filter(user => user.recipient_name?.trim())
+                                                .map(user => user.trees_count)
+                                                .reduce((prev, curr) => prev + curr, 0);
+
+                        if (treesAssigned < treesCount) {
+                          if (treesAssigned !== 0) alert(`You have only assigned ${treesAssigned} out of ${treesCount} trees. Please assign all the trees to recipients!`);
+                          else alert(`You have not assigned any tree out of ${treesCount} ${treesCount === 1 ? "tree" : "trees"}. Please assign all the trees to recipients!`);
+                          return;
+                        }
+
                         if (mainFormValid) {
                           setCurrentStep(2);
                         } else {
@@ -1369,7 +1404,7 @@ export default function GiftTreesPage() {
                       }}
                       className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors"
                     >
-                      Next →
+                      Next
                     </button>
                   </div>
                 </form>

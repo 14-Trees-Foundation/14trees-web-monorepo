@@ -250,10 +250,11 @@ function getOccasionName(type: string | null): string {
   const types: Record<string, string> = {
     "1": "Birthday",
     "2": "Memorial",
-    "3": "Wedding",
-    "4": "Wedding Anniversary",
-    "5": "Festival Celebration",
-    "6": "General Gift"
+    "4": "Wedding",
+    "5": "Wedding Anniversary",
+    "6": "Festival Celebration",
+    "7": "Retirement",
+    "3": "General Gift"
   };
   return type ? types[type] || "Other" : "Not specified";
 }
