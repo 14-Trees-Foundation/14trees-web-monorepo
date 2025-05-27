@@ -34,6 +34,10 @@ class RazorpayService {
         }
     }
 
+    async updateOrder(orderId: string, notes?: Record<string, string>) {
+        await this.razorpay.orders.edit(orderId, { notes })
+    }
+
     async getPayments(id: string) {
         try {
             let result: Payments.RazorpayPayment[] = []
