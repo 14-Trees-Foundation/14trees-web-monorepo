@@ -908,7 +908,7 @@ export default function DonatePage() {
       setCsvPreview([]);
       setCsvErrors([]);
       setErrors({});
-      setRpPaymentSuccess(true);
+      setRpPaymentSuccess(false);
       setRazorpayOrderId(null);
       setRazorpayPaymentId(null);
       setDonationAmount(5000);
