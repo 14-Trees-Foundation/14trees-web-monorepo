@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Tooltip from '@mui/material/Tooltip';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 interface DedicatedName {
     recipient_name: string;
@@ -63,7 +65,12 @@ const Recipeint: React.FC<RecipeintProps> = ({ maxTrees, index, user, errors, ha
 
                 {/* Recipient Name */}
                 <div>
-                    <label className="block text-gray-700 mb-1">Recipient name:</label>
+                    <label className="block text-gray-700 mb-1">
+                        Recipient name:
+                        <Tooltip title="The one who receives the card. There may be multiple recipients.">
+                            <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
+                        </Tooltip>
+                    </label>
                     <input
                         type="text"
                         placeholder="The one who receives the card"
@@ -108,7 +115,12 @@ const Recipeint: React.FC<RecipeintProps> = ({ maxTrees, index, user, errors, ha
 
                 {isAssigneeDifferent && (
                     <div className="border border-gray-200 rounded-md p-4 space-y-4 bg-gray-50">
-                        <h3 className="font-medium">Assignee Details</h3>
+                        <h3 className="font-medium">
+                            Assignee Details
+                            <Tooltip title="The tree is planted in this person's name.">
+                                <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
+                            </Tooltip>
+                        </h3>
                         <input
                             type="text"
                             placeholder="The tree is planted in this person&apos;s name *"
