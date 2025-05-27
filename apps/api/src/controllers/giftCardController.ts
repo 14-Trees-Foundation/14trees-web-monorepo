@@ -223,6 +223,14 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
         });
 
+        if (giftCard.payment_id) {
+            const payment = await PaymentRepository.getPayment(giftCard.payment_id);
+            if (payment && payment.order_id) {
+                const razorpayService = new RazorpayService();
+                await razorpayService.updateOrder(payment.order_id, { "Gift Request Id": giftCard.id.toString() })
+            }
+        }
+
         if (requestType === 'Gift Cards') {
             try {
                 await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
