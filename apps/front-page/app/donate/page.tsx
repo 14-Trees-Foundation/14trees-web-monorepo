@@ -376,6 +376,7 @@ export default function DonatePage() {
     }
 
     setIsLoading(true);
+    setIsProcessing(true);
     setIsSubmitting(true);
 
     const amount = treeLocation === "adopt"
@@ -406,6 +407,9 @@ export default function DonatePage() {
         setRazorpayOrderId(orderId);
       } catch (error: any) {
         alert("Failed to create your request. Please try again later!");
+        setIsProcessing(false);
+        setIsLoading(false);
+        setIsSubmitting(false);
         return;
       }
     }
@@ -413,6 +417,7 @@ export default function DonatePage() {
     if (!paymentId) {
       setIsLoading(false);
       setIsSubmitting(false);
+      setIsProcessing(false);
       return;
     }
 
@@ -537,6 +542,7 @@ export default function DonatePage() {
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
+      setIsProcessing(false);
     }
   };
 
