@@ -220,6 +220,7 @@ routes.post('/requests', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name
 
 
 routes.post('/requests/payment-success', giftCards.paymentSuccessForGiftRequest);
+routes.post('/requests/auto-process', giftCards.autoProcessGiftCardRequest);
 
 /**
  * @swagger

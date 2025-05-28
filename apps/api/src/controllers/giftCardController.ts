@@ -29,7 +29,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
@@ -2347,5 +2347,32 @@ export const generateAdhocTreeCards = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::generateAdhocTreeCards", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+}
+
+/**
+ * Auto process donation request
+ */
+export const autoProcessGiftCardRequest = async (req: Request, res: Response) => {
+
+    const {
+        gift_request_id
+    } = req.body;
+
+    if (!gift_request_id)
+        return res.status(status.bad).send({ message: "Gift request Id requried to process request." })
+
+    try {
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+
+        await autoProcessGiftRequest(giftRequest)
+
+        const updatedGiftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+        return res.status(status.success).send(updatedGiftRequest);
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::autoProcessGiftCardRequest", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
     }
 }
