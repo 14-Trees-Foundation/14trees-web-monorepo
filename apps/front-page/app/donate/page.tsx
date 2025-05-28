@@ -65,6 +65,7 @@ export default function DonatePage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [hasDuplicateNames, setHasDuplicateNames] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<Record<string, File>>({});
   const [visitDate, setVisitDate] = useState<string>("");
   const [adoptedTreeCount, setAdoptedTreeCount] = useState<number>(0);
@@ -106,6 +107,18 @@ export default function DonatePage() {
       setMultipleNames(true);
     }
   }, [csvPreview, nameEntryMethod, csvErrors]);
+
+  useEffect(() => {
+    const nameCounts = dedicatedNames.reduce((acc, user) => {
+      const name = user.recipient_name?.trim().toLowerCase();
+      if (!name) return acc;
+      acc[name] = (acc[name] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const hasDuplicates = Object.values(nameCounts).some(count => count > 1);
+    setHasDuplicateNames(hasDuplicates);
+  }, [dedicatedNames]);
 
   const containerVariants = {
     hidden: { opacity: 0, y: 10, scale: 1.05 },
@@ -253,6 +266,18 @@ export default function DonatePage() {
         if (totalTreesInCsv > donationTreeCount) {
           errors.push(`Total number of trees in CSV (${totalTreesInCsv}) exceeds the selected number of trees (${donationTreeCount})`);
         }
+
+        // ✅ Check for duplicate names
+        const nameCounts: Record<string, number> = {};
+        data.forEach((row) => {
+          const name = row.recipient_name?.trim().toLowerCase();
+          if (name) nameCounts[name] = (nameCounts[name] || 0) + 1;
+        });
+        Object.entries(nameCounts).forEach(([name, count]) => {
+          if (count > 1) {
+            errors.push(`Duplicate recipient name detected: "${name}" appears ${count} times`);
+          }
+        });
 
         data.forEach((row, index) => {
           const rowErrors: string[] = [];
@@ -1756,13 +1781,21 @@ export default function DonatePage() {
                             alert("Please fill all required fields");
                           }
                         }}
-                        className={`bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors ${hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
+                        className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-green-600 hover:bg-green-700"
+                          }`}
+                        disabled={hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
                       >
                         Next
                       </button>
                       {(hasTableErrors || Object.values(errors).some(e => e && e.trim() !== "") || csvErrors.length > 0) && (
                         <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding.</div>
+                      )}
+                      {hasDuplicateNames && (
+                        <p className="text-red-600 text-sm mt-2">
+                          Assignee name should be unique. Please remove duplicates to proceed.
+                        </p>
                       )}
                     </div>
                   </div>

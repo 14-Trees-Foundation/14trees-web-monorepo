@@ -17,6 +17,7 @@ interface RecipientsProps {
     handleNameChange: (index: number, field: keyof DedicatedName, value: string | number) => void;
     handleRemoveName: (index: number) => void;
     handleAddName: () => void;
+    setHasAssigneeError: (hasError: boolean) => void;
 }
 
 const Recipients: React.FC<RecipientsProps> = ({
@@ -26,6 +27,7 @@ const Recipients: React.FC<RecipientsProps> = ({
     handleNameChange,
     handleRemoveName,
     handleAddName,
+    setHasAssigneeError,
 }) => {
 
     return (
@@ -47,6 +49,8 @@ const Recipients: React.FC<RecipientsProps> = ({
                     user={user}
                     handleNameChange={handleNameChange}
                     handleRemoveName={handleRemoveName}
+                    allRecipients={dedicatedNames}
+                    setHasAssigneeError={setHasAssigneeError}
                 />
             })}
 

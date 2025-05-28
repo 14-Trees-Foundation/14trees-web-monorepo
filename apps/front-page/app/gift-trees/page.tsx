@@ -83,6 +83,8 @@ export default function GiftTreesPage() {
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [windowWidth, setWindowWidth] = useState(1024); // default value
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [hasDuplicateNames, setHasDuplicateNames] = useState(false);
+  const [hasAssigneeError, setHasAssigneeError] = useState(false);
 
   useEffect(() => {
     setWindowWidth(window.innerWidth);
@@ -119,6 +121,18 @@ export default function GiftTreesPage() {
     });
   }, []);
 
+  useEffect(() => {
+    const seen = new Set<string>();
+    const duplicateFound = dedicatedNames.some(({ recipient_name }) => {
+      const name = recipient_name.trim().toLowerCase();
+      if (name === "") return false;
+      if (seen.has(name)) return true;
+      seen.add(name);
+      return false;
+    });
+    setHasDuplicateNames(duplicateFound);
+  }, [dedicatedNames]);
+
   const getOccasionQuestion = () => {
     const treeCount = parseInt(formData.numberOfTrees) || 0;
     return treeCount === 1
@@ -139,7 +153,7 @@ export default function GiftTreesPage() {
 
   // Validation patterns (existing unchanged)
   const validationPatterns = {
-    name: /^[A-Za-z\s.'-]+$/,
+    name: /^[A-Za-z\s.,&_'-]+$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
@@ -1058,11 +1072,11 @@ export default function GiftTreesPage() {
             </div>
           ) : (
             <div className="text-center">
-              
+
               <p className="text-green-600 mb-4">
                 We truly value your willingness to engage. Your support makes a real difference!
               </p>
-              
+
               <button
                 onClick={() => { handleReset(); setShowSuccessDialog(false); }}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
@@ -1125,11 +1139,24 @@ export default function GiftTreesPage() {
                           type="number"
                           name="numberOfTrees"
                           min="1"
+                          step="1" // Ensures only whole numbers
                           className={`w-full sm:w-60 rounded-md border px-4 py-2 text-gray-700 ${errors.numberOfTrees ? 'border-red-500' : 'border-gray-300'}`}
                           required
                           disabled={rpPaymentSuccess}
                           value={formData.numberOfTrees}
-                          onChange={handleInputChange}
+                          onChange={(e) => {
+                            // Only update if value is empty or a valid integer ≥1
+                            if (e.target.value === "" || (/^\d+$/.test(e.target.value) && parseInt(e.target.value) >= 1)) {
+                              handleInputChange(e);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            // Ensure minimum value of 1
+                            if (e.target.value === "" || parseInt(e.target.value) < 1) {
+                              setFormData(prev => ({ ...prev, numberOfTrees: "1" }));
+                              setErrors(prev => ({ ...prev, numberOfTrees: "" }));
+                            }
+                          }}
                         />
                       </div>
 
@@ -1186,6 +1213,7 @@ export default function GiftTreesPage() {
                       handleNameChange={handleNameChange}
                       handleAddName={handleAddName}
                       handleRemoveName={handleRemoveName}
+                      setHasAssigneeError={setHasAssigneeError}
                     />
                   </div>
 
@@ -1293,7 +1321,7 @@ export default function GiftTreesPage() {
                       <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">
                           Gifted by*:
-                          <Tooltip title="The tree is planted in this person's name.">
+                          <Tooltip title="The donor who's paying for the trees.">
                             <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
                           </Tooltip>
                         </label>
@@ -1419,7 +1447,12 @@ export default function GiftTreesPage() {
                           alert("Please fill all required fields");
                         }
                       }}
-                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md transition-colors"
+                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-green-600 hover:bg-green-700"
+                        }`}
+
+                      disabled={hasDuplicateNames || hasAssigneeError}
                     >
                       Next
                     </button>
