@@ -429,6 +429,56 @@ routes.post('/trees/reserve', donations.reserveTreesForDonation)
 
 /**
  * @swagger
+ * /donations/trees/map:
+ *   post:
+ *     summary: Map assigned trees for a donation
+ *     description: Map already assigned trees to donation
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for reserving trees for a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             tree_ids:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [1, 2, 3]
+ *     responses:
+ *       200:
+ *         description: Trees mapped successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/trees/map', donations.mapAssignedTreesToDonation)
+
+
+/**
+ * @swagger
  * /donations/trees/stats:
  *   get:
  *     summary: Get reservation stats for a donation

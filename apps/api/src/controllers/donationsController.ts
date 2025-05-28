@@ -493,6 +493,34 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
 }
 
 
+export const mapAssignedTreesToDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to map trees to sponsor." })
+
+    if (!tree_ids || tree_ids.length === 0)
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        // map assigned trees to donation
+        await DonationService.mapTreesToDonation(donation, tree_ids);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::mapAssignedTreesToDonation", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+
 /*
     Tree Assign/Unassign APIs
 */

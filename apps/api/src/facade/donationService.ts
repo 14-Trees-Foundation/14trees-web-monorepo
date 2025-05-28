@@ -17,6 +17,7 @@ import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
+import { TreeAttributes } from "../models/tree";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -388,6 +389,17 @@ export class DonationService {
         }
 
         await TreeRepository.updateTrees(updateConfig, { donation_id: donationId });
+    }
+
+    public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
+        
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: donation.user_id,
+            donation_id: donation.id,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: {[Op.in]: treeIds} })
     }
 
     /**
