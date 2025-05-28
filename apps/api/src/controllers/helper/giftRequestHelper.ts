@@ -381,7 +381,7 @@ export const sendGiftRequestAcknowledgement = async (
         const docService = new GoogleDoc();
         const receiptId = await docService.get80GRecieptFileId({
             "{Name}": sponsorUser.name,
-            "{FY}": "Year " + (FY - 1) + "-" + (FY%100),
+            "{FY}": "Year " + (FY - 1) + "-" + (FY % 100),
             "{Rec}": giftReceiptId,
             "{Date}": moment(new Date(giftRequest.created_at)).format('MMMM DD, YYYY'),
             "{AmountW}": numberToWords(amount || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
@@ -680,6 +680,56 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
     return {
         requestId: giftRequest.id,
     }
+}
+
+export async function autoProcessGiftRequest(giftRequest: GiftCardRequest) {
+    const plotIds: number[] = [2124];
+
+    const users = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id);
+
+    // reserve trees for gift request
+    const treesCount = giftRequest.no_of_cards - Number((giftRequest as any).booked);
+    if (treesCount > 0) {
+        const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftRequest.user_id, giftRequest.sponsor_id, giftRequest.group_id, plotIds, treesCount, false, true, false);
+    
+        // add user to donations group
+        if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftRequest.user_id);
+        await GiftCardsRepository.bookGiftCards(giftRequest.id, treeIds);
+    }
+
+    // get gift cards
+    const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftRequest.id }]);
+    const cards = cardsResp.results;
+
+    let memoryImages: string[] | null = null;
+    if (giftRequest.album_id) {
+        const albums = await AlbumRepository.getAlbums({ id: giftRequest.album_id });
+        if (albums.length > 0) {
+            memoryImages = albums[0].images;
+        }
+    }
+
+    // assign trees
+    await autoAssignTrees(giftRequest, users, cards, memoryImages);
+
+    const updatedResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftRequest.id }]);
+    const request: any = updatedResp.results[0];
+
+    if (request.no_of_cards == Number(request.assigned)) {
+        request.status = GiftCardRequestStatus.completed;
+    } else if (request.no_of_cards == Number(request.booked)) {
+        request.status = GiftCardRequestStatus.pendingAssignment;
+    } else {
+        request.status = GiftCardRequestStatus.pendingPlotSelection;
+    }
+
+    request.updated_at = new Date();
+    await GiftCardsRepository.updateGiftCardRequest(request);
+
+    const giftRequestsResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftRequest.id }]);
+    const updatedRequest = giftRequestsResp.results[0];
+
+    generateGiftCardsForGiftRequest(updatedRequest);
 }
 
 async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCardRequest> {
