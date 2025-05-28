@@ -299,7 +299,7 @@ export default function DonatePage() {
 
           const user: any = {
             recipient_name: String(row.recipient_name || '').trim(),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name ? row.recipient_name.trim().toLowerCase().split(" ").join('.') + "@14trees" : '',
+            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name ? row.recipient_name.trim().toLowerCase().split(" ").join('.') + ".donor@14trees" : '',
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
@@ -309,7 +309,7 @@ export default function DonatePage() {
 
           if (row.assignee_name?.trim()) {
             user.assignee_name = String(row.assignee_name).trim();
-            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.trim().toLowerCase().split(" ").join('.') + "@14trees";
+            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.trim().toLowerCase().split(" ").join('.') + ".donor@14trees";
             user.assignee_phone = row.assignee_phone ? String(row.assignee_phone) : '';
           } else {
             user.assignee_name = user.recipient_name;
@@ -474,8 +474,8 @@ export default function DonatePage() {
         }),
         users: users.map(user => ({
           ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
+          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees"
         })),
         tags: ["WebSite"],
       };
@@ -682,8 +682,8 @@ export default function DonatePage() {
         }),
         users: dedicatedNames.map(user => ({
           ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
+          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees"
         })),
         tags: ["WebSite"],
       };
