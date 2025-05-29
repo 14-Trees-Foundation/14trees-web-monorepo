@@ -34,6 +34,7 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
+import { ReferencesRepository } from "../repo/referencesRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -113,6 +114,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        rfr,
+        c_key,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -166,6 +169,12 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         }
     }
 
+    let rfr_id: number | null = null;
+    if (rfr && c_key) {
+        const references = await ReferencesRepository.getReferences({ rfr: rfr, c_key: c_key });
+        if (references.length === 1) rfr_id = references[0].id;
+    }
+
     const request: GiftCardRequestCreationAttributes = {
         request_id: requestId,
         user_id: userId,
@@ -195,6 +204,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         sponsorship_type: sponsorshipType,
         donation_date: donationDate,
         amount_received: amountReceived,
+        rfr_id: rfr_id,
     }
 
     try {

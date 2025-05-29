@@ -20,6 +20,7 @@ import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
 import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
+import { ReferencesRepository } from "../repo/referencesRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -50,6 +51,8 @@ interface CreateDonationRequest {
     donation_method?: 'trees' | 'amount';
     status?: DonationStatus,
     tags?: string[]
+    rfr?: string | null;
+    c_key?: string | null;
 }
 
 export class DonationService {
@@ -83,6 +86,12 @@ export class DonationService {
             throw new Error("Failed to save sponsor details in the system!");
         });
 
+        let rfr_id: number | null = null;
+        if (data.rfr && data.c_key) {
+            const references = await ReferencesRepository.getReferences({ rfr: data.rfr, c_key: data.c_key });
+            if (references.length === 1) rfr_id = references[0].id;
+        }
+
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
             trees_count: trees_count || 0,
@@ -99,6 +108,7 @@ export class DonationService {
             comments: comments || null,
             status: status || DonationStatus_UserSubmitted,
             tags: tags || null,
+            rfr_id: rfr_id,
         };
 
         const donation = await DonationRepository.createdDonation(
