@@ -339,12 +339,12 @@ export default function GiftTreesPage() {
           // Create valid recipient object
           validRecipients.push({
             recipient_name: String(row.recipient_name),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_communication_email ? String(row.recipient_communication_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
+            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_communication_email ? String(row.recipient_communication_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
             assignee_name: row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
-            assignee_email: row.assignee_email ? String(row.assignee_email) : row.assignee_communication_email ? String(row.assignee_communication_email) : row.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
+            assignee_email: row.assignee_email ? String(row.assignee_email) : row.assignee_communication_email ? String(row.assignee_communication_email) : row.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
             assignee_phone: row.assignee_phone ? String(row.assignee_phone) : '',
             relation: row.relation ? String(row.relation) : 'other'
           });
@@ -401,52 +401,6 @@ export default function GiftTreesPage() {
       return;
     }
 
-    setIsLoading(true);
-    setIsSubmitting(true);
-
-    const uniqueRequestId = getUniqueRequestId();
-    setGiftRequestId(uniqueRequestId);
-
-    const amount = calculateGiftingAmount() * Number(formData.numberOfTrees);
-    let paymentId: number | null = razorpayPaymentId || null;
-    let orderId: string | null = razorpayOrderId || null;
-    if (isAboveLimit) {
-      paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
-      setRazorpayPaymentId(paymentId);
-    } else {
-      const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false);
-      paymentId = response.id;
-      orderId = response.order_id;
-      setRazorpayPaymentId(paymentId);
-      setRazorpayOrderId(orderId);
-    }
-
-    if (!paymentId) {
-      setIsLoading(false);
-      setIsSubmitting(false);
-      return;
-    }
-
-    let userId: number | null = null;
-    try {
-      const user = await apiClient.getUser(formData.email);
-      if (!user) {
-        const userData = await apiClient.createUser(
-          formData.fullName,
-          formData.email
-        );
-        userId = userData.id; // Extract user_id from the response
-      } else {
-        userId = user.id;
-      }
-    } catch (error) {
-      console.error("User creation error:", error);
-      alert(error.message || "Failed to create user");
-      setIsLoading(false);
-      setIsSubmitting(false);
-      return;
-    }
-
     const mainFormValid = Object.keys(formData).every(key => {
       if (key === "comments") {
         return true;
@@ -467,9 +421,8 @@ export default function GiftTreesPage() {
 
       return true;
     });
-    const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
-    const users = dedicatedNames.filter(user => user.recipient_name.trim() != "");
 
+    const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
     if (!mainFormValid || !dedicatedNamesValid) {
       console.log(errors);
       alert("Please fix the errors in the form before submitting");
@@ -478,23 +431,89 @@ export default function GiftTreesPage() {
       return;
     }
 
-    try {
-      const recipientsWithImages = await Promise.all(
-        dedicatedNames.map(async (recipient) => {
-          const image = recipient.image;
-          if (image && typeof image !== 'string') {
-            try {
-              const imageUrl = await apiClient.uploadUserImage(image);
-              return { ...recipient, image_url: imageUrl };
-            } catch (error) {
-              console.error("Failed to upload image:", error);
-              return recipient;
-            }
-          }
-          return recipient;
-        })
-      );
+    setIsLoading(true);
+    setIsSubmitting(true);
+    setIsProcessing(true);
 
+    const uniqueRequestId = getUniqueRequestId();
+
+    const amount = calculateGiftingAmount() * Number(formData.numberOfTrees);
+    let paymentId: number | null = razorpayPaymentId || null;
+    let orderId: string | null = razorpayOrderId || null;
+    if (isAboveLimit) {
+      paymentId = await handleBankPayment(uniqueRequestId, razorpayPaymentId);
+      setRazorpayPaymentId(paymentId);
+    } else if (!paymentId && !isAboveLimit) {
+      try {
+        const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false);
+        paymentId = response.id;
+        orderId = response.order_id;
+        setRazorpayPaymentId(paymentId);
+        setRazorpayOrderId(orderId);
+      } catch (error: any) {
+        alert("Failed to create your request. Please try again later!");
+        setIsProcessing(false);
+        setIsLoading(false);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (!paymentId) {
+      setIsLoading(false);
+      setIsSubmitting(false);
+      setIsProcessing(false);
+      return;
+    }
+
+    let userId: number | null = null;
+    try {
+      const user = await apiClient.getUser(formData.email);
+      if (!user) {
+        const userData = await apiClient.createUser(
+          formData.fullName,
+          formData.email
+        );
+        userId = userData.id; // Extract user_id from the response
+      } else {
+        userId = user.id;
+      }
+    } catch (error) {
+      console.error("User creation error:", error);
+      alert(error.message || "Failed to create user");
+      setIsLoading(false);
+      setIsSubmitting(false);
+      setIsProcessing(false);
+      return;
+    }
+
+    
+    let users = dedicatedNames.filter(user => user.recipient_name.trim() != "");
+
+    const donor = formData.fullName.replaceAll(" ", "").toLocaleLowerCase();
+    users = users.map(user => {
+
+      if (!user.assignee_name?.trim()) {
+        user.assignee_name = user.recipient_name;
+      }
+
+      if (user.recipient_email) {
+        user.recipient_email = user.recipient_email.replace("donor", donor);
+      } else {
+        user.recipient_email = user.recipient_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+      }
+
+      if (user.assignee_email) {
+        user.assignee_email = user.assignee_email.replace("donor", donor);
+      } else {
+        user.assignee_email = user.assignee_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+      }
+
+      return user;
+    })
+
+    try {
+      
       const giftTreesRequest = {
         request_id: uniqueRequestId,
         user_id: userId,
@@ -577,6 +596,9 @@ export default function GiftTreesPage() {
           name: "14 Trees Foundation",
           description: `Gifting ${formData.numberOfTrees} trees`,
           order_id: orderId,
+          notes: {
+            "Gift Request Id": responseData.id,
+          },
           handler: async (response: any) => {
             setRpPaymentSuccess(true);
             if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
@@ -635,6 +657,7 @@ export default function GiftTreesPage() {
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
+      setIsProcessing(false);
     }
   };
 
@@ -939,6 +962,7 @@ export default function GiftTreesPage() {
       setEventType(null);
       setGiftedOn(new Date());
       setPlantedBy(null);
+      setGiftRequestId(null);
       setPrimaryMessage("");
       setSecondaryMessage("");
       setShowSuccessDialog(false);
@@ -1239,8 +1263,8 @@ export default function GiftTreesPage() {
                           <option value="4">Wedding</option>
                           <option value="5">Wedding Anniversary</option>
                           <option value="6">Festival Celebration</option>
-                          <option value="3">General Gift</option>
                           <option value="7">Retirement</option>
+                          <option value="3">General Gift</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                           <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
@@ -1299,7 +1323,6 @@ export default function GiftTreesPage() {
 
 
                   <GiftCardPreview
-                    giftRequestId={giftRequestId ?? undefined}
                     userName={dedicatedNames[0]?.recipient_name}
                     giftedBy={plantedBy ?? undefined}
                     primaryMessage={primaryMessage}

@@ -387,7 +387,30 @@ export default function DonatePage() {
     });
 
     const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
-    const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
+    let users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
+
+    const donor = formData.fullName.replaceAll(" ", "").toLocaleLowerCase();
+    users = users.map(user => {
+
+      if (!user.assignee_name?.trim()) {
+        user.assignee_name = user.recipient_name;
+      }
+
+      if (user.recipient_email) {
+        user.recipient_email = user.recipient_email.replace("donor", donor);
+      } else {
+        user.recipient_email = user.recipient_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+      }
+
+      if (user.assignee_email) {
+        user.assignee_email = user.assignee_email.replace("donor", donor);
+      } else {
+        user.assignee_email = user.assignee_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+      }
+
+      return user;
+    })
+
     if (users.length === 1 && !multipleNames) {
       users[0].trees_count = donationTreeCount
     }
@@ -472,11 +495,7 @@ export default function DonatePage() {
           ...(donationMethod === "trees" && { trees_count: donationTreeCount }),
           ...(donationMethod === "amount" && { amount_donated: donationAmount }),
         }),
-        users: users.map(user => ({
-          ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees"
-        })),
+        users: users,
         tags: ["WebSite"],
       };
 
@@ -509,6 +528,9 @@ export default function DonatePage() {
           ? `Adoption of ${adoptedTreeCount} trees`
           : `Donation for ${donationTreeCount} trees`,
         order_id: orderId,
+        notes: {
+          "Donation Id": responseData.id,
+        },
         handler: async (response: any) => {
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
