@@ -43,6 +43,7 @@ import DuplicateTreeSync from "../models/duplicate_tree_sync";
 import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { EventMessage } from "../models/event_message";
+import { AutoPrsReqPlot } from "../models/auto_prs_req_plot";
 
 
 class Database {
@@ -121,6 +122,7 @@ class Database {
         DuplicateTreeSync,
         ChatMessage,
         MailSub,
+        AutoPrsReqPlot,
       ]
     });
 

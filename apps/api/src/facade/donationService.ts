@@ -18,6 +18,7 @@ import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
 import { PlotRepository } from "../repo/plotRepo";
+import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -735,7 +736,9 @@ export class DonationService {
         const treesCount = donation.trees_count - (donation as any).booked;
         if (treesCount <= 0) return; 
 
-        const plotIds: number[] = [1896, 1992, 1328]
+        const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('donation');
+
+        const plotIds: number[] = plotsToUse.map(item => item.plot_id);
         const plotsResp = await PlotRepository.getPlots(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: plotIds }]);
 
         let remaining = treesCount;

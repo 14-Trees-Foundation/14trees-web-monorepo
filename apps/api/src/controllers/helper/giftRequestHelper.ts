@@ -22,6 +22,7 @@ import { Group } from "../../models/group";
 import moment from "moment";
 import { formatNumber, numberToWords } from "../../helpers/utils"
 import { AlbumRepository } from "../../repo/albumRepo";
+import { AutoPrsReqPlotsRepository } from "../../repo/autoPrsReqPlotRepo";
 
 export const defaultGiftMessages = {
     primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
@@ -683,7 +684,9 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
 }
 
 export async function autoProcessGiftRequest(giftRequest: GiftCardRequest) {
-    const plotIds: number[] = [2124];
+
+    const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('gift');
+    const plotIds: number[] = plotsToUse.map(item => item.plot_id);
 
     const users = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id);
 
