@@ -250,6 +250,42 @@ export const updateDonation = async (req: Request, res: Response) => {
     }
 };
 
+export const processDonation = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body; // Get userId from request body
+
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    try {
+        // Check if donation exists and isn't processed
+        const donation = await Donation.findOne({ where: { id } });
+
+        if (!donation) {
+            return res.status(404).json({ message: 'Donation not found' });
+        }
+
+        if (donation.processed_by) {
+            return res.status(409).json({
+                message: 'Already processed by another user'
+            });
+        }
+
+        // Update only if processed_by is null
+        await Donation.update(
+            { processed_by: userId },
+            { where: { id, processed_by: null } }
+        );
+
+        return res.status(200).json({ success: true });
+
+    } catch (error) {
+        console.error("Error picking donation:", error);
+        return res.status(500).json({ message: 'Failed to process donation' });
+    }
+};
+
 // export const createWorkOrder = async (req: Request, res: Response) => {
 //     const donationId = req.params.donation_id
 //     if (!donationId || isNaN(parseInt(donationId))) {
@@ -925,7 +961,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
-        
+
         await DonationService.reserveTreesForDonation(donation);
         await DonationService.assignTreesForDonation(donation);
 

@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
+import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
@@ -246,7 +246,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         })
     }
 }
-
 
 export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
 
@@ -540,6 +539,60 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::updateGiftCardRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+};
+
+export const processGiftCard = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body; // Get userId from request body
+
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    try {
+        // Check if gift card exists and isn't processed
+        const giftCardRequest = await GiftCardRequest.findOne({ where: { id } });
+
+        if (!giftCardRequest) {
+            return res.status(404).json({ message: 'Gift card not found' });
+        }
+
+        if (giftCardRequest.processed_by) {
+            return res.status(409).json({
+                message: 'Already processed by another user',
+                processed_by: giftCardRequest.processed_by
+            });
+        }
+
+        // Update only if processed_by is null
+        const [affectedCount] = await GiftCardRequest.update(
+            {
+                processed_by: userId,
+                updated_at: new Date() // Maintain timestamp updates
+            },
+            {
+                where: {
+                    id,
+                    processed_by: null
+                }
+            }
+        );
+
+        // Get updated gift card details
+        const updatedGiftCard = await GiftCardRequest.findOne({ where: { id } });
+
+        return res.status(200).json({
+            success: true,
+            giftCard: updatedGiftCard
+        });
+
+    } catch (error) {
+        console.error("Error processing gift card:", error);
+        return res.status(500).json({
+            message: 'Failed to process gift card',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 };
 
