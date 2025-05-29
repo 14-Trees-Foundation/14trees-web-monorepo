@@ -16,7 +16,6 @@ const defaultMessages = {
 }
 
 interface GiftCardPreviewProps {
-    giftRequestId?: string;
     userName?: string;
     giftedBy?: string;
     primaryMessage: string;
@@ -32,7 +31,6 @@ interface GiftCardPreviewProps {
 }
 
 const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
-    giftRequestId,
     userName,
     giftedBy,
     primaryMessage,
@@ -51,7 +49,6 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
 
     const dataRef = useRef({
         primaryMessage: "",
-        giftRequestId: undefined as string | undefined,
         presentationId: null as string | null,
         slideId: null as string | null,
         userName: undefined as string | undefined,
@@ -84,11 +81,7 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
     useEffect(() => {
         dataRef.current.userName = userName;
     }, [userName])
-
-    useEffect(() => {
-        dataRef.current.giftRequestId = giftRequestId;
-    }, [giftRequestId])
-
+    
     useEffect(() => {
         dataRef.current.primaryMessage = primaryMessage;
     }, [primaryMessage])
@@ -116,7 +109,6 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    request_id: dataRef.current.giftRequestId || getUniqueRequestId(),
                     presentation_id: dataRef.current.presentationId,
                     slide_id: dataRef.current.slideId,
                     primary_message: dataRef.current.primaryMessage,

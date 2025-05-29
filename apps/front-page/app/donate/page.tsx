@@ -299,7 +299,7 @@ export default function DonatePage() {
 
           const user: any = {
             recipient_name: String(row.recipient_name || '').trim(),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name ? row.recipient_name.trim().toLowerCase().split(" ").join('.') + "@14trees" : '',
+            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name ? row.recipient_name.trim().toLowerCase().split(" ").join('.') + ".donor@14trees" : '',
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
@@ -309,7 +309,7 @@ export default function DonatePage() {
 
           if (row.assignee_name?.trim()) {
             user.assignee_name = String(row.assignee_name).trim();
-            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.trim().toLowerCase().split(" ").join('.') + "@14trees";
+            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.trim().toLowerCase().split(" ").join('.') + ".donor@14trees";
             user.assignee_phone = row.assignee_phone ? String(row.assignee_phone) : '';
           } else {
             user.assignee_name = user.recipient_name;
@@ -387,7 +387,30 @@ export default function DonatePage() {
     });
 
     const dedicatedNamesValid = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? true : validateDedicatedNames();
-    const users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
+    let users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
+
+    const donor = formData.fullName.replaceAll(" ", "").toLocaleLowerCase();
+    users = users.map(user => {
+
+      if (!user.assignee_name?.trim()) {
+        user.assignee_name = user.recipient_name;
+      }
+
+      if (user.recipient_email) {
+        user.recipient_email = user.recipient_email.replace("donor", donor);
+      } else {
+        user.recipient_email = user.recipient_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+      }
+
+      if (user.assignee_email) {
+        user.assignee_email = user.assignee_email.replace("donor", donor);
+      } else {
+        user.assignee_email = user.assignee_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+      }
+
+      return user;
+    })
+
     if (users.length === 1 && !multipleNames) {
       users[0].trees_count = donationTreeCount
     }
@@ -472,11 +495,7 @@ export default function DonatePage() {
           ...(donationMethod === "trees" && { trees_count: donationTreeCount }),
           ...(donationMethod === "amount" && { amount_donated: donationAmount }),
         }),
-        users: users.map(user => ({
-          ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
-        })),
+        users: users,
         tags: ["WebSite"],
       };
 
@@ -509,6 +528,9 @@ export default function DonatePage() {
           ? `Adoption of ${adoptedTreeCount} trees`
           : `Donation for ${donationTreeCount} trees`,
         order_id: orderId,
+        notes: {
+          "Donation Id": responseData.id,
+        },
         handler: async (response: any) => {
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
@@ -682,8 +704,8 @@ export default function DonatePage() {
         }),
         users: dedicatedNames.map(user => ({
           ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
+          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
+          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees"
         })),
         tags: ["WebSite"],
       };
