@@ -14,6 +14,7 @@ import Recipients from "components/Recipients";
 import GiftCardPreview from "components/gift-trees/GiftCardPreview";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Tooltip from '@mui/material/Tooltip';
+import { useSearchParams } from "next/navigation";
 
 declare global {
   interface Window {
@@ -34,6 +35,10 @@ interface DedicatedName {
 }
 
 export default function GiftTreesPage() {
+  const searchParams = useSearchParams();
+  const rfr = searchParams.get('r');
+  const c_key = searchParams.get('c');
+
   // Form state (existing state remains unchanged)
   const [eventName, setEventName] = useState<string | null>(null); // New state for event name
   const [eventType, setEventType] = useState<string | null>(null); // New state for event type
@@ -534,6 +539,8 @@ export default function GiftTreesPage() {
         event_type: eventType,
         planted_by: plantedBy,
         gifted_on: giftedOn,
+        rfr: rfr,
+        c_key: c_key,
         remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
       };
 

@@ -10,6 +10,7 @@ import { UploadIcon } from "lucide-react";
 import { getUniqueRequestId } from "~/utils";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
 import { SummaryPaymentPage } from './donationSummary';
+import { useSearchParams } from "next/navigation";
 
 declare global {
   interface Window {
@@ -32,6 +33,10 @@ interface DedicatedName {
 }
 
 export default function DonatePage() {
+  const searchParams = useSearchParams();
+  const rfr = searchParams.get('r');
+  const c_key = searchParams.get('c');
+
   const [treeLocation, setTreeLocation] = useState("");
   const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
@@ -497,6 +502,8 @@ export default function DonatePage() {
         }),
         users: users,
         tags: ["WebSite"],
+        rfr: rfr,
+        c_key: c_key,
       };
 
       let responseData: any;
