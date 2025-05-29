@@ -570,7 +570,6 @@ export const processGiftCard = async (req: Request, res: Response) => {
             });
         }
 
-        // 👇 Call the repo function — it already handles null check
         const updated = await GiftCardsRepository.updateGiftCardRequests(
             {
                 processed_by: userId,

@@ -187,27 +187,9 @@ export class GiftCardsRepository {
     static async updateGiftCardRequests(
         fields: Partial<GiftCardRequestAttributes>,
         whereClause: WhereOptions<GiftCardRequest>,
-        options?: {
-            requireNull?: Partial<Record<keyof GiftCardRequestAttributes, boolean>>;
-        }
     ): Promise<number> {
-        // Create the final where object with proper typing
-        const finalWhere: WhereOptions<GiftCardRequest> = { ...whereClause };
 
-        // Add null conditions if specified
-        if (options?.requireNull) {
-            Object.entries(options.requireNull).forEach(([field, mustBeNull]) => {
-                if (mustBeNull) {
-                    // Use type assertion for the field assignment
-                    (finalWhere as any)[field] = null;
-                }
-            });
-        }
-
-        const [affectedCount] = await GiftCardRequest.update(fields, {
-            where: finalWhere
-        });
-
+        const [affectedCount] = await GiftCardRequest.update(fields, { where: whereClause });
         return affectedCount;
     }
 
