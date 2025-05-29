@@ -1,4 +1,5 @@
-import { LandCategory } from "../models/common";
+import { LandCategory, SortOrder } from "../models/common";
+import { FilterItem, PaginatedResponse } from "../models/pagination"
 import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
@@ -17,6 +18,7 @@ import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
+import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
 
 interface DonationUserRequest {
@@ -71,7 +73,7 @@ export class DonationService {
             status,
             tags
         } = data;
-        
+
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
@@ -390,6 +392,42 @@ export class DonationService {
 
         await TreeRepository.updateTrees(updateConfig, { donation_id: donationId });
     }
+
+    public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
+        
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: donation.user_id,
+            donation_id: donation.id,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: {[Op.in]: treeIds} })
+    }
+
+    public static async unmapTreesFromDonation(donation: Donation, treeIds: number[]) {
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: null,
+            donation_id: null,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: { [Op.in]: treeIds } })
+    }
+
+    public static async getMappedTrees( donationId: number, offset: number = 0, limit: number = 20, filters: FilterItem[] = [], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Tree>> {
+        // Inject a required filter for donation_id
+        const donationFilter: FilterItem = {
+            columnField: "donation_id",
+            operatorValue: "equals",
+            value: donationId,
+        };
+
+        const finalFilters = [donationFilter, ...filters];
+
+        return await TreeRepository.getTrees(offset, limit, finalFilters, orderBy);
+    }
+
+
 
     /**
      * Tree Assignment 

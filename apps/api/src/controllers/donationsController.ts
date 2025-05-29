@@ -493,6 +493,93 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
 }
 
 
+export const mapAssignedTreesToDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to map trees to sponsor." })
+
+    if (!tree_ids || tree_ids.length === 0)
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        // map assigned trees to donation
+        await DonationService.mapTreesToDonation(donation, tree_ids);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::mapAssignedTreesToDonation", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+export const unmapAssignedTreesFromDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id required to unmap trees from donation." })
+
+    if (!tree_ids || tree_ids.length === 0)
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        // unmap trees from donation
+        await DonationService.unmapTreesFromDonation(donation, tree_ids);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::unmapTreesFromDonation", error);
+        return res.status(status.error).send({
+            message: error.message
+        })
+    }
+}
+
+export const getMappedTreesByDonation = async (req: Request, res: Response) => {
+    const { donation_id, offset = 0, limit = 20 } = req.body;
+
+    if (!donation_id) {
+        return res.status(status.bad).send({
+            message: "Donation ID is required to fetch mapped trees.",
+        });
+    }
+
+    try {
+        const parsedOffset = parseInt(offset as string, 10) || 0;
+        const parsedLimit = parseInt(limit as string, 10) || 20;
+
+        const filters = req.body.filters || [];
+        const orderBy = req.body.orderBy || [];
+
+        const result = await DonationService.getMappedTrees(
+            Number(donation_id),
+            parsedOffset,
+            parsedLimit,
+            filters,
+            orderBy
+        );
+
+        return res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::getMappedTreesByDonation", error);
+        return res.status(status.error).send({ message: error.message });
+    }
+};
+
+
+
 /*
     Tree Assign/Unassign APIs
 */
