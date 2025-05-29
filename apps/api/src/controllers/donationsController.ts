@@ -57,6 +57,7 @@ export const createDonation = async (req: Request, res: Response) => {
         sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, tags,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
         comments, users, donation_type, donation_method, visit_date, amount_donated,
+        rfr, c_key
     } = data;
 
     // Validate sponsor details
@@ -111,7 +112,9 @@ export const createDonation = async (req: Request, res: Response) => {
         donation_method,
         visit_date,
         amount_donated,
-        tags
+        tags,
+        rfr,
+        c_key,
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
