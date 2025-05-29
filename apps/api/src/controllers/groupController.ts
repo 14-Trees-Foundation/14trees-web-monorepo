@@ -123,7 +123,7 @@ export const mergeGroups = async (req: Request, res: Response) => {
         const mappedTrees = { mapped_to_group: primary_group, updated_at: new Date() };
         await TreeRepository.updateTrees(mappedTrees, { mapped_to_group: secondary_group });
 
-        const sponsoredTrees = { sponsored_by_group: primary_group, updated_at: new Date() };
+        const sponsoredTrees = { sponsored_by_group: primary_group, updated_at: new Date(),  sponsored_at: new Date() };
         await TreeRepository.updateTrees(sponsoredTrees, { sponsored_by_group: secondary_group });
 
         // gift requests

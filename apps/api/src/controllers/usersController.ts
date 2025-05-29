@@ -324,7 +324,7 @@ export const combineUsers = async (req: Request, res: Response) => {
     const mappedTrees = { mapped_to_user: primary_user, updated_at: new Date() };
     await TreeRepository.updateTrees(mappedTrees, { mapped_to_user: secondary_user });
 
-    const sponsoredTrees = { sponsored_by_user: primary_user, updated_at: new Date() };
+    const sponsoredTrees = { sponsored_by_user: primary_user, updated_at: new Date(), sponsored_at: new Date(), };
     await TreeRepository.updateTrees(sponsoredTrees, { sponsored_by_user: secondary_user });
 
     const assignedTrees = { assigned_to: primary_user, updated_at: new Date() };
