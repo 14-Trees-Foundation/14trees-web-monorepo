@@ -1,4 +1,5 @@
-import { LandCategory } from "../models/common";
+import { LandCategory, SortOrder } from "../models/common";
+import { FilterItem, PaginatedResponse } from "../models/pagination"
 import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
@@ -17,7 +18,9 @@ import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
+import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
+import { ReferencesRepository } from "../repo/referencesRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -48,6 +51,8 @@ interface CreateDonationRequest {
     donation_method?: 'trees' | 'amount';
     status?: DonationStatus,
     tags?: string[]
+    rfr?: string | null;
+    c_key?: string | null;
 }
 
 export class DonationService {
@@ -71,7 +76,7 @@ export class DonationService {
             status,
             tags
         } = data;
-        
+
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
@@ -80,6 +85,12 @@ export class DonationService {
             console.error("DonationService::createDonation", error);
             throw new Error("Failed to save sponsor details in the system!");
         });
+
+        let rfr_id: number | null = null;
+        if (data.rfr && data.c_key) {
+            const references = await ReferencesRepository.getReferences({ rfr: data.rfr, c_key: data.c_key });
+            if (references.length === 1) rfr_id = references[0].id;
+        }
 
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
@@ -97,6 +108,7 @@ export class DonationService {
             comments: comments || null,
             status: status || DonationStatus_UserSubmitted,
             tags: tags || null,
+            rfr_id: rfr_id,
         };
 
         const donation = await DonationRepository.createdDonation(
@@ -261,6 +273,7 @@ export class DonationService {
             mapped_to_group: groupId,
             sponsored_by_user: userId,
             sponsored_by_group: groupId,
+            sponsored_at: new Date(),
             donation_id,
             mapped_at: new Date(),
             updated_at: new Date(),
@@ -369,6 +382,7 @@ export class DonationService {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 donation_id: null,
                 updated_at: new Date(),
             }
@@ -384,12 +398,49 @@ export class DonationService {
             mapped_at: null,
             sponsored_by_user: null,
             sponsored_by_group: null,
+            sponsored_at: new Date(),
             donation_id: null,
             updated_at: new Date(),
         }
 
         await TreeRepository.updateTrees(updateConfig, { donation_id: donationId });
     }
+
+    public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
+        
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: donation.user_id,
+            donation_id: donation.id,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: {[Op.in]: treeIds} })
+    }
+
+    public static async unmapTreesFromDonation(donation: Donation, treeIds: number[]) {
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: null,
+            donation_id: null,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: { [Op.in]: treeIds } })
+    }
+
+    public static async getMappedTrees( donationId: number, offset: number = 0, limit: number = 20, filters: FilterItem[] = [], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Tree>> {
+        // Inject a required filter for donation_id
+        const donationFilter: FilterItem = {
+            columnField: "donation_id",
+            operatorValue: "equals",
+            value: donationId,
+        };
+
+        const finalFilters = [donationFilter, ...filters];
+
+        return await TreeRepository.getTrees(offset, limit, finalFilters, orderBy);
+    }
+
+
 
     /**
      * Tree Assignment 

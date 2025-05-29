@@ -69,10 +69,11 @@ interface GiftCardRequestAttributes {
     mail_status: GiftReqMailStatus[] | null;
     mail_error: string | null;
     processed_by: number | null;
+    rfr_id: number | null;
 }
 
 interface GiftCardRequestCreationAttributes
-    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments' | 'mail_sent' | 'mail_status' | 'mail_error' | 'processed_by'> { }
+    extends Optional<GiftCardRequestAttributes, 'id' | 'logo_url' | 'event_name' | 'event_type' | 'planted_by' | 'users_csv_file_url' | 'logo_message' | 'presentation_id' | 'notes' | 'album_id' | 'tags' | 'sponsorship_type' | 'amount_received' | 'donation_receipt_number' | 'donation_date' | 'contribution_options' | 'comments' | 'mail_sent' | 'mail_status' | 'mail_error' | 'processed_by' | 'rfr_id'> { }
 
 @Table({ tableName: 'gift_card_requests' })
 class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCreationAttributes>
@@ -228,6 +229,13 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
         type: DataType.INTEGER,
     })
     created_by!: number;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: null
+    })
+    rfr_id!: number | null;
 
     @Column({
         type: DataType.ARRAY(DataType.STRING),

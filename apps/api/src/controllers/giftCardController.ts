@@ -34,6 +34,7 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
+import { ReferencesRepository } from "../repo/referencesRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -113,6 +114,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        rfr,
+        c_key,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -166,6 +169,12 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         }
     }
 
+    let rfr_id: number | null = null;
+    if (rfr && c_key) {
+        const references = await ReferencesRepository.getReferences({ rfr: rfr, c_key: c_key });
+        if (references.length === 1) rfr_id = references[0].id;
+    }
+
     const request: GiftCardRequestCreationAttributes = {
         request_id: requestId,
         user_id: userId,
@@ -195,6 +204,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         sponsorship_type: sponsorshipType,
         donation_date: donationDate,
         amount_received: amountReceived,
+        rfr_id: rfr_id,
     }
 
     try {
@@ -508,7 +518,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.group_id !== originalRequest.group_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id, sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
@@ -516,7 +526,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.sponsor_id !== originalRequest.sponsor_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id,  sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.visit_id !== originalRequest.visit_id) {
@@ -654,6 +664,7 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
@@ -1367,6 +1378,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
