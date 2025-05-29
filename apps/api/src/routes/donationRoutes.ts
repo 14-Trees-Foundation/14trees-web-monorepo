@@ -148,15 +148,94 @@ routes.post('/requests/get', donations.getDonations);
  *               type: string
  *               example: "Failed to create donation"
  */
-routes.post('/requests' , donations.createDonation);
+routes.post('/requests', donations.createDonation);
+
+/**
+ * @swagger
+ * /donations/{id}/process:
+ *   post:
+ *     summary: Mark donation as processed
+ *     description: Updates the donation record to mark it as processed by a backoffice user
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the donation to process
+ *         schema:
+ *           type: integer
+ *           example: 123
+ *       - in: body
+ *         name: body
+ *         description: Backoffice user processing the donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - userId
+ *           properties:
+ *             userId:
+ *               type: integer
+ *               description: ID of the backoffice user processing the request
+ *               example: 45
+ *     responses:
+ *       200:
+ *         description: Donation successfully marked as processed
+ *         schema:
+ *           type: object
+ *           properties:
+ *             success:
+ *               type: boolean
+ *               example: true
+ *             processed_by:
+ *               type: integer
+ *               example: 45
+ *       400:
+ *         description: Bad request - missing or invalid parameters
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "User ID is required"
+ *       404:
+ *         description: Donation not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Donation not found"
+ *       409:
+ *         description: Conflict - donation already processed
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Already processed by user 32"
+ *             processed_by:
+ *               type: integer
+ *               example: 32
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Failed to process donation"
+ */
+routes.post('/:id/process', donations.processDonation);
 
 
 routes.post('/requests/payment-success', donations.paymentSuccessForDonation);
 
 routes.post('/requests/auto-process', donations.autoProcessDonationRequest);
 
-routes.delete('/requests/:id' , donations.deleteDonation);
-routes.put('/requests/:id' , donations.updateDonation);
+routes.delete('/requests/:id', donations.deleteDonation);
+routes.put('/requests/:id', donations.updateDonation);
 // routes.post('/work-order/:donation_id' , donations.createWorkOrder);
 // routes.post('/update-feedback' , donations.updateFeedback);
 // routes.post('/book-trees' , donations.bookTreesForDonation);

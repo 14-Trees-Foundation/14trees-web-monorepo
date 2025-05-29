@@ -10,11 +10,8 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
-import { Tree } from '../models/tree';
-import { User } from '../models/user';
-import { WhereOptions } from 'sequelize';
-import { EmailTemplate } from '../models/email_template';
+import { DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
 
@@ -250,6 +247,48 @@ export const updateDonation = async (req: Request, res: Response) => {
         res.status(status.error).json({
             message: 'Failed to update donation'
         });
+    }
+};
+
+export const processDonation = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    try {
+        // First check if donation exists and isn't processed
+        const donation = await DonationRepository.getDonation(Number(id));
+
+        if (donation.processed_by) {
+            return res.status(409).json({
+                message: 'Already processed by another user'
+            });
+        }
+
+        // Use repository method to update
+        const updated = await DonationRepository.updateDonations({
+            processed_by: userId,
+            updated_at: new Date()
+        }, {
+            id: donation.id,
+            processed_by: { [Op.is]: null }
+        });
+
+        if (!updated) {
+            return res.status(404).json({ message: 'Already being processed by another user' });
+        }
+
+        return res.status(200).json({ success: true });
+
+    } catch (error: any) {
+        console.error("Error processing donation:", error);
+        if (error.message.includes('not found')) {
+            return res.status(404).json({ message: 'Donation not found' });
+        }
+        return res.status(500).json({ message: 'Failed to process donation' });
     }
 };
 
@@ -1015,7 +1054,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
-        
+
         await DonationService.reserveTreesForDonation(donation);
         await DonationService.assignTreesForDonation(donation);
 
