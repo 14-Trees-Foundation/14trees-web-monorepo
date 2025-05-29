@@ -252,19 +252,15 @@ export const updateDonation = async (req: Request, res: Response) => {
 
 export const processDonation = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { userId } = req.body; // Get userId from request body
+    const { userId } = req.body;
 
     if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
     }
 
     try {
-        // Check if donation exists and isn't processed
-        const donation = await Donation.findOne({ where: { id } });
-
-        if (!donation) {
-            return res.status(404).json({ message: 'Donation not found' });
-        }
+        // First check if donation exists and isn't processed
+        const donation = await DonationRepository.getDonation(Number(id));
 
         if (donation.processed_by) {
             return res.status(409).json({
@@ -272,16 +268,19 @@ export const processDonation = async (req: Request, res: Response) => {
             });
         }
 
-        // Update only if processed_by is null
-        await Donation.update(
-            { processed_by: userId },
-            { where: { id, processed_by: null } }
-        );
+        // Use repository method to update
+        await DonationRepository.updateDonation(Number(id), {
+            processed_by: userId,
+            updated_at: new Date() // Don't forget to update the timestamp
+        });
 
         return res.status(200).json({ success: true });
 
-    } catch (error) {
-        console.error("Error picking donation:", error);
+    } catch (error: any) {
+        console.error("Error processing donation:", error);
+        if (error.message.includes('not found')) {
+            return res.status(404).json({ message: 'Donation not found' });
+        }
         return res.status(500).json({ message: 'Failed to process donation' });
     }
 };

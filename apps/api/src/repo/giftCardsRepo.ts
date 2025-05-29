@@ -14,50 +14,62 @@ export class GiftCardsRepository {
     public static async getGiftRequestTags(offset: number, limit: number): Promise<PaginatedResponse<string>> {
         const tags: string[] = [];
 
-        const getUniqueTagsQuery = 
+        const getUniqueTagsQuery =
             `SELECT DISTINCT tag
                 FROM "14trees_2".gift_card_requests gcr,
                 unnest(gcr.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
-        const countUniqueTagsQuery = 
+        const countUniqueTagsQuery =
             `SELECT count(DISTINCT tag)
                 FROM "14trees_2".gift_card_requests gcr,
                 unnest(gcr.tags) AS tag;`;
 
-        const tagsResp: any[] = await sequelize.query( getUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
         tagsResp.forEach(r => tags.push(r.tag));
 
-        const countResp: any[] = await sequelize.query( countUniqueTagsQuery,{ type: QueryTypes.SELECT });
+        const countResp: any[] = await sequelize.query(countUniqueTagsQuery, { type: QueryTypes.SELECT });
         const total = parseInt(countResp[0].count);
         return { offset: offset, total: total, results: tags };
     }
 
-    static async getGiftCardRequests(offset: number, limit: number, filters?: FilterItem[], orderBy?: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<GiftCardRequest>> {
+    static async getGiftCardRequests(
+        offset: number,
+        limit: number,
+        filters?: FilterItem[],
+        orderBy?: { column: string, order: "ASC" | "DESC" }[]
+    ): Promise<PaginatedResponse<GiftCardRequest>> {
         let whereConditions: string = "";
         let replacements: any = {}
 
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
-                let columnField = "gcr." + filter.columnField
+                let columnField = "gcr." + filter.columnField;
                 if (filter.columnField === "user_name") {
-                    columnField = "u.name"
+                    columnField = "u.name";
                 } else if (filter.columnField === "group_name") {
-                    columnField = "g.name"
+                    columnField = "g.name";
                 } else if (filter.columnField === "created_by_name") {
-                    columnField = "cu.name"
+                    columnField = "cu.name";
+                } else if (filter.columnField === "processed_by_name") {  // NEW: Filter by processor name
+                    columnField = "pu.name";
                 }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
-                replacements = { ...replacements, ...replacement }
-            })
+                replacements = { ...replacements, ...replacement };
+            });
             whereConditions = whereConditions.substring(0, whereConditions.length - 3);
         }
 
         const getQuery = `
             SELECT gcr.*, 
-                u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name, cu.name as created_by_name,
+                u.name as user_name, 
+                u.email as user_email, 
+                u.phone as user_phone, 
+                g.name as group_name, 
+                cu.name as created_by_name,
+                pu.name as processed_by_name,  
                 SUM(CASE 
                     WHEN gc.tree_id is not null
                     THEN 1
@@ -89,24 +101,26 @@ export class GiftCardsRepository {
             FROM "14trees_2".gift_card_requests gcr
             LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
             LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
+            LEFT JOIN "14trees_2".users pu ON pu.id = gcr.processed_by
             LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
             LEFT JOIN "14trees_2".gift_cards gc ON gc.gift_card_request_id = gcr.id
-            left join "14trees_2".trees t on t.id = gc.tree_id
+            LEFT JOIN "14trees_2".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees_2".gift_request_users gru ON gru.id = gc.gift_request_user_id
-            WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-            GROUP BY gcr.id, u.id, cu.id, g.name
-            ORDER BY ${ orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'gcr.id DESC'}
+            WHERE ${whereConditions || "1=1"}
+            GROUP BY gcr.id, u.id, cu.id, pu.id, g.name 
+            ORDER BY ${orderBy?.map(o => `gcr.${o.column} ${o.order}`).join(", ") || 'gcr.id DESC'}
             ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
-        `
+        `;
 
         const countQuery = `
             SELECT COUNT(*) 
             FROM "14trees_2".gift_card_requests gcr
             LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
             LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
+            LEFT JOIN "14trees_2".users pu ON pu.id = gcr.processed_by  
             LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
-            WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
-        `
+            WHERE ${whereConditions || "1=1"};
+        `;
 
         const giftCards: any[] = await sequelize.query(getQuery, {
             replacements: replacements,
@@ -130,7 +144,7 @@ export class GiftCardsRepository {
             })
         };
     }
-    static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number,total_gift_requests: number, total_gifted_trees: number}>{
+    static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number, total_gift_requests: number, total_gifted_trees: number }> {
         const query = `
           SELECT 
               COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_gift_requests,
@@ -144,14 +158,14 @@ export class GiftCardsRepository {
         `;
         const result = await sequelize.query(query, { type: QueryTypes.SELECT });
         return result[0] as {
-          personal_gift_requests: number,
-          corporate_gift_requests: number,
-          personal_gifted_trees: number,
-          corporate_gifted_trees: number,
-          total_gift_requests: number,
-          total_gifted_trees: number
+            personal_gift_requests: number,
+            corporate_gift_requests: number,
+            personal_gifted_trees: number,
+            corporate_gifted_trees: number,
+            total_gift_requests: number,
+            total_gifted_trees: number
         };
-      }
+    }
 
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
         return await GiftCardRequest.create(data);
@@ -170,8 +184,31 @@ export class GiftCardsRepository {
         return giftCards.results[0];
     }
 
-    static async updateGiftCardRequests(fields: Partial<GiftCardRequestAttributes>, whereClause: WhereOptions<GiftCardRequest>): Promise<void> {
-        await GiftCardRequest.update(fields, { where: whereClause });
+    static async updateGiftCardRequests(
+        fields: Partial<GiftCardRequestAttributes>,
+        whereClause: WhereOptions<GiftCardRequest>,
+        options?: {
+            requireNull?: Partial<Record<keyof GiftCardRequestAttributes, boolean>>;
+        }
+    ): Promise<number> {
+        // Create the final where object with proper typing
+        const finalWhere: WhereOptions<GiftCardRequest> = { ...whereClause };
+
+        // Add null conditions if specified
+        if (options?.requireNull) {
+            Object.entries(options.requireNull).forEach(([field, mustBeNull]) => {
+                if (mustBeNull) {
+                    // Use type assertion for the field assignment
+                    (finalWhere as any)[field] = null;
+                }
+            });
+        }
+
+        const [affectedCount] = await GiftCardRequest.update(fields, {
+            where: finalWhere
+        });
+
+        return affectedCount;
     }
 
     static async deleteGiftCardRequest(id: number): Promise<void> {
@@ -201,7 +238,7 @@ export class GiftCardsRepository {
         for (const user of users) {
             const userCards = cards.filter(card => (card.gifted_to === user.giftedTo && card.assigned_to === user.assignedTo));
 
-            const profileImageUrl = user.imageName ? 'https://14treesplants.s3.amazonaws.com/cards/'+ giftRequest.request_id + '/' + user.imageName : null
+            const profileImageUrl = user.imageName ? 'https://14treesplants.s3.amazonaws.com/cards/' + giftRequest.request_id + '/' + user.imageName : null
             if (userCards.length > 0 && userCards[0].profile_image_url !== profileImageUrl) {
                 await GiftCard.update({
                     profile_image_url: profileImageUrl,
@@ -218,7 +255,7 @@ export class GiftCardsRepository {
             if (user.count > userCards.length) {
                 let count = user.count - userCards.length;
 
-                for ( ; idx < nonUserCards.length; idx++) {
+                for (; idx < nonUserCards.length; idx++) {
 
                     if (count === 0) break;
 
@@ -245,7 +282,7 @@ export class GiftCardsRepository {
 
                     giftCards.push(...requests);
                 }
-                
+
             }
         }
 
@@ -328,7 +365,7 @@ export class GiftCardsRepository {
                     gift_card_request_id: cardId,
                     tree_id: treeId,
                     created_at: new Date()
-                    
+
                 } as GiftCardCreationAttributes
             })
 
@@ -346,13 +383,13 @@ export class GiftCardsRepository {
         plotIds = plotIds.filter(plotId => {
             return !plots.find(plot => plot.plot_id === plotId)
         })
-        
+
         const giftCardPlots = plotIds.map(plotId => {
             return {
                 gift_card_request_id: cardId,
                 plot_id: plotId,
                 created_at: new Date()
-                
+
             } as GiftCardPlotCreationAttributes
         })
 
@@ -547,7 +584,7 @@ export class GiftCardsRepository {
     }
 
     static async addGiftRequestUsers(data: GiftRequestUserCreationAttributes[], returning: boolean = false): Promise<GiftRequestUser[] | void> {
-        const response =  await GiftRequestUser.bulkCreate(data, { returning: returning });
+        const response = await GiftRequestUser.bulkCreate(data, { returning: returning });
         return returning ? response : undefined;
     }
 

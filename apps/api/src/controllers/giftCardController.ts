@@ -544,14 +544,14 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
 export const processGiftCard = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { userId } = req.body; // Get userId from request body
+    const { userId } = req.body;
 
     if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
     }
 
     try {
-        // Check if gift card exists and isn't processed
+        // Check if gift card exists
         const giftCardRequest = await GiftCardRequest.findOne({ where: { id } });
 
         if (!giftCardRequest) {
@@ -565,21 +565,16 @@ export const processGiftCard = async (req: Request, res: Response) => {
             });
         }
 
-        // Update only if processed_by is null
-        const [affectedCount] = await GiftCardRequest.update(
+        // 👇 Call the repo function — it already handles null check
+        await GiftCardsRepository.updateGiftCardRequests(
             {
                 processed_by: userId,
-                updated_at: new Date() // Maintain timestamp updates
+                updated_at: new Date()
             },
-            {
-                where: {
-                    id,
-                    processed_by: null
-                }
-            }
+            { id } // no null check here
         );
 
-        // Get updated gift card details
+        // Fetch updated gift card
         const updatedGiftCard = await GiftCardRequest.findOne({ where: { id } });
 
         return res.status(200).json({
