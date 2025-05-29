@@ -125,6 +125,7 @@ class GiftRequestHelper {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,

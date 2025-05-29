@@ -263,6 +263,7 @@ export class DonationService {
             mapped_to_group: groupId,
             sponsored_by_user: userId,
             sponsored_by_group: groupId,
+            sponsored_at: new Date(),
             donation_id,
             mapped_at: new Date(),
             updated_at: new Date(),
@@ -371,6 +372,7 @@ export class DonationService {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 donation_id: null,
                 updated_at: new Date(),
             }
@@ -386,6 +388,7 @@ export class DonationService {
             mapped_at: null,
             sponsored_by_user: null,
             sponsored_by_group: null,
+            sponsored_at: new Date(),
             donation_id: null,
             updated_at: new Date(),
         }

@@ -509,7 +509,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.group_id !== originalRequest.group_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id, sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
@@ -517,7 +517,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.sponsor_id !== originalRequest.sponsor_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id,  sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.visit_id !== originalRequest.visit_id) {
@@ -598,6 +598,7 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
@@ -1311,6 +1312,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
