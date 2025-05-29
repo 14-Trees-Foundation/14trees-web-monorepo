@@ -10,11 +10,8 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
-import { Tree } from '../models/tree';
-import { User } from '../models/user';
-import { WhereOptions } from 'sequelize';
-import { EmailTemplate } from '../models/email_template';
+import { DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
 
@@ -269,10 +266,17 @@ export const processDonation = async (req: Request, res: Response) => {
         }
 
         // Use repository method to update
-        await DonationRepository.updateDonation(Number(id), {
+        const updated = await DonationRepository.updateDonations({
             processed_by: userId,
-            updated_at: new Date() // Don't forget to update the timestamp
+            updated_at: new Date()
+        }, {
+            id: donation.id,
+            processed_by: { [Op.is]: null }
         });
+
+        if (!updated) {
+            return res.status(404).json({ message: 'Already being processed by another user' });
+        }
 
         return res.status(200).json({ success: true });
 

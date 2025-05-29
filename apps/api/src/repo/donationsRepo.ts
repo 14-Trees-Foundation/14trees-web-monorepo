@@ -2,7 +2,7 @@ import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { Donation, DonationAttributes, DonationCreationAttributes } from '../models/donation'
 import { FilterItem, PaginatedResponse } from "../models/pagination";
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, WhereOptions } from 'sequelize';
 import { Tree } from '../models/tree';
 import { SortOrder } from '../models/common';
 export class DonationRepository {
@@ -120,43 +120,26 @@ export class DonationRepository {
         }
     }
 
-    public static async updateDonation(donationId: number, updateData: Partial<DonationAttributes>,
-        options?: {
-            // Optional: Fields that must be null for the update to proceed
-            requireNullConditions?: { [key in keyof DonationAttributes]?: boolean };
-        }): Promise<Donation> {
-        try {
-            // 1. Build the WHERE clause
-            const where: any = { id: donationId };
+    public static async updateDonation(donationId: number, updateData: Partial<DonationAttributes>): Promise<Donation> {
+        const [numRowsUpdated, updatedDonations] = await Donation.update(updateData, {
+            where: { id: donationId},
+            returning: true,
+        });
 
-            // Add null conditions if specified (e.g., { processed_by: true })
-            if (options?.requireNullConditions) {
-                for (const [field, mustBeNull] of Object.entries(options.requireNullConditions)) {
-                    if (mustBeNull) {
-                        where[field] = null;
-                    }
-                }
-            }
-
-            // Update the donation with provided data
-            const [numRowsUpdated, updatedDonations] = await Donation.update(updateData, {
-                where: { id: donationId},
-                returning: true, // Ensure Sequelize returns the updated record(s)
-            });
-
-            // 3. Handle failures
-            if (numRowsUpdated === 0) {
-                throw new Error(
-                    options?.requireNullConditions
-                        ? 'Donation not found or null conditions not met'
-                        : 'Donation not found'
-                );
-            }
-
-            return updatedDonations[0];
-        } catch (error: any) {
-            throw new Error(`Error updating donation: ${error.message}`);
+        if (numRowsUpdated === 0) {
+            throw new Error('Donation not found or no changes made');
         }
+
+        return updatedDonations[0];
+    }
+
+    public static async updateDonations(updateData: Partial<DonationAttributes>, whereClause: WhereOptions<Donation>): Promise<number> {
+        const [affectedCount] = await Donation.update(updateData, {
+            where: whereClause,
+            returning: false,
+        });
+
+        return affectedCount;
     }
 
 

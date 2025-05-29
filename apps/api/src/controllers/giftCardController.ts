@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequest, GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, SponsorshipType } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
@@ -29,7 +29,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, autoProcessGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
@@ -550,9 +550,14 @@ export const processGiftCard = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'User ID is required' });
     }
 
+    if (!id || isNaN(Number(id))) {
+        return res.status(400).json({ message: 'Invalid gift card request ID' });
+    }
+
     try {
         // Check if gift card exists
-        const giftCardRequest = await GiftCardRequest.findOne({ where: { id } });
+        const giftRequestId = parseInt(id);
+        const giftCardRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
 
         if (!giftCardRequest) {
             return res.status(404).json({ message: 'Gift card not found' });
@@ -566,16 +571,20 @@ export const processGiftCard = async (req: Request, res: Response) => {
         }
 
         // 👇 Call the repo function — it already handles null check
-        await GiftCardsRepository.updateGiftCardRequests(
+        const updated = await GiftCardsRepository.updateGiftCardRequests(
             {
                 processed_by: userId,
                 updated_at: new Date()
             },
-            { id } // no null check here
+            { id, processed_by: { [Op.is]: null } }
         );
 
+        if (!updated) {
+            return res.status(409).json({ message: 'Gift card already being processed by another user' });
+        }
+
         // Fetch updated gift card
-        const updatedGiftCard = await GiftCardRequest.findOne({ where: { id } });
+        const updatedGiftCard = await GiftCardsService.getGiftCardsRequest(giftCardRequest.id);
 
         return res.status(200).json({
             success: true,
