@@ -19,6 +19,7 @@ import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
 import { Tree, TreeAttributes } from "../models/tree";
+import { PlotRepository } from "../repo/plotRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -764,7 +765,72 @@ export class DonationService {
         await this.deleteDonationUsers(donationId, users);
     }
 
+    /**
+     * Auto Process
+     */
+    public static async reserveTreesForDonation(donation: Donation) {
 
+        const treesCount = donation.trees_count - (donation as any).booked;
+        if (treesCount <= 0) return; 
+
+        const plotIds: number[] = [1896, 1992, 1328]
+        const plotsResp = await PlotRepository.getPlots(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: plotIds }]);
+
+        let remaining = treesCount;
+        const plotTreeCnts 
+            = plotsResp.results
+                .filter((plot: any) => plot.available_trees)
+                .map((plot: any) => {
+                    const cnt = Math.min(plot.available_trees, remaining);
+
+                    if (remaining) remaining -= cnt;
+                    return { plot_id: plot.id, trees_count: cnt }
+                }).filter(item => item.trees_count);
+        
+
+        await this.reserveTreesInPlots(donation.user_id, null, plotTreeCnts, true, true, false, donation.id);
+    }
+
+
+    public static async assignTreesForDonation(donation: Donation) {
+        
+        const donationUsers = await DonationUserRepository.getAllDonationUsers(donation.id); 
+        const treesCount = donationUsers.map(user => user.trees_count).reduce((prev, curr) => prev + curr, 0);
+        if (treesCount < donation.trees_count) {
+
+            const diffCnt = donation.trees_count - treesCount;
+            const sponsor = donationUsers.find(user => user.recipient === donation.user_id);
+            if (!sponsor) {
+                await DonationUserRepository.createDonationUsers([{
+                    recipient: donation.user_id,
+                    assignee: donation.user_id,
+                    trees_count: diffCnt,
+                    profile_image_url: null,
+                    donation_id: donation.id
+                }])
+            } else {
+                await DonationUserRepository.updateDonationUsers({
+                    trees_count: sponsor.trees_count + diffCnt,
+                    updated_at: new Date(),
+                }, { id: sponsor.id });
+            }
+        }
+
+        await this.autoAssignTrees(donation.id);
+    }
+
+
+    /**
+     * Donation Email functions
+     */
+
+
+    /**
+     * @param donation 
+     * @param sponsorUser 
+     * @param testMails List of email ids (string[]) to receive test email
+     * @param ccMails List of email ids (string[])
+     */
     public static async sendDonationAcknowledgement(
         donation: Donation,
         sponsorUser: User,

@@ -997,3 +997,31 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         console.error('Error stack:', (error as Error).stack);
     }
 };
+
+/**
+ * Auto process donation request
+ */
+export const autoProcessDonationRequest = async (req: Request, res: Response) => {
+
+    const {
+        donation_id
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+        
+        await DonationService.reserveTreesForDonation(donation);
+        await DonationService.assignTreesForDonation(donation);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}

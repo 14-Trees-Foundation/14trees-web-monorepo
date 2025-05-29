@@ -153,6 +153,8 @@ routes.post('/requests' , donations.createDonation);
 
 routes.post('/requests/payment-success', donations.paymentSuccessForDonation);
 
+routes.post('/requests/auto-process', donations.autoProcessDonationRequest);
+
 routes.delete('/requests/:id' , donations.deleteDonation);
 routes.put('/requests/:id' , donations.updateDonation);
 // routes.post('/work-order/:donation_id' , donations.createWorkOrder);
