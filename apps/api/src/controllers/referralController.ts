@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CampaignsRepository } from "../repo/campaignsRepo";
 import { UserRepository } from "../repo/userRepo";
 import { ReferralsRepository } from "../repo/referralsRepo";
+import { Op } from "sequelize";
 
 
 export const createReferral = async (req: Request, res: Response) => {
@@ -44,6 +45,52 @@ export const createReferral = async (req: Request, res: Response) => {
         console.error("[ERROR] ReferralController::createReferral", error);
         res.status(500).json({
             message: 'Failed to create referral',
+            error: error.message || 'Internal Server Error'
+        });
+    }
+}
+
+
+export const getReferralDetails = async (req: Request, res: Response) => {
+    try {
+        const { rfr, c_key } = req.body;
+
+        if (!rfr && !c_key) {
+            return res.status(400).json({ message: "Referral code or campaign key is required!" });
+        }
+
+        let referredBy: string | undefined = undefined;
+        if (rfr) {
+            const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', value: rfr, operatorValue: 'equals' }]);
+            if (usersResp.results.length !== 0) {
+                referredBy = usersResp.results[0].name;
+            }
+        }
+
+        let name: string | undefined = undefined;
+        let cKey: string | undefined = undefined;
+        let description: string | undefined = undefined;
+        if (c_key) {
+            const campaigns = await CampaignsRepository.getCampaigns({ c_key: c_key });
+            if (campaigns.length !== 0) {
+                name = campaigns[0].name;
+                cKey = campaigns[0].c_key;
+                description = campaigns[0].description ?? undefined;
+            }
+        }
+
+        return res.status(200).json({
+            rfr: rfr,
+            c_key: cKey,
+            referred_by: referredBy,
+            name: name,
+            description: description
+        });
+
+    } catch (error: any) {
+        console.error("[ERROR] ReferralController::getReferralDetails", error);
+        res.status(500).json({
+            message: 'Failed to get referral details',
             error: error.message || 'Internal Server Error'
         });
     }
