@@ -1065,7 +1065,7 @@ function GiftTrees() {
           <div className="space-y-4 bg-green-50 p-4 rounded-lg">
             <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
             <p className="text-sm text-green-700">
-              You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you've inspired as others join you in gifting trees.
+              You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
             </p>
             <a
               onClick={(e) => {
@@ -1210,7 +1210,7 @@ function GiftTrees() {
               <div className="mt-6 space-y-4 bg-green-50 p-4 rounded-lg">
                 <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
                 <p className="text-sm text-green-700">
-                  You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you've inspired as others join you in gifting trees.
+                  You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
                 </p>
                 <a
                   onClick={(e) => {
