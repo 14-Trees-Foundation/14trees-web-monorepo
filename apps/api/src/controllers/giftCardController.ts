@@ -170,8 +170,11 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
     }
 
     let rfr_id: number | null = null;
-    if (rfr && c_key) {
-        const references = await ReferralsRepository.getReferrals({ rfr: rfr, c_key: c_key });
+    if (rfr || c_key) {
+        const references = await ReferralsRepository.getReferrals({
+            rfr: rfr ? rfr : { [Op.is]: null },
+            c_key: c_key ? c_key : { [Op.is]: null }
+        });
         if (references.length === 1) rfr_id = references[0].id;
     }
 

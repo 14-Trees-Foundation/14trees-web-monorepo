@@ -87,8 +87,11 @@ export class DonationService {
         });
 
         let rfr_id: number | null = null;
-        if (data.rfr && data.c_key) {
-            const references = await ReferralsRepository.getReferrals({ rfr: data.rfr, c_key: data.c_key });
+        if (data.rfr || data.c_key) {
+            const references = await ReferralsRepository.getReferrals({
+                rfr: data.rfr ? data.rfr : { [Op.is]: null },
+                c_key: data.c_key ? data.c_key : { [Op.is]: null }
+            });
             if (references.length === 1) rfr_id = references[0].id;
         }
 
@@ -407,14 +410,14 @@ export class DonationService {
     }
 
     public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
-        
+
         const updateData: Partial<TreeAttributes> = {
             sponsored_by_user: donation.user_id,
             donation_id: donation.id,
             updated_at: new Date(),
         }
 
-        await TreeRepository.updateTrees(updateData, { id: {[Op.in]: treeIds} })
+        await TreeRepository.updateTrees(updateData, { id: { [Op.in]: treeIds } })
     }
 
     public static async unmapTreesFromDonation(donation: Donation, treeIds: number[]) {
@@ -427,7 +430,7 @@ export class DonationService {
         await TreeRepository.updateTrees(updateData, { id: { [Op.in]: treeIds } })
     }
 
-    public static async getMappedTrees( donationId: number, offset: number = 0, limit: number = 20, filters: FilterItem[] = [], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Tree>> {
+    public static async getMappedTrees(donationId: number, offset: number = 0, limit: number = 20, filters: FilterItem[] = [], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Tree>> {
         // Inject a required filter for donation_id
         const donationFilter: FilterItem = {
             columnField: "donation_id",
@@ -784,13 +787,13 @@ export class DonationService {
     public static async reserveTreesForDonation(donation: Donation) {
 
         const treesCount = donation.trees_count - (donation as any).booked;
-        if (treesCount <= 0) return; 
+        if (treesCount <= 0) return;
 
         const plotIds: number[] = [1896, 1992, 1328]
         const plotsResp = await PlotRepository.getPlots(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: plotIds }]);
 
         let remaining = treesCount;
-        const plotTreeCnts 
+        const plotTreeCnts
             = plotsResp.results
                 .filter((plot: any) => plot.available_trees)
                 .map((plot: any) => {
@@ -799,15 +802,15 @@ export class DonationService {
                     if (remaining) remaining -= cnt;
                     return { plot_id: plot.id, trees_count: cnt }
                 }).filter(item => item.trees_count);
-        
+
 
         await this.reserveTreesInPlots(donation.user_id, null, plotTreeCnts, true, true, false, donation.id);
     }
 
 
     public static async assignTreesForDonation(donation: Donation) {
-        
-        const donationUsers = await DonationUserRepository.getAllDonationUsers(donation.id); 
+
+        const donationUsers = await DonationUserRepository.getAllDonationUsers(donation.id);
         const treesCount = donationUsers.map(user => user.trees_count).reduce((prev, curr) => prev + curr, 0);
         if (treesCount < donation.trees_count) {
 
