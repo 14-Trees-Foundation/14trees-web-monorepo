@@ -34,7 +34,7 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
-import { ReferencesRepository } from "../repo/referencesRepo";
+import { ReferencesRepository } from "../repo/referralsRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {

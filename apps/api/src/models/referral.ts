@@ -2,21 +2,20 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-interface CampaignAttributes {
+interface ReferralAttributes {
     id: number;
-    name: string;
-    c_key: string;
-    description: string | null;
+    rfr: string | null;
+    c_key: string | null;
     created_at: Date;
     updated_at: Date;
 }
 
-interface CampaignCreationAttributes
-    extends Optional<CampaignAttributes, 'id' | 'created_at' | 'updated_at'> { }
+interface ReferralCreationAttributes
+    extends Optional<ReferralAttributes, 'id' | 'created_at' | 'updated_at'> { }
 
-@Table({ tableName: 'campaigns' })
-class Campaign extends Model<CampaignAttributes, CampaignCreationAttributes>
-    implements CampaignAttributes {
+@Table({ tableName: 'referrals' })
+class Referral extends Model<ReferralAttributes, ReferralCreationAttributes>
+    implements ReferralAttributes {
 
     @Column({
         type: DataType.NUMBER,
@@ -28,22 +27,16 @@ class Campaign extends Model<CampaignAttributes, CampaignCreationAttributes>
 
     @Column({
         type: DataType.STRING,
-        allowNull: false,
+        allowNull: true,
     })
-    name!: string;
+    rfr!: string | null;
 
     @Column({
         type: DataType.STRING,
-        allowNull: false,
+        allowNull: true,
         unique: true
     })
-    c_key!: string;
-
-    @Column({
-        type: DataType.STRING,
-        allowNull: true
-    })
-    description!: string | null;
+    c_key!: string | null;
 
     @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
     created_at!: Date;
@@ -52,5 +45,5 @@ class Campaign extends Model<CampaignAttributes, CampaignCreationAttributes>
     updated_at!: Date;
 }
 
-export { Campaign }
-export type { CampaignAttributes, CampaignCreationAttributes }
+export { Referral }
+export type { ReferralAttributes, ReferralCreationAttributes }
