@@ -305,5 +305,21 @@ class ApiClient {
       throw new Error('Failed to general referral link!');
     }
   }
+
+  async getReferrelDetails(rfr?: string | null, c_key?: string | null): Promise<{ referred_by?: string, name?: string, c_key?: string, description?: string }> {
+    try {
+      const response = await this.api.post<{ referred_by?: string, name?: string, c_key?: string, description?: string }>(`/referrals/details`, { rfr, c_key }, {
+        headers: {
+          "content-type": "application/json",
+        }
+      });
+      return response.data;
+    } catch(error: any) {
+      if (error.response) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Failed to fetch referrel details!');
+    }
+  }
 }
 export const apiClient = new ApiClient();

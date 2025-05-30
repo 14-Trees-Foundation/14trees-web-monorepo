@@ -92,10 +92,27 @@ function GiftTrees() {
   const [hasDuplicateNames, setHasDuplicateNames] = useState(false);
   const [hasAssigneeError, setHasAssigneeError] = useState(false);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
+  const [referralDetails, setReferralDetails] = useState<{ referred_by?: string, name?: string, c_key?: string, description?: string } | null>(null);
+
 
   useEffect(() => {
     setWindowWidth(window.innerWidth);
   }, []);
+
+  useEffect(() => {
+    const fetchReferralDetails = async () => {
+      if (rfr || c_key) {
+        try {
+          const details = await apiClient.getReferrelDetails(rfr, c_key);
+          setReferralDetails(details);
+        } catch (error) {
+          console.error('Failed to fetch referral details:', error);
+        }
+      }
+    };
+
+    fetchReferralDetails();
+  }, [rfr, c_key]);
 
   const calculateGiftingAmount = (): number => {
     return 2000;
@@ -293,6 +310,7 @@ function GiftTrees() {
     // Handle CSV file
     Papa.parse(files[0], {
       header: true,
+      skipEmptyLines: true,
       transformHeader: (header) => {
         // Map the CSV headers to our internal field names
         const headerMap: Record<string, string> = {
@@ -494,7 +512,7 @@ function GiftTrees() {
       return;
     }
 
-    
+
     let users = dedicatedNames.filter(user => user.recipient_name.trim() != "");
 
     const donor = formData.fullName.replaceAll(" ", "").toLocaleLowerCase();
@@ -520,7 +538,7 @@ function GiftTrees() {
     })
 
     try {
-      
+
       const giftTreesRequest = {
         request_id: uniqueRequestId,
         user_id: userId,
@@ -1044,6 +1062,22 @@ function GiftTrees() {
             </li>
           </ul>
 
+          <div className="space-y-4 bg-green-50 p-4 rounded-lg">
+            <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
+            <p className="text-sm text-green-700">
+              You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you've inspired as others join you in gifting trees.
+            </p>
+            <a
+              onClick={(e) => {
+                e.preventDefault();
+                setShowReferralDialog(true);
+              }}
+              className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
+            >
+              Create & Share Your Link
+            </a>
+          </div>
+
           {!updateSuccess ? (
             <div className="space-y-6">
               {/* Divider */}
@@ -1081,19 +1115,6 @@ function GiftTrees() {
                     rows={4}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-4 bg-green-50 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-green-800">Share Your Gift!</h4>
-                <p className="text-sm text-green-700">
-                  Help us spread the joy of giving trees as gifts. Share your gift with friends and family to inspire them to make a difference too.
-                </p>
-                <button
-                  onClick={() => setShowReferralDialog(true)}
-                  className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                >
-                  Share Your Gift
-                </button>
               </div>
 
               {updateError && (
@@ -1147,23 +1168,59 @@ function GiftTrees() {
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
-              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
-              </h6>
-              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
-              </h6>
-              <div className="space-y-4 mt-6 bg-green-50 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-green-800">Share Your Gift!</h4>
+            {referralDetails ? (
+                <div className="mt-4">
+                  {referralDetails.description ? (
+                    <>
+                      {referralDetails.name && (
+                        <h2 className="text-2xl font-semibold text-green-800">
+                          {referralDetails.name}
+                        </h2>
+                      )}
+                      <h6 className="mt-2 text-grey-600 mt-6 text-sm font-light md:text-lg whitespace-pre-line">
+                        {referralDetails.description}
+                      </h6>
+                    </>
+                  ) : (
+                    <>
+                      <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                        By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
+                      </h6>
+                      <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                        Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
+                      </h6>
+                    </>
+                  )}
+                  {referralDetails.referred_by && (
+                    <p className="mt-2 text-sm md:text-lg text-gray-900">
+                      Referred by: {referralDetails.referred_by}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                    By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
+                  </h6>
+                  <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
+                    Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
+                  </h6>
+                </>
+              )}
+              <div className="mt-6 space-y-4 bg-green-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
                 <p className="text-sm text-green-700">
-                  Help us spread the joy of giving trees as gifts. Share your gift with friends and family to inspire them to make a difference too.
+                  You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you've inspired as others join you in gifting trees.
                 </p>
-                <button
-                  onClick={() => setShowReferralDialog(true)}
-                  className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                <a
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowReferralDialog(true);
+                  }}
+                  className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
                 >
-                  Share Your Gift
-                </button>
+                  Create & Share Your Link
+                </a>
               </div>
               <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
@@ -1453,7 +1510,7 @@ function GiftTrees() {
                           <Tooltip title="PAN number is required for us to map and issue 80G receipt to the donor.">
                             <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
                           </Tooltip>
-                          </label>
+                        </label>
                         <div className="min-w-[200px] flex-1">
                           <input
                             type="text"
@@ -1489,8 +1546,8 @@ function GiftTrees() {
 
                         const treesCount = parseInt(formData.numberOfTrees);
                         const treesAssigned = dedicatedNames.filter(user => user.recipient_name?.trim())
-                                                .map(user => user.trees_count)
-                                                .reduce((prev, curr) => prev + curr, 0);
+                          .map(user => user.trees_count)
+                          .reduce((prev, curr) => prev + curr, 0);
 
                         if (treesAssigned < treesCount) {
                           if (treesAssigned !== 0) alert(`You have only assigned ${treesAssigned} out of ${treesCount} trees. Please assign all the trees to recipients!`);
@@ -1505,8 +1562,8 @@ function GiftTrees() {
                         }
                       }}
                       className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-green-600 hover:bg-green-700"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-green-600 hover:bg-green-700"
                         }`}
 
                       disabled={hasDuplicateNames || hasAssigneeError}
