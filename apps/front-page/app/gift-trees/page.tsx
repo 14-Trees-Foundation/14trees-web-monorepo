@@ -4,7 +4,7 @@
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Script from 'next/script';
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
@@ -35,7 +35,7 @@ interface DedicatedName {
   [key: string]: string | number | undefined;
 }
 
-export default function GiftTreesPage() {
+function GiftTrees() {
   const searchParams = useSearchParams();
   const rfr = searchParams.get('r');
   const c_key = searchParams.get('c');
@@ -1550,5 +1550,13 @@ export default function GiftTreesPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function GiftTreesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GiftTrees />
+    </Suspense>
   );
 }

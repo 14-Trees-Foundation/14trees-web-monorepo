@@ -3,7 +3,7 @@
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import { UploadIcon } from "lucide-react";
@@ -33,7 +33,7 @@ interface DedicatedName {
   [key: string]: string | number | undefined;
 }
 
-export default function DonatePage() {
+function Donation() {
   const searchParams = useSearchParams();
   const rfr = searchParams.get('r');
   const c_key = searchParams.get('c');
@@ -1894,5 +1894,13 @@ export default function DonatePage() {
         />
       )}
     </div>
+  );
+}
+
+export default function DonatePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Donation />
+    </Suspense>
   );
 }
