@@ -20,7 +20,7 @@ import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
 import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
-import { ReferencesRepository } from "../repo/referralsRepo";
+import { ReferralsRepository } from "../repo/referralsRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -88,7 +88,7 @@ export class DonationService {
 
         let rfr_id: number | null = null;
         if (data.rfr && data.c_key) {
-            const references = await ReferencesRepository.getReferences({ rfr: data.rfr, c_key: data.c_key });
+            const references = await ReferralsRepository.getReferrals({ rfr: data.rfr, c_key: data.c_key });
             if (references.length === 1) rfr_id = references[0].id;
         }
 
