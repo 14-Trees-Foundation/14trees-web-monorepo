@@ -15,6 +15,7 @@ import GiftCardPreview from "components/gift-trees/GiftCardPreview";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Tooltip from '@mui/material/Tooltip';
 import { useSearchParams } from "next/navigation";
+import { ReferralDialog } from "components/referral/ReferralDialog";
 
 declare global {
   interface Window {
@@ -90,6 +91,7 @@ export default function GiftTreesPage() {
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [hasDuplicateNames, setHasDuplicateNames] = useState(false);
   const [hasAssigneeError, setHasAssigneeError] = useState(false);
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
 
   useEffect(() => {
     setWindowWidth(window.innerWidth);
@@ -1081,6 +1083,19 @@ export default function GiftTreesPage() {
                 </div>
               </div>
 
+              <div className="space-y-4 bg-green-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-800">Share Your Gift!</h4>
+                <p className="text-sm text-green-700">
+                  Help us spread the joy of giving trees as gifts. Share your gift with friends and family to inspire them to make a difference too.
+                </p>
+                <button
+                  onClick={() => setShowReferralDialog(true)}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Share Your Gift
+                </button>
+              </div>
+
               {updateError && (
                 <p className="text-red-600 text-sm">{updateError}</p>
               )}
@@ -1133,11 +1148,23 @@ export default function GiftTreesPage() {
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
+                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we're not just bringing life back to the land, we're rebuilding entire ecosystems.
               </h6>
               <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
                 Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
               </h6>
+              <div className="space-y-4 mt-6 bg-green-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-800">Share Your Gift!</h4>
+                <p className="text-sm text-green-700">
+                  Help us spread the joy of giving trees as gifts. Share your gift with friends and family to inspire them to make a difference too.
+                </p>
+                <button
+                  onClick={() => setShowReferralDialog(true)}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Share Your Gift
+                </button>
+              </div>
               <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
               </h2>
@@ -1515,6 +1542,13 @@ export default function GiftTreesPage() {
         </div>
       </div>
       {showSuccessDialog && <SuccessDialog />}
+      {showReferralDialog && (
+        <ReferralDialog
+          linkType="gift-trees"
+          open={showReferralDialog}
+          onClose={() => setShowReferralDialog(false)}
+        />
+      )}
     </div>
   );
 }

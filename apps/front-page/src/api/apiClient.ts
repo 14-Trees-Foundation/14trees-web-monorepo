@@ -123,9 +123,9 @@ class ApiClient {
     trees_count?: number;
     pledged_area_acres?: number;
     donation_type?: string; // "adopt" or "donate"
-  donation_method?: string; // "trees" or "amount"
-  visit_date?: string; // Required for adoptions
-  amount_donated?: number; // Required for monetary donations
+    donation_method?: string; // "trees" or "amount"
+    visit_date?: string; // Required for adoptions
+    amount_donated?: number; // Required for monetary donations
     [key: string]: any; // For additional fields
   }): Promise<any> {
     try {
@@ -257,19 +257,52 @@ class ApiClient {
     return presignedUrl.split('?')[0];
   }
 
-  async serveUserQuery(message: string, history: any[]): Promise<{output: string}> {
+  async serveUserQuery(message: string, history: any[]): Promise<{ output: string }> {
     try {
-        const response = await this.api.post<{output: string}>(`/gift-cards/gen-ai`, { message, history }, {
-            headers: {
-                "content-type": "application/json",
-            }
-        });
-        return response.data;
-    } catch (error: any) {
-        if (error.response) {
-            throw new Error(error.response.data.message);
+      const response = await this.api.post<{ output: string }>(`/gift-cards/gen-ai`, { message, history }, {
+        headers: {
+          "content-type": "application/json",
         }
-        throw new Error('Failed to connect with our AI bot!');
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Failed to connect with our AI bot!');
+    }
+  }
+
+
+  async getReferral(email: string, c_key?: string | null): Promise<{ rfr: string, c_key: string }> {
+    try {
+      const response = await this.api.post<{ rfr: string, c_key: string }>(`/referrals/`, { email, c_key }, {
+        headers: {
+          "content-type": "application/json",
+        }
+      });
+      return response.data;
+    } catch(error: any) {
+      if (error.response) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Failed to general referral link!');
+    }
+  }
+
+  async listCampaigns(): Promise<{ name: string, c_key: string }> {
+    try {
+      const response = await this.api.get<{ name: string, c_key: string }>(`/campaigns/`, {
+        headers: {
+          "content-type": "application/json",
+        }
+      });
+      return response.data;
+    } catch(error: any) {
+      if (error.response) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Failed to general referral link!');
     }
   }
 }
