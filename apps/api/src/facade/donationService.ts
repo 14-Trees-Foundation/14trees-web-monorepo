@@ -21,6 +21,7 @@ import RazorpayService from "../services/razorpay/razorpay";
 import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
 import { ReferralsRepository } from "../repo/referralsRepo";
+import { CampaignsRepository } from "../repo/campaignsRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -861,6 +862,29 @@ export class DonationService {
                 panNumber = payment?.pan_number || "";
             }
 
+            let referredBy = "";
+            let campaignName = "";
+            if (donation.rfr_id) {
+                const referrals = await ReferralsRepository.getReferrals({ id: donation.rfr_id });
+                if (referrals.length > 0) {
+                    const referral = referrals[0];
+
+                    if (referral.c_key) {
+                        const campaigns = await CampaignsRepository.getCampaigns({ c_key: referral.c_key });
+                        if (campaigns.length > 0) {
+                            campaignName = campaigns[0].name;
+                        }
+                    }
+
+                    if (referral.rfr) {
+                        const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }]);
+                        if (usersResp.results.length > 0) {
+                            referredBy = usersResp.results[0].name;
+                        }
+                    }
+                }
+            }
+
             const date = new Date();
             const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
             const donationReceiptId = FY + "/" + donation.id;
@@ -894,6 +918,8 @@ export class DonationService {
                     amount: formatNumber(donation.amount_donated || 0),
                     date: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                     treesCount: donation.trees_count,
+                    referredBy: referredBy,
+                    campaignName: campaignName,
                     donationType: donation.donation_type === 'donate'
                         ? donation.trees_count
                             ? 'trees'
