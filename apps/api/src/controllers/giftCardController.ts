@@ -34,7 +34,7 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
-import { ReferencesRepository } from "../repo/referralsRepo";
+import { ReferralsRepository } from "../repo/referralsRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -171,7 +171,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
     let rfr_id: number | null = null;
     if (rfr && c_key) {
-        const references = await ReferencesRepository.getReferences({ rfr: rfr, c_key: c_key });
+        const references = await ReferralsRepository.getReferrals({ rfr: rfr, c_key: c_key });
         if (references.length === 1) rfr_id = references[0].id;
     }
 

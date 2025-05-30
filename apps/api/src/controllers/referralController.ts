@@ -48,3 +48,31 @@ export const createReferral = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const getUserNameByReferral = async (req: Request, res: Response) => {
+    try {
+        const { rfr } = req.body;
+        
+        if (!rfr) {
+            return res.status(400).json({ message: "Referral code (rfr) is required!" });
+        }
+
+        const usersResp = await UserRepository.getUsers(0, 1, [
+            { columnField: 'rfr', value: rfr, operatorValue: 'equals' }
+        ]);
+
+        if (usersResp.results.length === 0) {
+            return res.status(404).json({ message: "No user found with this referral code" });
+        }
+
+        const user = usersResp.results[0];
+        return res.status(200).json({ name: user.name });
+
+    } catch (error: any) {
+        console.error("[ERROR] ReferralController::getUserNameByReferral", error);
+        res.status(500).json({
+            message: 'Failed to fetch user name by referral',
+            error: error.message || 'Internal Server Error'
+        });
+    }
+}
