@@ -27,3 +27,17 @@ export const createCampaign = async (req: Request, res: Response) => {
         });
     }
 }
+
+
+export const listCampaigns = async (req: Request, res: Response) => {
+    try {
+        const campaigns = await CampaignsRepository.getCampaigns({});
+        res.status(200).json(campaigns);
+    } catch (error: any) {
+        console.error("[ERROR] CampaignsController::listCampaigns", error);
+        res.status(status.error).json({
+            message: 'Failed to list campaigns'
+        });
+    }
+}
+

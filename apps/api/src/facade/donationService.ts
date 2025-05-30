@@ -20,7 +20,7 @@ import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
 import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
-import { ReferencesRepository } from "../repo/referencesRepo";
+import { ReferencesRepository } from "../repo/referralsRepo";
 
 interface DonationUserRequest {
     recipient_name: string

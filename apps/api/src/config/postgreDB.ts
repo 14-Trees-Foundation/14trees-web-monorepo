@@ -43,7 +43,7 @@ import DuplicateTreeSync from "../models/duplicate_tree_sync";
 import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { EventMessage } from "../models/event_message";
-import { Reference } from "../models/reference";
+import { Referral } from "../models/referral";
 import { Campaign } from "../models/campaign";
 
 
@@ -123,7 +123,7 @@ class Database {
         DuplicateTreeSync,
         ChatMessage,
         MailSub,
-        Reference,
+        Referral,
         Campaign,
       ]
     });
