@@ -11,7 +11,7 @@ export class CampaignsRepository {
         return campaigns;
     }
 
-    public static async createReferece(name: string, c_key: string, description?: string): Promise<Campaign> {
+    public static async createCampaign(name: string, c_key: string, description?: string): Promise<Campaign> {
         const campaign = await Campaign.create({
             name,
             c_key,
