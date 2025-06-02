@@ -159,7 +159,7 @@ class GiftCardsService {
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['vivekpbhagwat@gmail.com'];
+                ['dashboard@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'backoffice_gifting.html';
@@ -217,7 +217,7 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['vivekpbhagwat@gmail.com'];
+                ['accounts@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'gifting-accounts.html';
@@ -274,7 +274,7 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['vivekpbhagwat@gmail.com'];
+                ['volunteer@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'gifting-volunteer.html';
@@ -331,7 +331,7 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['vivekpbhagwat@gmail.com'];
+                ['csr@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'gifting-csr.html';
