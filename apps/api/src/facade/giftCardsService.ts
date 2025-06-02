@@ -9,6 +9,8 @@ import { PaymentRepository } from "../repo/paymentsRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { User } from "../models/user";
+import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
+import { PlotRepository } from "../repo/plotRepo";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -362,6 +364,31 @@ class GiftCardsService {
                 mail_error: "CSR: " + errorMessage,
             }, { id: giftCardRequestId });
         }
+    }
+
+
+    public static async getPlotTreesCntForAutoReserveTreesForGiftRequest(giftRequest: GiftCardRequest) {
+
+        const treesCount = giftRequest.no_of_cards - (giftRequest as any).booked;
+        if (treesCount <= 0) return [];
+
+        const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('gift');
+
+        const plotIds: number[] = plotsToUse.map(item => item.plot_id);
+        const plotsResp = await PlotRepository.getPlots(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: plotIds }]);
+
+        let remaining = treesCount;
+        const plotTreeCnts
+            = plotsResp.results
+                .filter((plot: any) => plot.card_available)
+                .map((plot: any) => {
+                    const cnt = Math.min(plot.card_available, remaining);
+
+                    if (remaining) remaining -= cnt;
+                    return { plot_id: plot.id, trees_count: cnt, plot_name: plot.name }
+                }).filter(item => item.trees_count);
+
+        return plotTreeCnts;
     }
 }
 

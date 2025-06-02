@@ -17,6 +17,7 @@ import { UserRepository } from '../repo/userRepo';
 import GiftCardsService from '../facade/giftCardsService';
 import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from '../models/gift_card_request';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
+import { updateInventoryStates } from '../facade/autoProcessInventory';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -315,6 +316,16 @@ export function sendGiftCardMails() {
             } catch (error) {
                 console.error("[ERROR] Failed to process gift card request:", error);
             }
+        }
+    });
+}
+
+export function updateAutoProcessReqInventory() {
+    const task = cron.schedule('*/5 * * * *', async () => {
+        try {
+            await updateInventoryStates();
+        } catch(error) {
+            console.error("[ERROR] Failed to update auto process req inventory:", error);
         }
     });
 }
