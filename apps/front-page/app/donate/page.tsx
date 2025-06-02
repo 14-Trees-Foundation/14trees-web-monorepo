@@ -3,13 +3,15 @@
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import { UploadIcon } from "lucide-react";
 import { getUniqueRequestId } from "~/utils";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
 import { SummaryPaymentPage } from './donationSummary';
+import { useSearchParams } from "next/navigation";
+import { ReferralDialog } from "components/referral/ReferralDialog";
 
 declare global {
   interface Window {
@@ -31,7 +33,11 @@ interface DedicatedName {
   [key: string]: string | number | undefined;
 }
 
-export default function DonatePage() {
+function Donation() {
+  const searchParams = useSearchParams();
+  const rfr = searchParams.get('r');
+  const c_key = searchParams.get('c');
+
   const [treeLocation, setTreeLocation] = useState("");
   const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
@@ -80,6 +86,9 @@ export default function DonatePage() {
   const [donationAmount, setDonationAmount] = useState<number>(5000);
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
+  const [referralDetails, setReferralDetails] = useState<{ referred_by?: string, name?: string, c_key?: string, description?: string } | null>(null);
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -119,6 +128,21 @@ export default function DonatePage() {
     const hasDuplicates = Object.values(nameCounts).some(count => count > 1);
     setHasDuplicateNames(hasDuplicates);
   }, [dedicatedNames]);
+
+  useEffect(() => {
+    const fetchReferralDetails = async () => {
+      if (rfr || c_key) {
+        try {
+          const details = await apiClient.getReferrelDetails(rfr, c_key);
+          setReferralDetails(details);
+        } catch (error) {
+          console.error('Failed to fetch referral details:', error);
+        }
+      }
+    };
+
+    fetchReferralDetails();
+  }, [rfr, c_key]);
 
   const containerVariants = {
     hidden: { opacity: 0, y: 10, scale: 1.05 },
@@ -235,6 +259,7 @@ export default function DonatePage() {
 
     Papa.parse(files[0], {
       header: true,
+      skipEmptyLines: true,
       transformHeader: (header) => {
         const headerMap: Record<string, string> = {
           'Recipient Name': 'recipient_name',
@@ -497,6 +522,8 @@ export default function DonatePage() {
         }),
         users: users,
         tags: ["WebSite"],
+        rfr: rfr,
+        c_key: c_key,
       };
 
       let responseData: any;
@@ -1090,6 +1117,23 @@ export default function DonatePage() {
               </button>
             </div>
           )}
+
+          <div className="mt-12 h-px bg-gray-200"></div>
+          <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
+            <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
+            <p className="text-sm text-green-700">
+              Do you know you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
+            </p>
+            <a
+              onClick={(e) => {
+                e.preventDefault();
+                setShowReferralDialog(true);
+              }}
+              className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
+            >
+              Create & Share Your Link
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -1099,25 +1143,91 @@ export default function DonatePage() {
     <div className="overflow-hidden bg-white">
       <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
         <MotionDiv
-          className="container z-0 mx-auto my-10 overflow-hidden text-gray-800"
+          className="container z-0 mx-auto my-5 overflow-hidden text-gray-800"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
-            <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
-              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we’re not just bringing life back to the land, we’re rebuilding entire ecosystems.
-              </h6>
-              <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
-              </h6>
-              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
+            <div className="md:mx-12 my-10 object-center text-center md:my-5 md:w-4/5 md:text-left">
+              <div className="mt-12 space-y-6">
+                <h2 className="text-4xl font-bold text-green-800">We don&apos;t just plant trees, we rebuild forests.</h2>
+
+                <p className="text-gray-700 leading-relaxed">
+                  By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-green-700">Through our reforestation efforts we:</h3>
+                    <ul className="space-y-1 text-gray-700">
+                      <li className="flex items-start">
+                        <span className="text-green-600 mr-2">•</span>
+                        Plant native tree species
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-600 mr-2">•</span>
+                        Do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-600 mr-2">•</span>
+                        Use only organic composts and no chemical pesticides
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-600 mr-2">•</span>
+                        Employ local rural population for all on-ground tasks
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-600 mr-2">•</span>
+                        Incubate microventures
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-600 mr-2">•</span>
+                        Leverage urban capital to scale-up
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-green-700">Our Impact till date:</h3>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <ul className="space-y-1 text-gray-700">
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          1400+ acres area under reforestation
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          2 lacs+ trees planted
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          200+ local rural people employed
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          Biodiversity impact: 400+ species (Flora & Fauna)
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          13 of 17 SDGs mapped
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 leading-relaxed">
+                  By funding 14Trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend most on the land.
+                </p>
+              </div>
+
+              {/* <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
               </h2>
               <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl">
                 {labels.site.description}
-              </h3>
+              </h3> */}
             </div>
           </div>
         </MotionDiv>
@@ -1165,8 +1275,9 @@ export default function DonatePage() {
                       </label>
                     </div>
 
+                    <div className="mt-6 mb-8 h-px bg-gray-200"></div>
                     {treeLocation === "donate" && (
-                      <div className="space-y-4 pl-6">
+                      <div className="space-y-4">
                         <div className="space-y-4">
                           {/* Option 1: Donate Trees */}
                           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
@@ -1259,7 +1370,7 @@ export default function DonatePage() {
                     )}
 
                     {treeLocation === "adopt" && (
-                      <div className="space-y-4 pl-6">
+                      <div className="space-y-4">
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1397,420 +1508,436 @@ export default function DonatePage() {
                             <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
                           )}
                         </div>
+                        <p className="mt-2 text-sm text-gray-600">
+                          At present we can accept donations only from Indian residents. PAN number is required to know the donor&apos;s identity.
+                        </p>
                       </div>
                     </div>
                   </div>}
 
                   {donationMethod === "trees" && treeLocation === "donate" && (
                     <div className="space-y-4">
-                      <h2 className="mt-6 text-2xl font-semibold">Additional Information (optional)</h2>
-                      <label className="mb-2 block text-lg font-light">
-                        I&apos;d like my trees to be planted in the following name:
-                      </label>
+                      {showAdditionalInfo && (
+                        <>
+                          <h2 className="mt-6 text-2xl font-semibold">Additional Information (optional)</h2>
+                          <label className="mb-2 block text-lg font-light">
+                            I&apos;d like my trees to be planted in the following name:
+                          </label>
 
-                      <div className="flex items-center mb-4">
-                        <input
-                          type="checkbox"
-                          id="multipleNames"
-                          className="h-5 w-5 mr-3"
-                          checked={multipleNames}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const checked = e.target.checked;
-                            setMultipleNames(checked);
-                            if (!checked) {
-                              // Reset all multiple recipient data and keep only the first single recipient
-                              setCsvPreview([]);
-                              setCsvFile(null);
-                              setCsvErrors([]);
-                              setUploadedImages({});
-                              setDedicatedNames([{
-                                recipient_name: '',
-                                recipient_email: '',
-                                recipient_phone: '',
-                                assignee_name: '',
-                                assignee_email: '',
-                                assignee_phone: '',
-                                relation: '',
-                                trees_count: donationTreeCount
-                              }]);
-                            }
-                          }}
-                        />
-                        <label htmlFor="multipleNames" className="text-gray-700">
-                          Dedicate to multiple people?
-                        </label>
-                      </div>
-
-                      {multipleNames && (
-                        <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
-                          <button
-                            type="button"
-                            className={`${nameEntryMethod === "manual"
-                              ? "bg-green-500 shadow-sm text-white ring-green-700"
-                              : "text-green-600 hover:bg-green-100"
-                              } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                            onClick={() => setNameEntryMethod("manual")}
-                          >
-                            Add Manually
-                          </button>
-                          <button
-                            type="button"
-                            className={`${nameEntryMethod === "csv"
-                              ? "bg-green-500 shadow-sm text-white ring-green-700"
-                              : "text-green-600 hover:bg-green-100"
-                              } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                            onClick={() => setNameEntryMethod("csv")}
-                          >
-                            Bulk Upload CSV
-                          </button>
-                        </div>
-                      )}
-
-                      {multipleNames && nameEntryMethod === "manual" ? (
-                        <div className="space-y-4">
-                          {errors["totalTrees"] && (
-                            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                              <p className="text-red-700">{errors["totalTrees"]}</p>
+                          {multipleNames && (
+                            <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
+                              <button
+                                type="button"
+                                className={`${nameEntryMethod === "manual"
+                                  ? "bg-green-500 shadow-sm text-white ring-green-700"
+                                  : "text-green-600 hover:bg-green-100"
+                                  } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                                onClick={() => setNameEntryMethod("manual")}
+                              >
+                                Add Manually
+                              </button>
+                              <button
+                                type="button"
+                                className={`${nameEntryMethod === "csv"
+                                  ? "bg-green-500 shadow-sm text-white ring-green-700"
+                                  : "text-green-600 hover:bg-green-100"
+                                  } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                                onClick={() => setNameEntryMethod("csv")}
+                              >
+                                Bulk Upload CSV
+                              </button>
                             </div>
                           )}
-                          {dedicatedNames.map((name, index) => (
-                            <UserDetailsForm
-                              key={index}
-                              data={name}
-                              index={index}
-                              onUpdate={(field, value) => handleNameChange(index, field, value)}
-                              errors={errors}
-                              maxTrees={donationTreeCount - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
-                              canRemove={index > 0}
-                              onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
-                            />
-                          ))}
-                          <button
-                            type="button"
-                            onClick={handleAddName}
-                            className={`flex items-center text-green-700 hover:text-green-900 mt-2 ${dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "" || dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount}
-                            title={dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'You have already assigned all the trees to users' : ''}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                            </svg>
-                            Add another name
-                          </button>
-                        </div>
-                      ) : multipleNames && nameEntryMethod === "csv" ? (
-                        <div className="space-y-4 border border-gray-200 rounded-md p-4">
-                          <div className="space-y-4">
-                            {errors["totalTrees"] && (
-                              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                                <p className="text-red-700">{errors["totalTrees"]}</p>
-                              </div>
-                            )}
-                            <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
-                            <p className="text-sm text-gray-600">
-                              <button
-                                type="button"
-                                onClick={downloadSampleCsv}
-                                className="text-blue-600 hover:underline"
-                              >
-                                Download sample CSV
-                              </button>
-                            </p>
 
-                            <div className="flex gap-2">
-                              <input
-                                type="file"
-                                ref={fileInputRef}
-                                accept=".csv"
-                                onChange={handleCsvUpload}
-                                className="hidden"
-                              />
+                          {multipleNames && nameEntryMethod === "manual" ? (
+                            <div className="space-y-4">
+                              {errors["totalTrees"] && (
+                                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                                  <p className="text-red-700">{errors["totalTrees"]}</p>
+                                </div>
+                              )}
+                              {dedicatedNames.map((name, index) => (
+                                <UserDetailsForm
+                                  key={index}
+                                  data={name}
+                                  index={index}
+                                  onUpdate={(field, value) => handleNameChange(index, field, value)}
+                                  errors={errors}
+                                  maxTrees={donationTreeCount - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
+                                  canRemove={index > 0}
+                                  onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
+                                />
+                              ))}
                               <button
-                                value={undefined}
                                 type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                                onClick={handleAddName}
+                                className={`flex items-center text-green-700 hover:text-green-900 mt-2 ${dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "" || dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount}
+                                title={dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'You have already assigned all the trees to users' : ''}
                               >
-                                Select CSV File
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                                </svg>
+                                Add another name
                               </button>
-                              {csvFile && (
-                                <span className="self-center text-sm">
-                                  {csvFile.name}
-                                </span>
+                            </div>
+                          ) : multipleNames && nameEntryMethod === "csv" ? (
+                            <div className="space-y-4 border border-gray-200 rounded-md p-4">
+                              <div className="space-y-4">
+                                {errors["totalTrees"] && (
+                                  <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                                    <p className="text-red-700">{errors["totalTrees"]}</p>
+                                  </div>
+                                )}
+                                <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
+                                <p className="text-sm text-gray-600">
+                                  <button
+                                    type="button"
+                                    onClick={downloadSampleCsv}
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    Download sample CSV
+                                  </button>
+                                </p>
+
+                                <div className="flex gap-2">
+                                  <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    accept=".csv"
+                                    onChange={handleCsvUpload}
+                                    className="hidden"
+                                  />
+                                  <button
+                                    value={undefined}
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                                  >
+                                    Select CSV File
+                                  </button>
+                                  {csvFile && (
+                                    <span className="self-center text-sm">
+                                      {csvFile.name}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="pt-2">
+                                  <label className="block text-sm font-medium mb-1">
+                                    Upload Recipient Images
+                                  </label>
+                                  <input
+                                    type="file"
+                                    id="recipient-images"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                  />
+                                  <label
+                                    htmlFor="recipient-images"
+                                    className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
+                                  >
+                                    <UploadIcon className="w-4 h-4" />
+                                    Select Images
+                                  </label>
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
+                                  </p>
+                                </div>
+                              </div>
+
+                              {csvErrors.length > 0 && (
+                                <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                                  <h4 className="font-medium text-red-700">CSV Errors:</h4>
+                                  {(() => {
+                                    // Count unique rows with errors
+                                    const rowErrorNumbers = new Set(
+                                      csvErrors
+                                        .map(error => {
+                                          const match = error.match(/Row (\d+):/);
+                                          return match ? match[1] : null;
+                                        })
+                                        .filter(Boolean)
+                                    );
+                                    if (rowErrorNumbers.size > 0) {
+                                      return (
+                                        <p className="text-sm text-red-600 mb-2">
+                                          Out of {csvPreview.length} rows, {rowErrorNumbers.size} row{rowErrorNumbers.size > 1 ? 's' : ''} have errors
+                                        </p>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                  <ul className="list-disc pl-5 text-red-600">
+                                    {csvErrors.map((error, i) => (
+                                      <li key={i} className="text-sm">{error}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {csvPreview.length > 0 && (
+                                <div className="space-y-2">
+                                  <h4 className="font-medium">
+                                    Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
+                                  </h4>
+                                  <div className="max-h-96 overflow-y-auto border rounded-md">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <thead className="bg-gray-50">
+                                        <tr>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="bg-white divide-y divide-gray-200">
+                                        {paginatedData.map((recipient, i) => {
+                                          const hasImageName = recipient.image && typeof recipient.image === 'string' && recipient.image.trim() !== '';
+                                          const hasImageUploaded = hasImageName && recipient.image && recipient.image.startsWith('blob:');
+                                          const hasErrors = Array.isArray(recipient._errors) && recipient._errors.length > 0;
+                                          // For image column
+                                          let imageCell;
+                                          if (hasImageName) {
+                                            if (hasImageUploaded) {
+                                              imageCell = (
+                                                <img
+                                                  src={recipient.image as string}
+                                                  className="h-10 w-10 rounded-full object-cover"
+                                                  alt={`${recipient.recipient_name}'s profile`}
+                                                />
+                                              );
+                                            } else {
+                                              imageCell = <span className="text-sm text-gray-500">No image uploaded</span>;
+                                            }
+                                          } else {
+                                            imageCell = <span className="text-sm text-gray-500">Image not provided</span>;
+                                          }
+                                          // For valid column
+                                          let validCell;
+                                          if (hasErrors) {
+                                            validCell = (
+                                              <span
+                                                className="text-red-600 cursor-help"
+                                                title={Array.isArray(recipient._errors) ? recipient._errors.join(', ') : ''}
+                                              >
+                                                &#10006;
+                                              </span>
+                                            );
+                                          } else if (hasImageName) {
+                                            validCell = hasImageUploaded ? (
+                                              <span className="text-green-600">✓</span>
+                                            ) : (
+                                              <span className="text-red-600">✕</span>
+                                            );
+                                          } else {
+                                            validCell = <span className="text-green-600">✓</span>;
+                                          }
+                                          return (
+                                            <tr key={i} className={hasErrors ? "bg-red-50" : ""}>
+                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name || <span className="italic text-gray-400">[Missing]</span>}</td>
+                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
+                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
+                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
+                                              <td className="px-4 py-2 whitespace-nowrap">{imageCell}</td>
+                                              <td className="px-4 py-2 whitespace-nowrap">{validCell}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                  <div className="flex justify-between items-center mt-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                      disabled={currentPage === 0}
+                                      className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                                    >
+                                      Previous
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setCurrentPage(p =>
+                                        Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
+                                      )}
+                                      disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
+                                      className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                                    >
+                                      Next
+                                    </button>
+                                  </div>
+                                </div>
                               )}
                             </div>
-
-                            <div className="pt-2">
-                              <label className="block text-sm font-medium mb-1">
-                                Upload Recipient Images
-                              </label>
+                          ) : (
+                            <div className="space-y-4">
                               <input
-                                type="file"
-                                id="recipient-images"
-                                multiple
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
+                                type="text"
+                                placeholder="Assignee name"
+                                className={`w-full rounded-md border ${errors['dedicatedName-0'] ? 'border-red-500' : 'border-gray-300'
+                                  } px-4 py-3 text-gray-700`}
+                                value={dedicatedNames[0].recipient_name}
+                                onChange={(e) => {
+                                  handleNameChange(0, "recipient_name", e.target.value);
+                                  if (!isAssigneeDifferent) {
+                                    handleNameChange(0, "assignee_name", e.target.value);
+                                  }
+                                }}
                               />
-                              <label
-                                htmlFor="recipient-images"
-                                className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
-                              >
-                                <UploadIcon className="w-4 h-4" />
-                                Select Images
-                              </label>
-                              <p className="mt-1 text-xs text-gray-500">
-                                Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
-                              </p>
-                            </div>
-                          </div>
-
-                          {csvErrors.length > 0 && (
-                            <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                              <h4 className="font-medium text-red-700">CSV Errors:</h4>
-                              {(() => {
-                                // Count unique rows with errors
-                                const rowErrorNumbers = new Set(
-                                  csvErrors
-                                    .map(error => {
-                                      const match = error.match(/Row (\d+):/);
-                                      return match ? match[1] : null;
-                                    })
-                                    .filter(Boolean)
-                                );
-                                if (rowErrorNumbers.size > 0) {
-                                  return (
-                                    <p className="text-sm text-red-600 mb-2">
-                                      Out of {csvPreview.length} rows, {rowErrorNumbers.size} row{rowErrorNumbers.size > 1 ? 's' : ''} have errors
-                                    </p>
-                                  );
-                                }
-                                return null;
-                              })()}
-                              <ul className="list-disc pl-5 text-red-600">
-                                {csvErrors.map((error, i) => (
-                                  <li key={i} className="text-sm">{error}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {csvPreview.length > 0 && (
-                            <div className="space-y-2">
-                              <h4 className="font-medium">
-                                Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
-                              </h4>
-                              <div className="max-h-96 overflow-y-auto border rounded-md">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {paginatedData.map((recipient, i) => {
-                                      const hasImageName = recipient.image && typeof recipient.image === 'string' && recipient.image.trim() !== '';
-                                      const hasImageUploaded = hasImageName && recipient.image && recipient.image.startsWith('blob:');
-                                      const hasErrors = Array.isArray(recipient._errors) && recipient._errors.length > 0;
-                                      // For image column
-                                      let imageCell;
-                                      if (hasImageName) {
-                                        if (hasImageUploaded) {
-                                          imageCell = (
-                                            <img
-                                              src={recipient.image as string}
-                                              className="h-10 w-10 rounded-full object-cover"
-                                              alt={`${recipient.recipient_name}'s profile`}
-                                            />
-                                          );
-                                        } else {
-                                          imageCell = <span className="text-sm text-gray-500">No image uploaded</span>;
-                                        }
-                                      } else {
-                                        imageCell = <span className="text-sm text-gray-500">Image not provided</span>;
-                                      }
-                                      // For valid column
-                                      let validCell;
-                                      if (hasErrors) {
-                                        validCell = (
-                                          <span
-                                            className="text-red-600 cursor-help"
-                                            title={Array.isArray(recipient._errors) ? recipient._errors.join(', ') : ''}
-                                          >
-                                            &#10006;
-                                          </span>
-                                        );
-                                      } else if (hasImageName) {
-                                        validCell = hasImageUploaded ? (
-                                          <span className="text-green-600">✓</span>
-                                        ) : (
-                                          <span className="text-red-600">✕</span>
-                                        );
-                                      } else {
-                                        validCell = <span className="text-green-600">✓</span>;
-                                      }
-                                      return (
-                                        <tr key={i} className={hasErrors ? "bg-red-50" : ""}>
-                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name || <span className="italic text-gray-400">[Missing]</span>}</td>
-                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
-                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
-                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
-                                          <td className="px-4 py-2 whitespace-nowrap">{imageCell}</td>
-                                          <td className="px-4 py-2 whitespace-nowrap">{validCell}</td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                              <div className="flex justify-between items-center mt-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                                  disabled={currentPage === 0}
-                                  className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                                >
-                                  Previous
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => setCurrentPage(p =>
-                                    Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
-                                  )}
-                                  disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
-                                  className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                                >
-                                  Next
-                                </button>
+                              {errors['dedicatedName-0'] && (
+                                <p className="mt-1 text-sm text-red-600">{errors['dedicatedName-0']}</p>
+                              )}
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <input
+                                  type="email"
+                                  placeholder="Assignee Email (optional)"
+                                  className={`w-full rounded-md border ${errors['dedicatedEmail-0'] ? 'border-red-500' : 'border-gray-300'
+                                    } px-4 py-3 text-gray-700`}
+                                  value={dedicatedNames[0].recipient_email}
+                                  onChange={(e) => {
+                                    handleNameChange(0, "recipient_email", e.target.value)
+                                    if (!isAssigneeDifferent) {
+                                      handleNameChange(0, "assignee_email", e.target.value)
+                                    }
+                                  }}
+                                />
+                                {errors['dedicatedEmail-0'] && (
+                                  <p className="mt-1 text-sm text-red-600">{errors['dedicatedEmail-0']}</p>
+                                )}
+                                <input
+                                  type="tel"
+                                  placeholder="Assignee Phone (optional)"
+                                  className={`w-full rounded-md border ${errors['dedicatedPhone-0'] ? 'border-red-500' : 'border-gray-300'
+                                    } px-4 py-3 text-gray-700`}
+                                  value={dedicatedNames[0].recipient_phone}
+                                  onChange={(e) => {
+                                    handleNameChange(0, "recipient_phone", e.target.value)
+                                    if (!isAssigneeDifferent) {
+                                      handleNameChange(0, "assignee_phone", e.target.value)
+                                    }
+                                  }}
+                                  pattern="[0-9]{10,15}"
+                                  title="10-15 digit phone number"
+                                />
+                                {errors['dedicatedPhone-0'] && (
+                                  <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
+                                )}
                               </div>
                             </div>
                           )}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <input
-                            type="text"
-                            placeholder="Assignee name"
-                            className={`w-full rounded-md border ${errors['dedicatedName-0'] ? 'border-red-500' : 'border-gray-300'
-                              } px-4 py-3 text-gray-700`}
-                            value={dedicatedNames[0].recipient_name}
-                            onChange={(e) => {
-                              handleNameChange(0, "recipient_name", e.target.value);
-                              if (!isAssigneeDifferent) {
-                                handleNameChange(0, "assignee_name", e.target.value);
-                              }
-                            }}
-                          />
-                          {errors['dedicatedName-0'] && (
-                            <p className="mt-1 text-sm text-red-600">{errors['dedicatedName-0']}</p>
-                          )}
-                          <div className="grid gap-4 md:grid-cols-2">
+
+                          <div className="flex items-center mb-4">
                             <input
-                              type="email"
-                              placeholder="Assignee Email (optional)"
-                              className={`w-full rounded-md border ${errors['dedicatedEmail-0'] ? 'border-red-500' : 'border-gray-300'
-                                } px-4 py-3 text-gray-700`}
-                              value={dedicatedNames[0].recipient_email}
-                              onChange={(e) => {
-                                handleNameChange(0, "recipient_email", e.target.value)
-                                if (!isAssigneeDifferent) {
-                                  handleNameChange(0, "assignee_email", e.target.value)
+                              type="checkbox"
+                              id="multipleNames"
+                              className="h-5 w-5 mr-3"
+                              checked={multipleNames}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const checked = e.target.checked;
+                                setMultipleNames(checked);
+                                if (!checked) {
+                                  // Reset all multiple recipient data and keep only the first single recipient
+                                  setCsvPreview([]);
+                                  setCsvFile(null);
+                                  setCsvErrors([]);
+                                  setUploadedImages({});
+                                  setDedicatedNames([{
+                                    recipient_name: '',
+                                    recipient_email: '',
+                                    recipient_phone: '',
+                                    assignee_name: '',
+                                    assignee_email: '',
+                                    assignee_phone: '',
+                                    relation: '',
+                                    trees_count: donationTreeCount
+                                  }]);
                                 }
                               }}
                             />
-                            {errors['dedicatedEmail-0'] && (
-                              <p className="mt-1 text-sm text-red-600">{errors['dedicatedEmail-0']}</p>
-                            )}
-                            <input
-                              type="tel"
-                              placeholder="Assignee Phone (optional)"
-                              className={`w-full rounded-md border ${errors['dedicatedPhone-0'] ? 'border-red-500' : 'border-gray-300'
-                                } px-4 py-3 text-gray-700`}
-                              value={dedicatedNames[0].recipient_phone}
-                              onChange={(e) => {
-                                handleNameChange(0, "recipient_phone", e.target.value)
-                                if (!isAssigneeDifferent) {
-                                  handleNameChange(0, "assignee_phone", e.target.value)
-                                }
-                              }}
-                              pattern="[0-9]{10,15}"
-                              title="10-15 digit phone number"
-                            />
-                            {errors['dedicatedPhone-0'] && (
-                              <p className="mt-1 text-sm text-red-600">{errors['dedicatedPhone-0']}</p>
-                            )}
+                            <label htmlFor="multipleNames" className="text-gray-700">
+                              Dedicate to multiple people?
+                            </label>
                           </div>
-                        </div>
+                        </>
                       )}
                     </div>
                   )}
 
-                  <div className="flex justify-end mt-8">
+                  <div className="flex justify-end space-x-4 mt-8">
                     <div className="w-full flex flex-col items-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Check for any errors in form, csv, or table
-                          const hasFormErrors = Object.entries(errors).some(
-                            ([key, value]) => key !== "comments" && value && value.trim() !== ""
-                          );
-                          if (hasTableErrors || hasFormErrors || csvErrors.length > 0) {
-                            alert('Please fix all errors in the form and table above before proceeding.');
-                            return;
-                          }
-                          const mainFormValid = Object.keys(formData).every(key => {
-                            if (key === "comments") return true;
-                            const value = formData[key as keyof typeof formData];
-                            // Check for mandatory fields
-                            if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
-                              return !!value;
-                            }
-                            return true;
-                          });
-
-                          if (treeLocation === 'adopt') {
-                            if (!adoptedTreeCount) {
-                              alert("Please enter number of trees you would like to adopt!");
+                      <div className="flex justify-end space-x-4">
+                        {!showAdditionalInfo && treeLocation === "donate" && donationMethod === "trees" && <button
+                          type="button"
+                          onClick={() => setShowAdditionalInfo(true)}
+                          className="px-6 py-3 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        >
+                          Dedicate trees to someone
+                        </button>}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Check for any errors in form, csv, or table
+                            const hasFormErrors = Object.entries(errors).some(
+                              ([key, value]) => key !== "comments" && value && value.trim() !== ""
+                            );
+                            if (hasTableErrors || hasFormErrors || csvErrors.length > 0) {
+                              alert('Please fix all errors in the form and table above before proceeding.');
                               return;
                             }
-                            if (!visitDate) {
-                              alert("Please select visit date!");
-                              return;
-                            }
-                          }
-
-                          if (treeLocation === 'donate' && donationMethod === 'trees' && !donationTreeCount) {
-                            alert("Please enter number of trees you would like to donate!");
-                            return;
-                          }
-
-                          if (mainFormValid) {
-                            setCurrentStep(2);
-                            // Use setTimeout to ensure the DOM has updated with the new step
-                            setTimeout(() => {
-                              const orderSummary = document.getElementById('order-summary');
-                              if (orderSummary) {
-                                orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            const mainFormValid = Object.keys(formData).every(key => {
+                              if (key === "comments") return true;
+                              const value = formData[key as keyof typeof formData];
+                              // Check for mandatory fields
+                              if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
+                                return !!value;
                               }
-                            }, 100);
-                          } else {
-                            alert("Please fill all required fields");
-                          }
-                        }}
-                        className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-green-600 hover:bg-green-700"
-                          }`}
-                        disabled={hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
-                      >
-                        Next
-                      </button>
+                              return true;
+                            });
+
+                            if (treeLocation === 'adopt') {
+                              if (!adoptedTreeCount) {
+                                alert("Please enter number of trees you would like to adopt!");
+                                return;
+                              }
+                              if (!visitDate) {
+                                alert("Please select visit date!");
+                                return;
+                              }
+                            }
+
+                            if (treeLocation === 'donate' && donationMethod === 'trees' && !donationTreeCount) {
+                              alert("Please enter number of trees you would like to donate!");
+                              return;
+                            }
+
+                            if (mainFormValid) {
+                              setCurrentStep(2);
+                              // Use setTimeout to ensure the DOM has updated with the new step
+                              setTimeout(() => {
+                                const orderSummary = document.getElementById('order-summary');
+                                if (orderSummary) {
+                                  orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                              }, 100);
+                            } else {
+                              alert("Please fill all required fields");
+                            }
+                          }}
+                          className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-green-600 hover:bg-green-700"
+                            }`}
+                          disabled={hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
+                        >
+                          Next
+                        </button>
+                      </div>
                       {(hasTableErrors || Object.values(errors).some(e => e && e.trim() !== "") || csvErrors.length > 0) && (
                         <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding.</div>
                       )}
@@ -1850,8 +1977,40 @@ export default function DonatePage() {
             </ScrollReveal>
           </div>
         </div>
+
+        <div className="mt-12 h-px bg-gray-200"></div>
+        <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
+          <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
+          <p className="text-sm text-green-700">
+            Do you know you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
+          </p>
+          <a
+            onClick={(e) => {
+              e.preventDefault();
+              setShowReferralDialog(true);
+            }}
+            className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
+          >
+            Create & Share Your Link
+          </a>
+        </div>
       </div>
       {showSuccessDialog && <SuccessDialog />}
+      {showReferralDialog && (
+        <ReferralDialog
+          linkType="donate"
+          open={showReferralDialog}
+          onClose={() => setShowReferralDialog(false)}
+        />
+      )}
     </div>
+  );
+}
+
+export default function DonatePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Donation />
+    </Suspense>
   );
 }
