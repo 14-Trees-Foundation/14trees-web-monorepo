@@ -16,12 +16,13 @@ interface UserAttributes {
   status?: string;
   status_message?: string[];
   last_system_updated_at?: Date;
+  rfr: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
 
 interface UserCreationAttributes
-	extends Optional<UserAttributes, 'birth_date' | 'id' | 'pin' | 'roles'> {}
+	extends Optional<UserAttributes, 'birth_date' | 'id' | 'pin' | 'roles' | 'rfr'> {}
 
 @Table({ tableName: 'users' })
 class User extends Model<UserAttributes, UserCreationAttributes>
@@ -61,6 +62,9 @@ implements UserAttributes {
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status?: string;
+
+  @Column(DataType.STRING)
+  rfr!: string | null;
 
   @Column(DataType.ARRAY(DataType.STRING))
   status_message?: string[];

@@ -2,11 +2,11 @@ import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { Donation, DonationAttributes, DonationCreationAttributes } from '../models/donation'
 import { FilterItem, PaginatedResponse } from "../models/pagination";
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, WhereOptions } from 'sequelize';
 import { Tree } from '../models/tree';
 import { SortOrder } from '../models/common';
 export class DonationRepository {
-   
+
     public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
         try {
             let whereConditions: string = "";
@@ -15,8 +15,11 @@ export class DonationRepository {
             if (filters && filters.length > 0) {
                 filters.forEach(filter => {
                     let columnField = "d." + filter.columnField;
+                    // Handle both donor user_name and processor user_name
                     if (filter.columnField === "user_name") {
-                        columnField = "u.name";
+                        columnField = "u.name"; // This is for the donor's name
+                    } else if (filter.columnField === "processed_by_name") {
+                        columnField = "pu.name"; // This is for the processor's name
                     }
                     const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                     whereConditions = whereConditions + " " + condition + " AND";
@@ -30,16 +33,18 @@ export class DonationRepository {
             const getQuery = `
                 SELECT 
                     d.*,
-                    u.name as user_name,
+                    u.name as user_name,               
                     u.email as user_email,
                     u.phone as user_phone,
+                    pu.name as processed_by_name,    
                     count(t.mapped_to_user) as booked,
                     count(t.assigned_to) as assigned
                 FROM "14trees".donations d
-                LEFT JOIN "14trees".users u ON u.id = d.user_id
+                LEFT JOIN "14trees".users u ON u.id = d.user_id          
+                LEFT JOIN "14trees".users pu ON pu.id = d.processed_by
                 LEFT JOIN "14trees".trees t ON t.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-                GROUP BY d.id, u.id
+                GROUP BY d.id, u.id, pu.id           
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
@@ -47,6 +52,7 @@ export class DonationRepository {
                 SELECT COUNT(*) 
                 FROM "14trees".donations d
                 LEFT JOIN "14trees".users u ON u.id = d.user_id
+                LEFT JOIN "14trees".users pu ON pu.id = d.processed_by
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
     
@@ -71,12 +77,12 @@ export class DonationRepository {
             throw new Error('Failed to fetch donations');
         }
     }
- 
+
     public static async getDonation(donationId: number): Promise<Donation> {
         const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
         if (donationsResp.results.length !== 1)
             throw new Error("Donation request for given id not found.")
-        
+
         return donationsResp.results[0];
     }
 
@@ -84,7 +90,7 @@ export class DonationRepository {
         try {
             donationData.created_at = new Date();
             donationData.updated_at = new Date();
-    
+
             // Create donation with explicit field mapping
             const donation = await Donation.create(donationData);
             return donation;
@@ -101,12 +107,12 @@ export class DonationRepository {
             if (!donation) {
                 throw new Error('Donation not found');
             }
-    
+
             // Delete the donation
             const result = await Donation.destroy({
                 where: { id: donationId }
             });
-    
+
             return result;
         } catch (error) {
             console.error('[ERROR] DonationRepository::deleteDonation:', error);
@@ -115,28 +121,25 @@ export class DonationRepository {
     }
 
     public static async updateDonation(donationId: number, updateData: Partial<DonationAttributes>): Promise<Donation> {
+        const [numRowsUpdated, updatedDonations] = await Donation.update(updateData, {
+            where: { id: donationId},
+            returning: true,
+        });
 
-        try {
-            // Find the donation by its primary key (id)
-            const donation = await Donation.findByPk(donationId);
-            if (!donation) {
-                throw new Error('Donation not found for given id');
-            }
-
-            // Update the donation with provided data
-            const [numRowsUpdated, updatedDonations] = await Donation.update(updateData, {
-                where: { id: donationId},
-                returning: true, // Ensure Sequelize returns the updated record(s)
-            });
-
-            if (numRowsUpdated === 0) {
-                throw new Error('Failed to update donation');
-            }
-
-            return updatedDonations[0];
-        } catch (error: any) {
-            throw new Error(`Error updating donation: ${error.message}`);
+        if (numRowsUpdated === 0) {
+            throw new Error('Donation not found or no changes made');
         }
+
+        return updatedDonations[0];
+    }
+
+    public static async updateDonations(updateData: Partial<DonationAttributes>, whereClause: WhereOptions<Donation>): Promise<number> {
+        const [affectedCount] = await Donation.update(updateData, {
+            where: whereClause,
+            returning: false,
+        });
+
+        return affectedCount;
     }
 
 
@@ -155,7 +158,7 @@ export class DonationRepository {
                 } else if (filter.columnField === "plant_type") {
                     columnField = "pt.name"
                 }
-                
+
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
                 replacements = { ...replacements, ...replacement }
@@ -209,14 +212,14 @@ export class DonationRepository {
         try {
             const tags: string[] = [];
 
-            const getUniqueTagsQuery = 
+            const getUniqueTagsQuery =
                 `SELECT DISTINCT tag
                     FROM "14trees".donations d,
                     unnest(d.tags) AS tag
                     ORDER BY tag
                     OFFSET ${offset} LIMIT ${limit};`;
 
-            const countUniqueTagsQuery = 
+            const countUniqueTagsQuery =
                 `SELECT count(DISTINCT tag)
                     FROM "14trees".donations d,
                     unnest(d.tags) AS tag;`;

@@ -10,11 +10,8 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
-import { Tree } from '../models/tree';
-import { User } from '../models/user';
-import { WhereOptions } from 'sequelize';
-import { EmailTemplate } from '../models/email_template';
+import { DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
 
@@ -57,6 +54,7 @@ export const createDonation = async (req: Request, res: Response) => {
         sponsor_name, sponsor_email, sponsor_phone, payment_id, category, grove, tags,
         grove_type_other, trees_count, pledged_area_acres, contribution_options, names_for_plantation,
         comments, users, donation_type, donation_method, visit_date, amount_donated,
+        rfr, c_key
     } = data;
 
     // Validate sponsor details
@@ -111,7 +109,9 @@ export const createDonation = async (req: Request, res: Response) => {
         donation_method,
         visit_date,
         amount_donated,
-        tags
+        tags,
+        rfr,
+        c_key,
     }).catch((error) => {
         console.error("[ERROR] DonationsController::createDonation:", error);
         res.status(status.error).json({
@@ -247,6 +247,48 @@ export const updateDonation = async (req: Request, res: Response) => {
         res.status(status.error).json({
             message: 'Failed to update donation'
         });
+    }
+};
+
+export const processDonation = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    try {
+        // First check if donation exists and isn't processed
+        const donation = await DonationRepository.getDonation(Number(id));
+
+        if (donation.processed_by) {
+            return res.status(409).json({
+                message: 'Already processed by another user'
+            });
+        }
+
+        // Use repository method to update
+        const updated = await DonationRepository.updateDonations({
+            processed_by: userId,
+            updated_at: new Date()
+        }, {
+            id: donation.id,
+            processed_by: { [Op.is]: null }
+        });
+
+        if (!updated) {
+            return res.status(404).json({ message: 'Already being processed by another user' });
+        }
+
+        return res.status(200).json({ success: true });
+
+    } catch (error: any) {
+        console.error("Error processing donation:", error);
+        if (error.message.includes('not found')) {
+            return res.status(404).json({ message: 'Donation not found' });
+        }
+        return res.status(500).json({ message: 'Failed to process donation' });
     }
 };
 
@@ -491,6 +533,93 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
         })
     }
 }
+
+
+export const mapAssignedTreesToDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to map trees to sponsor." })
+
+    if (!tree_ids || tree_ids.length === 0)
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        // map assigned trees to donation
+        await DonationService.mapTreesToDonation(donation, tree_ids);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::mapAssignedTreesToDonation", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+export const unmapAssignedTreesFromDonation = async (req: Request, res: Response) => {
+    const {
+        donation_id, tree_ids
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id required to unmap trees from donation." })
+
+    if (!tree_ids || tree_ids.length === 0)
+        return res.status(status.bad).send({ message: "Tree Ids not provided." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        // unmap trees from donation
+        await DonationService.unmapTreesFromDonation(donation, tree_ids);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::unmapTreesFromDonation", error);
+        return res.status(status.error).send({
+            message: error.message
+        })
+    }
+}
+
+export const getMappedTreesByDonation = async (req: Request, res: Response) => {
+    const { donation_id, offset = 0, limit = 20 } = req.body;
+
+    if (!donation_id) {
+        return res.status(status.bad).send({
+            message: "Donation ID is required to fetch mapped trees.",
+        });
+    }
+
+    try {
+        const parsedOffset = parseInt(offset as string, 10) || 0;
+        const parsedLimit = parseInt(limit as string, 10) || 20;
+
+        const filters = req.body.filters || [];
+        const orderBy = req.body.orderBy || [];
+
+        const result = await DonationService.getMappedTrees(
+            Number(donation_id),
+            parsedOffset,
+            parsedLimit,
+            filters,
+            orderBy
+        );
+
+        return res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::getMappedTreesByDonation", error);
+        return res.status(status.error).send({ message: error.message });
+    }
+};
+
 
 
 /*
@@ -910,3 +1039,31 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         console.error('Error stack:', (error as Error).stack);
     }
 };
+
+/**
+ * Auto process donation request
+ */
+export const autoProcessDonationRequest = async (req: Request, res: Response) => {
+
+    const {
+        donation_id
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+
+        await DonationService.reserveTreesForDonation(donation);
+        await DonationService.assignTreesForDonation(donation);
+
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        return res.status(status.success).send(updatedDonation);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
