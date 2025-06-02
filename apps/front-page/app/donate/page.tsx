@@ -1160,57 +1160,59 @@ function Donation() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <h3 className="font-semibold text-green-700">Through our reforestation efforts we:</h3>
-                    <ul className="space-y-1 text-gray-700">
-                      <li className="flex items-start">
-                        <span className="text-green-600 mr-2">•</span>
-                        Plant native tree species
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-green-600 mr-2">•</span>
-                        Do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-green-600 mr-2">•</span>
-                        Use only organic composts and no chemical pesticides
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-green-600 mr-2">•</span>
-                        Employ local rural population for all on-ground tasks
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-green-600 mr-2">•</span>
-                        Incubate microventures
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-green-600 mr-2">•</span>
-                        Leverage urban capital to scale-up
-                      </li>
-                    </ul>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <ul className="space-y-1 text-gray-700 text-left">
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Plant native tree species</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Use only organic composts and no chemical pesticides</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Employ local rural population for all on-ground tasks</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Incubate microventures</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Leverage urban capital to scale-up</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <h3 className="font-semibold text-green-700">Our Impact till date:</h3>
                     <div className="bg-green-50 p-4 rounded-lg">
-                      <ul className="space-y-1 text-gray-700">
+                      <ul className="space-y-1 text-gray-700 text-left">
                         <li className="flex items-start">
                           <span className="text-green-600 mr-2">•</span>
-                          1400+ acres area under reforestation
+                          <span>1400+ acres area under reforestation</span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-600 mr-2">•</span>
-                          2 lacs+ trees planted
+                          <span>2 lacs+ trees planted</span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-600 mr-2">•</span>
-                          200+ local rural people employed
+                          <span>200+ local rural people employed</span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-600 mr-2">•</span>
-                          Biodiversity impact: 400+ species (Flora & Fauna)
+                          <span>Biodiversity impact: 400+ species (Flora & Fauna)</span>
                         </li>
                         <li className="flex items-start">
                           <span className="text-green-600 mr-2">•</span>
-                          13 of 17 SDGs mapped
+                          <span>13 of 17 SDGs mapped</span>
                         </li>
                       </ul>
                     </div>
@@ -1242,183 +1244,190 @@ function Donation() {
                   <div className="space-y-6">
 
                     {/* First radio option - Donation */}
-                    <div className="space-y-3">
-                      <label className="flex items-start space-x-3">
-                        <input
-                          type="radio"
-                          name="treeLocation"
-                          value="donate"
-                          className="mt-1 h-5 w-5"
-                          onChange={() => {
-                            setTreeLocation("donate");
-                          }}
-                          checked={treeLocation === "donate"}
-                        />
-                        <span>I want to make a donation to support reforestation.</span>
-                      </label>
+                    <div className="space-y-6 bg-green-50 p-4 rounded-lg border border-gray-600">
+                      <div className="space-y-3">
+                        <label className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            name="treeLocation"
+                            value="donate"
+                            className="mt-1 h-5 w-5"
+                            onChange={() => {
+                              setTreeLocation("donate");
+                            }}
+                            checked={treeLocation === "donate"}
+                          />
+                          <span>I want to make a donation to support reforestation.</span>
+                        </label>
+                      </div>
+
+                      {/* Second radio option - Adoption */}
+                      <div className="space-y-3">
+                        <label className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            name="treeLocation"
+                            value="adopt"
+                            className="mt-1 h-5 w-5"
+                            onChange={() => {
+                              setTreeLocation("adopt");
+                            }}
+                            checked={treeLocation === "adopt"}
+                          />
+                          <span>I would like to adopt the trees, I/we planted during my visit at 14 Trees in the past.</span>
+                        </label>
+                      </div>
                     </div>
 
-                    {/* Second radio option - Adoption */}
-                    <div className="space-y-3">
-                      <label className="flex items-start space-x-3">
-                        <input
-                          type="radio"
-                          name="treeLocation"
-                          value="adopt"
-                          className="mt-1 h-5 w-5"
-                          onChange={() => {
-                            setTreeLocation("adopt");
-                          }}
-                          checked={treeLocation === "adopt"}
-                        />
-                        <span>I would like to adopt the trees, I/we planted during my visit at 14 Trees in the past.</span>
-                      </label>
-                    </div>
 
                     <div className="mt-6 mb-8 h-px bg-gray-200"></div>
+
                     {treeLocation === "donate" && (
-                      <div className="space-y-4">
+                      <div className="space-y-6 bg-green-50 p-4 rounded-lg border border-gray-600">
                         <div className="space-y-4">
-                          {/* Option 1: Donate Trees */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
-                            <label className="flex items-center space-x-2">
+                          <div className="space-y-4">
+                            {/* Option 1: Donate Trees */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  name="donationMethod"
+                                  value="trees"
+                                  className="h-5 w-5"
+                                  checked={donationMethod === "trees"}
+                                  onChange={() => {
+                                    setDonationMethod("trees");
+                                    setDonationAmount(1500);
+                                  }}
+                                />
+                                <span>I want to donate</span>
+                              </label>
                               <input
-                                type="radio"
-                                name="donationMethod"
-                                value="trees"
-                                className="h-5 w-5"
-                                checked={donationMethod === "trees"}
-                                onChange={() => {
-                                  setDonationMethod("trees");
-                                  setDonationAmount(1500);
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                step="1"
+                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
+                                disabled={donationMethod !== 'trees'}
+                                value={donationMethod !== 'trees' ? 0 : donationTreeCount}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9]/g, '');
+                                  setDonationTreeCount(Number(value))
+                                  !multipleNames && setDedicatedNames(prev => {
+                                    prev[0].trees_count = Number(value) || 1;
+                                    return prev;
+                                  })
                                 }}
                               />
-                              <span>I want to donate</span>
-                            </label>
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              min="0"
-                              step="1"
-                              className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100"
-                              disabled={donationMethod !== 'trees'}
-                              value={donationMethod !== 'trees' ? 0 : donationTreeCount}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9]/g, '');
-                                setDonationTreeCount(Number(value))
-                                !multipleNames && setDedicatedNames(prev => {
-                                  prev[0].trees_count = Number(value) || 1;
-                                  return prev;
-                                })
-                              }}
-                            />
-                            <span className="text-sm">Trees</span>
-                          </div>
+                              <span className="text-sm">Trees</span>
+                            </div>
 
-                          {/* Option 2: Donate Amount */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
-                            <label className="flex items-center space-x-2">
+                            {/* Option 2: Donate Amount */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  name="donationMethod"
+                                  value="amount"
+                                  className="h-5 w-5"
+                                  checked={donationMethod === "amount"}
+                                  onChange={() => setDonationMethod("amount")}
+                                />
+                                <span>I want to donate</span>
+                              </label>
                               <input
-                                type="radio"
-                                name="donationMethod"
-                                value="amount"
-                                className="h-5 w-5"
-                                checked={donationMethod === "amount"}
-                                onChange={() => setDonationMethod("amount")}
-                              />
-                              <span>I want to donate</span>
-                            </label>
-                            <input
-                              type="number"
-                              min="1500"
-                              step="1"
-                              inputMode="numeric"
-                              className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100 appearance-none" // Removes up/down arrows
-                              disabled={donationMethod !== 'amount'}
-                              value={donationMethod !== 'amount' ? 0 : donationAmount || ""}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9]/g, "");
-                                const amount = parseInt(value, 10);
+                                type="number"
+                                min="1500"
+                                step="1"
+                                inputMode="numeric"
+                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100 appearance-none" // Removes up/down arrows
+                                disabled={donationMethod !== 'amount'}
+                                value={donationMethod !== 'amount' ? 0 : donationAmount || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9]/g, "");
+                                  const amount = parseInt(value, 10);
 
-                                if (!isNaN(amount)) {
-                                  setDonationAmount(amount);
-                                } else {
-                                  setDonationAmount(0);
-                                }
-                              }}
-                              onBlur={() => {
-                                if (donationAmount < 1500) {
-                                  setDonationAmount(1500);
-                                }
-                              }}
-                              placeholder="1500"
-                            />
-                            <span className="text-sm">Rupees</span>
+                                  if (!isNaN(amount)) {
+                                    setDonationAmount(amount);
+                                  } else {
+                                    setDonationAmount(0);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (donationAmount < 1500) {
+                                    setDonationAmount(1500);
+                                  }
+                                }}
+                                placeholder="1500"
+                              />
+                              <span className="text-sm">Rupees</span>
+                            </div>
+                            {donationMethod === 'amount' && donationAmount < 1500 && donationAmount > 0 && (
+                              <p className="text-sm text-red-600 mt-1">Minimum donation amount is ₹1,500</p>
+                            )}
                           </div>
-                          {donationMethod === 'amount' && donationAmount < 1500 && donationAmount > 0 && (
-                            <p className="text-sm text-red-600 mt-1">Minimum donation amount is ₹1,500</p>
+
+
+                          {donationMethod === "trees" && (
+                            <div className="font-medium">
+                              Donation amount: {(donationTreeCount * 1500).toLocaleString('en-IN')} INR
+                            </div>
                           )}
                         </div>
-
-
-                        {donationMethod === "trees" && (
-                          <div className="font-medium">
-                            Donation amount: {(donationTreeCount * 1500).toLocaleString('en-IN')} INR
-                          </div>
-                        )}
                       </div>
                     )}
 
                     {treeLocation === "adopt" && (
-                      <div className="space-y-4">
+                      <div className="space-y-6 bg-green-50 p-4 rounded-lg border border-gray-600">
                         <div className="space-y-4">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Number of trees you would like to adopt:
+                              </label>
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                step="1"
+                                className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                                value={adoptedTreeCount || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9]/g, '');
+                                  setAdoptedTreeCount(Number(value))
+                                }}
+                              />
+                              <p className="text-sm text-gray-500 mt-1">3000 INR per tree</p>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <p className="font-medium">Amount: {(3000 * (adoptedTreeCount || 0)).toLocaleString('en-IN')} INR</p>
+                          </div>
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Number of trees you would like to adopt:
+                              Date of visit: <span className="text-gray-500">- approx date / month is fine if you don&apos;t remember</span>
                             </label>
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              min="0"
-                              step="1"
-                              className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                              value={adoptedTreeCount || ""}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^0-9]/g, '');
-                                setAdoptedTreeCount(Number(value))
+                            <div
+                              className="relative cursor-pointer"
+                              onClick={() => {
+                                dateInputRef.current?.showPicker();
                               }}
-                            />
-                            <p className="text-sm text-gray-500 mt-1">3000 INR per tree</p>
+                            >
+                              <input
+                                ref={dateInputRef}
+                                type="date"
+                                className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700 cursor-pointer"
+                                value={visitDate}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVisitDate(e.target.value)}
+                                placeholder="dd-mm-yyyy"
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="mt-2">
-                          <p className="font-medium">Amount: {(3000 * (adoptedTreeCount || 0)).toLocaleString('en-IN')} INR</p>
-                        </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Date of visit: <span className="text-gray-500">- approx date / month is fine if you don&apos;t remember</span>
-                          </label>
-                          <div
-                            className="relative cursor-pointer"
-                            onClick={() => {
-                              dateInputRef.current?.showPicker();
-                            }}
-                          >
-                            <input
-                              ref={dateInputRef}
-                              type="date"
-                              className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700 cursor-pointer"
-                              value={visitDate}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVisitDate(e.target.value)}
-                              placeholder="dd-mm-yyyy"
-                            />
-                          </div>
                         </div>
-
                       </div>
                     )}
-
                   </div>
 
                   {treeLocation !== "" && <div className="mt-6 space-y-6">
@@ -1514,6 +1523,40 @@ function Donation() {
                       </div>
                     </div>
                   </div>}
+
+                  {treeLocation === "donate" && donationMethod === "trees" &&
+                    <div className="flex items-center mb-4">
+                      <input
+                        type="checkbox"
+                        id="multiplePeople"
+                        className="h-5 w-5 mr-3"
+                        checked={showAdditionalInfo}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          const checked = e.target.checked;
+                          setShowAdditionalInfo(checked);
+                          if (!checked) {
+                            // Reset all multiple recipient data and keep only the first single recipient
+                            setCsvPreview([]);
+                            setCsvFile(null);
+                            setCsvErrors([]);
+                            setUploadedImages({});
+                            setDedicatedNames([{
+                              recipient_name: '',
+                              recipient_email: '',
+                              recipient_phone: '',
+                              assignee_name: '',
+                              assignee_email: '',
+                              assignee_phone: '',
+                              relation: '',
+                              trees_count: donationTreeCount
+                            }]);
+                          }
+                        }}
+                      />
+                      <label htmlFor="multiplePeople" className="text-gray-700">
+                        Dedicate trees to someone?
+                      </label>
+                    </div>}
 
                   {donationMethod === "trees" && treeLocation === "donate" && (
                     <div className="space-y-4">
@@ -1871,73 +1914,64 @@ function Donation() {
 
                   <div className="flex justify-end space-x-4 mt-8">
                     <div className="w-full flex flex-col items-end">
-                      <div className="flex justify-end space-x-4">
-                        {!showAdditionalInfo && treeLocation === "donate" && donationMethod === "trees" && <button
-                          type="button"
-                          onClick={() => setShowAdditionalInfo(true)}
-                          className="px-6 py-3 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
-                        >
-                          Dedicate trees to someone
-                        </button>}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Check for any errors in form, csv, or table
-                            const hasFormErrors = Object.entries(errors).some(
-                              ([key, value]) => key !== "comments" && value && value.trim() !== ""
-                            );
-                            if (hasTableErrors || hasFormErrors || csvErrors.length > 0) {
-                              alert('Please fix all errors in the form and table above before proceeding.');
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Check for any errors in form, csv, or table
+                          const hasFormErrors = Object.entries(errors).some(
+                            ([key, value]) => key !== "comments" && value && value.trim() !== ""
+                          );
+                          if (hasTableErrors || hasFormErrors || csvErrors.length > 0) {
+                            alert('Please fix all errors in the form and table above before proceeding.');
+                            return;
+                          }
+                          const mainFormValid = Object.keys(formData).every(key => {
+                            if (key === "comments") return true;
+                            const value = formData[key as keyof typeof formData];
+                            // Check for mandatory fields
+                            if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
+                              return !!value;
+                            }
+                            return true;
+                          });
+
+                          if (treeLocation === 'adopt') {
+                            if (!adoptedTreeCount) {
+                              alert("Please enter number of trees you would like to adopt!");
                               return;
                             }
-                            const mainFormValid = Object.keys(formData).every(key => {
-                              if (key === "comments") return true;
-                              const value = formData[key as keyof typeof formData];
-                              // Check for mandatory fields
-                              if (key === "fullName" || key === "email" || key === "phone" || key === "panNumber") {
-                                return !!value;
-                              }
-                              return true;
-                            });
-
-                            if (treeLocation === 'adopt') {
-                              if (!adoptedTreeCount) {
-                                alert("Please enter number of trees you would like to adopt!");
-                                return;
-                              }
-                              if (!visitDate) {
-                                alert("Please select visit date!");
-                                return;
-                              }
-                            }
-
-                            if (treeLocation === 'donate' && donationMethod === 'trees' && !donationTreeCount) {
-                              alert("Please enter number of trees you would like to donate!");
+                            if (!visitDate) {
+                              alert("Please select visit date!");
                               return;
                             }
+                          }
 
-                            if (mainFormValid) {
-                              setCurrentStep(2);
-                              // Use setTimeout to ensure the DOM has updated with the new step
-                              setTimeout(() => {
-                                const orderSummary = document.getElementById('order-summary');
-                                if (orderSummary) {
-                                  orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }
-                              }, 100);
-                            } else {
-                              alert("Please fill all required fields");
-                            }
-                          }}
-                          className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-green-600 hover:bg-green-700"
-                            }`}
-                          disabled={hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
-                        >
-                          Next
-                        </button>
-                      </div>
+                          if (treeLocation === 'donate' && donationMethod === 'trees' && !donationTreeCount) {
+                            alert("Please enter number of trees you would like to donate!");
+                            return;
+                          }
+
+                          if (mainFormValid) {
+                            setCurrentStep(2);
+                            // Use setTimeout to ensure the DOM has updated with the new step
+                            setTimeout(() => {
+                              const orderSummary = document.getElementById('order-summary');
+                              if (orderSummary) {
+                                orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }
+                            }, 100);
+                          } else {
+                            alert("Please fill all required fields");
+                          }
+                        }}
+                        className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-green-600 hover:bg-green-700"
+                          }`}
+                        disabled={hasDuplicateNames || hasTableErrors || Object.entries(errors).some(([key, value]) => key !== "comments" && value && value.trim() !== "") || csvErrors.length > 0}
+                      >
+                        Proceed to pay
+                      </button>
                       {(hasTableErrors || Object.values(errors).some(e => e && e.trim() !== "") || csvErrors.length > 0) && (
                         <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding.</div>
                       )}
