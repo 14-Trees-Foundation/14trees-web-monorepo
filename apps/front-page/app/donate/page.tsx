@@ -1056,22 +1056,6 @@ function Donation() {
           <p className="mb-5">In case of any issue, please call +91 98458 05881 or write to us at contact@14trees.org
           </p>
 
-          <div className="space-y-4 bg-green-50 p-4 rounded-lg">
-            <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
-            <p className="text-sm text-green-700">
-              You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
-            </p>
-            <a
-              onClick={(e) => {
-                e.preventDefault();
-                setShowReferralDialog(true);
-              }}
-              className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
-            >
-              Create & Share Your Link
-            </a>
-          </div>
-
           {(!updateSuccess && !skipped) ? (
             <div className="space-y-6">
               <div className="h-px bg-gray-200"></div>
