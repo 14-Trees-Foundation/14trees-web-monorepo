@@ -946,6 +946,7 @@ function Donation() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [updateError, setUpdateError] = useState<string | null>(null);
+    const [skipped, setSkipped] = useState(false); // New state for skip tracking
 
     const involvementOptions = [
       { display: "Plan a visit to the project site", value: "Planning visit" },
@@ -1031,6 +1032,15 @@ function Donation() {
       }
     };
 
+    const handleSkip = () => {
+      setSkipped(true);
+    };
+
+    const handleClose = () => { 
+      handleReset();
+      setShowSuccessDialog(false);
+    };
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 m-5 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -1046,7 +1056,7 @@ function Donation() {
           <p className="mb-5">In case of any issue, please call +91 98458 05881 or write to us at contact@14trees.org
           </p>
 
-          {!updateSuccess ? (
+          {(!updateSuccess && !skipped) ? (
             <div className="space-y-6">
               <div className="h-px bg-gray-200"></div>
 
@@ -1088,7 +1098,7 @@ function Donation() {
 
               <div className="flex justify-end space-x-4">
                 <button
-                  onClick={() => { handleReset(); setShowSuccessDialog(false); }}
+                  onClick={handleSkip}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Skip
@@ -1104,13 +1114,14 @@ function Donation() {
             </div>
           ) : (
             <div className="text-center">
-
               <p className="text-green-600 mb-4">
-                We truly value your willingness to engage. Your support makes a real difference!
+                {updateSuccess 
+                  ? "We truly value your willingness to engage. Your support makes a real difference!"
+                  : "Thank you for your donation!"}
               </p>
 
               <button
-                onClick={() => { handleReset(); setShowSuccessDialog(false); }}
+                onClick={handleClose}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 Close
