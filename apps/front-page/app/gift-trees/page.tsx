@@ -1062,22 +1062,6 @@ function GiftTrees() {
             </li>
           </ul>
 
-          <div className="space-y-4 bg-green-50 p-4 rounded-lg">
-            <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
-            <p className="text-sm text-green-700">
-              You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
-            </p>
-            <a
-              onClick={(e) => {
-                e.preventDefault();
-                setShowReferralDialog(true);
-              }}
-              className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
-            >
-              Create & Share Your Link
-            </a>
-          </div>
-
           {!updateSuccess ? (
             <div className="space-y-6">
               {/* Divider */}
@@ -1120,6 +1104,23 @@ function GiftTrees() {
               {updateError && (
                 <p className="text-red-600 text-sm">{updateError}</p>
               )}
+
+              <div className="mt-12 h-px bg-gray-200"></div>
+              <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
+                <p className="text-sm text-green-700">
+                  Do you know, yo can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
+                </p>
+                <a
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowReferralDialog(true);
+                  }}
+                  className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
+                >
+                  Create & Share Your Link
+                </a>
+              </div>
 
               <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
@@ -1168,7 +1169,7 @@ function GiftTrees() {
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
-            {referralDetails ? (
+              {referralDetails ? (
                 <div className="mt-4">
                   {referralDetails.description ? (
                     <>
@@ -1207,21 +1208,6 @@ function GiftTrees() {
                   </h6>
                 </>
               )}
-              <div className="mt-6 space-y-4 bg-green-50 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
-                <p className="text-sm text-green-700">
-                  You can create your personal referral link and share it with friends and family. Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
-                </p>
-                <a
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowReferralDialog(true);
-                  }}
-                  className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
-                >
-                  Create & Share Your Link
-                </a>
-              </div>
               <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
                 Support Our Reforestation
               </h2>
@@ -1596,6 +1582,23 @@ function GiftTrees() {
               )}
             </ScrollReveal>
           </div>
+        </div>
+
+        <div className="mt-12 h-px bg-gray-200"></div>
+        <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
+          <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
+          <p className="text-sm text-green-700">
+            Do you know, yo can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
+          </p>
+          <a
+            onClick={(e) => {
+              e.preventDefault();
+              setShowReferralDialog(true);
+            }}
+            className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
+          >
+            Create & Share Your Link
+          </a>
         </div>
       </div>
       {showSuccessDialog && <SuccessDialog />}
