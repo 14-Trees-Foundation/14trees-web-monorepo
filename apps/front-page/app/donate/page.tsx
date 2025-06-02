@@ -1121,7 +1121,7 @@ function Donation() {
           <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
             <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
             <p className="text-sm text-green-700">
-              Do you know, yo can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
+              Do you know, you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
             </p>
             <a
               onClick={(e) => {
@@ -1931,7 +1931,7 @@ function Donation() {
         <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
           <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
           <p className="text-sm text-green-700">
-            Do you know, yo can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
+            Do you know, you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
           </p>
           <a
             onClick={(e) => {
