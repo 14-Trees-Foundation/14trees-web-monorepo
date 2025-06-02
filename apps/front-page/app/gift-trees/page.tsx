@@ -934,6 +934,7 @@ function GiftTrees() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [updateError, setUpdateError] = useState<string | null>(null);
+    const [skipped, setSkipped] = useState(false); // New state for skip tracking
 
     const involvementOptions = [
       { display: "Plan a visit to the project site and plant trees by my own hands", value: "Planning visit" },
@@ -1029,6 +1030,14 @@ function GiftTrees() {
       }
     };
 
+    const handleSkip = () => {
+      setSkipped(true); // Show thank you message without saving
+    };
+
+    const handleClose = () => {
+      handleReset();
+      setShowSuccessDialog(false);
+    };
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1078,7 +1087,7 @@ function GiftTrees() {
             </a>
           </div>
 
-          {!updateSuccess ? (
+          {(!updateSuccess && !skipped) ? (
             <div className="space-y-6">
               {/* Divider */}
               <div className="h-px bg-gray-200"></div>
@@ -1123,7 +1132,7 @@ function GiftTrees() {
 
               <div className="sticky bottom-0 bg-white pt-4 mt-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
-                  onClick={() => { handleReset(); setShowSuccessDialog(false); }}
+                  onClick={handleSkip}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Skip
@@ -1139,13 +1148,14 @@ function GiftTrees() {
             </div>
           ) : (
             <div className="text-center">
-
               <p className="text-green-600 mb-4">
-                We truly value your willingness to engage. Your support makes a real difference!
+                {updateSuccess 
+                  ? "We truly value your willingness to engage. Your support makes a real difference!"
+                  : "Thank you for your gift trees request!"}
               </p>
 
               <button
-                onClick={() => { handleReset(); setShowSuccessDialog(false); }}
+                onClick={handleClose}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 Close
