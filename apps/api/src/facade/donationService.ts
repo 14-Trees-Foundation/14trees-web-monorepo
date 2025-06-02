@@ -766,7 +766,7 @@ export class DonationService {
 
 
     public static async deleteDonationUser(donationUserId: number) {
-        // 1. Fetch the donation user first to verify existence
+
         const resp = await DonationUserRepository.getDonationUsers(0, 1, [
             { columnField: 'id', operatorValue: 'equals', value: donationUserId },
         ]).catch(error => {
@@ -777,10 +777,7 @@ export class DonationService {
         if (resp.results.length !== 1) {
             throw new Error("Donation user not found for given id");
         }
-    
-        const donationUser = resp.results[0];
-        
-        // 2. Check and unassign any trees assigned to this user
+            
         try {
             // Get trees assigned to this user
             const assignedTrees = await TreeRepository.getTrees(0, -1, [
@@ -792,17 +789,13 @@ export class DonationService {
                 
                 // Unassign trees by setting assigned_to to null
                 const treeIds = assignedTrees.results.map(tree => tree.id);
-                await TreeRepository.updateTrees(
-                    { assigned_to: null },
-                    { id: { [Op.in]: treeIds } }
-                );
+                await this.unassignTreesForTreeIds(treeIds);
             }
         } catch (error) {
             console.error("[ERROR] DonationService::deleteDonationUser - Failed to unassign trees:", error);
             throw new Error("Failed to unassign trees before user deletion");
         }
     
-        // 3. Delete the user using the correct repository method signature
         try {
             await DonationUserRepository.deleteDonationUsers({ 
                 id: donationUserId 
