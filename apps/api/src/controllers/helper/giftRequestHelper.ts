@@ -22,6 +22,9 @@ import { Group } from "../../models/group";
 import moment from "moment";
 import { formatNumber, numberToWords } from "../../helpers/utils"
 import { AlbumRepository } from "../../repo/albumRepo";
+import { AutoPrsReqPlotsRepository } from "../../repo/autoPrsReqPlotRepo";
+import { ReferralsRepository } from "../../repo/referralsRepo";
+import { CampaignsRepository } from "../../repo/campaignsRepo";
 
 export const defaultGiftMessages = {
     primary: 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.',
@@ -371,6 +374,29 @@ export const sendGiftRequestAcknowledgement = async (
             panNumber = payment?.pan_number || "";
         }
 
+        let referredBy = "";
+        let campaignName = "";
+        if (giftRequest.rfr_id) {
+            const referrals = await ReferralsRepository.getReferrals({ id: giftRequest.rfr_id });
+            if (referrals.length > 0) {
+                const referral = referrals[0];
+
+                if (referral.c_key) {
+                    const campaigns = await CampaignsRepository.getCampaigns({ c_key: referral.c_key });
+                    if (campaigns.length > 0) {
+                        campaignName = campaigns[0].name;
+                    }
+                }
+
+                if (referral.rfr) {
+                    const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }]);
+                    if (usersResp.results.length > 0) {
+                        referredBy = usersResp.results[0].name;
+                    }
+                }
+            }
+        }
+
         const amount = (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards;
 
         // Generate 80G receipt if applicable
@@ -416,6 +442,8 @@ export const sendGiftRequestAcknowledgement = async (
                 groupName: giftRequest.group_name,
                 amount: amount,
                 requestId: giftRequest.id,
+                referredBy: referredBy,
+                campaignName: campaignName,
             }
         };
 
@@ -683,7 +711,9 @@ export async function processGiftRequest(payload: GiftRequestPayload, giftCardsC
 }
 
 export async function autoProcessGiftRequest(giftRequest: GiftCardRequest) {
-    const plotIds: number[] = [2124];
+
+    const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('gift');
+    const plotIds: number[] = plotsToUse.map(item => item.plot_id);
 
     const users = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id);
 
@@ -725,11 +755,6 @@ export async function autoProcessGiftRequest(giftRequest: GiftCardRequest) {
 
     request.updated_at = new Date();
     await GiftCardsRepository.updateGiftCardRequest(request);
-
-    const giftRequestsResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftRequest.id }]);
-    const updatedRequest = giftRequestsResp.results[0];
-
-    generateGiftCardsForGiftRequest(updatedRequest);
 }
 
 async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCardRequest> {

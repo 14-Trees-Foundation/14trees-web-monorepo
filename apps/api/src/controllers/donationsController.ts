@@ -838,201 +838,26 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Donation not found' });
         }
 
-        // Get user details
-        const userResult = await UserRepository.getUsers(0, 1, [
-            { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
-        ]);
-
-        if (!userResult?.results?.length) {
-            return res.status(404).json({ error: 'User not found' });
+        const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(donation, event_type);
+        if (treeData.length === 0) {
+            return res.status(400).json({ error: 'No trees found for this donation' });
         }
-
-        const user = userResult.results[0];
-
-        // Get trees associated with the donation
-        const trees = await DonationRepository.getDonationTrees(0, -1, [
-            { columnField: 'donation_id', operatorValue: 'equals', value: donation_id }
-        ]);
-
-        if (!trees?.results?.length) {
-            return res.status(404).json({ error: 'No trees found for this donation' });
-        }
-
-        // Prepare tree data for email
-        const treeData = trees.results.filter((tree: any) => !tree.mail_sent).map(tree => ({
-            sapling_id: tree.sapling_id,
-            dashboard_link: `${process.env.DASHBOARD_URL}/profile/${tree.sapling_id}`,
-            planted_via: (tree as any).planted_via,
-            plant_type: (tree as any).plant_type || '',
-            scientific_name: (tree as any).scientific_name || '',
-            card_image_url: (tree as any).card_image_url || '',
-            event_name: (tree as any).event_name || '',
-            recipient: (tree as any).recipient,
-            assigned_to_name: (tree as any).assignee_name || 'Tree Planter', // Matches template
-            assignee_name: (tree as any).assignee_name || '', // Keep for backward compatibility
-            assignee_email: (tree as any).assignee_email || '',
-            recipient_email: (tree as any).recipient_email || '',
-            recipient_name: (tree as any).recipient_name || (tree as any).assignee_name || 'Recipient',
-        }));
-
-        // Common email data
-        const commonEmailData = {
-            trees: treeData,
-            count: treeData.length,
-            donation_id: donation.id,
-            grove: donation.grove,
-            category: donation.category,
-            contribution_options: donation.contribution_options,
-            names_for_plantation: donation.names_for_plantation,
-            comments: donation.comments,
-            event_name: (donation as any).event_name || '',
-            event_type: event_type
-        };
 
         res.status(200).json();
 
-        // Initialize tracking variables
-        let recipientsMap: Map<number, typeof treeData> | null = null;
-        let assigneesMap: Map<string, typeof treeData> | null = null;
-
         // Send email to sponsor if enabled
         if (!donation.mail_status?.includes(DonationMailStatus_DashboardsSent) && email_sponsor) {
-            const sponsorEmailData = {
-                ...commonEmailData,
-                user_name: user.name,
-                name: user.name,
-                email: user.email
-            };
-
-            const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
-            const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
-                event_type,
-                template_type: sponsorTemplateType
-            });
-
-            if (!sponsorTemplates?.length) {
-                throw new Error('Sponsor email template not found');
-            }
-
-            const statusMessage = await sendDashboardMail(
-                sponsorTemplates[0].template_name,
-                sponsorEmailData,
-                test_mails?.length ? test_mails : [user.email],
-                sponsor_cc_mails || []
-            );
-
-            if (statusMessage) {
-                await DonationRepository.updateDonation(donation.id, {
-                    mail_error: statusMessage,
-                    updated_at: new Date(),
-                })
-            } else {
-                await DonationRepository.updateDonation(donation.id, {
-                    mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_DashboardsSent] : [DonationMailStatus_DashboardsSent],
-                    updated_at: new Date(),
-                })
-            }
+            await DonationService.sendDashboardEmailToSponsor(donation, commonEmailData, treeData, event_type, test_mails, sponsor_cc_mails);
         }
 
         // Send email to recipient if enabled
         if (email_recipient) {
-            recipientsMap = new Map<number, typeof treeData>();
-
-            treeData.forEach(tree => {
-                if (tree.recipient) {
-                    if (!recipientsMap!.has(tree.recipient)) {
-                        recipientsMap!.set(tree.recipient, []);
-                    }
-                    recipientsMap!.get(tree.recipient)?.push(tree);
-                }
-            });
-
-            const recipientTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
-            const recipientTemplates = await EmailTemplateRepository.getEmailTemplates({
-                event_type,
-                template_type: recipientTemplateType
-            });
-
-            if (!recipientTemplates?.length) {
-                throw new Error('Recipient email template not found');
-            }
-
-            // Send to each recipient
-            for (const [recipient, recipientTrees] of recipientsMap) {
-                const recipientEmailData = {
-                    ...commonEmailData,
-                    user_name: recipientTrees[0].recipient_name,
-                    assigned_to_name: recipientTrees[0].assignee_name,
-                    self: recipientTrees[0].recipient_name == recipientTrees[0].assignee_name,
-                    email: recipientTrees[0].recipient_email,
-                    trees: recipientTrees,
-                    count: recipientTrees.length
-                };
-
-                if ((!test_mails || test_mails.length === 0) && (recipientTrees[0].recipient_email as string).includes("14trees")) continue;
-                const statusMessage = await sendDashboardMail(
-                    recipientTemplates[0].template_name,
-                    recipientEmailData,
-                    test_mails?.length ? test_mails : [recipientTrees[0].recipient_email],
-                    recipient_cc_mails || []
-                );
-
-                if (statusMessage) {
-                    await DonationUserRepository.updateDonationUsers({
-                        mail_error: statusMessage,
-                        updated_at: new Date(),
-                    }, { donation_id: donation.id, recipient: recipient });
-                } else {
-                    await DonationUserRepository.updateDonationUsers({
-                        mail_sent: true,
-                        updated_at: new Date(),
-                    }, { donation_id: donation.id, recipient: recipient });
-                }
-            }
+            await DonationService.sendDashboardEmailsToRecipients(donation, commonEmailData, treeData, event_type, test_mails, recipient_cc_mails);
         }
 
         // Send email to assignee if enabled
         if (email_assignee) {
-            assigneesMap = new Map<string, typeof treeData>();
-
-            treeData.forEach(tree => {
-                if (tree.assignee_email) {
-                    if (!assigneesMap!.has(tree.assignee_email)) {
-                        assigneesMap!.set(tree.assignee_email, []);
-                    }
-                    assigneesMap!.get(tree.assignee_email)?.push(tree);
-                }
-            });
-
-            const assigneeTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
-            const assigneeTemplates = await EmailTemplateRepository.getEmailTemplates({
-                event_type,
-                template_type: assigneeTemplateType
-            });
-
-            if (!assigneeTemplates?.length) {
-                throw new Error('Assignee email template not found');
-            }
-
-            // Send to each assignee
-            for (const [assigneeEmail, assigneeTrees] of assigneesMap) {
-                const assigneeEmailData = {
-                    ...commonEmailData,
-                    user_name: assigneeTrees[0].assignee_name,
-                    assigned_to_name: assigneeTrees[0].assignee_name,
-                    //assigned_to_name: assigneeTrees[0].assigned_to_name,
-                    email: assigneeEmail,
-                    trees: assigneeTrees,
-                    count: assigneeTrees.length
-                };
-
-                await sendDashboardMail(
-                    assigneeTemplates[0].template_name,
-                    assigneeEmailData,
-                    test_mails || [assigneeEmail],
-                    assignee_cc_mails || []
-                );
-            }
+            await DonationService.sendDashboardEmailsToAssignees(donation, commonEmailData, treeData, event_type, test_mails, assignee_cc_mails);
         }
     } catch (error) {
         console.error('Error sending donation emails:', error);
@@ -1059,9 +884,43 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
         await DonationService.assignTreesForDonation(donation);
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
-        return res.status(status.success).send(updatedDonation);
+        const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(updatedDonation, 'default');
+        
+        res.status(status.success).send(updatedDonation);
+
+        if (treeData.length > 0) {
+            try {
+                await DonationService.sendDashboardEmailToSponsor(updatedDonation, commonEmailData, treeData, 'default');
+                await DonationService.sendDashboardEmailsToRecipients(updatedDonation, commonEmailData, treeData, 'default');
+            } catch (error) {
+                console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
+            }
+        }
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+
+export const getTreesCountForAutoReserveTrees = async (req: Request, res: Response) => {
+    const {
+        donation_id
+    } = req.body;
+
+    if (!donation_id)
+        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+
+    try {
+        const donation = await DonationRepository.getDonation(donation_id);
+        
+        const data = await DonationService.getPlotTreesCntForAutoReserveTreesForDonation(donation);
+        
+        return res.status(status.success).send(data);
+    } catch (error: any) {
+        console.log("[ERROR]", "donationsController::getTreesCountForAutoReserveTrees", error);
         return res.status(status.error).send({
             messgae: error.message
         })
