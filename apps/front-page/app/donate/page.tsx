@@ -1122,7 +1122,7 @@ function Donation() {
           <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
             <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
             <p className="text-sm text-green-700">
-              Do you know, you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
+              Do you know you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
             </p>
             <a
               onClick={(e) => {
@@ -1151,10 +1151,10 @@ function Donation() {
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-10 object-center text-center md:my-5 md:w-4/5 md:text-left">
               <div className="mt-12 space-y-6">
-                <h2 className="text-4xl font-bold text-green-800">We don't just plant trees, we rebuild forests.</h2>
+                <h2 className="text-4xl font-bold text-green-800">We don&apos;t just plant trees, we rebuild forests.</h2>
 
                 <p className="text-gray-700 leading-relaxed">
-                  By donating to 14Trees, you're directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
+                  By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1218,7 +1218,7 @@ function Donation() {
                 </div>
 
                 <p className="text-gray-700 leading-relaxed">
-                  By funding 14Trees, you're enabling long-term environmental healing and economic empowerment for those who depend most on the land.
+                  By funding 14Trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend most on the land.
                 </p>
               </div>
 
@@ -1509,7 +1509,7 @@ function Donation() {
                           )}
                         </div>
                         <p className="mt-2 text-sm text-gray-600">
-                          At present we can accept donations only from Indian residents. PAN number is required to know the donor's identity.
+                          At present we can accept donations only from Indian residents. PAN number is required to know the donor&apos;s identity.
                         </p>
                       </div>
                     </div>
@@ -1982,7 +1982,7 @@ function Donation() {
         <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
           <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
           <p className="text-sm text-green-700">
-            Do you know, you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
+            Do you know you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in supporting our reforestation efforts.
           </p>
           <a
             onClick={(e) => {
