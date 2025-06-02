@@ -148,13 +148,94 @@ routes.post('/requests/get', donations.getDonations);
  *               type: string
  *               example: "Failed to create donation"
  */
-routes.post('/requests' , donations.createDonation);
+routes.post('/requests', donations.createDonation);
+
+/**
+ * @swagger
+ * /donations/{id}/process:
+ *   post:
+ *     summary: Mark donation as processed
+ *     description: Updates the donation record to mark it as processed by a backoffice user
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the donation to process
+ *         schema:
+ *           type: integer
+ *           example: 123
+ *       - in: body
+ *         name: body
+ *         description: Backoffice user processing the donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - userId
+ *           properties:
+ *             userId:
+ *               type: integer
+ *               description: ID of the backoffice user processing the request
+ *               example: 45
+ *     responses:
+ *       200:
+ *         description: Donation successfully marked as processed
+ *         schema:
+ *           type: object
+ *           properties:
+ *             success:
+ *               type: boolean
+ *               example: true
+ *             processed_by:
+ *               type: integer
+ *               example: 45
+ *       400:
+ *         description: Bad request - missing or invalid parameters
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "User ID is required"
+ *       404:
+ *         description: Donation not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Donation not found"
+ *       409:
+ *         description: Conflict - donation already processed
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Already processed by user 32"
+ *             processed_by:
+ *               type: integer
+ *               example: 32
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Failed to process donation"
+ */
+routes.post('/:id/process', donations.processDonation);
 
 
 routes.post('/requests/payment-success', donations.paymentSuccessForDonation);
 
-routes.delete('/requests/:id' , donations.deleteDonation);
-routes.put('/requests/:id' , donations.updateDonation);
+routes.post('/requests/auto-process', donations.autoProcessDonationRequest);
+
+routes.delete('/requests/:id', donations.deleteDonation);
+routes.put('/requests/:id', donations.updateDonation);
 // routes.post('/work-order/:donation_id' , donations.createWorkOrder);
 // routes.post('/update-feedback' , donations.updateFeedback);
 // routes.post('/book-trees' , donations.bookTreesForDonation);
@@ -425,6 +506,188 @@ routes.delete('/users/:donation_user_id', donations.deleteDonationUser);
  *               example: "Something went wrong. Please try again after some time!"
  */
 routes.post('/trees/reserve', donations.reserveTreesForDonation)
+
+
+/**
+ * @swagger
+ * /donations/trees/map:
+ *   post:
+ *     summary: Map assigned trees for a donation
+ *     description: Map already assigned trees to donation
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for reserving trees for a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             tree_ids:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [1, 2, 3]
+ *     responses:
+ *       200:
+ *         description: Trees mapped successfully
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/trees/map', donations.mapAssignedTreesToDonation)
+
+/**
+ * @swagger
+ * /donations/trees/unmap:
+ *   post:
+ *     summary: Unmap trees from a donation
+ *     description: Remove association between trees and a donation
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for unmapping trees from a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               description: ID of the donation to unmap trees from
+ *               example: 123
+ *             tree_ids:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               description: Array of tree IDs to unmap
+ *               example: [1, 2, 3]
+ *     responses:
+ *       200:
+ *         description: Trees unmapped successfully
+ *         schema:
+ *           $ref: '#/definitions/Donation'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid input provided!"
+ *       404:
+ *         description: Not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Donation or trees not found"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/trees/unmap', donations.unmapAssignedTreesFromDonation)
+
+/**
+ * @swagger
+ * /donations/trees/mapped:
+ *   post:
+ *     summary: Get trees mapped to a donation
+ *     description: Retrieve all trees currently mapped to a specific donation
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body containing donation ID and optional filters
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation_id:
+ *               type: integer
+ *               example: 123
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             limit:
+ *               type: integer
+ *               example: 20
+ *             filters:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   columnField:
+ *                     type: string
+ *                     example: "sapling_id"
+ *                   operatorValue:
+ *                     type: string
+ *                     example: "contains"
+ *                   value:
+ *                     type: string
+ *                     example: "ABC"
+ *             orderBy:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   column:
+ *                     type: string
+ *                     example: "sapling_id"
+ *                   order:
+ *                     type: string
+ *                     enum: [ASC, DESC]
+ *                     example: "ASC"
+ *     responses:
+ *       200:
+ *         description: List of mapped trees
+ *         schema:
+ *           type: object
+ *           properties:
+ *             total:
+ *               type: integer
+ *             results:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Tree'
+ *       400:
+ *         description: Missing or invalid input
+ *       500:
+ *         description: Internal server error
+ */
+routes.post('/trees/getmapped', donations.getMappedTreesByDonation);
+
 
 
 /**

@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, SponsorshipType } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
@@ -29,11 +29,12 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, autoProcessGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
+import { ReferralsRepository } from "../repo/referralsRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -113,6 +114,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        rfr,
+        c_key,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -156,7 +159,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             const razorpayService = new RazorpayService();
             const payments = await razorpayService.getPayments(payment.order_id);
             payments?.forEach(item => {
-                amountReceived += Number(item.amount)/100;
+                amountReceived += Number(item.amount) / 100;
             })
         }
 
@@ -164,6 +167,15 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             sponsorshipType = 'Donation Received';
             donationDate = new Date();
         }
+    }
+
+    let rfr_id: number | null = null;
+    if (rfr || c_key) {
+        const references = await ReferralsRepository.getReferrals({
+            rfr: rfr ? rfr : { [Op.is]: null },
+            c_key: c_key ? c_key : { [Op.is]: null }
+        });
+        if (references.length === 1) rfr_id = references[0].id;
     }
 
     const request: GiftCardRequestCreationAttributes = {
@@ -195,6 +207,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         sponsorship_type: sponsorshipType,
         donation_date: donationDate,
         amount_received: amountReceived,
+        rfr_id: rfr_id,
     }
 
     try {
@@ -246,7 +259,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         })
     }
 }
-
 
 export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
 
@@ -509,7 +521,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.group_id !== originalRequest.group_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id, sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
@@ -517,7 +529,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.sponsor_id !== originalRequest.sponsor_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id,  sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.visit_id !== originalRequest.visit_id) {
@@ -540,6 +552,63 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::updateGiftCardRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+};
+
+export const processGiftCard = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    if (!id || isNaN(Number(id))) {
+        return res.status(400).json({ message: 'Invalid gift card request ID' });
+    }
+
+    try {
+        // Check if gift card exists
+        const giftRequestId = parseInt(id);
+        const giftCardRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
+
+        if (!giftCardRequest) {
+            return res.status(404).json({ message: 'Gift card not found' });
+        }
+
+        if (giftCardRequest.processed_by) {
+            return res.status(409).json({
+                message: 'Already processed by another user',
+                processed_by: giftCardRequest.processed_by
+            });
+        }
+
+        const updated = await GiftCardsRepository.updateGiftCardRequests(
+            {
+                processed_by: userId,
+                updated_at: new Date()
+            },
+            { id, processed_by: { [Op.is]: null } }
+        );
+
+        if (!updated) {
+            return res.status(409).json({ message: 'Gift card already being processed by another user' });
+        }
+
+        // Fetch updated gift card
+        const updatedGiftCard = await GiftCardsService.getGiftCardsRequest(giftCardRequest.id);
+
+        return res.status(200).json({
+            success: true,
+            giftCard: updatedGiftCard
+        });
+
+    } catch (error) {
+        console.error("Error processing gift card:", error);
+        return res.status(500).json({
+            message: 'Failed to process gift card',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 };
 
@@ -598,6 +667,7 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
@@ -1311,6 +1381,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
@@ -1697,7 +1768,7 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
     if (giftedBy) message = message.replace("{giftedBy}", giftedBy);
     const record = {
         sapling: saplingId ? saplingId : '00000',
-        message: message, 
+        message: message,
         logo: logo,
         logo_message: logoMessage
     }
@@ -1873,6 +1944,109 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::redeemMultipleGiftCard", error);
+        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+};
+
+export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
+    const {
+        sponsor_group: sponsorGroup,
+        sponsor_user: sponsorUser,
+        primaryMessage,
+        secondaryMessage,
+        logoMessage,
+        requesting_user: requestingUser,
+        users,
+    } = req.body;
+
+    if (!users?.length) {
+        res.status(status.bad).json({
+            message: 'Users are required to gift trees!'
+        })
+        return;
+    }
+
+    try {
+
+        let filters: FilterItem[] = [];
+        if (sponsorGroup) {
+            filters = [{ columnField: 'group_id', operatorValue: 'equals', value: sponsorGroup }];
+        } else if (sponsorUser) {
+            filters = [{ columnField: 'user_id', operatorValue: 'equals', value: sponsorUser }];
+        }
+
+        const giftRequests = await GiftCardsRepository.getGiftCardRequests(0, -1, filters);
+        if (giftRequests.results.length === 0) {
+            return res.status(status.bad).json({
+                message: 'Tree cards request not found for the group!'
+            })
+        }
+        const requestIds = giftRequests.results.map(request => request.id);
+
+
+        for (const user of users) {
+            let userId = user?.id;
+            if (!userId) {
+                const usr = await UserRepository.upsertUser(user);
+                userId = usr.id;
+            }
+
+            const giftCards = await GiftCardsRepository.getGiftCards(0, user.trees_count, { gift_card_request_id: { [Op.in]: requestIds }, gift_request_user_id: { [Op.is]: null } });
+            if (giftCards.results.length === 0) {
+                res.status(status.bad).json({
+                    message: 'Tree cards not found!'
+                })
+                return;
+            }
+
+            const {
+                event_type: eventType,
+                event_name: eventName,
+                gifted_on: giftedOn,
+                gifted_by: giftedBy,
+                profile_image_url: profileImageUrl,
+            } = user;
+
+            for (const card of giftCards.results) {
+                await redeemSingleGiftCard(card, userId, eventType, eventName, giftedBy, giftedOn, profileImageUrl);
+            }
+
+            const trnData: GiftRedeemTransactionCreationAttributes = {
+                group_id: sponsorGroup,
+                user_id: sponsorUser,
+                created_by: requestingUser,
+                modified_by: requestingUser,
+                recipient: userId,
+                occasion_name: eventName,
+                occasion_type: eventType,
+                gifted_by: giftedBy,
+                gifted_on: giftedOn,
+                primary_message: primaryMessage,
+                secondary_message: secondaryMessage,
+                logo_message: logoMessage,
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+
+            const cardIds = giftCards.results.map(card => card.id);
+            if (sponsorGroup || sponsorUser) {
+                const trn = await GRTransactionsRepository.createTransaction(trnData);
+                await GRTransactionsRepository.addCardsToTransaction(trn.id, cardIds);
+            }
+
+            const giftCardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: cardIds }])
+            GiftRequestHelper.generateGiftCardTemplates(giftRequests.results[0], giftCardsResp.results, {
+                primary_message: primaryMessage,
+                secondary_message: secondaryMessage,
+                logo_message: logoMessage,
+                event_type: eventType,
+                gifted_by: giftedBy,
+            });
+        }
+
+        res.status(status.success).send({});
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::bulkRedeemGiftCard", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
     }
 };
@@ -2287,5 +2461,32 @@ export const generateAdhocTreeCards = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::generateAdhocTreeCards", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+}
+
+/**
+ * Auto process donation request
+ */
+export const autoProcessGiftCardRequest = async (req: Request, res: Response) => {
+
+    const {
+        gift_request_id
+    } = req.body;
+
+    if (!gift_request_id)
+        return res.status(status.bad).send({ message: "Gift request Id requried to process request." })
+
+    try {
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+
+        await autoProcessGiftRequest(giftRequest)
+
+        const updatedGiftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+        return res.status(status.success).send(updatedGiftRequest);
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::autoProcessGiftCardRequest", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
     }
 }

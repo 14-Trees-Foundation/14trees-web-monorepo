@@ -44,6 +44,8 @@ import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { PlotPlantType } from "../models/plot_plant_type";
 import { EventMessage } from "../models/event_message";
+import { Referral } from "../models/referral";
+import { Campaign } from "../models/campaign";
 
 
 class Database {
@@ -123,6 +125,8 @@ class Database {
         DuplicateTreeSync,
         ChatMessage,
         MailSub,
+        Referral,
+        Campaign,
       ]
     });
 

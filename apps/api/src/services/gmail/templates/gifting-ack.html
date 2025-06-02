@@ -21,6 +21,14 @@
 
         <p>Thank you so much for your generous gift request dated {{giftDetails.date}} to 14 Trees Foundation!</p>
 
+        {{#if donationDetails.referredBy}}
+        <p>Referred By: <strong>{{donationDetails.referredBy}}</strong></p>
+        {{/if}}
+
+        {{#if donationDetails.campaignName}}
+        <p>Campaign Name: <strong>{{donationDetails.campaignName}}</strong></p>
+        {{/if}}
+
         <p>Your gift request number is <strong>{{giftDetails.requestId}}</strong>. Please keep this number handy for any queries or correspondence related to your gift request.</p>
 
         <p>Your gift of {{giftDetails.quantity}} tree(s) will help transform barren lands into biodiverse forests full

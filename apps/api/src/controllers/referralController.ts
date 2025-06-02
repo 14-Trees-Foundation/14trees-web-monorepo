@@ -1,0 +1,97 @@
+import { Request, Response } from "express";
+import { CampaignsRepository } from "../repo/campaignsRepo";
+import { UserRepository } from "../repo/userRepo";
+import { ReferralsRepository } from "../repo/referralsRepo";
+import { Op } from "sequelize";
+
+
+export const createReferral = async (req: Request, res: Response) => {
+
+    try {
+        const { email, c_key } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: "User email required to generate referral link!" });
+        }
+
+        let cKey: string | null = null;
+        if (c_key) {
+            const campaigns = await CampaignsRepository.getCampaigns({ c_key: c_key });
+            if (campaigns.length !== 0) {
+                cKey = campaigns[0].c_key;
+            }
+        }
+
+        const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'email', value: email, operatorValue: 'equals' }]);
+        if (usersResp.results.length === 0) {
+            return res.status(404).json({ message: "User not registed in the system!" });
+        }
+
+        const user = usersResp.results[0];
+        let rfr: string | null = user.rfr;
+        if (!user.rfr) {
+            rfr = user.name.split(' ')[0].toLowerCase() + '-' + Math.random().toString(36).substring(2, 5);
+            await UserRepository.updateUsers({ rfr: rfr }, { id: user.id });
+        }
+
+        const referrals = await ReferralsRepository.getReferrals({ rfr: rfr, c_key: cKey });
+        if (referrals.length > 0) {
+            return res.status(201).json({ rfr: referrals[0].rfr, c_key: referrals[0].c_key });
+        }
+
+        const referral = await ReferralsRepository.createReferece(rfr, cKey);
+
+        return res.status(201).json({ rfr: referral.rfr, c_key: referral.c_key });
+    } catch (error: any) {
+        console.error("[ERROR] ReferralController::createReferral", error);
+        res.status(500).json({
+            message: 'Failed to create referral',
+            error: error.message || 'Internal Server Error'
+        });
+    }
+}
+
+
+export const getReferralDetails = async (req: Request, res: Response) => {
+    try {
+        const { rfr, c_key } = req.body;
+
+        if (!rfr && !c_key) {
+            return res.status(400).json({ message: "Referral code or campaign key is required!" });
+        }
+
+        let referredBy: string | undefined = undefined;
+        if (rfr) {
+            const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', value: rfr, operatorValue: 'equals' }]);
+            if (usersResp.results.length !== 0) {
+                referredBy = usersResp.results[0].name;
+            }
+        }
+
+        let name: string | undefined = undefined;
+        let cKey: string | undefined = undefined;
+        let description: string | undefined = undefined;
+        if (c_key) {
+            const campaigns = await CampaignsRepository.getCampaigns({ c_key: c_key });
+            if (campaigns.length !== 0) {
+                name = campaigns[0].name;
+                cKey = campaigns[0].c_key;
+                description = campaigns[0].description ?? undefined;
+            }
+        }
+
+        return res.status(200).json({
+            rfr: rfr,
+            c_key: cKey,
+            referred_by: referredBy,
+            name: name,
+            description: description
+        });
+
+    } catch (error: any) {
+        console.error("[ERROR] ReferralController::getReferralDetails", error);
+        res.status(500).json({
+            message: 'Failed to get referral details',
+            error: error.message || 'Internal Server Error'
+        });
+    }
+}

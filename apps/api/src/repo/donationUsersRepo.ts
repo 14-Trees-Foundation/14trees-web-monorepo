@@ -1,6 +1,6 @@
 import { QueryTypes, WhereOptions, where } from "sequelize";
 import { sequelize } from "../config/postgreDB";
-import { DonationUser, DonationUserCreationAttributes } from "../models/donation_user";
+import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 
@@ -84,7 +84,7 @@ export class DonationUserRepository {
     return await DonationUser.bulkCreate(data, { returning: returning });
   }
 
-  static async updateDonationUsers(fields: any, whereClause: WhereOptions<DonationUser>) {
+  static async updateDonationUsers(fields: Partial<DonationUserAttributes>, whereClause: WhereOptions<DonationUser>) {
     await DonationUser.update(fields, { where: whereClause });
   }
 
