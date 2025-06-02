@@ -29,7 +29,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
@@ -2366,11 +2366,45 @@ export const autoProcessGiftCardRequest = async (req: Request, res: Response) =>
         const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
 
         await autoProcessGiftRequest(giftRequest)
-
         const updatedGiftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
-        return res.status(status.success).send(updatedGiftRequest);
+        res.status(status.success).send(updatedGiftRequest);
+
+        try {
+            await generateGiftCardsForGiftRequest(updatedGiftRequest);
+
+            const giftCardRequest: any = updatedGiftRequest;
+            const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(giftCardRequest.id);
+
+            // send email to sponsors and receivers
+            await sendMailsToSponsors(giftCardRequest, giftCards, 'default', true);
+            await sendMailsToReceivers(giftCardRequest, giftCards, 'default', true);
+        } catch (error: any) {
+            console.log("[ERROR]", "GiftCardController::autoProcessGiftCardRequest", "Error while generating gift cards for the request", error);
+        }
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::autoProcessGiftCardRequest", error);
+        return res.status(status.error).send({
+            messgae: error.message
+        })
+    }
+}
+
+export const getTreesCountForAutoReserveTrees = async (req: Request, res: Response) => {
+    const {
+        gift_request_id
+    } = req.body;
+
+    if (!gift_request_id)
+        return res.status(status.bad).send({ message: "Gift request Id requried to process request." })
+
+    try {
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+        
+        const data = await GiftCardsService.getPlotTreesCntForAutoReserveTreesForGiftRequest(giftRequest);
+        
+        return res.status(status.success).send(data);
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::getTreesCountForAutoReserveTrees", error);
         return res.status(status.error).send({
             messgae: error.message
         })

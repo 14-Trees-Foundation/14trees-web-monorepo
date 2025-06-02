@@ -1,5 +1,5 @@
 import { LandCategory } from "../models/common";
-import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
+import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_DashboardsSent, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
@@ -19,6 +19,8 @@ import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
 import { PlotRepository } from "../repo/plotRepo";
 import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
+import { TemplateType } from "../models/email_template";
+import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -72,7 +74,7 @@ export class DonationService {
             status,
             tags
         } = data;
-        
+
         const sponsorUser = await UserRepository.upsertUser({
             name: sponsor_name,
             email: sponsor_email,
@@ -731,10 +733,11 @@ export class DonationService {
     /**
      * Auto Process
      */
-    public static async reserveTreesForDonation(donation: Donation) {
+
+    public static async getPlotTreesCntForAutoReserveTreesForDonation(donation: Donation) {
 
         const treesCount = donation.trees_count - (donation as any).booked;
-        if (treesCount <= 0) return; 
+        if (treesCount <= 0) return [];
 
         const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('donation');
 
@@ -742,24 +745,32 @@ export class DonationService {
         const plotsResp = await PlotRepository.getPlots(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: plotIds }]);
 
         let remaining = treesCount;
-        const plotTreeCnts 
+        const plotTreeCnts
             = plotsResp.results
                 .filter((plot: any) => plot.available_trees)
                 .map((plot: any) => {
                     const cnt = Math.min(plot.available_trees, remaining);
 
                     if (remaining) remaining -= cnt;
-                    return { plot_id: plot.id, trees_count: cnt }
+                    return { plot_id: plot.id, trees_count: cnt, plot_name: plot.name }
                 }).filter(item => item.trees_count);
-        
+
+        return plotTreeCnts;
+    }
+
+    public static async reserveTreesForDonation(donation: Donation) {
+        const plotTreeCnts
+            = await this.getPlotTreesCntForAutoReserveTreesForDonation(donation);
+
+        if (plotTreeCnts.length === 0) return;
 
         await this.reserveTreesInPlots(donation.user_id, null, plotTreeCnts, true, true, false, donation.id);
     }
 
 
     public static async assignTreesForDonation(donation: Donation) {
-        
-        const donationUsers = await DonationUserRepository.getAllDonationUsers(donation.id); 
+
+        const donationUsers = await DonationUserRepository.getAllDonationUsers(donation.id);
         const treesCount = donationUsers.map(user => user.trees_count).reduce((prev, curr) => prev + curr, 0);
         if (treesCount < donation.trees_count) {
 
@@ -882,6 +893,202 @@ export class DonationService {
         } catch (error) {
             console.error("[ERROR] DonationService::sendDonationAcknowledgement", error);
             throw new Error("Failed to send acknowledgement email");
+        }
+    }
+
+    public static async getEmailDataForDonation(donation: Donation, event_type: string): Promise<{ commonEmailData: any, treeData: any[] }> {
+        // Get trees associated with the donation
+        const trees = await DonationRepository.getDonationTrees(0, -1, [
+            { columnField: 'donation_id', operatorValue: 'equals', value: donation.id }
+        ]);
+
+        if (!trees?.results?.length) {
+            return { commonEmailData: {}, treeData: [] };
+        }
+
+        // Prepare tree data for email
+        const treeData = trees.results.filter((tree: any) => !tree.mail_sent).map(tree => ({
+            sapling_id: tree.sapling_id,
+            dashboard_link: `${process.env.DASHBOARD_URL}/profile/${tree.sapling_id}`,
+            planted_via: (tree as any).planted_via,
+            plant_type: (tree as any).plant_type || '',
+            scientific_name: (tree as any).scientific_name || '',
+            card_image_url: (tree as any).card_image_url || '',
+            event_name: (tree as any).event_name || '',
+            recipient: (tree as any).recipient,
+            assigned_to_name: (tree as any).assignee_name || 'Tree Planter', // Matches template
+            assignee_name: (tree as any).assignee_name || '', // Keep for backward compatibility
+            assignee_email: (tree as any).assignee_email || '',
+            recipient_email: (tree as any).recipient_email || '',
+            recipient_name: (tree as any).recipient_name || (tree as any).assignee_name || 'Recipient',
+        }));
+
+        // Common email data
+        const commonEmailData = {
+            trees: treeData,
+            count: treeData.length,
+            donation_id: donation.id,
+            grove: donation.grove,
+            category: donation.category,
+            contribution_options: donation.contribution_options,
+            names_for_plantation: donation.names_for_plantation,
+            comments: donation.comments,
+            event_name: (donation as any).event_name || '',
+            event_type: event_type
+        };
+
+        return {
+            commonEmailData,
+            treeData
+        }
+    }
+
+    public static async sendDashboardEmailToSponsor(donation: Donation, commonEmailData: any, treeData: any[], event_type: string, test_mails?: string[], sponsor_cc_mails?: string[]) {
+
+        // Get user details
+        const userResult = await UserRepository.getUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
+        ]);
+
+        if (!userResult?.results?.length) {
+            throw new Error('Sponsor user not found for the donation');
+        }
+
+        const user = userResult.results[0];
+
+        const sponsorEmailData = {
+            ...commonEmailData,
+            user_name: user.name,
+            name: user.name,
+            email: user.email
+        };
+
+        const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+        const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
+            event_type,
+            template_type: sponsorTemplateType
+        });
+
+        if (!sponsorTemplates?.length) {
+            throw new Error('Sponsor email template not found');
+        }
+
+        const statusMessage = await sendDashboardMail(
+            sponsorTemplates[0].template_name,
+            sponsorEmailData,
+            test_mails?.length ? test_mails : [user.email],
+            sponsor_cc_mails || []
+        );
+
+        if (statusMessage) {
+            await DonationRepository.updateDonation(donation.id, {
+                mail_error: statusMessage,
+                updated_at: new Date(),
+            })
+        } else {
+            await DonationRepository.updateDonation(donation.id, {
+                mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_DashboardsSent] : [DonationMailStatus_DashboardsSent],
+                updated_at: new Date(),
+            })
+        }
+    }
+
+    public static async sendDashboardEmailsToRecipients(donation: Donation, commonEmailData: any, treeData: any[], event_type: string, test_mails?: string[], recipient_cc_mails?: string[]) {
+        let recipientsMap = new Map<number, any>();
+
+        treeData.forEach(tree => {
+            if (tree.recipient) {
+                if (!recipientsMap!.has(tree.recipient)) {
+                    recipientsMap!.set(tree.recipient, []);
+                }
+                recipientsMap!.get(tree.recipient)?.push(tree);
+            }
+        });
+
+        const recipientTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+        const recipientTemplates = await EmailTemplateRepository.getEmailTemplates({
+            event_type,
+            template_type: recipientTemplateType
+        });
+
+        if (!recipientTemplates?.length) {
+            throw new Error('Recipient email template not found');
+        }
+
+        // Send to each recipient
+        for (const [recipient, recipientTrees] of recipientsMap) {
+            const recipientEmailData = {
+                ...commonEmailData,
+                user_name: recipientTrees[0].recipient_name,
+                assigned_to_name: recipientTrees[0].assignee_name,
+                self: recipientTrees[0].recipient_name == recipientTrees[0].assignee_name,
+                email: recipientTrees[0].recipient_email,
+                trees: recipientTrees,
+                count: recipientTrees.length
+            };
+
+            if ((!test_mails || test_mails.length === 0) && (recipientTrees[0].recipient_email as string).includes("14trees")) continue;
+            const statusMessage = await sendDashboardMail(
+                recipientTemplates[0].template_name,
+                recipientEmailData,
+                test_mails?.length ? test_mails : [recipientTrees[0].recipient_email],
+                recipient_cc_mails || []
+            );
+
+            if (statusMessage) {
+                await DonationUserRepository.updateDonationUsers({
+                    mail_error: statusMessage,
+                    updated_at: new Date(),
+                }, { donation_id: donation.id, recipient: recipient });
+            } else {
+                await DonationUserRepository.updateDonationUsers({
+                    mail_sent: true,
+                    updated_at: new Date(),
+                }, { donation_id: donation.id, recipient: recipient });
+            }
+        }
+    }
+
+    public static async sendDashboardEmailsToAssignees(donation: Donation, commonEmailData: any, treeData: any[], event_type: string, test_mails?: string[], assignee_cc_mails?: string[]) {
+        let assigneesMap = new Map<string, any>();
+
+        treeData.forEach(tree => {
+            if (tree.assignee_email) {
+                if (!assigneesMap!.has(tree.assignee_email)) {
+                    assigneesMap!.set(tree.assignee_email, []);
+                }
+                assigneesMap!.get(tree.assignee_email)?.push(tree);
+            }
+        });
+
+        const assigneeTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+        const assigneeTemplates = await EmailTemplateRepository.getEmailTemplates({
+            event_type,
+            template_type: assigneeTemplateType
+        });
+
+        if (!assigneeTemplates?.length) {
+            throw new Error('Assignee email template not found');
+        }
+
+        // Send to each assignee
+        for (const [assigneeEmail, assigneeTrees] of assigneesMap) {
+            const assigneeEmailData = {
+                ...commonEmailData,
+                user_name: assigneeTrees[0].assignee_name,
+                assigned_to_name: assigneeTrees[0].assignee_name,
+                //assigned_to_name: assigneeTrees[0].assigned_to_name,
+                email: assigneeEmail,
+                trees: assigneeTrees,
+                count: assigneeTrees.length
+            };
+
+            await sendDashboardMail(
+                assigneeTemplates[0].template_name,
+                assigneeEmailData,
+                test_mails || [assigneeEmail],
+                assignee_cc_mails || []
+            );
         }
     }
 

@@ -154,6 +154,7 @@ routes.post('/requests' , donations.createDonation);
 routes.post('/requests/payment-success', donations.paymentSuccessForDonation);
 
 routes.post('/requests/auto-process', donations.autoProcessDonationRequest);
+routes.post('/requests/plot-trees-cnt/get', donations.getTreesCountForAutoReserveTrees);
 
 routes.delete('/requests/:id' , donations.deleteDonation);
 routes.put('/requests/:id' , donations.updateDonation);

@@ -728,11 +728,6 @@ export async function autoProcessGiftRequest(giftRequest: GiftCardRequest) {
 
     request.updated_at = new Date();
     await GiftCardsRepository.updateGiftCardRequest(request);
-
-    const giftRequestsResp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftRequest.id }]);
-    const updatedRequest = giftRequestsResp.results[0];
-
-    generateGiftCardsForGiftRequest(updatedRequest);
 }
 
 async function createGiftRrequest(payload: GiftRequestPayload): Promise<GiftCardRequest> {
