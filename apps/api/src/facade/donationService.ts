@@ -766,20 +766,52 @@ export class DonationService {
 
 
     public static async deleteDonationUser(donationUserId: number) {
+        // 1. Fetch the donation user first to verify existence
         const resp = await DonationUserRepository.getDonationUsers(0, 1, [
             { columnField: 'id', operatorValue: 'equals', value: donationUserId },
         ]).catch(error => {
-            console.log("[ERROR]", "DonationService::deleteDonationUser", error);
-            throw new Error("Failed fetch donation user for deletion!");
-        })
-
-        if (resp.results.length !== 1)
-            throw new Error("Donation user not for given id")
-
-        const donationId = resp.results[0].donation_id;
-        const users = resp.results;
-
-        await this.deleteDonationUsers(donationId, users);
+            console.error("[ERROR] DonationService::deleteDonationUser - Failed to fetch user:", error);
+            throw new Error("Failed to fetch donation user for deletion");
+        });
+    
+        if (resp.results.length !== 1) {
+            throw new Error("Donation user not found for given id");
+        }
+    
+        const donationUser = resp.results[0];
+        
+        // 2. Check and unassign any trees assigned to this user
+        try {
+            // Get trees assigned to this user
+            const assignedTrees = await TreeRepository.getTrees(0, -1, [
+                { columnField: 'assigned_to', operatorValue: 'equals', value: donationUserId }
+            ]);
+            
+            if (assignedTrees.results.length > 0) {
+                console.log(`Unassigning ${assignedTrees.results.length} trees from user ${donationUserId}`);
+                
+                // Unassign trees by setting assigned_to to null
+                const treeIds = assignedTrees.results.map(tree => tree.id);
+                await TreeRepository.updateTrees(
+                    { assigned_to: null },
+                    { id: { [Op.in]: treeIds } }
+                );
+            }
+        } catch (error) {
+            console.error("[ERROR] DonationService::deleteDonationUser - Failed to unassign trees:", error);
+            throw new Error("Failed to unassign trees before user deletion");
+        }
+    
+        // 3. Delete the user using the correct repository method signature
+        try {
+            await DonationUserRepository.deleteDonationUsers({ 
+                id: donationUserId 
+            });
+            console.log(`Successfully deleted donation user ${donationUserId}`);
+        } catch (error) {
+            console.error("[ERROR] DonationService::deleteDonationUser - Failed to delete user:", error);
+            throw new Error("Failed to delete donation user");
+        }
     }
 
     /**

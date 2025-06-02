@@ -89,7 +89,7 @@ export class DonationUserRepository {
   }
 
   static async deleteDonationUsers(whereClause: WhereOptions<DonationUser>) {
-    await DonationUser.destroy({ where: whereClause });
+    await DonationUser.destroy({ where: whereClause }); 
   }
 
 }

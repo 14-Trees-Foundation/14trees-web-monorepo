@@ -7,6 +7,7 @@ import { DonationRepository} from "../repo/donationsRepo"
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
+import { DonationService } from "../facade/donationService";
 
 /*
     Model - Donation Users
@@ -60,5 +61,34 @@ export const addDonationUsersBulk = async (req: Request, res: Response) => {
   } catch (error:any) {
     console.error('Error processing CSV:', error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteDonationUser = async (req: Request, res: Response) => {
+  const donationUserId = Number(req.params.donation_user_id);
+  
+  if (isNaN(donationUserId)) {
+      return res.status(status.bad).json({
+          status: status.bad,
+          message: "Invalid donation user ID"
+      });
+  }
+
+  try {
+      await DonationService.deleteDonationUser(donationUserId);
+      
+      return res.status(status.success).json({
+          status: status.success,
+          message: "Donation user deleted successfully",
+          data: { id: donationUserId }
+      });
+  } catch (error: any) {
+      console.error("[ERROR] deleteDonationUser controller:", error.message);
+      
+      return res.status(status.error).json({
+          status: status.error,
+          message: error.message || "Failed to delete donation user",
+          error: process.env.NODE_ENV === 'development' ? error : undefined
+      });
   }
 };
