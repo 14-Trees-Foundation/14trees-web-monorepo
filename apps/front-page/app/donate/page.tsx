@@ -1562,263 +1562,11 @@ function Donation() {
                     <div className="space-y-4">
                       {showAdditionalInfo && (
                         <>
-                          <h2 className="mt-6 text-2xl font-semibold">Additional Information (optional)</h2>
                           <label className="mb-2 block text-lg font-light">
                             I&apos;d like my trees to be planted in the following name:
                           </label>
 
-                          {multipleNames && (
-                            <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
-                              <button
-                                type="button"
-                                className={`${nameEntryMethod === "manual"
-                                  ? "bg-green-500 shadow-sm text-white ring-green-700"
-                                  : "text-green-600 hover:bg-green-100"
-                                  } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                                onClick={() => setNameEntryMethod("manual")}
-                              >
-                                Add Manually
-                              </button>
-                              <button
-                                type="button"
-                                className={`${nameEntryMethod === "csv"
-                                  ? "bg-green-500 shadow-sm text-white ring-green-700"
-                                  : "text-green-600 hover:bg-green-100"
-                                  } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
-                                onClick={() => setNameEntryMethod("csv")}
-                              >
-                                Bulk Upload CSV
-                              </button>
-                            </div>
-                          )}
-
-                          {multipleNames && nameEntryMethod === "manual" ? (
-                            <div className="space-y-4">
-                              {errors["totalTrees"] && (
-                                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                                  <p className="text-red-700">{errors["totalTrees"]}</p>
-                                </div>
-                              )}
-                              {dedicatedNames.map((name, index) => (
-                                <UserDetailsForm
-                                  key={index}
-                                  data={name}
-                                  index={index}
-                                  onUpdate={(field, value) => handleNameChange(index, field, value)}
-                                  errors={errors}
-                                  maxTrees={donationTreeCount - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
-                                  canRemove={index > 0}
-                                  onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
-                                />
-                              ))}
-                              <button
-                                type="button"
-                                onClick={handleAddName}
-                                className={`flex items-center text-green-700 hover:text-green-900 mt-2 ${dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "" || dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount}
-                                title={dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'You have already assigned all the trees to users' : ''}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                                </svg>
-                                Add another name
-                              </button>
-                            </div>
-                          ) : multipleNames && nameEntryMethod === "csv" ? (
-                            <div className="space-y-4 border border-gray-200 rounded-md p-4">
-                              <div className="space-y-4">
-                                {errors["totalTrees"] && (
-                                  <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                                    <p className="text-red-700">{errors["totalTrees"]}</p>
-                                  </div>
-                                )}
-                                <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
-                                <p className="text-sm text-gray-600">
-                                  <button
-                                    type="button"
-                                    onClick={downloadSampleCsv}
-                                    className="text-blue-600 hover:underline"
-                                  >
-                                    Download sample CSV
-                                  </button>
-                                </p>
-
-                                <div className="flex gap-2">
-                                  <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    accept=".csv"
-                                    onChange={handleCsvUpload}
-                                    className="hidden"
-                                  />
-                                  <button
-                                    value={undefined}
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
-                                  >
-                                    Select CSV File
-                                  </button>
-                                  {csvFile && (
-                                    <span className="self-center text-sm">
-                                      {csvFile.name}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="pt-2">
-                                  <label className="block text-sm font-medium mb-1">
-                                    Upload Recipient Images
-                                  </label>
-                                  <input
-                                    type="file"
-                                    id="recipient-images"
-                                    multiple
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                  />
-                                  <label
-                                    htmlFor="recipient-images"
-                                    className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
-                                  >
-                                    <UploadIcon className="w-4 h-4" />
-                                    Select Images
-                                  </label>
-                                  <p className="mt-1 text-xs text-gray-500">
-                                    Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
-                                  </p>
-                                </div>
-                              </div>
-
-                              {csvErrors.length > 0 && (
-                                <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                                  <h4 className="font-medium text-red-700">CSV Errors:</h4>
-                                  {(() => {
-                                    // Count unique rows with errors
-                                    const rowErrorNumbers = new Set(
-                                      csvErrors
-                                        .map(error => {
-                                          const match = error.match(/Row (\d+):/);
-                                          return match ? match[1] : null;
-                                        })
-                                        .filter(Boolean)
-                                    );
-                                    if (rowErrorNumbers.size > 0) {
-                                      return (
-                                        <p className="text-sm text-red-600 mb-2">
-                                          Out of {csvPreview.length} rows, {rowErrorNumbers.size} row{rowErrorNumbers.size > 1 ? 's' : ''} have errors
-                                        </p>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
-                                  <ul className="list-disc pl-5 text-red-600">
-                                    {csvErrors.map((error, i) => (
-                                      <li key={i} className="text-sm">{error}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {csvPreview.length > 0 && (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium">
-                                    Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
-                                  </h4>
-                                  <div className="max-h-96 overflow-y-auto border rounded-md">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                      <thead className="bg-gray-50">
-                                        <tr>
-                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
-                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
-                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
-                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
-                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="bg-white divide-y divide-gray-200">
-                                        {paginatedData.map((recipient, i) => {
-                                          const hasImageName = recipient.image && typeof recipient.image === 'string' && recipient.image.trim() !== '';
-                                          const hasImageUploaded = hasImageName && recipient.image && recipient.image.startsWith('blob:');
-                                          const hasErrors = Array.isArray(recipient._errors) && recipient._errors.length > 0;
-                                          // For image column
-                                          let imageCell;
-                                          if (hasImageName) {
-                                            if (hasImageUploaded) {
-                                              imageCell = (
-                                                <img
-                                                  src={recipient.image as string}
-                                                  className="h-10 w-10 rounded-full object-cover"
-                                                  alt={`${recipient.recipient_name}'s profile`}
-                                                />
-                                              );
-                                            } else {
-                                              imageCell = <span className="text-sm text-gray-500">No image uploaded</span>;
-                                            }
-                                          } else {
-                                            imageCell = <span className="text-sm text-gray-500">Image not provided</span>;
-                                          }
-                                          // For valid column
-                                          let validCell;
-                                          if (hasErrors) {
-                                            validCell = (
-                                              <span
-                                                className="text-red-600 cursor-help"
-                                                title={Array.isArray(recipient._errors) ? recipient._errors.join(', ') : ''}
-                                              >
-                                                &#10006;
-                                              </span>
-                                            );
-                                          } else if (hasImageName) {
-                                            validCell = hasImageUploaded ? (
-                                              <span className="text-green-600">✓</span>
-                                            ) : (
-                                              <span className="text-red-600">✕</span>
-                                            );
-                                          } else {
-                                            validCell = <span className="text-green-600">✓</span>;
-                                          }
-                                          return (
-                                            <tr key={i} className={hasErrors ? "bg-red-50" : ""}>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name || <span className="italic text-gray-400">[Missing]</span>}</td>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
-                                              <td className="px-4 py-2 whitespace-nowrap">{imageCell}</td>
-                                              <td className="px-4 py-2 whitespace-nowrap">{validCell}</td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                  <div className="flex justify-between items-center mt-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                                      disabled={currentPage === 0}
-                                      className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                                    >
-                                      Previous
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => setCurrentPage(p =>
-                                        Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
-                                      )}
-                                      disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
-                                      className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
-                                    >
-                                      Next
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
+                          {!multipleNames && (
                             <div className="space-y-4">
                               <input
                                 type="text"
@@ -1909,6 +1657,260 @@ function Donation() {
                           </div>
                         </>
                       )}
+
+
+                      {multipleNames && (
+                        <div className="inline-flex p-1 space-x-1 rounded-xl w-full sm:w-auto border-2 border-gray-300">
+                          <button
+                            type="button"
+                            className={`${nameEntryMethod === "manual"
+                              ? "bg-green-500 shadow-sm text-white ring-green-700"
+                              : "text-green-600 hover:bg-green-100"
+                              } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                            onClick={() => setNameEntryMethod("manual")}
+                          >
+                            Manual
+                          </button>
+                          <button
+                            type="button"
+                            className={`${nameEntryMethod === "csv"
+                              ? "bg-green-500 shadow-sm text-white ring-green-700"
+                              : "text-green-600 hover:bg-green-100"
+                              } flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-lg flex-1 sm:flex-none transition-all duration-200`}
+                            onClick={() => setNameEntryMethod("csv")}
+                          >
+                            Bulk Upload CSV
+                          </button>
+                        </div>
+                      )}
+
+                      {multipleNames && nameEntryMethod === "manual" ? (
+                        <div className="space-y-4">
+                          {errors["totalTrees"] && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                              <p className="text-red-700">{errors["totalTrees"]}</p>
+                            </div>
+                          )}
+                          {dedicatedNames.map((name, index) => (
+                            <UserDetailsForm
+                              key={index}
+                              data={name}
+                              index={index}
+                              onUpdate={(field, value) => handleNameChange(index, field, value)}
+                              errors={errors}
+                              maxTrees={donationTreeCount - dedicatedNames.slice(0, -1).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0)}
+                              canRemove={index > 0}
+                              onRemove={index > 0 ? () => handleRemoveName(index) : undefined}
+                            />
+                          ))}
+                          <button
+                            type="button"
+                            onClick={handleAddName}
+                            className={`flex items-center text-green-700 hover:text-green-900 mt-2 ${dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={dedicatedNames[dedicatedNames.length - 1].recipient_name.trim() === "" || dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount}
+                            title={dedicatedNames.reduce((sum, user) => sum + (user.trees_count || 1), 0) >= donationTreeCount ? 'You have already assigned all the trees to users' : ''}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                            </svg>
+                            Add another name
+                          </button>
+                        </div>
+                      ) : multipleNames && nameEntryMethod === "csv" && (
+                        <div className="space-y-4 border border-gray-200 rounded-md p-4">
+                          <div className="space-y-4">
+                            {errors["totalTrees"] && (
+                              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                                <p className="text-red-700">{errors["totalTrees"]}</p>
+                              </div>
+                            )}
+                            <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
+                            <p className="text-sm text-gray-600">
+                              <button
+                                type="button"
+                                onClick={downloadSampleCsv}
+                                className="text-blue-600 hover:underline"
+                              >
+                                Download sample CSV
+                              </button>
+                            </p>
+
+                            <div className="flex gap-2">
+                              <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept=".csv"
+                                onChange={handleCsvUpload}
+                                className="hidden"
+                              />
+                              <button
+                                value={undefined}
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md"
+                              >
+                                Select CSV File
+                              </button>
+                              {csvFile && (
+                                <span className="self-center text-sm">
+                                  {csvFile.name}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="pt-2">
+                              <label className="block text-sm font-medium mb-1">
+                                Upload Recipient Images
+                              </label>
+                              <input
+                                type="file"
+                                id="recipient-images"
+                                multiple
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="recipient-images"
+                                className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md cursor-pointer"
+                              >
+                                <UploadIcon className="w-4 h-4" />
+                                Select Images
+                              </label>
+                              <p className="mt-1 text-xs text-gray-500">
+                                Upload images matching CSV names (e.g. &quot;john_doe.jpg&quot;)
+                              </p>
+                            </div>
+                          </div>
+
+                          {csvErrors.length > 0 && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                              <h4 className="font-medium text-red-700">CSV Errors:</h4>
+                              {(() => {
+                                // Count unique rows with errors
+                                const rowErrorNumbers = new Set(
+                                  csvErrors
+                                    .map(error => {
+                                      const match = error.match(/Row (\d+):/);
+                                      return match ? match[1] : null;
+                                    })
+                                    .filter(Boolean)
+                                );
+                                if (rowErrorNumbers.size > 0) {
+                                  return (
+                                    <p className="text-sm text-red-600 mb-2">
+                                      Out of {csvPreview.length} rows, {rowErrorNumbers.size} row{rowErrorNumbers.size > 1 ? 's' : ''} have errors
+                                    </p>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              <ul className="list-disc pl-5 text-red-600">
+                                {csvErrors.map((error, i) => (
+                                  <li key={i} className="text-sm">{error}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {csvPreview.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="font-medium">
+                                Preview ({csvPreview.length} recipients) - Page {currentPage + 1} of {Math.ceil(csvPreview.length / itemsPerPage)}
+                              </h4>
+                              <div className="max-h-96 overflow-y-auto border rounded-md">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                  <thead className="bg-gray-50">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Name</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Email</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee Phone</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trees</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white divide-y divide-gray-200">
+                                    {paginatedData.map((recipient, i) => {
+                                      const hasImageName = recipient.image && typeof recipient.image === 'string' && recipient.image.trim() !== '';
+                                      const hasImageUploaded = hasImageName && recipient.image && recipient.image.startsWith('blob:');
+                                      const hasErrors = Array.isArray(recipient._errors) && recipient._errors.length > 0;
+                                      // For image column
+                                      let imageCell;
+                                      if (hasImageName) {
+                                        if (hasImageUploaded) {
+                                          imageCell = (
+                                            <img
+                                              src={recipient.image as string}
+                                              className="h-10 w-10 rounded-full object-cover"
+                                              alt={`${recipient.recipient_name}'s profile`}
+                                            />
+                                          );
+                                        } else {
+                                          imageCell = <span className="text-sm text-gray-500">No image uploaded</span>;
+                                        }
+                                      } else {
+                                        imageCell = <span className="text-sm text-gray-500">Image not provided</span>;
+                                      }
+                                      // For valid column
+                                      let validCell;
+                                      if (hasErrors) {
+                                        validCell = (
+                                          <span
+                                            className="text-red-600 cursor-help"
+                                            title={Array.isArray(recipient._errors) ? recipient._errors.join(', ') : ''}
+                                          >
+                                            &#10006;
+                                          </span>
+                                        );
+                                      } else if (hasImageName) {
+                                        validCell = hasImageUploaded ? (
+                                          <span className="text-green-600">✓</span>
+                                        ) : (
+                                          <span className="text-red-600">✕</span>
+                                        );
+                                      } else {
+                                        validCell = <span className="text-green-600">✓</span>;
+                                      }
+                                      return (
+                                        <tr key={i} className={hasErrors ? "bg-red-50" : ""}>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{recipient.recipient_name || <span className="italic text-gray-400">[Missing]</span>}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_email || '-'}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.recipient_phone || '-'}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{recipient.trees_count || '1'}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap">{imageCell}</td>
+                                          <td className="px-4 py-2 whitespace-nowrap">{validCell}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <div className="flex justify-between items-center mt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                  disabled={currentPage === 0}
+                                  className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                                >
+                                  Previous
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setCurrentPage(p =>
+                                    Math.min(p + 1, Math.ceil(csvPreview.length / itemsPerPage) - 1)
+                                  )}
+                                  disabled={(currentPage + 1) * itemsPerPage >= csvPreview.length}
+                                  className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 text-sm"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1953,13 +1955,6 @@ function Donation() {
 
                           if (mainFormValid) {
                             setCurrentStep(2);
-                            // Use setTimeout to ensure the DOM has updated with the new step
-                            setTimeout(() => {
-                              const orderSummary = document.getElementById('order-summary');
-                              if (orderSummary) {
-                                orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              }
-                            }, 100);
                           } else {
                             alert("Please fill all required fields");
                           }
