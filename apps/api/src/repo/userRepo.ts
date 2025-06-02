@@ -80,6 +80,13 @@ export class UserRepository {
         return updatedUser;
     }
 
+    public static async updateUsers(fields: Partial<UserAttributes>, whereClause: WhereOptions<User>): Promise<number> {
+        const [numberOfAffectedRows] = await User.update(fields, {
+            where: whereClause
+        });
+        return numberOfAffectedRows;
+    }
+
     public static async getUsers(offset: number, limit: number, filters: FilterItem[]): Promise<PaginatedResponse<User>> {
         let whereConditions: string = "";
         let replacements: any = {}

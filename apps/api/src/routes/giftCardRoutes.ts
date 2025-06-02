@@ -216,12 +216,91 @@ routes.post('/requests/get', giftCards.getGiftCardRequests);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.post('/requests', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name: 'csv_file', maxCount: 1}]), giftCards.createGiftCardRequest);
+routes.post('/requests', uploadFiles.fields([{ name: 'logo', maxCount: 1 }, { name: 'csv_file', maxCount: 1 }]), giftCards.createGiftCardRequest);
 
 
 routes.post('/requests/payment-success', giftCards.paymentSuccessForGiftRequest);
 routes.post('/requests/auto-process', giftCards.autoProcessGiftCardRequest);
 routes.post('/requests/plot-trees-cnt/get', giftCards.getTreesCountForAutoReserveTrees);
+
+/**
+ * @swagger
+ * /gift-cards/{id}/process:
+ *   post:
+ *     summary: Mark gcr as processed
+ *     description: Updates the gcr record to mark it as processed by a backoffice user
+ *     tags:
+ *       - Gift card Requests
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the request to process
+ *         schema:
+ *           type: integer
+ *           example: 123
+ *       - in: body
+ *         name: body
+ *         description: Backoffice user processing the request
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - userId
+ *           properties:
+ *             userId:
+ *               type: integer
+ *               description: ID of the backoffice user processing the request
+ *               example: 45
+ *     responses:
+ *       200:
+ *         description: Request successfully marked as processed
+ *         schema:
+ *           type: object
+ *           properties:
+ *             success:
+ *               type: boolean
+ *               example: true
+ *             processed_by:
+ *               type: integer
+ *               example: 45
+ *       400:
+ *         description: Bad request - missing or invalid parameters
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "User ID is required"
+ *       404:
+ *         description: Gift request not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Gift request not found"
+ *       409:
+ *         description: Conflict - Request already processed
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Already processed by user 32"
+ *             processed_by:
+ *               type: integer
+ *               example: 32
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Failed to process Request"
+ */
+routes.post('/:id/process', giftCards.processGiftCard);
 
 /**
  * @swagger
@@ -390,7 +469,7 @@ routes.post('/requests/plot-trees-cnt/get', giftCards.getTreesCountForAutoReserv
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.put('/requests/:id', uploadFiles.fields([{name: 'logo', maxCount: 1 }, {name: 'csv_file', maxCount: 1}]), giftCards.updateGiftCardRequest);
+routes.put('/requests/:id', uploadFiles.fields([{ name: 'logo', maxCount: 1 }, { name: 'csv_file', maxCount: 1 }]), giftCards.updateGiftCardRequest);
 
 
 routes.patch('/requests/update', giftCards.patchGiftCardRequest);

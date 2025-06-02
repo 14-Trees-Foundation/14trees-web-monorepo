@@ -186,6 +186,9 @@ export const assignTreesToUser = async (req: Request, res: Response) => {
       assigned_at: new Date(),
       sponsored_by_user: fields.sponsored_by_user || null,
       sponsored_by_group: fields.sponsored_by_group || null,
+      sponsored_at: (fields.sponsored_by_user || fields.sponsored_by_group) 
+      ? new Date() 
+      : null, // Only update if sponsorship exists
       gifted_by: fields.gifted_by || null,
       planted_by: fields.planted_by || null,
       user_tree_image: userImageUrl,

@@ -4,7 +4,7 @@ import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository } from "../repo/userRepo";
-import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, GiftMessages, SponsorshipType } from "../models/gift_card_request";
+import { GiftCardRequestAttributes, GiftCardRequestCreationAttributes, GiftCardRequestStatus, GiftCardRequestValidationError, SponsorshipType } from "../models/gift_card_request";
 import TreeRepository from "../repo/treeRepo";
 import { createSlide, updateSlide } from "./helper/slides";
 import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
@@ -34,6 +34,7 @@ import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
+import { ReferralsRepository } from "../repo/referralsRepo";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -113,6 +114,8 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        rfr,
+        c_key,
     } = req.body;
 
     if (!userId || !noOfCards) {
@@ -166,6 +169,15 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         }
     }
 
+    let rfr_id: number | null = null;
+    if (rfr || c_key) {
+        const references = await ReferralsRepository.getReferrals({
+            rfr: rfr ? rfr : { [Op.is]: null },
+            c_key: c_key ? c_key : { [Op.is]: null }
+        });
+        if (references.length === 1) rfr_id = references[0].id;
+    }
+
     const request: GiftCardRequestCreationAttributes = {
         request_id: requestId,
         user_id: userId,
@@ -195,6 +207,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         sponsorship_type: sponsorshipType,
         donation_date: donationDate,
         amount_received: amountReceived,
+        rfr_id: rfr_id,
     }
 
     try {
@@ -246,7 +259,6 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         })
     }
 }
-
 
 export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
 
@@ -509,7 +521,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.group_id !== originalRequest.group_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, mapped_to_group: updatedGiftCardRequest.group_id, sponsored_by_group: updatedGiftCardRequest.group_id, sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.user_id !== originalRequest.user_id) {
@@ -517,7 +529,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.sponsor_id !== originalRequest.sponsor_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id }
+            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id,  sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.visit_id !== originalRequest.visit_id) {
@@ -540,6 +552,63 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::updateGiftCardRequest", error);
         res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+    }
+};
+
+export const processGiftCard = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    if (!id || isNaN(Number(id))) {
+        return res.status(400).json({ message: 'Invalid gift card request ID' });
+    }
+
+    try {
+        // Check if gift card exists
+        const giftRequestId = parseInt(id);
+        const giftCardRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
+
+        if (!giftCardRequest) {
+            return res.status(404).json({ message: 'Gift card not found' });
+        }
+
+        if (giftCardRequest.processed_by) {
+            return res.status(409).json({
+                message: 'Already processed by another user',
+                processed_by: giftCardRequest.processed_by
+            });
+        }
+
+        const updated = await GiftCardsRepository.updateGiftCardRequests(
+            {
+                processed_by: userId,
+                updated_at: new Date()
+            },
+            { id, processed_by: { [Op.is]: null } }
+        );
+
+        if (!updated) {
+            return res.status(409).json({ message: 'Gift card already being processed by another user' });
+        }
+
+        // Fetch updated gift card
+        const updatedGiftCard = await GiftCardsService.getGiftCardsRequest(giftCardRequest.id);
+
+        return res.status(200).json({
+            success: true,
+            giftCard: updatedGiftCard
+        });
+
+    } catch (error) {
+        console.error("Error processing gift card:", error);
+        return res.status(500).json({
+            message: 'Failed to process gift card',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 };
 
@@ -598,6 +667,7 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,
@@ -1311,6 +1381,7 @@ export const unBookTrees = async (req: Request, res: Response) => {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 gifted_to: null,
                 gifted_by: null,
                 gifted_by_name: null,

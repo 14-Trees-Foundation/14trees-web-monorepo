@@ -1,4 +1,5 @@
-import { LandCategory } from "../models/common";
+import { LandCategory, SortOrder } from "../models/common";
+import { FilterItem, PaginatedResponse } from "../models/pagination"
 import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_DashboardsSent, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
@@ -17,10 +18,13 @@ import { GoogleDoc } from "../services/google";
 import { uploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { GoogleSpreadsheet } from "../services/google";
 import RazorpayService from "../services/razorpay/razorpay";
+import { Tree, TreeAttributes } from "../models/tree";
 import { PlotRepository } from "../repo/plotRepo";
 import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
 import { TemplateType } from "../models/email_template";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
+import { ReferralsRepository } from "../repo/referralsRepo";
+import { CampaignsRepository } from "../repo/campaignsRepo";
 
 interface DonationUserRequest {
     recipient_name: string
@@ -51,6 +55,8 @@ interface CreateDonationRequest {
     donation_method?: 'trees' | 'amount';
     status?: DonationStatus,
     tags?: string[]
+    rfr?: string | null;
+    c_key?: string | null;
 }
 
 export class DonationService {
@@ -84,6 +90,15 @@ export class DonationService {
             throw new Error("Failed to save sponsor details in the system!");
         });
 
+        let rfr_id: number | null = null;
+        if (data.rfr || data.c_key) {
+            const references = await ReferralsRepository.getReferrals({
+                rfr: data.rfr ? data.rfr : { [Op.is]: null },
+                c_key: data.c_key ? data.c_key : { [Op.is]: null }
+            });
+            if (references.length === 1) rfr_id = references[0].id;
+        }
+
         const request: DonationCreationAttributes = {
             user_id: sponsorUser.id,
             trees_count: trees_count || 0,
@@ -100,6 +115,7 @@ export class DonationService {
             comments: comments || null,
             status: status || DonationStatus_UserSubmitted,
             tags: tags || null,
+            rfr_id: rfr_id,
         };
 
         const donation = await DonationRepository.createdDonation(
@@ -264,6 +280,7 @@ export class DonationService {
             mapped_to_group: groupId,
             sponsored_by_user: userId,
             sponsored_by_group: groupId,
+            sponsored_at: new Date(),
             donation_id,
             mapped_at: new Date(),
             updated_at: new Date(),
@@ -372,6 +389,7 @@ export class DonationService {
                 mapped_at: null,
                 sponsored_by_user: null,
                 sponsored_by_group: null,
+                sponsored_at: new Date(),
                 donation_id: null,
                 updated_at: new Date(),
             }
@@ -387,12 +405,49 @@ export class DonationService {
             mapped_at: null,
             sponsored_by_user: null,
             sponsored_by_group: null,
+            sponsored_at: new Date(),
             donation_id: null,
             updated_at: new Date(),
         }
 
         await TreeRepository.updateTrees(updateConfig, { donation_id: donationId });
     }
+
+    public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
+
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: donation.user_id,
+            donation_id: donation.id,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: { [Op.in]: treeIds } })
+    }
+
+    public static async unmapTreesFromDonation(donation: Donation, treeIds: number[]) {
+        const updateData: Partial<TreeAttributes> = {
+            sponsored_by_user: null,
+            donation_id: null,
+            updated_at: new Date(),
+        }
+
+        await TreeRepository.updateTrees(updateData, { id: { [Op.in]: treeIds } })
+    }
+
+    public static async getMappedTrees(donationId: number, offset: number = 0, limit: number = 20, filters: FilterItem[] = [], orderBy: SortOrder[] = []): Promise<PaginatedResponse<Tree>> {
+        // Inject a required filter for donation_id
+        const donationFilter: FilterItem = {
+            columnField: "donation_id",
+            operatorValue: "equals",
+            value: donationId,
+        };
+
+        const finalFilters = [donationFilter, ...filters];
+
+        return await TreeRepository.getTrees(offset, limit, finalFilters, orderBy);
+    }
+
+
 
     /**
      * Tree Assignment 
@@ -821,6 +876,29 @@ export class DonationService {
                 panNumber = payment?.pan_number || "";
             }
 
+            let referredBy = "";
+            let campaignName = "";
+            if (donation.rfr_id) {
+                const referrals = await ReferralsRepository.getReferrals({ id: donation.rfr_id });
+                if (referrals.length > 0) {
+                    const referral = referrals[0];
+
+                    if (referral.c_key) {
+                        const campaigns = await CampaignsRepository.getCampaigns({ c_key: referral.c_key });
+                        if (campaigns.length > 0) {
+                            campaignName = campaigns[0].name;
+                        }
+                    }
+
+                    if (referral.rfr) {
+                        const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }]);
+                        if (usersResp.results.length > 0) {
+                            referredBy = usersResp.results[0].name;
+                        }
+                    }
+                }
+            }
+
             const date = new Date();
             const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
             const donationReceiptId = FY + "/" + donation.id;
@@ -854,6 +932,8 @@ export class DonationService {
                     amount: formatNumber(donation.amount_donated || 0),
                     date: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                     treesCount: donation.trees_count,
+                    referredBy: referredBy,
+                    campaignName: campaignName,
                     donationType: donation.donation_type === 'donate'
                         ? donation.trees_count
                             ? 'trees'

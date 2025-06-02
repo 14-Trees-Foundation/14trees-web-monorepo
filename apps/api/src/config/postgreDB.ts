@@ -44,6 +44,8 @@ import { ChatMessage } from "../models/chat_message";
 import { MailSub } from "../models/mail_sub";
 import { EventMessage } from "../models/event_message";
 import { AutoPrsReqPlot } from "../models/auto_prs_req_plot";
+import { Referral } from "../models/referral";
+import { Campaign } from "../models/campaign";
 
 
 class Database {
@@ -123,6 +125,8 @@ class Database {
         ChatMessage,
         MailSub,
         AutoPrsReqPlot,
+        Referral,
+        Campaign,
       ]
     });
 
