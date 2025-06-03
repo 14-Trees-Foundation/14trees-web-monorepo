@@ -1664,6 +1664,7 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
         plant_type: plantType,
         user_name: userName,
         gifted_by: giftedBy,
+        assignee,
         primary_message: primaryMessage,
         logo,
         logo_message: logoMessage,
@@ -1681,10 +1682,12 @@ export const generateGiftCardSlide = async (req: Request, res: Response) => {
     let message = primaryMessage;
     if (userName) message.replace("{recipient}", userName);
     if (giftedBy) message.replace("{giftedBy}", giftedBy);
+    if (assignee) message.replace("{assignee}", assignee);
     const record = {
         sapling: saplingId ? saplingId : '00000',
         message: message,
         logo: logo,
+        assignee: assignee,
         logo_message: logoMessage
     }
 
