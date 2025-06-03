@@ -4,8 +4,7 @@
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import labels from "~/assets/labels.json";
-import { useState, useEffect, useRef, Suspense } from "react";
-import Script from 'next/script';
+import { useState, useEffect, Suspense } from "react";
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import { getUniqueRequestId } from "~/utils";
@@ -160,8 +159,8 @@ function GiftTrees() {
   const getOccasionQuestion = () => {
     const treeCount = parseInt(formData.numberOfTrees) || 0;
     return treeCount === 1
-      ? "Are you gifting this tree for an occasion?"
-      : "Are you gifting these trees for an occasion?";
+      ? "Is there a special occasion you're celebrating with this tree?"
+      : "Is there a special occasion you're celebrating with these trees?";
   };
 
   // Animation variants (existing unchanged)
@@ -1043,8 +1042,8 @@ function GiftTrees() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 m-5 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <h3 className="text-xl font-bold text-green-600 mb-4">Gift Trees Request Successful!</h3>
-          <p className="mb-2">Your gift trees request has been submitted successfully.</p>
+          <h3 className="text-xl font-bold text-green-600 mb-4">Your memory is being planted!</h3>
+          <p className="mb-2">Your request has been submitted successfully. We're crafting your personalised tree card.</p>
           {giftRequestId && (
             <p className="mb-2">
               <strong>Gift Trees Request ID:</strong> {giftRequestId}
@@ -1173,58 +1172,86 @@ function GiftTrees() {
     <div className="overflow-hidden bg-white">
       <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
         <MotionDiv
-          className="container z-0 mx-auto my-10 overflow-hidden text-gray-800"
+          className="container z-0 mx-auto my-5 overflow-hidden text-gray-800"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
-            <div className="md:mx-12 my-10 object-center text-center md:my-10 md:w-4/5 md:text-left">
-              {referralDetails ? (
-                <div className="mt-4">
-                  {referralDetails.description ? (
-                    <>
-                      {referralDetails.name && (
-                        <h2 className="text-2xl font-semibold text-green-800">
-                          {referralDetails.name}
-                        </h2>
-                      )}
-                      <h6 className="mt-2 text-grey-600 mt-6 text-sm font-light md:text-lg whitespace-pre-line">
-                        {referralDetails.description}
-                      </h6>
-                    </>
-                  ) : (
-                    <>
-                      <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                        By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
-                      </h6>
-                      <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                        Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
-                      </h6>
-                    </>
-                  )}
-                  {referralDetails.referred_by && (
-                    <p className="mt-2 text-sm md:text-lg text-gray-900">
-                      Referred by: {referralDetails.referred_by}
-                    </p>
-                  )}
+            <div className="md:mx-12 my-5 object-center text-center md:my-5 md:w-4/5 md:text-left">
+            <div className="mt-5 space-y-6">
+                <h2 className="text-4xl font-bold text-green-800">We don&apos;t just plant trees, we rebuild forests.</h2>
+
+                <p className="text-gray-700 leading-relaxed">
+                  By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-green-700">Through our reforestation efforts we:</h3>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <ul className="space-y-1 text-gray-700 text-left">
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Plant native tree species</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Use only organic composts and no chemical pesticides</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Employ local rural population for all on-ground tasks</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Incubate microventures</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Leverage urban capital to scale-up</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-green-700">Our Impact till date:</h3>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <ul className="space-y-1 text-gray-700 text-left">
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>1400+ acres area under reforestation</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>2 lacs+ trees planted</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>200+ local rural people employed</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Biodiversity impact: 400+ species (Flora & Fauna)</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>13 of 17 SDGs mapped</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                    By donating towards the plantation of native trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes, currently home only to fire-prone grass, suffer from severe topsoil erosion and depleted groundwater. Through our reforestation efforts—planting native species, digging ponds to store rainwater, and creating trenches for groundwater recharge—we&apos;re not just bringing life back to the land, we&apos;re rebuilding entire ecosystems.
-                  </h6>
-                  <h6 className="text-grey-600 mt-6 text-sm font-light md:text-lg">
-                    Your support goes beyond planting trees. Each donation helps generate sustainable livelihoods for local tribal communities who are at the heart of this transformation. By funding 14 trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend on the land the most.
-                  </h6>
-                </>
-              )}
-              <h2 className="mt-12 leading-12 text-4xl font-bold tracking-tight text-gray-800 shadow-black drop-shadow-2xl md:text-5xl">
-                Support Our Reforestation
-              </h2>
-              <h3 className="text-grey-600 mt-6 text-sm font-light md:text-xl">
-                {labels.site.description}
-              </h3>
+
+                <p className="text-gray-700 leading-relaxed">
+                  By funding 14Trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend most on the land.
+                </p>
+              </div>
             </div>
           </div>
         </MotionDiv>
@@ -1245,7 +1272,7 @@ function GiftTrees() {
                       {/* Label + Input */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
                         <label className="text-base sm:text-lg font-light">
-                          Number of trees you would like to gift *
+                          How many trees would you like to sponsor?*
                         </label>
                         <input
                           type="number"
@@ -1379,8 +1406,8 @@ function GiftTrees() {
                     {/* Gifted By */}
                     <div>
                       <label className="block text-base sm:text-lg font-light mb-2">
-                        Gifted by
-                        <Tooltip title="The name(s) of the person(s) gifting.">
+                        Best wishes from 
+                        <Tooltip title="The name(s) of the person(s) gifting." className="ml-1">
                           <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
                         </Tooltip>
                       </label>
@@ -1388,7 +1415,7 @@ function GiftTrees() {
                         type="text"
                         id="plantedBy"
                         name="plantedBy"
-                        placeholder="Gifted By"
+                        placeholder="Best wishes from"
                         value={plantedBy || ""}
                         onChange={(e) => setPlantedBy(e.target.value)}
                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
@@ -1431,7 +1458,7 @@ function GiftTrees() {
                     <div className="grid grid-cols-1 gap-4">
                       <div className="flex items-center flex-wrap">
                         <label className="w-48 text-gray-700">
-                          Gifted by*:
+                          Sponsored by*:
                           <Tooltip title="The donor who's paying for the trees.">
                             <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
                           </Tooltip>
@@ -1523,6 +1550,9 @@ function GiftTrees() {
                             <p className="mt-1 text-sm text-red-600">{errors.panNumber}</p>
                           )}
                         </div>
+                        <p className="mt-2 text-sm text-gray-600">
+                          At present we can accept donations only from Indian residents. PAN number is required to know the donor&apos;s identity.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1550,6 +1580,9 @@ function GiftTrees() {
                           if (treesAssigned !== 0) alert(`You have only assigned ${treesAssigned} out of ${treesCount} trees. Please assign all the trees to recipients!`);
                           else alert(`You have not assigned any tree out of ${treesCount} ${treesCount === 1 ? "tree" : "trees"}. Please assign all the trees to recipients!`);
                           return;
+                        } else if (treesAssigned > treesCount) {
+                          alert(`You have opted for sponsor ${treesCount}, but you have assigned ${treesAssigned}!`);
+                          return;
                         }
 
                         if (mainFormValid) {
@@ -1565,7 +1598,7 @@ function GiftTrees() {
 
                       disabled={hasDuplicateNames || hasAssigneeError}
                     >
-                      Next
+                      Proceed to pay
                     </button>
                   </div>
                 </form>

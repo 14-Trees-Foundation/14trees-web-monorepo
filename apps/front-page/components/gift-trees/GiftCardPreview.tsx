@@ -141,7 +141,7 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
 
     return (
         <div className="space-y-6">
-            <h3 className="text-2xl font-semibold">Help us craft a beautiful gift card for you!</h3>
+            <h3 className="text-2xl font-semibold">Help us craft a beautiful message for your green tribute!</h3>
 
             {/* Preview Section */}
             <div className="border min-h-[250px] border-gray-200 rounded-md w-full h-auto flex items-center justify-center">
@@ -172,7 +172,7 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
             {/* Message Inputs Section */}
             <div className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium mb-1">Gift Card Message</label>
+                    <label className="block text-sm font-medium mb-1">Your message</label>
                     <textarea
                         className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
                         rows={windowWidth > 640 ? 5 : 3}

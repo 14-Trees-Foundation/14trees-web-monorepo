@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Recipient from "components/Recipient"
 
 interface DedicatedName {
@@ -30,9 +30,16 @@ const Recipients: React.FC<RecipientsProps> = ({
     setHasAssigneeError,
 }) => {
 
+    const [treesCount, setTreesCount] = useState(0);
+
+    useEffect(() => {
+        const cnt = dedicatedNames.filter(user => user.recipient_name.trim()).map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0);
+        setTreesCount(cnt);
+    }, [dedicatedNames])
+
     return (
         <div className="space-y-6">
-            <h3 className="text-2xl font-semibold">Gift Recipients</h3>
+            <h3 className="text-2xl font-semibold">Who would you like to honour with this living tribute?</h3>
 
             {errors["totalTrees"] && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
@@ -85,10 +92,18 @@ const Recipients: React.FC<RecipientsProps> = ({
                 Add another recipient
             </button>
 
-            {Number(formData.numberOfTrees) != dedicatedNames.map(user => user.trees_count || 1).reduce((prev, count) => prev + count, 0) && (
+            {treesCount != 0 && Number(formData.numberOfTrees) > treesCount && (
                 <div className="pt-6">
                     <p className="text-red-600">
-                        Only gifting {Number(dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0))} { Number(dedicatedNames.map(user => user.trees_count).reduce((a, b) => a + b, 0)) == 1 ? "tree" : "trees"} out of {formData.numberOfTrees} trees.
+                        Only gifting {treesCount} {treesCount == 1 ? "tree" : "trees"} out of {formData.numberOfTrees} trees.
+                    </p>
+                </div>
+            )}
+
+            {treesCount > Number(formData.numberOfTrees) && (
+                <div className="pt-6">
+                    <p className="text-red-600">
+                        You cannot gift more trees then originally requested!
                     </p>
                 </div>
             )}
