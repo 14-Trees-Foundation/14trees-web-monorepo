@@ -1,6 +1,9 @@
 import { WhereOptions, QueryTypes } from "sequelize";
 import { sequelize } from '../config/postgreDB';
 import { Campaign, CampaignAttributes } from "../models/campaign";
+import { FilterItem, PaginatedResponse } from "../models/pagination";
+import { SortOrder } from "../models/common";
+import { getSqlQueryExpression } from "../controllers/helper/filters";
 
 interface CampaignSummaryResult {
     donationCount: number;
@@ -45,12 +48,81 @@ interface ReferralDashboardResult {
 
 export class CampaignsRepository {
 
-    public static async getCampaigns(whereClause: WhereOptions<CampaignAttributes>): Promise<Campaign[]> {
-        const campaigns = await Campaign.findAll({
-            where: whereClause,
+    public static async getCampaigns(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Campaign>> {
+        try {
+            let whereConditions: string = "";
+            let replacements: any = {};
+
+            // Build WHERE conditions from filters
+            if (filters && filters.length > 0) {
+                filters.forEach(filter => {
+                    const { condition, replacement } = getSqlQueryExpression(
+                        `c.${filter.columnField}`,
+                        filter.operatorValue,
+                        filter.columnField,
+                        filter.value
+                    );
+                    whereConditions = whereConditions + " " + condition + " AND";
+                    replacements = { ...replacements, ...replacement };
+                });
+                whereConditions = whereConditions.substring(0, whereConditions.length - 3);
+            }
+
+            // Build ORDER BY clause
+            const sortOrderQuery = orderBy && orderBy.length > 0
+                ? orderBy.map(order => `c.${order.column} ${order.order}`).join(', ')
+                : 'c.id DESC';
+
+            // Main query to get paginated results
+            const getQuery = `
+                SELECT c.*
+                FROM "14trees_2".campaigns c
+                WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
+                ORDER BY ${sortOrderQuery}
+                ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
+            `;
+
+            // Count query for pagination
+            const countQuery = `
+                SELECT COUNT(*) 
+                FROM "14trees_2".campaigns c
+                WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
+            `;
+
+            // Execute both queries in parallel
+            const [campaigns, campaignsCount] = await Promise.all([
+                sequelize.query(getQuery, {
+                    replacements: replacements,
+                    type: QueryTypes.SELECT,
+                }),
+                sequelize.query(countQuery, {
+                    replacements: replacements,
+                    type: QueryTypes.SELECT
+                })
+            ]);
+
+            return {
+                offset: offset,
+                total: parseInt((campaignsCount[0] as any).count),
+                results: campaigns as Campaign[]
+            };
+        } catch (error) {
+            console.error('[ERROR] CampaignsRepository::getCampaigns:', error);
+            throw new Error('Failed to fetch campaigns');
+        }
+    }
+
+    public static async updateCampaign(campaignId: number, updateData: Partial<CampaignAttributes>): Promise<Campaign> {
+        const [numRowsUpdated, updatedCampaigns] = await Campaign.update(updateData, {
+            where: { id: campaignId },
+            returning: true, // Returns the updated record(s)
         });
 
-        return campaigns;
+        if (numRowsUpdated === 0) {
+            throw new Error('Campaign not found or no changes made');
+        }
+
+        return updatedCampaigns[0];
     }
 
     public static async createCampaign(name: string, c_key: string, description?: string): Promise<Campaign> {
@@ -62,7 +134,7 @@ export class CampaignsRepository {
 
         return campaign;
     }
-   
+
     public static async getCampaignSummary(c_key: string): Promise<CampaignSummaryResult> {
         const query = `
             WITH valid_gift_cards AS (
@@ -91,15 +163,15 @@ export class CampaignsRepository {
             LEFT JOIN valid_gift_cards vgc ON r.id = vgc.rfr_id
             WHERE r.c_key = :c_key
         `;
-    
+
         const [result] = await sequelize.query<CampaignSummaryResult>(query, {
             replacements: { c_key },
             type: QueryTypes.SELECT
         });
-    
+
         return result;
     }
-        
+
     public static async getCampaignChampion(c_key: string): Promise<CampaignChampionResult[] | null> {
         const query = `
             WITH valid_gift_cards AS (
@@ -144,12 +216,12 @@ export class CampaignsRepository {
             LEFT JOIN "14trees".users u ON u.rfr = dgs.rfr_code
             ORDER BY (dgs.donation_amount + dgs.gift_card_amount) DESC
         `;
-    
+
         const results = await sequelize.query<CampaignChampionResult>(query, {
             replacements: { c_key },
             type: QueryTypes.SELECT
         });
-    
+
         return results.length > 0 ? results : null;
     }
 
@@ -161,14 +233,14 @@ export class CampaignsRepository {
                 COUNT(*) AS "totalReferrals"
             FROM "14trees".referrals
         `;
-    
+
         const [result] = await sequelize.query<ReferralCountsResult>(query, {
             type: QueryTypes.SELECT
         });
-    
+
         return result;
     }
-    
+
     public static async getReferralDashboard(rfr: string): Promise<ReferralDashboardResult> {
         const query = `
             WITH referral_cte AS (
@@ -214,18 +286,18 @@ export class CampaignsRepository {
                 (SELECT COALESCE(JSON_AGG(donation_data), '[]') FROM donation_data) as "donations",
                 (SELECT COALESCE(JSON_AGG(gift_data), '[]') FROM gift_data) as "gifts"
         `;
-    
+
         const [result] = await sequelize.query<ReferralDashboardResult>(query, {
             replacements: { rfr },
             type: QueryTypes.SELECT
         });
-    
+
         return {
             totalRaised: result?.totalRaised || 0,
             totalTrees: result?.totalTrees || 0,
             donations: result?.donations || [],
             gifts: result?.gifts || []
         };
-    }    
-     
+    }
+
 }

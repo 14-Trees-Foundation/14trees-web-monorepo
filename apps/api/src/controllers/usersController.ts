@@ -18,6 +18,8 @@ import { VisitUsersRepository } from "../repo/visitUsersRepo";
 import { AlbumRepository } from "../repo/albumRepo";
 import EventRepository from "../repo/eventsRepo";
 import { GroupRepository } from "../repo/groupRepo";
+import { DonationRepository } from "../repo/donationsRepo";
+import { DonationUserRepository } from "../repo/donationUsersRepo";
 
 /*
     Model - User
@@ -351,6 +353,22 @@ export const combineUsers = async (req: Request, res: Response) => {
 
     const giftRequestsAssignee = { assignee: primary_user, updated_at: new Date() };
     await GiftCardsRepository.updateGiftRequestUsers(giftRequestsAssignee, { assignee: secondary_user });
+
+    // donations
+    const donation = { user_id: primary_user, updated_at: new Date() };
+    await DonationRepository.updateDonations(donation, { user_id: secondary_user });
+
+    const donationProcessedBy = { processed_by: primary_user, updated_at: new Date() };
+    await DonationRepository.updateDonations(donationProcessedBy, { processed_by: secondary_user });
+
+    const donationCreatedBy = { created_by: primary_user, updated_at: new Date() };
+    await DonationRepository.updateDonations(donationCreatedBy, { created_by: secondary_user });
+    
+    const donationAssignedTo = { assignee: primary_user, updated_at: new Date() };
+    await DonationUserRepository.updateDonationUsers(donationAssignedTo, { assignee: secondary_user });
+
+    const donationRecipient = { recipient: primary_user, updated_at: new Date() };
+    await DonationUserRepository.updateDonationUsers(donationRecipient, { recipient: secondary_user });
 
     // group users
     await UserGroupRepository.changeUser(primary_user, secondary_user);
