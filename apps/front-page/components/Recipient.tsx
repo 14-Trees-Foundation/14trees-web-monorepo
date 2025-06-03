@@ -84,7 +84,7 @@ const Recipeint: React.FC<RecipeintProps> = ({
     return (
         <div key={index} className="border rounded-lg p-6 space-y-4 bg-white shadow-sm">
             <div className="flex justify-between items-center">
-                <h3 className="font-medium text-lg">Recipient {index + 1}</h3>
+                <h3 className="font-medium text-lg">Recipient {allRecipients.length > 1 ? index + 1 : undefined}</h3>
                 {index > 0 && (
                     <button
                         type="button"
@@ -112,10 +112,8 @@ const Recipeint: React.FC<RecipeintProps> = ({
                                 const inputValue = e.target.value;
                                 if (inputValue === "" || (/^\d+$/.test(inputValue))) {
                                     const numValue = parseInt(inputValue);
-                                    if (!isNaN(numValue)) {
-                                        const clampedValue = Math.max(1, Math.min(numValue, maxTrees));
-                                        handleNameChange(index, "trees_count", clampedValue);
-                                    }
+                                    // const clampedValue = Math.max(1, Math.min(numValue, maxTrees));
+                                    handleNameChange(index, "trees_count", !isNaN(numValue) ? numValue : 0);
                                 }
                             }}
                             onBlur={(e) => {
@@ -174,7 +172,7 @@ const Recipeint: React.FC<RecipeintProps> = ({
             </div>
 
             {/* Assignee Section */}
-            <div className="mt-4 pt-4 border-t">
+            {/* <div className="mt-4 pt-4 border-t">
                 <label className="flex items-center space-x-3 mb-4">
                     <input
                         type="checkbox"
@@ -219,7 +217,7 @@ const Recipeint: React.FC<RecipeintProps> = ({
                     </div>
                 </div>
                 )}
-            </div>
+            </div> */}
         </div>
     );
 }

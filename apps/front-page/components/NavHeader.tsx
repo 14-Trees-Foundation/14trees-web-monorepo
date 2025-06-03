@@ -63,7 +63,7 @@ function getGiftTreesAction() {
     <div className="relative w-full">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger className="bg-green-800 w-full text-white px-4 py-2 rounded-md cursor-pointer">
-          Gift Trees
+          Plant a Memory
         </DropdownMenuTrigger>
         <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
           <Link href="/gift-trees " className="header-link">
@@ -139,7 +139,7 @@ export default function Header() {
               </Link>
               <Link href="/gift-trees">
                 <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
-                  Gift Trees
+                  Plant a Memory
                 </Button>
               </Link>
             </div>
@@ -162,7 +162,7 @@ export default function Header() {
             </Link>
             <Link href="/gift-trees">
               <Button className="mr-3" variant="secondary">
-                Gift Trees
+                Plant a Memory
               </Button>
             </Link>
           </div>
