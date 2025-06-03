@@ -76,7 +76,7 @@ export class CampaignsRepository {
             // Main query to get paginated results
             const getQuery = `
                 SELECT c.*
-                FROM "14trees_2".campaigns c
+                FROM "14trees".campaigns c
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
                 ORDER BY ${sortOrderQuery}
                 ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -85,7 +85,7 @@ export class CampaignsRepository {
             // Count query for pagination
             const countQuery = `
                 SELECT COUNT(*) 
-                FROM "14trees_2".campaigns c
+                FROM "14trees".campaigns c
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
 
