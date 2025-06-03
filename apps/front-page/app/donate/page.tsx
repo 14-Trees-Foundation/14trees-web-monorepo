@@ -12,6 +12,7 @@ import { UserDetailsForm } from 'components/donate/UserDetailsForm';
 import { SummaryPaymentPage } from './donationSummary';
 import { useSearchParams } from "next/navigation";
 import { ReferralDialog } from "components/referral/ReferralDialog";
+import { Modal } from "ui";
 
 declare global {
   interface Window {
@@ -32,6 +33,29 @@ interface DedicatedName {
   image_url?: string;
   [key: string]: string | number | undefined;
 }
+
+interface ValidationAlertProps {
+  show: boolean;
+  onClose: () => void;
+  title: string;
+  message: React.ReactNode;
+}
+
+const ValidationAlert = ({ show, onClose, title, message }: ValidationAlertProps) => {
+  return (
+    <Modal
+      show={show}
+      onClose={onClose}
+      title={title}
+      showCloseButton
+      panelClass="rounded-lg p-6"
+    >
+      <div className="text-gray-700 p-6">
+        {message}
+      </div>
+    </Modal>
+  );
+};
 
 function Donation() {
   const searchParams = useSearchParams();
@@ -89,6 +113,11 @@ function Donation() {
   const [showReferralDialog, setShowReferralDialog] = useState(false);
   const [referralDetails, setReferralDetails] = useState<{ referred_by?: string, name?: string, c_key?: string, description?: string } | null>(null);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationAlertData, setValidationAlertData] = useState<{
+    title: string;
+    message: React.ReactNode;
+  }>({ title: "", message: "" });
 
   const itemsPerPage = 10;
   const paginatedData = csvPreview.slice(
@@ -155,7 +184,7 @@ function Donation() {
   };
 
   const validationPatterns = {
-    name: /^[A-Za-z\s.'\-&()\/,]+$/,
+    name: /^[A-Za-z0-9\s.,&_'-]+$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]*$/,
     phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
@@ -306,7 +335,7 @@ function Donation() {
 
         data.forEach((row, index) => {
           const rowErrors: string[] = [];
-          if (!row.recipient_name || !row.recipient_name.trim()) {
+          if (!row.recipient_name || !row.recipient_name.trim() || !validationPatterns.name.test(row.recipient_name)) {
             rowErrors.push("Recipient name is required");
           }
           if (row.recipient_email && !validationPatterns.email.test(String(row.recipient_email))) {
@@ -420,6 +449,8 @@ function Donation() {
       let user = { ...item }
       if (!user.assignee_name?.trim()) {
         user.assignee_name = user.recipient_name;
+        user.assignee_email = user.recipient_email;
+        user.assignee_phone = user.recipient_phone;
       }
 
       if (user.recipient_email) {
@@ -1038,7 +1069,7 @@ function Donation() {
       setSkipped(true);
     };
 
-    const handleClose = () => { 
+    const handleClose = () => {
       handleReset();
       setShowSuccessDialog(false);
     };
@@ -1117,7 +1148,7 @@ function Donation() {
           ) : (
             <div className="text-center">
               <p className="text-green-600 mb-4">
-                {updateSuccess 
+                {updateSuccess
                   ? "We truly value your willingness to engage. Your support makes a real difference!"
                   : "Thank you for your donation!"}
               </p>
@@ -1966,6 +1997,29 @@ function Donation() {
                             return;
                           }
 
+                          const treesCount = donationTreeCount;
+                          const treesAssigned = dedicatedNames.filter(user => user.recipient_name?.trim())
+                            .map(user => user.trees_count)
+                            .reduce((prev, curr) => prev + curr, 0);
+
+                          if (treesAssigned > treesCount) {
+                            setValidationAlertData({
+                              title: "Tree Count Mismatch",
+                              message: (
+                                <div className="space-y-2">
+                                  <p>You have opted to sponsor {treesCount} trees, but you have assigned {treesAssigned} trees. <span className="text-red-600 font-medium mt-4">Please update the total trees at the beginning of the section to {treesAssigned}</span></p>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    <li>Please adjust the number of trees assigned to match your sponsorship</li>
+                                    <li>You can either increase your sponsorship or reduce the number of trees assigned</li>
+                                    <li>Each recipient can have multiple trees assigned to them</li>
+                                  </ul>
+                                </div>
+                              )
+                            });
+                            setShowValidationAlert(true);
+                            return;
+                          }
+
                           if (mainFormValid) {
                             setCurrentStep(2);
                           } else {
@@ -1981,7 +2035,7 @@ function Donation() {
                         Proceed to pay
                       </button>
                       {(hasTableErrors || Object.values(errors).some(e => e && e.trim() !== "") || csvErrors.length > 0) && (
-                        <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding.</div>
+                        <div className="text-red-600 text-sm mt-2">Please fix all errors in the form before proceeding. {hasTableErrors && "There are errors in csv file uploaded!"} </div>
                       )}
                       {hasDuplicateNames && (
                         <p className="text-red-600 text-sm mt-2">
@@ -2043,6 +2097,14 @@ function Donation() {
           linkType="donate"
           open={showReferralDialog}
           onClose={() => setShowReferralDialog(false)}
+        />
+      )}
+      {showValidationAlert && (
+        <ValidationAlert
+          show={showValidationAlert}
+          onClose={() => setShowValidationAlert(false)}
+          title={validationAlertData.title}
+          message={validationAlertData.message}
         />
       )}
     </div>
