@@ -10,7 +10,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
@@ -495,7 +495,16 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
         }
 
         const donation = await DonationRepository.getDonation(donation_id);
-        return res.status(status.success).send(donation);
+        res.status(status.success).send(donation);
+
+        try {
+            const userId = req.headers['x-user-id'] as string;
+            if (!donation.processed_by && userId && !isNaN(parseInt(userId))) {
+                await DonationRepository.updateDonation(donation.id, { processed_by: parseInt(userId) });
+            }
+        } catch (error: any) {
+            console.log("[ERROR]", "donationsController::assignTrees", error);
+        }
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
@@ -657,7 +666,17 @@ export const assignTrees = async (req: Request, res: Response) => {
         }
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
-        return res.status(status.success).send(updatedDonation);
+        res.status(status.success).send(updatedDonation);
+        
+        try {
+            const userId = req.headers['X-User-Id'] as string;
+            if (!donation.processed_by && userId && !isNaN(parseInt(userId))) {
+                await DonationRepository.updateDonation(donation.id, { processed_by: parseInt(userId) });
+            }
+        } catch (error: any) {
+            console.log("[ERROR]", "donationsController::assignTrees", error);
+        }
+
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
@@ -887,6 +906,15 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
         const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(updatedDonation, 'default');
         
         res.status(status.success).send(updatedDonation);
+
+        try {
+            const userId = req.headers['x-user-id'] as string;
+            if (!donation.processed_by && userId && !isNaN(parseInt(userId))) {
+                await DonationRepository.updateDonation(donation.id, { processed_by: parseInt(userId) });
+            }
+        } catch (error: any) {
+            console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
+        }
 
         if (treeData.length > 0) {
             try {
