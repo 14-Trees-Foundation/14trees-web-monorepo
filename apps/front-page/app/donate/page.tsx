@@ -324,7 +324,7 @@ function Donation() {
 
           const user: any = {
             recipient_name: String(row.recipient_name || '').trim(),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_name ? row.recipient_name.trim().toLowerCase().split(" ").join('.') + ".donor@14trees" : '',
+            recipient_email: row.recipient_email ? String(row.recipient_email).trim() : "",
             recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
             trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
             image: row.image ? String(row.image) : undefined,
@@ -334,7 +334,7 @@ function Donation() {
 
           if (row.assignee_name?.trim()) {
             user.assignee_name = String(row.assignee_name).trim();
-            user.assignee_email = row.assignee_email ? String(row.assignee_email) : user.assignee_name.trim().toLowerCase().split(" ").join('.') + ".donor@14trees";
+            user.assignee_email = row.assignee_email ? String(row.assignee_email).trim() : "";
             user.assignee_phone = row.assignee_phone ? String(row.assignee_phone) : '';
           } else {
             user.assignee_name = user.recipient_name;
@@ -415,22 +415,23 @@ function Donation() {
     let users = dedicatedNames.length === 1 && dedicatedNames[0].recipient_name.trim() === "" ? [] : dedicatedNames;
 
     const donor = formData.fullName.replaceAll(" ", "").toLocaleLowerCase();
-    users = users.map(user => {
+    users = users.map(item => {
 
+      let user = { ...item }
       if (!user.assignee_name?.trim()) {
         user.assignee_name = user.recipient_name;
       }
 
       if (user.recipient_email) {
-        user.recipient_email = user.recipient_email.replace("donor", donor);
+        user.recipient_email = user.recipient_email.trim().replace("donor", donor);
       } else {
-        user.recipient_email = user.recipient_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+        user.recipient_email = user.recipient_name.toLowerCase().trim().replace(/\s+/g, '') + "." + donor + "@14trees"
       }
 
       if (user.assignee_email) {
-        user.assignee_email = user.assignee_email.replace("donor", donor);
+        user.assignee_email = user.assignee_email.trim().replace("donor", donor);
       } else {
-        user.assignee_email = user.assignee_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+        user.assignee_email = user.assignee_name.toLowerCase().trim().replace(/\s+/g, '') + "." + donor + "@14trees"
       }
 
       return user;
@@ -526,8 +527,8 @@ function Donation() {
         c_key: c_key,
       };
 
-      let responseData: any;
-      if (!donationId) {
+      let donId = donationId;
+      if (!donId) {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
           method: 'POST',
           headers: {
@@ -541,7 +542,8 @@ function Donation() {
           throw new Error(error.message || "Donation submission failed");
         }
 
-        responseData = await response.json();
+        const responseData = await response.json();
+        donId = responseData.id;
         setDonationId(responseData.id);
       }
 
@@ -556,7 +558,7 @@ function Donation() {
           : `Donation for ${donationTreeCount} trees`,
         order_id: orderId,
         notes: {
-          "Donation Id": responseData.id,
+          "Donation Id": donId,
         },
         handler: async (response: any) => {
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
@@ -587,7 +589,7 @@ function Donation() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                donation_id: responseData.id
+                donation_id: donId
               })
             });
           } catch (err) {

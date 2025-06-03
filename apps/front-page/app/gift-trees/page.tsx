@@ -516,8 +516,9 @@ function GiftTrees() {
     let users = dedicatedNames.filter(user => user.recipient_name.trim() != "");
 
     const donor = formData.fullName.replaceAll(" ", "").toLocaleLowerCase();
-    users = users.map(user => {
+    users = users.map(item => {
 
+      let user = { ...item }
       if (!user.assignee_name?.trim()) {
         user.assignee_name = user.recipient_name;
       }
