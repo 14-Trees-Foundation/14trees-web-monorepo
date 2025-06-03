@@ -213,7 +213,7 @@ function GiftTrees() {
 
   // Validation patterns (existing unchanged)
   const validationPatterns = {
-    name: /^[A-Za-z\s.,&_'-]+$/,
+    name: /^[A-Za-z0-9\s.,&_'-]+$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     phone: /^\+?[0-9\s\-()]{7,20}$/,
     pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
@@ -557,6 +557,8 @@ function GiftTrees() {
       let user = { ...item }
       if (!user.assignee_name?.trim()) {
         user.assignee_name = user.recipient_name;
+        user.assignee_email = user.recipient_email;
+        user.assignee_phone = user.recipient_phone;
       }
 
       if (user.recipient_email) {
@@ -629,12 +631,6 @@ function GiftTrees() {
               users: users.map(user => ({
                 ...user,
                 gifted_trees: user.trees_count,
-                recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees",
-                assignee_name: user.assignee_name || user.recipient_name,
-                assignee_email: user.assignee_email ||
-                  (user.assignee_name
-                    ? user.assignee_name.toLowerCase().replace(/\s+/g, '') + "@14trees"
-                    : user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + "@14trees")
               })),
             })
           });
