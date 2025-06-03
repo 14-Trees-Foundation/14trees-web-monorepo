@@ -290,14 +290,14 @@ class ApiClient {
     }
   }
 
-  async listCampaigns(): Promise<{ name: string, c_key: string }> {
+  async listCampaigns(): Promise<{ name: string, c_key: string }[]> {
     try {
-      const response = await this.api.get<{ name: string, c_key: string }>(`/campaigns/`, {
+      const response = await this.api.post<{ results: { name: string, c_key: string }[] }>(`/campaigns/list/get`, {
         headers: {
           "content-type": "application/json",
         }
       });
-      return response.data;
+      return response.data.results;
     } catch(error: any) {
       if (error.response) {
         throw new Error(error.response.data.message);
