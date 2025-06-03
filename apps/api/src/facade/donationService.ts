@@ -143,7 +143,11 @@ export class DonationService {
         sponsor_email: string,
         amount_donated: number,
     ): Promise<void> {
-        const spreadsheetId = '12cIX-3-EReUq6tLWRUl-eMHdvRilccbK4mrubQ2b38E';
+        const spreadsheetId = process.env.DONATION_SPREADSHEET;
+        if (!spreadsheetId) {
+            console.log("[WARN]", "DonationsService::insertDonationIntoGoogleSheet", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
+            return;
+        }
         const sheetName = 'WebsiteTxns';
 
         const sheet = new GoogleSpreadsheet();
@@ -824,9 +828,13 @@ export class DonationService {
         const plotIds: number[] = plotsToUse.map(item => item.plot_id);
         const plotsResp = await PlotRepository.getPlots(0, -1, [{ columnField: 'id', operatorValue: 'isAnyOf', value: plotIds }]);
 
+        const orderedPlots = plotsResp.results.sort((a: any, b: any) => {
+            return plotIds.indexOf(a.id) - plotIds.indexOf(b.id);
+        });
+
         let remaining = treesCount;
         const plotTreeCnts
-            = plotsResp.results
+            = orderedPlots
                 .filter((plot: any) => plot.available_trees)
                 .map((plot: any) => {
                     const cnt = Math.min(plot.available_trees, remaining);

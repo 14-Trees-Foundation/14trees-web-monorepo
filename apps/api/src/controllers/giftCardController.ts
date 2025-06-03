@@ -529,7 +529,7 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (updatedGiftCardRequest.sponsor_id !== originalRequest.sponsor_id) {
-            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id,  sponsored_at: new Date() }
+            treeUpdateRequest = { ...treeUpdateRequest, sponsored_by_user: updatedGiftCardRequest.sponsor_id, sponsored_by_group: updatedGiftCardRequest.group_id, sponsored_at: new Date() }
         }
 
         if (updatedGiftCardRequest.visit_id !== originalRequest.visit_id) {
@@ -1252,9 +1252,18 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
 
         giftCardRequest.is_active = true;
         giftCardRequest.updated_at = new Date();
-        await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        const updatedRequest = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 
         res.status(status.success).send();
+
+        try {
+            const userId = req.headers['x-user-id'] as string;
+            if (!updatedRequest.processed_by && userId && !isNaN(parseInt(userId))) {
+                await GiftCardsRepository.updateGiftCardRequests({ processed_by: parseInt(userId) }, { id: updatedRequest.id, processed_by: { [Op.is]: null } });
+            }
+        } catch (error: any) {
+            console.log("[ERROR]", "GiftCardController::bookTreesForGiftRequest", error);
+        }
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::bookTreesForGiftRequest", error);
@@ -1517,8 +1526,17 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
         }
 
         giftRequest.updated_at = new Date();
-        await GiftCardsRepository.updateGiftCardRequest(giftRequest);
+        const updatedRequest = await GiftCardsRepository.updateGiftCardRequest(giftRequest);
         res.status(status.success).json();
+
+        try {
+            const userId = req.headers['x-user-id'] as string;
+            if (!updatedRequest.processed_by && userId && !isNaN(parseInt(userId))) {
+                await GiftCardsRepository.updateGiftCardRequests({ processed_by: parseInt(userId) }, { id: updatedRequest.id, processed_by: { [Op.is]: null } });
+            }
+        } catch (error: any) {
+            console.log("[ERROR]", "GiftCardController::assignGiftRequestTrees", error);
+        }
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::assignGiftRequestTrees", error);
         res.status(status.error).json({
@@ -2441,6 +2459,15 @@ export const autoProcessGiftCardRequest = async (req: Request, res: Response) =>
         res.status(status.success).send(updatedGiftRequest);
 
         try {
+            const userId = req.headers['x-user-id'] as string;
+            if (!updatedGiftRequest.processed_by && userId && !isNaN(parseInt(userId))) {
+                await GiftCardsRepository.updateGiftCardRequests({ processed_by: parseInt(userId) }, { id: updatedGiftRequest.id, processed_by: { [Op.is]: null } });
+            }
+        } catch (error: any) {
+            console.log("[ERROR]", "GiftCardController::autoProcessGiftCardRequest", error);
+        }
+
+        try {
             await generateGiftCardsForGiftRequest(updatedGiftRequest);
 
             const giftCardRequest: any = updatedGiftRequest;
@@ -2470,9 +2497,9 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
 
     try {
         const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
-        
+
         const data = await GiftCardsService.getPlotTreesCntForAutoReserveTreesForGiftRequest(giftRequest);
-        
+
         return res.status(status.success).send(data);
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::getTreesCountForAutoReserveTrees", error);
