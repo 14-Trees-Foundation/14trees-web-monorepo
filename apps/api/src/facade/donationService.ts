@@ -1001,6 +1001,85 @@ export class DonationService {
         }
     }
 
+    public static async sendReferralDonationNotification(
+        donation: Donation,
+        testMails?: string[],
+        ccMails?: string[]
+    ): Promise<void> {
+        try {
+            if (!donation.rfr_id) {
+                console.log("[INFO] No referral ID associated with this donation");
+                return;
+            }
+    
+            const referrals = await ReferralsRepository.getReferrals({ id: donation.rfr_id });
+            if (referrals.length === 0) {
+                console.log("[INFO] Referral not found for ID:", donation.rfr_id);
+                return;
+            }
+    
+            const referral = referrals[0];
+    
+            if (!referral.rfr) {
+                console.log("[INFO] No referral code associated with this referral");
+                return;
+            }
+    
+            const usersResp = await UserRepository.getUsers(0, 2, [
+                { columnField: 'rfr', operatorValue: 'equals', value: referral.rfr },
+                { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
+            ]);
+    
+            const users = usersResp.results;
+            const referrerUser = users.find(u => u.rfr === referral.rfr);
+            const donorUser = users.find(u => u.id === donation.user_id);
+    
+            if (!referrerUser) {
+                console.log("[INFO] No user found with referral code:", referral.rfr);
+                return;
+            }
+    
+            if (!donorUser) {
+                console.log("[ERROR] Donor user not found for donation:", donation.id);
+                return;
+            }
+    
+            const referralBaseUrl = process.env.DASHBOARD_URL;
+            const emailData = {
+                donor_name: donorUser.name,
+                trees: donation.trees_count || 0,
+                amount: formatNumber(donation.amount_donated || 0),
+                referral_link: `${referralBaseUrl}referral/${referral.rfr}`,
+                current_year: new Date().getFullYear()
+            };
+    
+            const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+            const mailIds = (testMails && testMails.length !== 0)
+                ? testMails
+                : [referrerUser.email];
+    
+            const templateName = 'donation_referral.html';
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                ccMailIds,
+                undefined,
+                'New Donation Through Your Referral!'
+            );
+    
+            if (statusMessage) {
+                console.error("[ERROR] Failed to send referral notification:", statusMessage);
+            } else {
+                console.log("[INFO] Successfully sent referral notification for donation:", donation.id);
+            }
+    
+        } catch (error) {
+            console.error("[ERROR] DonationService::sendReferralDonationNotification", error);
+            throw new Error("Failed to send referral notification email");
+        }
+    }
+    
     public static async getEmailDataForDonation(donation: Donation, event_type: string): Promise<{ commonEmailData: any, treeData: any[] }> {
         // Get trees associated with the donation
         const trees = await DonationRepository.getDonationTrees(0, -1, [

@@ -312,6 +312,15 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             remainingTrees || 0,
         );
 
+        // Conditionally send referral notification if rfr_id exists
+        if (giftRequest.rfr_id) {
+            try {
+                await GiftCardsService.sendReferralGiftNotification(giftRequest);
+            } catch (referralError) {
+                console.error("[ERROR] Failed to send referral notification:", referralError);
+            }
+        }
+
         res.status(status.success).send();
     } catch (emailError) {
         console.error("[ERROR] Failed to send gift acknowledgment email:", {
@@ -321,7 +330,6 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         res.status(status.error).send({ message: "Failed to update payment status in system!" })
     }
 }
-
 export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
         gift_card_request_id: giftCardRequestId,
