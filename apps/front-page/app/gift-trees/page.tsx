@@ -15,6 +15,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Tooltip from '@mui/material/Tooltip';
 import { useSearchParams } from "next/navigation";
 import { ReferralDialog } from "components/referral/ReferralDialog";
+import { Modal } from "ui";
 
 declare global {
   interface Window {
@@ -33,6 +34,29 @@ interface DedicatedName {
   image_url?: string;
   [key: string]: string | number | undefined;
 }
+
+interface ValidationAlertProps {
+  show: boolean;
+  onClose: () => void;
+  title: string;
+  message: React.ReactNode;
+}
+
+const ValidationAlert = ({ show, onClose, title, message }: ValidationAlertProps) => {
+  return (
+    <Modal
+      show={show}
+      onClose={onClose}
+      title={title}
+      showCloseButton
+      panelClass="rounded-lg p-6"
+    >
+      <div className="text-gray-700 p-6">
+        {message}
+      </div>
+    </Modal>
+  );
+};
 
 function GiftTrees() {
   const searchParams = useSearchParams();
@@ -92,7 +116,20 @@ function GiftTrees() {
   const [hasAssigneeError, setHasAssigneeError] = useState(false);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
   const [referralDetails, setReferralDetails] = useState<{ referred_by?: string, name?: string, c_key?: string, description?: string } | null>(null);
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationAlertData, setValidationAlertData] = useState<{
+    title: string;
+    message: React.ReactNode;
+  }>({ title: "", message: "" });
 
+  const scrollToRecipients = () => {
+    const recipientsSection = document.getElementById('gift-recipients');
+    if (recipientsSection) {
+      const offset = -100;
+      const top = recipientsSection.getBoundingClientRect().top + window.pageYOffset + offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     setWindowWidth(window.innerWidth);
@@ -1150,7 +1187,7 @@ function GiftTrees() {
           ) : (
             <div className="text-center">
               <p className="text-green-600 mb-4">
-                {updateSuccess 
+                {updateSuccess
                   ? "We truly value your willingness to engage. Your support makes a real difference!"
                   : "Thank you for your gift trees request!"}
               </p>
@@ -1170,7 +1207,7 @@ function GiftTrees() {
 
   return (
     <div className="overflow-hidden bg-white">
-      <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
+      <div className="relative w-full">
         <MotionDiv
           className="container z-0 mx-auto my-5 overflow-hidden text-gray-800"
           initial="hidden"
@@ -1179,77 +1216,11 @@ function GiftTrees() {
         >
           <div className="z-0 mx-4 pt-16 md:mx-12">
             <div className="md:mx-12 my-5 object-center text-center md:my-5 md:w-4/5 md:text-left">
-            <div className="mt-5 space-y-6">
+              <div className="mt-5 space-y-6">
                 <h2 className="text-4xl font-bold text-green-800">We don&apos;t just plant trees, we rebuild forests.</h2>
 
                 <p className="text-gray-700 leading-relaxed">
-                  By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-green-700">Through our reforestation efforts we:</h3>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <ul className="space-y-1 text-gray-700 text-left">
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Plant native tree species</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Use only organic composts and no chemical pesticides</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Employ local rural population for all on-ground tasks</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Incubate microventures</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Leverage urban capital to scale-up</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-green-700">Our Impact till date:</h3>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <ul className="space-y-1 text-gray-700 text-left">
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>1400+ acres area under reforestation</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>2 lacs+ trees planted</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>200+ local rural people employed</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>Biodiversity impact: 400+ species (Flora & Fauna)</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          <span>13 of 17 SDGs mapped</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-gray-700 leading-relaxed">
-                  By funding 14Trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend most on the land.
+                  Dedicating trees in someone&apos;s name is a unique way to show your appreciation and your concern to the environment. Simply choose how many trees you would like to plant, design your custom Tree-card, and let us know who you would like to send it to.
                 </p>
               </div>
             </div>
@@ -1406,7 +1377,7 @@ function GiftTrees() {
                     {/* Gifted By */}
                     <div>
                       <label className="block text-base sm:text-lg font-light mb-2">
-                        Best wishes from 
+                        Best wishes from
                         <Tooltip title="The name(s) of the person(s) gifting." className="ml-1">
                           <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help" />
                         </Tooltip>
@@ -1577,11 +1548,54 @@ function GiftTrees() {
                           .reduce((prev, curr) => prev + curr, 0);
 
                         if (treesAssigned < treesCount) {
-                          if (treesAssigned !== 0) alert(`You have only assigned ${treesAssigned} out of ${treesCount} trees. Please assign all the trees to recipients!`);
-                          else alert(`You have not assigned any tree out of ${treesCount} ${treesCount === 1 ? "tree" : "trees"}. Please assign all the trees to recipients!`);
+                          if (treesAssigned !== 0) {
+                            setValidationAlertData({
+                              title: "Incomplete Tree Assignment",
+                              message: (
+                                <div className="space-y-2">
+                                  <p>You have only assigned {treesAssigned} out of {treesCount} trees. <span className="text-red-600 font-medium mt-4">You should assign the remaining {treesCount - treesAssigned} {treesCount - treesAssigned === 1 ? 'tree' : 'trees'}</span></p>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    <li>Please assign all trees to recipients before proceeding</li>
+                                    <li>Each tree needs to be assigned to a recipient</li>
+                                    <li>You can add more recipients if needed</li>
+                                  </ul>
+                                </div>
+                              )
+                            });
+                          } else {
+                            setValidationAlertData({
+                              title: "No Trees Assigned",
+                              message: (
+                                <div className="space-y-2">
+                                  <p>You have not assigned any tree out of {treesCount} {treesCount === 1 ? "tree" : "trees"}. <span className="text-red-600 font-medium mt-4">You should assign all {treesCount} {treesCount === 1 ? 'tree' : 'trees'}</span></p>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    <li>Please assign all trees to recipients before proceeding</li>
+                                    <li>Each tree needs to be assigned to a recipient</li>
+                                    <li>You can add recipients using the form above</li>
+                                  </ul>
+                                </div>
+                              )
+                            });
+                          }
+                          setShowValidationAlert(true);
+                          setTimeout(scrollToRecipients, 100);
                           return;
                         } else if (treesAssigned > treesCount) {
-                          alert(`You have opted for sponsor ${treesCount}, but you have assigned ${treesAssigned}!`);
+                          setValidationAlertData({
+                            title: "Tree Count Mismatch",
+                            message: (
+                              <div className="space-y-2">
+                                <p>You have opted to sponsor {treesCount} trees, but you have assigned {treesAssigned} trees. <span className="text-red-600 font-medium mt-4">Please update the total trees at the beginning of the section to {treesAssigned}</span></p>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  <li>Please adjust the number of trees assigned to match your sponsorship</li>
+                                  <li>You can either increase your sponsorship or reduce the number of trees assigned</li>
+                                  <li>Each recipient can have multiple trees assigned to them</li>
+                                </ul>
+                              </div>
+                            )
+                          });
+                          setShowValidationAlert(true);
+                          setTimeout(scrollToRecipients, 100);
                           return;
                         }
 
@@ -1627,23 +1641,105 @@ function GiftTrees() {
             </ScrollReveal>
           </div>
         </div>
+      </div>
 
-        <div className="mt-12 h-px bg-gray-200"></div>
-        <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
-          <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
-          <p className="text-sm text-green-700">
-            Do you know, you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
-          </p>
-          <a
-            onClick={(e) => {
-              e.preventDefault();
-              setShowReferralDialog(true);
-            }}
-            className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
-          >
-            Create & Share Your Link
-          </a>
-        </div>
+      <div className="relative w-full">
+        <MotionDiv
+          className="container z-0 mx-auto overflow-hidden text-gray-800"
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
+          <div className="z-0 mx-4 pt-16 md:mx-12">
+            <div className="md:mx-12 object-center text-center md:w-4/5 md:text-left">
+              <div className="mt-6 space-y-6">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-green-700">Through our reforestation efforts we:</h3>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <ul className="space-y-1 text-gray-700 text-left">
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Plant native tree species</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Do rainwater harvesting - dig ponds to store rainwater and create trenches for groundwater recharge</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Use only organic composts and no chemical pesticides</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Employ local rural population for all on-ground tasks</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Incubate microventures</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Leverage urban capital to scale-up</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-green-700">Our Impact till date:</h3>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <ul className="space-y-1 text-gray-700 text-left">
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>1400+ acres area under reforestation</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>2 lacs+ trees planted</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>200+ local rural people employed</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>Biodiversity impact: 400+ species (Flora & Fauna)</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          <span>13 of 17 SDGs mapped</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 leading-relaxed">
+                  By funding 14Trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend most on the land.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-12 h-px bg-gray-200"></div>
+            <div className="mt-6 mb-6 space-y-4 bg-green-50 p-4 rounded-lg">
+              <h4 className="text-lg font-semibold text-green-800">Inspire Others to Give</h4>
+              <p className="text-sm text-green-700">
+                Do you know, you can create your personal referral link and share it with friends and family? Every contribution made through your link will be tracked. When someone contributes using your link, you&apos;ll receive an email with your personal referral dashboard where you can see the impact you&apos;ve inspired as others join you in gifting trees.
+              </p>
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowReferralDialog(true);
+                }}
+                className="mt-2 text-green-800 hover:text-green-900 underline cursor-pointer"
+              >
+                Create & Share Your Link
+              </a>
+            </div>
+          </div>
+        </MotionDiv>
       </div>
       {showSuccessDialog && <SuccessDialog />}
       {showReferralDialog && (
@@ -1651,6 +1747,14 @@ function GiftTrees() {
           linkType="gift-trees"
           open={showReferralDialog}
           onClose={() => setShowReferralDialog(false)}
+        />
+      )}
+      {showValidationAlert && (
+        <ValidationAlert
+          show={showValidationAlert}
+          onClose={() => setShowValidationAlert(false)}
+          title={validationAlertData.title}
+          message={validationAlertData.message}
         />
       )}
     </div>

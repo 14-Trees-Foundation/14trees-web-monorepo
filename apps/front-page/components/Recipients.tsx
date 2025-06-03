@@ -38,7 +38,7 @@ const Recipients: React.FC<RecipientsProps> = ({
     }, [dedicatedNames])
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" id="gift-recipients">
             <h3 className="text-2xl font-semibold">Who would you like to honour with this living tribute?</h3>
 
             {errors["totalTrees"] && (
