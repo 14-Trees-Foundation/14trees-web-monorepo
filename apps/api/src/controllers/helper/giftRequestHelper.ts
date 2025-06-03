@@ -382,9 +382,9 @@ export const sendGiftRequestAcknowledgement = async (
                 const referral = referrals[0];
 
                 if (referral.c_key) {
-                    const campaigns = await CampaignsRepository.getCampaigns({ c_key: referral.c_key });
-                    if (campaigns.length > 0) {
-                        campaignName = campaigns[0].name;
+                    const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [{ columnField: 'c_key', operatorValue: 'equals', value: referral.c_key }]);
+                    if (campaignsResp.results.length > 0) {
+                        campaignName = campaignsResp.results[0].name;
                     }
                 }
 

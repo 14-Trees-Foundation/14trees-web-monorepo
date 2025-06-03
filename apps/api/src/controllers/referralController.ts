@@ -15,9 +15,9 @@ export const createReferral = async (req: Request, res: Response) => {
 
         let cKey: string | null = null;
         if (c_key) {
-            const campaigns = await CampaignsRepository.getCampaigns({ c_key: c_key });
-            if (campaigns.length !== 0) {
-                cKey = campaigns[0].c_key;
+            const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [{ columnField: 'c_key', value: c_key, operatorValue: 'equals' }]);
+            if (campaignsResp.results.length !== 0) {
+                cKey = campaignsResp.results[0].c_key;
             }
         }
 
@@ -71,11 +71,11 @@ export const getReferralDetails = async (req: Request, res: Response) => {
         let cKey: string | undefined = undefined;
         let description: string | undefined = undefined;
         if (c_key) {
-            const campaigns = await CampaignsRepository.getCampaigns({ c_key: c_key });
-            if (campaigns.length !== 0) {
-                name = campaigns[0].name;
-                cKey = campaigns[0].c_key;
-                description = campaigns[0].description ?? undefined;
+            const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [{ columnField: 'c_key', value: c_key, operatorValue: 'equals' }]);
+            if (campaignsResp.results.length !== 0) {
+                name = campaignsResp.results[0].name;
+                cKey = campaignsResp.results[0].c_key;
+                description = campaignsResp.results[0].description ?? undefined;
             }
         }
 
