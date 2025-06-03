@@ -1080,7 +1080,7 @@ function GiftTrees() {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 m-5 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <h3 className="text-xl font-bold text-green-600 mb-4">Your memory is being planted!</h3>
-          <p className="mb-2">Your request has been submitted successfully. We're crafting your personalised tree card.</p>
+          <p className="mb-2">Your request has been submitted successfully. We&apos;re crafting your personalised tree card.</p>
           {giftRequestId && (
             <p className="mb-2">
               <strong>Gift Trees Request ID:</strong> {giftRequestId}
