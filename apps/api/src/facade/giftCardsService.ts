@@ -422,7 +422,7 @@ class GiftCardsService {
                 donor_name: gifterUser.name,
                 trees: numberOfTrees,
                 amount: formatNumber(calculatedAmount),
-                referral_link: `${referralBaseUrl}referral/${referral.rfr}`,
+                referral_link: `${referralBaseUrl}/referral/${referral.rfr}`,
                 current_year: new Date().getFullYear()
             };
     

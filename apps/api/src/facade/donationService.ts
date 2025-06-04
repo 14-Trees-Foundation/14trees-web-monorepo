@@ -1057,7 +1057,7 @@ export class DonationService {
                 donor_name: donorUser.name,
                 trees: donation.trees_count || 0,
                 amount: formatNumber(donation.amount_donated || 0),
-                referral_link: `${referralBaseUrl}referral/${referral.rfr}`,
+                referral_link: `${referralBaseUrl}/referral/${referral.rfr}`,
                 current_year: new Date().getFullYear()
             };
     
