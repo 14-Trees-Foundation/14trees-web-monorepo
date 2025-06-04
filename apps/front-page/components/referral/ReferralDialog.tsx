@@ -18,12 +18,21 @@ import {
     MenuItem,
     FormControlLabel,
     Checkbox,
+    Stack,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import {
+    FacebookShareButton,
+    LinkedinShareButton,
+    WhatsappShareButton,
+    FacebookIcon,
+    LinkedinIcon,
+    WhatsappIcon,
+} from 'react-share';
 import { apiClient } from '~/api/apiClient';
 
 interface ReferralDialogProps {
-    linkType: 'donate' | 'gift-trees'
+    linkType: 'donate' | 'plant-memory'
     open: boolean;
     onClose: () => void;
     c_key?: string;
@@ -82,13 +91,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                 params.append('r', referralData.rfr);
             }
 
-            // Use the selected campaign's c_key if available, otherwise use the one from referralData
-            if (showCampaignSelection && selectedCampaign) {
-                const selectedCampaignObj = campaigns.find(c => c.name === selectedCampaign);
-                if (selectedCampaignObj?.c_key) {
-                    params.append('c', selectedCampaignObj.c_key);
-                }
-            } else if (referralData.c_key) {
+            if (referralData.c_key) {
                 params.append('c', referralData.c_key);
             }
 
@@ -98,7 +101,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
 
             setReferralLink(link);
         }
-    }, [referralData, selectedCampaign, showCampaignSelection, campaigns, linkType]);
+    }, [referralData, linkType]);
 
     const validateEmail = (email: string): boolean => {
         if (!email) {
@@ -148,6 +151,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
 
     const handleCampaignChange = (event: any) => {
         setSelectedCampaign(event.target.value);
+        setReferralLink('');
     };
 
     const handleCopyLink = async () => {
@@ -159,6 +163,9 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
             setError('Failed to copy link to clipboard. Please try again.');
         }
     };
+
+    const shareTitle = '14 Trees Initiative';
+    const shareMessage = 'Join me in supporting 14 Trees Initiative!';
 
     return (
         <>
@@ -201,7 +208,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                                 control={
                                     <Checkbox
                                         checked={showCampaignSelection}
-                                        onChange={(e) => setShowCampaignSelection(e.target.checked)}
+                                        onChange={(e) => { setShowCampaignSelection(e.target.checked); selectedCampaign && setReferralLink(""); }}
                                         sx={{
                                             color: '#4caf50',
                                             '&.Mui-checked': {
@@ -210,7 +217,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                                         }}
                                     />
                                 }
-                                label="Share via an ongoing campaign"
+                                label="Share for an ongoing campaign"
                                 sx={{ mb: showCampaignSelection ? 2 : 0 }}
                             />
                         )}
@@ -313,6 +320,35 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                             </Typography>
                         )}
                     </Box>
+                    {referralLink && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                Share via:
+                            </Typography>
+                            <Stack direction="row" spacing={1}>
+                                <WhatsappShareButton
+                                    url={referralLink}
+                                    title={shareMessage}
+                                >
+                                    <WhatsappIcon size={40} round />
+                                </WhatsappShareButton>
+                                {/* <FacebookShareButton
+                                    url={referralLink}
+                                    hashtag="#14Trees"
+                                >
+                                    <FacebookIcon size={40} round />
+                                </FacebookShareButton>
+                                <LinkedinShareButton
+                                    url={referralLink}
+                                    title={shareTitle}
+                                    summary={shareMessage}
+                                    source="14 Trees"
+                                >
+                                    <LinkedinIcon size={40} round />
+                                </LinkedinShareButton> */}
+                            </Stack>
+                        </Box>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={onClose}>Close</Button>

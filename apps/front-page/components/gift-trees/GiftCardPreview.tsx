@@ -5,7 +5,7 @@ const prefix = "Dear {recipient}" + "\n\n"
 const secondaryMessage = "\n\n" + 'We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future.'
 
 const defaultMessages = {
-    primary: prefix + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.' + secondaryMessage,
+    primary: prefix + 'We are immensely delighted to share that a tree has been planted in your name by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.' + secondaryMessage,
     birthday: prefix + 'We are immensely delighted to share that a tree has been planted in your name on the occasion of your birthday by {giftedBy} at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
     memorial: prefix + 'A tree has been planted in the memory of <name here> at the 14 Trees Foundation reforestation site. For many years, this tree will help rejuvenate local ecosystems, support local biodiversity and offset the harmful effects of climate change and global warming.' + secondaryMessage,
     wedding: prefix + 'We are delighted to share that a tree has been planted by {giftedBy} at the 14Trees Foundation, Pune, in your name to celebrate your special union. This tree will be nurtured in your honour, helping offset the harmful effects of climate change.' + secondaryMessage,
@@ -204,7 +204,7 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
                         </p>
                     </div>
                 )}
-                {eventType && eventType != '2' && eventType != '3' && !primaryMessage.includes("{giftedBy}") && (
+                {eventType != '2' && !primaryMessage.includes("{giftedBy}") && (
                     <div className="pt-6 flex justify-center">
                         <p className="text-red-600">
                             Missing {`"{giftedBy}"`} placeholder in your tree card message. Gifted By will not be visible in the generate tree card.

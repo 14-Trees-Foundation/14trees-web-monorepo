@@ -66,7 +66,7 @@ function getGiftTreesAction() {
           Plant a Memory
         </DropdownMenuTrigger>
         <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
-          <Link href="/gift-trees " className="header-link">
+          <Link href="/plant-memory " className="header-link">
             <DropdownMenuItem
               className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
             >
@@ -137,7 +137,7 @@ export default function Header() {
                   Donate
                 </Button>
               </Link>
-              <Link href="/gift-trees">
+              <Link href="/plant-memory">
                 <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
                   Plant a Memory
                 </Button>
@@ -160,7 +160,7 @@ export default function Header() {
                 Donate
               </Button>
             </Link>
-            <Link href="/gift-trees">
+            <Link href="/plant-memory">
               <Button className="mr-3" variant="secondary">
                 Plant a Memory
               </Button>

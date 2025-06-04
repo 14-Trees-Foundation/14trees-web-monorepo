@@ -103,7 +103,7 @@ const Recipients: React.FC<RecipientsProps> = ({
             {treesCount > Number(formData.numberOfTrees) && (
                 <div className="pt-6">
                     <p className="text-red-600">
-                        You cannot gift more trees then originally requested!
+                        You&apos;re currently trying to gift more trees than were originally requested. Please adjust the quantity to proceed.
                     </p>
                 </div>
             )}
