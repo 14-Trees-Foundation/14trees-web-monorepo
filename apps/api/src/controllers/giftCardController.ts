@@ -354,7 +354,6 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     }
 
     try {
-
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
         if (resp.results.length === 0) {
             res.status(status.notfound).json({
@@ -388,7 +387,7 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             logo_message: giftCardRequest.logo_message,
             status: GiftCardRequestStatus.pendingPlotSelection,
             validation_errors: validationErrors,
-            album_id: giftCardRequest.album_id,
+            album_id: null, 
             notes: null,
             payment_id: null,
             created_by: createdBy || giftCardRequest.user_id,
