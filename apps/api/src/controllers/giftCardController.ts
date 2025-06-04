@@ -114,6 +114,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         gifted_on: giftedOn,
         request_type: requestType,
         logo_url: logoUrl,
+        tags,
         rfr,
         c_key,
     } = req.body;
@@ -208,6 +209,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         donation_date: donationDate,
         amount_received: amountReceived,
         rfr_id: rfr_id,
+        tags: tags && Array.isArray(tags) ? tags : null,
     }
 
     try {
