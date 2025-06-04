@@ -303,18 +303,35 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             }, { id: giftRequest.id })
         }
 
+        res.status(status.success).send();
+
         const sponsorUser = {
             id: giftRequest.user_id,
             name: (giftRequest as any).user_name,
             email: (giftRequest as any).user_email,
         };
-        await sendGiftRequestAcknowledgement(
-            giftRequest,
-            sponsorUser,
-            remainingTrees || 0,
-        );
 
-        res.status(status.success).send();
+        try {
+            await sendGiftRequestAcknowledgement(
+                giftRequest,
+                sponsorUser,
+                remainingTrees || 0,
+            );
+        } catch (error) {
+            console.error("[ERROR] Failed to send gift acknowledgment email:", {
+                error,
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        }
+
+        if (giftRequest.rfr_id) {
+            try {
+                await GiftCardsService.sendReferralGiftNotification(giftRequest);
+            } catch (referralError) {
+                console.error("[ERROR] Failed to send referral notification:", referralError);
+            }
+        }
+
     } catch (emailError) {
         console.error("[ERROR] Failed to send gift acknowledgment email:", {
             error: emailError,
@@ -323,7 +340,6 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         res.status(status.error).send({ message: "Failed to update payment status in system!" })
     }
 }
-
 export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
         gift_card_request_id: giftCardRequestId,
@@ -338,7 +354,6 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     }
 
     try {
-
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }]);
         if (resp.results.length === 0) {
             res.status(status.notfound).json({
@@ -372,7 +387,7 @@ export const cloneGiftCardRequest = async (req: Request, res: Response) => {
             logo_message: giftCardRequest.logo_message,
             status: GiftCardRequestStatus.pendingPlotSelection,
             validation_errors: validationErrors,
-            album_id: giftCardRequest.album_id,
+            album_id: null, 
             notes: null,
             payment_id: null,
             created_by: createdBy || giftCardRequest.user_id,
