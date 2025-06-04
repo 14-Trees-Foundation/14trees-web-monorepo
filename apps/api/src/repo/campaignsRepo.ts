@@ -201,7 +201,7 @@ export class CampaignsRepository {
                 FROM "14trees_2".referrals r
                 LEFT JOIN "14trees_2".donations d ON r.id = d.rfr_id
                 LEFT JOIN valid_gift_cards vgc ON r.id = vgc.rfr_id
-                WHERE r.c_key = :c_key
+                WHERE r.c_key = :c_key AND (d.rfr_id IS NOT NULL OR vgc.rfr_id IS NOT NULL)
                 GROUP BY r.id, r.rfr, vgc.gift_card_amount, vgc.gift_card_count, vgc.gift_card_trees
             )
             SELECT 
@@ -211,7 +211,7 @@ export class CampaignsRepository {
                 dgs.rfr_code,
                 (dgs.donation_amount + dgs.gift_card_amount) as "amountRaised",
                 (dgs.donation_trees + dgs.gift_card_trees) as "treesSponsored",
-                (dgs.gift_card_count + 0) as "referralDonationsCount"
+                (dgs.gift_card_count + 0) as "giftedTrees"
             FROM donation_gift_summary dgs
             LEFT JOIN "14trees_2".users u ON u.rfr = dgs.rfr_code
             ORDER BY (dgs.donation_amount + dgs.gift_card_amount) DESC
