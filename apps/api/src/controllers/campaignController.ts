@@ -42,10 +42,18 @@ export const getCampaignAnalytics = async (req: Request, res: Response) => {
     const { c_key } = req.params;
 
     if (!c_key) {
-        return res.status(400).json({ error: "Campaign key (c_key) is required" });
+        return res.status(400).json({ message: "Campaign key (c_key) is required" });
     }
 
     try {
+
+        const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+            { columnField: 'c_key', operatorValue: 'equals', value: c_key }
+        ]);
+        if (campaignsResp.results.length === 0) {
+            return res.status(404).json({ message: "Campaign not found" });
+        }
+
         // Get campaign summary data
         const summary = await CampaignsRepository.getCampaignSummary(c_key);
 
@@ -54,6 +62,7 @@ export const getCampaignAnalytics = async (req: Request, res: Response) => {
 
         // Combine both results into single response
         const response = {
+            campaign: campaignsResp.results[0],
             summary,
             champion
         };
