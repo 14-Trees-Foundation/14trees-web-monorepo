@@ -22,14 +22,10 @@ import {
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {
-    FacebookShareButton,
     LinkedinShareButton,
     WhatsappShareButton,
-    FacebookIcon,
     LinkedinIcon,
     WhatsappIcon,
-    InstapaperShareButton,
-    InstapaperIcon,
     TelegramShareButton,
     TelegramIcon,
 } from 'react-share';
@@ -173,7 +169,19 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+            <Dialog 
+                open={open} 
+                onClose={onClose} 
+                maxWidth="sm" 
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        width: { xs: '95%', sm: '500px' },
+                        maxWidth: '500px',
+                        margin: { xs: '16px', sm: '32px' },
+                    }
+                }}
+            >
                 <DialogTitle>Share 14 Trees Initiative</DialogTitle>
                 <DialogContent>
                     <Typography variant="body1" sx={{ mb: 2 }}>
@@ -256,103 +264,143 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                                 </Select>
                             </FormControl>
                         )}
-                        <TextField
-                            fullWidth
-                            value={referralLink}
-                            placeholder="Your referral link will appear here"
-                            InputProps={{
-                                readOnly: true,
-                                sx: {
-                                    backgroundColor: '#f5f5f5',
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': {
-                                            borderColor: '#e0e0e0',
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: '#bdbdbd',
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: '#4caf50',
+                        <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            gap: { xs: 2, sm: 1 },
+                            alignItems: { sm: 'stretch' }
+                        }}>
+                            <TextField
+                                fullWidth
+                                value={referralLink}
+                                placeholder="Your referral link will appear here"
+                                multiline
+                                minRows={1}
+                                maxRows={3}
+                                size='medium'
+                                InputProps={{
+                                    readOnly: true,
+                                    sx: {
+                                        backgroundColor: '#f5f5f5',
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': {
+                                                borderColor: '#e0e0e0',
+                                            },
+                                            '&:hover fieldset': {
+                                                borderColor: '#bdbdbd',
+                                            },
+                                            '&.Mui-focused fieldset': {
+                                                borderColor: '#4caf50',
+                                            },
                                         },
                                     },
-                                },
-                                endAdornment: referralLink ? (
-                                    <IconButton 
-                                        onClick={handleCopyLink} 
-                                        sx={{ 
-                                            color: 'green',
-                                            borderRadius: '10px',
-                                            height: '100%',
-                                            padding: '8px',
-                                            margin: '-14px',
-                                            '&:hover': {
-                                                backgroundColor: 'rgb(146 195 146)',
-                                            },
-                                        }}
-                                    >
-                                        <ContentCopyIcon />
-                                    </IconButton>
-                                ) : (
-                                    <Button
-                                        variant="contained"
-                                        onClick={handleGenerateLink}
-                                        disabled={isLoading || !email || !!emailError || (showCampaignSelection && !selectedCampaign)}
-                                        sx={{ 
-                                            whiteSpace: 'nowrap',
-                                            backgroundColor: '#4caf50',
-                                            borderRadius: '0 4px 4px 0',
-                                            margin: '-14px',
-                                            height: '100%',
-                                            padding: '6px 16px',
-                                            '&:hover': {
-                                                backgroundColor: '#388e3c',
-                                            },
-                                        }}
-                                    >
-                                        {isLoading ? (
-                                            <CircularProgress size={20} color="inherit" />
-                                        ) : (
-                                            'Generate Link'
-                                        )}
-                                    </Button>
-                                ),
-                            }}
-                        />
+                                    endAdornment: referralLink && (
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center',
+                                            alignSelf: 'center',
+                                            pr: 1
+                                        }}>
+                                            <IconButton 
+                                                onClick={handleCopyLink} 
+                                                sx={{ 
+                                                    color: 'green',
+                                                    borderRadius: '10px',
+                                                    padding: '8px',
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgb(146 195 146)',
+                                                    },
+                                                }}
+                                            >
+                                                <ContentCopyIcon />
+                                            </IconButton>
+                                        </Box>
+                                    ),
+                                }}
+                                sx={{
+                                    '& .MuiInputBase-root': {
+                                        height: '100%',
+                                        alignItems: 'flex-start',
+                                        paddingTop: '8px',
+                                        paddingBottom: '8px',
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        alignSelf: 'center',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'normal',
+                                        wordBreak: 'break-all',
+                                        paddingRight: referralLink ? '48px' : '14px',
+                                    }
+                                }}
+                            />
+                            {!referralLink && (
+                                <Button
+                                    variant="contained"
+                                    onClick={handleGenerateLink}
+                                    disabled={isLoading || !email || !!emailError || (showCampaignSelection && !selectedCampaign)}
+                                    sx={{ 
+                                        backgroundColor: '#4caf50',
+                                        minHeight: { xs: '48px', sm: '100%' },
+                                        minWidth: { sm: '160px' },
+                                        '&:hover': {
+                                            backgroundColor: '#388e3c',
+                                        },
+                                    }}
+                                >
+                                    {isLoading ? (
+                                        <CircularProgress size={24} color="inherit" />
+                                    ) : (
+                                        'Generate Link'
+                                    )}
+                                </Button>
+                            )}
+                        </Box>
                         {error && (
                             <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
                                 {error}
                             </Typography>
                         )}
                     </Box>
-                    {referralLink && (
-                        <Box sx={{ mt: 2 }}>
-                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                Share via:
-                            </Typography>
-                            <Stack direction="row" spacing={1}>
-                                <WhatsappShareButton
-                                    url={referralLink}
-                                    title={shareMessage}
-                                >
-                                    <WhatsappIcon size={40} round />
-                                </WhatsappShareButton>
-                                <LinkedinShareButton
-                                    url={referralLink}
-                                    title={shareTitle}
-                                    summary={shareMessage}
-                                    source="14%20Trees"
-                                >
-                                    <LinkedinIcon size={40} round />
-                                </LinkedinShareButton>
-                                <TelegramShareButton
-                                    url={referralLink}
-                                    title={shareTitle}
-                                >
-                                    <TelegramIcon size={40} round />
-                                </TelegramShareButton>
-                            </Stack>
-                        </Box>
-                    )}
+
+                    <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Share via:
+                        </Typography>
+                        <Stack 
+                            direction="row" 
+                            spacing={1}
+                            sx={{
+                                justifyContent: { xs: 'center', sm: 'flex-start' },
+                                flexWrap: 'wrap',
+                                gap: 1
+                            }}
+                        >
+                            <WhatsappShareButton
+                                disabled={referralLink === ""}
+                                url={referralLink}
+                                title={shareMessage}
+                            >
+                                <WhatsappIcon size={40} round />
+                            </WhatsappShareButton>
+                            <LinkedinShareButton
+                                disabled={referralLink === ""}
+                                url={referralLink}
+                                title={shareTitle}
+                                summary={shareMessage}
+                                source="14%20Trees"
+                            >
+                                <LinkedinIcon size={40} round />
+                            </LinkedinShareButton>
+                            <TelegramShareButton
+                                disabled={referralLink === ""}
+                                url={referralLink}
+                                title={shareTitle}
+                            >
+                                <TelegramIcon size={40} round />
+                            </TelegramShareButton>
+                        </Stack>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={onClose}>Close</Button>
