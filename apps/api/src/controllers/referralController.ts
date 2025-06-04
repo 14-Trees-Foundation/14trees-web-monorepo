@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CampaignsRepository } from "../repo/campaignsRepo";
 import { UserRepository } from "../repo/userRepo";
 import { ReferralsRepository } from "../repo/referralsRepo";
+import { sendDashboardMail } from "../services/gmail/gmail";
 import { Op } from "sequelize";
 
 
@@ -39,6 +40,52 @@ export const createReferral = async (req: Request, res: Response) => {
         }
 
         const referral = await ReferralsRepository.createReferece(rfr, cKey);
+
+        // Send email with referral links after successful creation
+        if (referral.rfr && user.email) {
+            try {
+                const baseUrl = process.env.FRONTEND_URL;
+                const referralData = {
+                    rfr: referral.rfr,
+                    c_key: referral.c_key
+                };
+
+                const buildReferralLink = (linkType: string) => {
+                    let link = `${baseUrl}/${linkType}`;
+                    const params = new URLSearchParams();
+
+                    if (referralData.rfr) {
+                        params.append('r', referralData.rfr);
+                    }
+
+                    if (referralData.c_key) {
+                        params.append('c', referralData.c_key);
+                    }
+
+                    return params.toString() ? `${link}?${params.toString()}` : link;
+                };
+
+                const emailData = {
+                    name: user.name,
+                    donate_link: buildReferralLink('donate'),
+                    gift_link: buildReferralLink('gift-trees'),
+                    current_year: new Date().getFullYear(),
+                };
+
+                await sendDashboardMail(
+                    'referrer_email.html',
+                    emailData,
+                    [user.email],
+                    undefined,
+                    undefined,
+                    'Your 14Trees Referral Links Are Ready!'
+                );
+
+                console.log("[INFO] Referral links email sent to", user.email);
+            } catch (emailError) {
+                console.error("[ERROR] Failed to send referral links email:", emailError);
+            }
+        }
 
         return res.status(201).json({ rfr: referral.rfr, c_key: referral.c_key });
     } catch (error: any) {
