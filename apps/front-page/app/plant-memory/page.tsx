@@ -594,6 +594,7 @@ function GiftTrees() {
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         request_type: 'Gift Cards',
+        tags: ["WebSite"],
         event_name: eventName,
         event_type: eventType,
         planted_by: plantedBy,
@@ -1740,7 +1741,7 @@ function GiftTrees() {
       {showSuccessDialog && <SuccessDialog />}
       {showReferralDialog && (
         <ReferralDialog
-          linkType="gift-trees"
+          linkType="plant-memory"
           open={showReferralDialog}
           onClose={() => setShowReferralDialog(false)}
         />
