@@ -301,18 +301,27 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             }, { id: giftRequest.id })
         }
 
+        res.status(status.success).send();
+
         const sponsorUser = {
             id: giftRequest.user_id,
             name: (giftRequest as any).user_name,
             email: (giftRequest as any).user_email,
         };
-        await sendGiftRequestAcknowledgement(
-            giftRequest,
-            sponsorUser,
-            remainingTrees || 0,
-        );
 
-        // Conditionally send referral notification if rfr_id exists
+        try {
+            await sendGiftRequestAcknowledgement(
+                giftRequest,
+                sponsorUser,
+                remainingTrees || 0,
+            );
+        } catch (error) {
+            console.error("[ERROR] Failed to send gift acknowledgment email:", {
+                error,
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        }
+
         if (giftRequest.rfr_id) {
             try {
                 await GiftCardsService.sendReferralGiftNotification(giftRequest);
@@ -321,7 +330,6 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             }
         }
 
-        res.status(status.success).send();
     } catch (emailError) {
         console.error("[ERROR] Failed to send gift acknowledgment email:", {
             error: emailError,

@@ -171,20 +171,22 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
         ])
         const sponsorUser = usersResp.results[0];
 
-        // Send donation acknowledgment
-       await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+        res.status(status.success).send({});
 
-        // Conditionally send referral notification if rfr_id exists
+        try {
+            await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+        } catch (error) {
+            console.error("[ERROR] DonationsController::paymentSuccessForDonation:sendAcknowledgement", error);
+        }
+
         if (donation.rfr_id) {
             try {
                 await DonationService.sendReferralDonationNotification(donation);
             } catch (referralError) {
                 console.error("[ERROR] Failed to send referral notification:", referralError);
-                // Optional: You could also log this to a monitoring system or DB
             }
         }
 
-        res.status(status.success).send({});
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);
         res.status(status.error).send({ message: "Failed to send acknowledgment email!" });
