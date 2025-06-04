@@ -402,7 +402,7 @@ export const sendGiftRequestAcknowledgement = async (
         // Generate 80G receipt if applicable
         const date = new Date();
         const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-        const giftReceiptId = date.getFullYear() + "/" + giftRequest.id;
+        const giftReceiptId = FY + "/" + giftRequest.id;
 
         const docService = new GoogleDoc();
         const receiptId = await docService.get80GRecieptFileId({
