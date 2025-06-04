@@ -11,6 +11,8 @@ import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { User } from "../models/user";
 import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
 import { PlotRepository } from "../repo/plotRepo";
+import { UserRepository } from "../repo/userRepo";
+import { ReferralsRepository } from "../repo/referralsRepo";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -363,6 +365,98 @@ class GiftCardsService {
             await GiftCardsRepository.updateGiftCardRequests({
                 mail_error: "CSR: " + errorMessage,
             }, { id: giftCardRequestId });
+        }
+    }
+
+    public static async sendReferralGiftNotification(
+        gift: any,
+        testMails?: string[],
+        ccMails?: string[]
+    ): Promise<void> {
+        try {
+            if (!gift.rfr_id) {
+                console.log("[INFO] No referral ID associated with this gift");
+                return;
+            }
+    
+            const referrals = await ReferralsRepository.getReferrals({ id: gift.rfr_id });
+            if (referrals.length === 0) {
+                console.log("[INFO] Referral not found for ID:", gift.rfr_id);
+                return;
+            }
+    
+            const referral = referrals[0];
+    
+            if (!referral.rfr) {
+                console.log("[INFO] No referral code associated with this referral");
+                return;
+            }
+    
+            // Get referrer user separately
+            const referrerUsersResp = await UserRepository.getUsers(0, 1, [
+                { columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }
+            ]);
+            const referrerUser = referrerUsersResp.results[0];
+    
+            if (!referrerUser) {
+                console.log("[INFO] No user found with referral code:", referral.rfr);
+                return;
+            }
+    
+            // Get gifter user separately
+            const gifterUsersResp = await UserRepository.getUsers(0, 1, [
+                { columnField: 'id', operatorValue: 'equals', value: gift.user_id }
+            ]);
+            const gifterUser = gifterUsersResp.results[0];
+    
+            if (!gifterUser) {
+                console.log("[ERROR] Gifter user not found for gift:", gift.id);
+                return;
+            }
+    
+            const referralBaseUrl = process.env.DASHBOARD_URL;
+            const numberOfTrees = gift.no_of_cards || 0;
+            const calculatedAmount = numberOfTrees * 2000;
+            
+            const emailData = {
+                donor_name: gifterUser.name,
+                trees: numberOfTrees,
+                amount: formatNumber(calculatedAmount),
+                referral_link: `${referralBaseUrl}/referral/${referral.rfr}`,
+                current_year: new Date().getFullYear()
+            };
+    
+            console.log("[DEBUG] Email data:", {
+                originalAmount: gift.amount,
+                calculatedAmount,
+                numberOfTrees,
+                finalAmount: emailData.amount
+            });
+    
+            const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+            const mailIds = (testMails && testMails.length !== 0)
+                ? testMails
+                : [referrerUser.email];
+    
+            const templateName = 'gifting_referral.html';
+            const statusMessage = await sendDashboardMail(
+                templateName,
+                emailData,
+                mailIds,
+                ccMailIds,
+                undefined,
+                'New Gift Through Your Referral!'
+            );
+    
+            if (statusMessage) {
+                console.error("[ERROR] Failed to send referral notification:", statusMessage);
+            } else {
+                console.log("[INFO] Successfully sent referral notification for gift:", gift.id);
+            }
+    
+        } catch (error) {
+            console.error("[ERROR] GiftService::sendReferralGiftNotification", error);
+            throw new Error("Failed to send referral notification email");
         }
     }
 
