@@ -15,20 +15,47 @@ export const getPayment = async (req: Request, res: Response) => {
     }
 
     try {
-        let result = await PaymentRepository.getPayment(parseInt(req.params.id))
+        const paymentId = parseInt(req.params.id);
+        const result = await PaymentRepository.getPayment(paymentId);
+
         if (!result) {
             res.status(status.notfound).json({ message: 'Payment not found!' });
             return;
         }
+
+        // If payment has a Razorpay order_id, fetch payments from Razorpay (regardless of local history)
+        if (result.order_id) {
+            const razorpay = new RazorpayService();
+            const razorpayPayments = await razorpay.getPayments(result.order_id);
+
+            if (razorpayPayments && razorpayPayments.length > 0) {
+                const enhancedResult = {
+                    ...result,
+                    razorpay_history: razorpayPayments.map(p => ({
+                        transaction_id: p.acquirer_data?.upi_transaction_id,
+                        status: p.status,
+                        method: p.method,
+                        amount: Number(p.amount),
+                        fee: Number(p.fee),
+                        created_at: new Date(p.created_at * 1000), // Convert Razorpay timestamp
+                    })),
+                };
+                return res.status(status.success).json(enhancedResult);
+            }
+        }
+
+        // If no Razorpay payments or no order_id, return DB result alone
         res.status(status.success).json(result);
+
     } catch (error) {
         console.log("[ERROR]", "PaymentController::getPayment", error);
-        res.status(status.error).send({
+        res.status(status.error).json({
             status: status.error,
             message: 'Something went wrong. Please try again later.',
-        })
+        });
     }
-}
+};
+
 
 export const createPayment = async (req: Request, res: Response) => {
     const data = req.body;
