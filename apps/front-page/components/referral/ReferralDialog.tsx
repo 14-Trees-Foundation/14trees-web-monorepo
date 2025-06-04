@@ -28,6 +28,10 @@ import {
     FacebookIcon,
     LinkedinIcon,
     WhatsappIcon,
+    InstapaperShareButton,
+    InstapaperIcon,
+    TelegramShareButton,
+    TelegramIcon,
 } from 'react-share';
 import { apiClient } from '~/api/apiClient';
 
@@ -332,20 +336,20 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                                 >
                                     <WhatsappIcon size={40} round />
                                 </WhatsappShareButton>
-                                {/* <FacebookShareButton
-                                    url={referralLink}
-                                    hashtag="#14Trees"
-                                >
-                                    <FacebookIcon size={40} round />
-                                </FacebookShareButton>
                                 <LinkedinShareButton
                                     url={referralLink}
                                     title={shareTitle}
                                     summary={shareMessage}
-                                    source="14 Trees"
+                                    source="14%20Trees"
                                 >
                                     <LinkedinIcon size={40} round />
-                                </LinkedinShareButton> */}
+                                </LinkedinShareButton>
+                                <TelegramShareButton
+                                    url={referralLink}
+                                    title={shareTitle}
+                                >
+                                    <TelegramIcon size={40} round />
+                                </TelegramShareButton>
                             </Stack>
                         </Box>
                     )}
