@@ -68,7 +68,7 @@ export const createReferral = async (req: Request, res: Response) => {
                 const emailData = {
                     name: user.name,
                     donate_link: buildReferralLink('donate'),
-                    gift_link: buildReferralLink('gift-trees'),
+                    gift_link: buildReferralLink('plant-memory'),
                     current_year: new Date().getFullYear(),
                 };
 
