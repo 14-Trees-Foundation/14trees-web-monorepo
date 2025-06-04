@@ -42,8 +42,7 @@ export const createPayment = async (req: Request, res: Response) => {
         let orderId: string | null = null;
         const razorpayService = new RazorpayService();
         if (data.amount <= 500000) {
-            const amount = Math.max(data.amount/2000, 1);
-            const order = await razorpayService.createOrder(amount, data.notes);
+            const order = await razorpayService.createOrder(data.amount, data.notes);
             if (!order) {
                 res.status(status.error).send({
                     status: status.error,
