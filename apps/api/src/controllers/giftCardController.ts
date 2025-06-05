@@ -2525,3 +2525,37 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
         })
     }
 }
+
+export const sendCustomEmail = async (req: Request, res: Response) => {
+
+    const {
+        gift_request_id,
+        template_name,
+        test_emails,
+        attachments,
+        attach_cards,
+        subject,
+    } = req.body;
+
+    try {
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: gift_request_id }])
+        if (resp.results.length !== 1) {
+            res.status(status.bad).json({
+                message: 'Please provide valid input details!'
+            })
+            return;
+        }
+
+        const giftCardRequest: any = resp.results[0];
+        const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(giftCardRequest.id);
+
+        await GiftCardsService.sendCustomEmailToSponsor(giftCardRequest, giftCards, template_name, attach_cards, undefined, test_emails, subject, attachments);
+        res.status(status.success).send();
+
+    } catch(error) {
+        console.log("[ERROR]", "GiftCardController::sendCustomEmail", error);
+        return res.status(status.error).send({
+            messgae: 'Something went wrong. Please try again later.'
+        })
+    }
+}
