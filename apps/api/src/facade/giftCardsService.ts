@@ -13,6 +13,11 @@ import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
 import { PlotRepository } from "../repo/plotRepo";
 import { UserRepository } from "../repo/userRepo";
 import { ReferralsRepository } from "../repo/referralsRepo";
+import { GiftRequestUserAttributes, GiftRequestUserCreationAttributes } from "../models/gift_request_user";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
+import { GiftCard } from "../models/gift_card";
+import { Op } from "sequelize";
+import { UserGroupRepository } from "../repo/userGroupRepo";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -28,6 +33,137 @@ class GiftCardsService {
         ])
 
         return resp.results[0];
+    }
+
+    private static async upsertGiftRequestUsersAndRelations(users: any[], giftCardRequestId: number) {
+        const addUsersData: GiftRequestUserCreationAttributes[] = []
+        const updateUsersData: GiftRequestUserAttributes[] = []
+        let count = 0;
+        for (const user of users) {
+
+            // gifted To
+            const recipientUser = {
+                id: user.recipient,
+                name: user.recipient_name,
+                email: user.recipient_email,
+                phone: user.recipient_phone,
+            }
+            const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
+
+            // assigned To
+            const assigneeUser = {
+                id: user.assignee,
+                name: user.assignee_name,
+                email: user.assignee_email,
+                phone: user.assignee_phone,
+            }
+            const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
+
+            if (recipient.id !== assignee.id && user.relation?.trim()) {
+                await UserRelationRepository.createUserRelation({
+                    primary_user: recipient.id,
+                    secondary_user: assignee.id,
+                    relation: user.relation.trim(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
+            if (user.id) {
+                updateUsersData.push({
+                    ...user,
+                    gift_request_id: giftCardRequestId,
+                    recipient: recipient.id,
+                    assignee: assignee.id,
+                    profile_image_url: user.image_url || null,
+                    updated_at: new Date(),
+                })
+            } else {
+                addUsersData.push({
+                    ...user,
+                    gift_request_id: giftCardRequestId,
+                    recipient: recipient.id,
+                    assignee: assignee.id,
+                    profile_image_url: user.image_url || null,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
+            count += parseInt(user.gifted_trees) || 1;
+        }
+
+        return { addUsersData, updateUsersData, count };
+    }
+
+    private static async deleteGiftRequestUsersAndResetTrees(deleteIds: number[], giftCards: GiftCard[], giftCardRequestId: number) {
+        const treeIds = giftCards.filter(item => item.gift_request_user_id && item.tree_id && deleteIds.includes(item.gift_request_user_id)).map(item => item.tree_id);
+        await TreeRepository.updateTrees({
+            description: null,
+            assigned_to: null,
+            assigned_at: null,
+            gifted_to: null,
+            gifted_by: null,
+            planted_by: null,
+            gifted_by_name: null,
+            event_type: null,
+            user_tree_image: null,
+            memory_images: null,
+            updated_at: new Date()
+        }, { id: { [Op.in]: treeIds } });
+
+        await GiftCardsRepository.updateGiftCards({ gift_request_user_id: null }, { gift_card_request_id: giftCardRequestId, gift_request_user_id: { [Op.in]: deleteIds } });
+        await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
+    }
+
+    public static async upsertGiftRequestUsers(giftCardRequest: GiftCardRequest, users: any[]) {
+        const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequest.id }]);
+        const giftCards = cardsResp.results;
+
+        const { addUsersData, updateUsersData, count } = await this.upsertGiftRequestUsersAndRelations(users, giftCardRequest.id);
+
+        if (count > giftCardRequest.no_of_cards)
+            throw new Error("Requested number of gift trees doesn't match in user details!");
+
+        const existingUsers = await GiftCardsRepository.getGiftRequestUsers(giftCardRequest.id);
+        const deleteIds = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1).map(item => item.id);
+        if (deleteIds.length > 0) {
+            await this.deleteGiftRequestUsersAndResetTrees(deleteIds, giftCards, giftCardRequest.id);
+        }
+
+        if (addUsersData.length > 0) await GiftCardsRepository.addGiftRequestUsers(addUsersData);
+        for (const user of updateUsersData) {
+
+            const treeIds = giftCards.filter(item => item.tree_id && item.gift_request_user_id === user.id).map(item => item.tree_id);
+            await TreeRepository.updateTrees({
+                assigned_to: user.assignee,
+                assigned_at: giftCardRequest.gifted_on,
+                gifted_to: giftCardRequest.request_type === 'Normal Assignment' ? null : user.recipient,
+                user_tree_image: user.profile_image_url,
+                updated_at: new Date()
+            }, { id: { [Op.in]: treeIds } });
+
+            await GiftCardsRepository.updateGiftRequestUsers(user, { id: user.id });
+        }
+
+        // add recipients to Giftee group
+        let recipientIds: number[] = []
+        addUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
+        updateUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
+        await UserGroupRepository.addUsersToGifteeGroup(recipientIds);
+
+        // validation on user details
+        if (giftCardRequest.no_of_cards !== count && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? [...giftCardRequest.validation_errors, 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS']
+        } else if (giftCardRequest.no_of_cards === count && giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : [];
+        }
+
+        if (!giftCardRequest.validation_errors || giftCardRequest.validation_errors.length === 0) giftCardRequest.validation_errors = [];
+        giftCardRequest.updated_at = new Date();
+        const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
+        return updated;
     }
 
     public static async generateTreeCardsForSaplings(saplingIds: string[]) {
@@ -378,46 +514,46 @@ class GiftCardsService {
                 console.log("[INFO] No referral ID associated with this gift");
                 return;
             }
-    
+
             const referrals = await ReferralsRepository.getReferrals({ id: gift.rfr_id });
             if (referrals.length === 0) {
                 console.log("[INFO] Referral not found for ID:", gift.rfr_id);
                 return;
             }
-    
+
             const referral = referrals[0];
-    
+
             if (!referral.rfr) {
                 console.log("[INFO] No referral code associated with this referral");
                 return;
             }
-    
+
             // Get referrer user separately
             const referrerUsersResp = await UserRepository.getUsers(0, 1, [
                 { columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }
             ]);
             const referrerUser = referrerUsersResp.results[0];
-    
+
             if (!referrerUser) {
                 console.log("[INFO] No user found with referral code:", referral.rfr);
                 return;
             }
-    
+
             // Get gifter user separately
             const gifterUsersResp = await UserRepository.getUsers(0, 1, [
                 { columnField: 'id', operatorValue: 'equals', value: gift.user_id }
             ]);
             const gifterUser = gifterUsersResp.results[0];
-    
+
             if (!gifterUser) {
                 console.log("[ERROR] Gifter user not found for gift:", gift.id);
                 return;
             }
-    
+
             const referralBaseUrl = process.env.DASHBOARD_URL;
             const numberOfTrees = gift.no_of_cards || 0;
             const calculatedAmount = numberOfTrees * 2000;
-            
+
             const emailData = {
                 donor_name: gifterUser.name,
                 trees: numberOfTrees,
@@ -425,19 +561,19 @@ class GiftCardsService {
                 referral_link: `${referralBaseUrl}/referral/${referral.rfr}`,
                 current_year: new Date().getFullYear()
             };
-    
+
             console.log("[DEBUG] Email data:", {
                 originalAmount: gift.amount,
                 calculatedAmount,
                 numberOfTrees,
                 finalAmount: emailData.amount
             });
-    
+
             const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
             const mailIds = (testMails && testMails.length !== 0)
                 ? testMails
                 : [referrerUser.email];
-    
+
             const templateName = 'gifting_referral.html';
             const statusMessage = await sendDashboardMail(
                 templateName,
@@ -447,13 +583,13 @@ class GiftCardsService {
                 undefined,
                 'New Gift Through Your Referral!'
             );
-    
+
             if (statusMessage) {
                 console.error("[ERROR] Failed to send referral notification:", statusMessage);
             } else {
                 console.log("[INFO] Successfully sent referral notification for gift:", gift.id);
             }
-    
+
         } catch (error) {
             console.error("[ERROR] GiftService::sendReferralGiftNotification", error);
             throw new Error("Failed to send referral notification email");
