@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import * as autoPrsReq  from '../controllers/autoPrsReqController';  
+import * as autoPrsReq from '../controllers/autoPrsReqController';
 import { verifyToken } from '../auth/verifyToken';
 
 const routes = Router();
 
 /**
  * @swagger
- * /plots/create:
+ * /auto-process/create:
  *   post:
  *     summary: Create a new plot record
  *     description: Creates a new plot record with type either 'donation' or 'gift'. A plot_id can exist once per type.
@@ -61,7 +61,7 @@ const routes = Router();
  *       500:
  *         description: Internal server error
  */
-routes.post('/create', verifyToken, autoPrsReq.createPlot); // Add auth middleware if needed
+routes.post('/addPlots', verifyToken, autoPrsReq.addPlot); // Add auth middleware if needed
 
 routes.get('/getPlot', autoPrsReq.getPlotData);
 

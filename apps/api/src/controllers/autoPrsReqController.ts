@@ -4,12 +4,12 @@ import { AutoPrsReqPlotsRepository } from '../repo/autoPrsReqPlotRepo';
 import { PlotRepository } from '../repo/plotRepo';
 import { Request, Response } from 'express';
 
-export const createPlot = async (req: Request, res: Response) => {
+export const addPlot = async (req: Request, res: Response) => {
     try {
-        const { plot_id, type } = req.body;
+        const { plot_ids, type } = req.body;
 
         // Validate input
-        if (!plot_id || !type) {
+        if (!plot_ids || !type) {
             return res.status(400).json({ error: 'plot_id and type are required' });
         }
 
@@ -18,8 +18,8 @@ export const createPlot = async (req: Request, res: Response) => {
         }
 
         // Create plot
-        const newPlot = await AutoPrsReqPlotsRepository.createPlot({
-            plot_id,
+        const newPlot = await AutoPrsReqPlotsRepository.addPlot({
+            plot_ids,
             type
             // Add other fields from req.body as needed
         });
@@ -28,8 +28,8 @@ export const createPlot = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('Error creating plot:', error);
-        return res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to create plot' 
+        return res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to create plot'
         });
     }
 };
@@ -56,17 +56,16 @@ export const getPlotData = async (req: Request, res: Response) => {
         const filters: FilterItem[] = [
             {
                 columnField: 'id',
-                operatorValue: 'in',
+                operatorValue: 'isAnyOf',
                 value: plotIds
             }
         ];
 
         // 4. Call PlotsRepository with required params
         const plotsData = await PlotRepository.getPlots(
-            0,         // offset
-            1000,      // limit (adjust if needed)
-            filters,   // filters
-            [{ column: 'id', order: 'ASC' }] // optional order
+            0,
+            plotIds.length,
+            filters,
         );
 
         return res.status(200).json(plotsData);
