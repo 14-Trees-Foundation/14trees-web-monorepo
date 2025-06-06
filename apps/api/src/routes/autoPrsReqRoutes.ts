@@ -63,6 +63,6 @@ const routes = Router();
  */
 routes.post('/addPlots', verifyToken, autoPrsReq.addPlot); // Add auth middleware if needed
 
-routes.get('/getPlot', autoPrsReq.getPlotData);
+routes.post('/getPlot', autoPrsReq.getPlotData);
 
 export default routes;

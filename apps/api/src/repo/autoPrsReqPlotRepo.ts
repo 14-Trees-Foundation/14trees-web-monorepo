@@ -1,5 +1,6 @@
 
 
+import { Op } from 'sequelize';
 import { AutoPrsReqPlot } from '../models/auto_prs_req_plot';
 
 export class AutoPrsReqPlotsRepository {
@@ -11,28 +12,30 @@ export class AutoPrsReqPlotsRepository {
         })
     }
 
-    public static async addPlot(
+    public static async addPlots(
         plotData: {
-            plot_ids: string;
+            plot_ids: number[];
             type: 'donation' | 'gift';
         }
-    ): Promise<AutoPrsReqPlot> {
-        // Check for existing plot_id + type combination
-        const existing = await AutoPrsReqPlot.findOne({
+    ): Promise<AutoPrsReqPlot[]> {
+
+        const existing = await AutoPrsReqPlot.findAll({
             where: {
-                plot_id: plotData.plot_ids,
+                plot_id: { [Op.in]: plotData.plot_ids },
                 type: plotData.type
             }
         });
 
-        if (existing) {
-            throw new Error(`Plot ${plotData.plot_ids} already exists for type ${plotData.type}`);
-        }
+        const newPlotIds = plotData.plot_ids.filter(id =>
+            !existing.some(plot => plot.plot_id === id && plot.type === plotData.type)
+        );
 
-        return AutoPrsReqPlot.create({
-            plot_id: parseInt(plotData.plot_ids),
+        const createData = newPlotIds.map(plot_id => ({
+            plot_id,
             type: plotData.type
-        });
-    }
+        }));
 
+        if (createData.length === 0) return existing;
+        return AutoPrsReqPlot.bulkCreate(createData, { returning: true });
+    }
 }

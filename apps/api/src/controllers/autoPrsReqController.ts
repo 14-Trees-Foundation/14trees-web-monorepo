@@ -8,8 +8,7 @@ export const addPlot = async (req: Request, res: Response) => {
     try {
         const { plot_ids, type } = req.body;
 
-        // Validate input
-        if (!plot_ids || !type) {
+        if (!plot_ids || plot_ids.length === 0 || !type) {
             return res.status(400).json({ error: 'plot_id and type are required' });
         }
 
@@ -18,13 +17,12 @@ export const addPlot = async (req: Request, res: Response) => {
         }
 
         // Create plot
-        const newPlot = await AutoPrsReqPlotsRepository.addPlot({
+        const newPlots = await AutoPrsReqPlotsRepository.addPlots({
             plot_ids,
             type
-            // Add other fields from req.body as needed
         });
 
-        return res.status(201).json(newPlot);
+        return res.status(201).json(newPlots);
 
     } catch (error) {
         console.error('Error creating plot:', error);
@@ -37,23 +35,21 @@ export const addPlot = async (req: Request, res: Response) => {
 export const getPlotData = async (req: Request, res: Response) => {
     try {
         const { type } = req.query;
+        const { filters, order_by } = req.body;
 
         if (type !== 'donation' && type !== 'gift') {
             return res.status(400).json({ error: 'Query param "type" must be "donation" or "gift"' });
         }
 
-        // 1. Fetch plot records by type
-        const autoPlots = await AutoPrsReqPlotsRepository.getPlots(type as 'donation' | 'gift');
+        const autoPlots = await AutoPrsReqPlotsRepository.getPlots(type);
 
         if (!autoPlots || autoPlots.length === 0) {
             return res.status(404).json({ message: 'No plots found for this type' });
         }
 
-        // 2. Extract plot_ids
         const plotIds = autoPlots.map(p => p.plot_id);
 
-        // 3. Prepare filters
-        const filters: FilterItem[] = [
+        const Allfilters: FilterItem[] = [
             {
                 columnField: 'id',
                 operatorValue: 'isAnyOf',
@@ -61,12 +57,29 @@ export const getPlotData = async (req: Request, res: Response) => {
             }
         ];
 
-        // 4. Call PlotsRepository with required params
+        if (filters && Array.isArray(filters)) {
+            Allfilters.push(...filters);
+        }
+
         const plotsData = await PlotRepository.getPlots(
             0,
             plotIds.length,
-            filters,
+            Allfilters,
+            order_by
         );
+
+        if (!order_by || order_by.length === 0) {
+            let orderedPlots = plotIds.map(id => {
+                return plotsData.results.find((plot: any) => plot.id === id);
+            }).filter(plot => plot !== undefined);
+
+            orderedPlots = orderedPlots.reverse()
+            return res.status(200).json({
+                results: orderedPlots,
+                total: orderedPlots.length,
+                offset: 0,
+            });
+        }
 
         return res.status(200).json(plotsData);
 
