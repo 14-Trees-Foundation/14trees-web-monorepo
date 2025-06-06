@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCS Fortress Tree Planting Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+
+    .header {
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header h2 {
+      margin: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .info-table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table th,
+    .info-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .info-table th {
+      background-color: #f2f2f2;
+    }
+
+    @media screen and (max-width: 600px) {
+
+      .info-table th,
+      .info-table td {
+        padding: 6px;
+        font-size: 14px;
+      }
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding: 10px;
+      background-color: #f2f2f2;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .footer-content {
+      text-align: left;
+      line-height: 0.5;
+    }
+
+    .footer-logo {
+      height: 80px;
+      margin-left: 10px;
+    }
+
+    .footer-logo-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Thank You for Supporting the TCS Fortress Tree Plantation Drive</h2>
+    </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        With heartfelt appreciation, we thank you for being a valued part of the <strong>TCS Fortress campaign</strong>.
+        We're delighted to share that the <strong>tree plantation drive under this initiative is now
+          complete</strong>—and it's all thanks to your generous support.
+      </p>
+      <p>
+        Because of your contribution, <strong>{{trees_count}}</strong> trees have been planted, each one a living symbol
+        of your commitment to a greener and healthier planet.
+      </p>
+      <h3>You can view your tree and track its journey here:</h3>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Tree ID</th>
+            <th>Tree Name</th>
+            <th>Scientific Name</th>
+            <th>Name</th>
+            <th>Dashboard Link</th>
+          </tr>
+          {{#each trees}}
+          <tr>
+            <td>{{sapling_id}}</td>
+            <td>{{plant_type}}</td>
+            <td>{{scientific_name}}</td>
+            <td>{{assigned_to_name}}</td>
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      <p>
+        Every tree planted through this campaign brings us closer to restoring ecosystems, purifying our air, and
+        leaving behind a legacy of sustainability. Your involvement in TCS Fortress is making a tangible and lasting
+        difference.
+      </p>
+      <p>
+        We're truly grateful for your trust, support, and partnership in this meaningful endeavor.
+      </p>
+      <p>
+        To continue following our shared mission or explore more ways to stay engaged, please connect us on
+        <a href="mailto:contact@14trees.org">contact@14trees.org</a>. We also look forward to welcoming you to the <strong>14 Trees Foundation</strong> site in the
+        near future.
+      </p>
+      <p>
+        For any feedback or updates related to your dashboard, feel free to reply to this email—we're always happy to
+        assist.
+      </p>
+    </div>
+    <div class="footer">
+      <div class="footer-content">
+        <p>With warmest regards and sincere appreciation,</p>
+        <p>14 Trees Foundation</p>
+        <a href="https://14trees.org">https://14trees.org</a>
+      </div>
+      <div class="footer-logo-container">
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" />
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
