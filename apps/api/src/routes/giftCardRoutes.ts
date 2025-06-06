@@ -219,6 +219,39 @@ routes.post('/requests/get', giftCards.getGiftCardRequests);
 routes.post('/requests', uploadFiles.fields([{ name: 'logo', maxCount: 1 }, { name: 'csv_file', maxCount: 1 }]), giftCards.createGiftCardRequest);
 
 
+/**
+ * @swagger
+ * /gift-cards/requests/createv2:
+ *   post:
+ *     summary: Create gift card request
+ *     description: Creates a new gift card request.
+ *     tags:
+ *       - Gift Cards
+ *     responses:
+ *       200:
+ *         description: Gift card request created successfully
+ *         schema:
+ *           $ref: '#/definitions/GiftTreesRequest'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Please provide valid input details!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.post('/requests/createv2', giftCards.createGiftCardRequestV2);
+
+
 routes.post('/requests/payment-success', giftCards.paymentSuccessForGiftRequest);
 routes.post('/requests/auto-process', giftCards.autoProcessGiftCardRequest);
 routes.post('/requests/plot-trees-cnt/get', giftCards.getTreesCountForAutoReserveTrees);

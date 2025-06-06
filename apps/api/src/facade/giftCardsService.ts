@@ -13,11 +13,13 @@ import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
 import { PlotRepository } from "../repo/plotRepo";
 import { UserRepository } from "../repo/userRepo";
 import { ReferralsRepository } from "../repo/referralsRepo";
-import { GiftRequestUserAttributes, GiftRequestUserCreationAttributes } from "../models/gift_request_user";
+import { GiftRequestUser, GiftRequestUserAttributes, GiftRequestUserCreationAttributes } from "../models/gift_request_user";
 import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { GiftCard } from "../models/gift_card";
 import { Op } from "sequelize";
 import { UserGroupRepository } from "../repo/userGroupRepo";
+import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
+import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -619,6 +621,68 @@ class GiftCardsService {
                 }).filter(item => item.trees_count);
 
         return plotTreeCnts;
+    }
+
+    public static async redeemGiftCards(
+        giftCards: GiftCard[],
+        recipient: GiftRequestUser,
+        sponsorUser: number | null,
+        sponsorGroup: number | null,
+        requestingUser: number,
+        eventName: string,
+        eventType: string,
+        giftedBy: string,
+        giftedOn: Date,
+        primaryMessage: string = defaultMessage,
+        logoMessage: string = ""
+    ) {
+
+        const treeUpdateRequest = {
+            assigned_at: giftedOn,
+            assigned_to: recipient.assignee,
+            gifted_to: recipient.recipient,
+            event_type: eventType?.trim() ? eventType.trim() : "3",
+            description: eventName?.trim() ? eventName.trim() : null,
+            gifted_by_name: giftedBy?.trim() ? giftedBy.trim() : null,
+            updated_at: new Date(),
+            planted_by: null,
+            gifted_by: sponsorUser,
+            user_tree_image: recipient.profile_image_url,
+        }
+    
+        await TreeRepository.updateTrees(treeUpdateRequest, { id: { [Op.in]: giftCards.map(card => card.tree_id)}});
+        await GiftCardsRepository.updateGiftCards(
+            {
+                gift_request_user_id: recipient.id,
+                assigned_to: recipient.assignee,
+                gifted_to: recipient.recipient,
+                updated_at: new Date(),
+            },
+            { id: { [Op.in]: giftCards.map(card => card.id) } }
+        );
+
+        const trnData: GiftRedeemTransactionCreationAttributes = {
+            group_id: sponsorGroup,
+            user_id: sponsorUser,
+            created_by: requestingUser,
+            modified_by: requestingUser,
+            recipient: recipient.recipient,
+            occasion_name: eventName,
+            occasion_type: eventType,
+            gifted_by: giftedBy,
+            gifted_on: giftedOn,
+            primary_message: primaryMessage,
+            secondary_message: "",
+            logo_message: logoMessage,
+            created_at: new Date(),
+            updated_at: new Date(),
+        }
+
+        const cardIds = giftCards.map(card => card.id);
+        if (sponsorGroup || sponsorUser) {
+            const trn = await GRTransactionsRepository.createTransaction(trnData);
+            await GRTransactionsRepository.addCardsToTransaction(trn.id, cardIds);
+        }
     }
 }
 
