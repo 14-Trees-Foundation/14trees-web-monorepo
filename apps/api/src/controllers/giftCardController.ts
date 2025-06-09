@@ -265,7 +265,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
 export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
 
-    const { gift_request_id, remaining_trees: remainingTrees } = req.body;
+    const { gift_request_id, remaining_trees: remainingTrees, is_corporate } = req.body;
 
     try {
 
@@ -306,6 +306,8 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
 
         res.status(status.success).send();
 
+        if (is_corporate) return;
+
         const sponsorUser = {
             id: giftRequest.user_id,
             name: (giftRequest as any).user_name,
@@ -341,6 +343,8 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         res.status(status.error).send({ message: "Failed to update payment status in system!" })
     }
 }
+
+
 export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
         gift_card_request_id: giftCardRequestId,
