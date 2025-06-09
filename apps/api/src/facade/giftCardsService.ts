@@ -623,6 +623,68 @@ class GiftCardsService {
         return plotTreeCnts;
     }
 
+    public static async sendCustomEmailToSponsor(giftCardRequest: any, giftCards: any[], templateName: string, attachCard: boolean, ccMails?: string[], testMails?: string[], subject?: string, attachments?: { filename: string; path: string }[]) {
+        const emailData: any = {
+            trees: [] as any[],
+            trees_count: giftCards.length,
+            user_email: giftCardRequest.user_email,
+            user_name: giftCardRequest.user_name,
+            event_name: giftCardRequest.event_name,
+            group_name: giftCardRequest.group_name,
+            company_logo_url: giftCardRequest.logo_url,
+            count: 0
+        };
+
+        for (const giftCard of giftCards) {
+
+            const treeData = {
+                sapling_id: giftCard.sapling_id,
+                dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
+                planted_via: giftCard.planted_via,
+                plant_type: giftCard.plant_type,
+                scientific_name: giftCard.scientific_name,
+                card_image_url: giftCard.card_image_url,
+                event_name: giftCard.event_name,
+                assigned_to_name: giftCard.assigned_to_name,
+            };
+
+            emailData.trees.push(treeData);
+            emailData.count++;
+        }
+
+        const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+        const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
+
+        let allAttachments: { filename: string; path: string }[] | undefined = attachments;
+        if (attachCard) {
+            const files: { filename: string; path: string }[] = []
+            for (const tree of emailData.trees) {
+                if (tree.card_image_url) {
+                    files.push({
+                        filename: tree.assigned_to_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                        path: tree.card_image_url
+                    })
+                }
+            }
+
+            if (files.length > 0) allAttachments = allAttachments ? [...allAttachments, ...files] : files;
+        }
+
+        const statusMessage: string = await sendDashboardMail(templateName, emailData, mailIds, ccMailIds, allAttachments, subject);
+
+        if (statusMessage === '') {
+            await GiftCardsRepository.updateGiftCardRequests(
+                {
+                    mail_sent: true,
+                    updated_at: new Date()
+                },
+                {
+                    id: giftCardRequest.id
+                }
+            );
+        }
+    }
+
     public static async redeemGiftCards(
         giftCards: GiftCard[],
         recipient: GiftRequestUser,

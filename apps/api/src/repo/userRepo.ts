@@ -17,13 +17,13 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
     return {
         name: reqBody.name.trim(),
         phone: reqBody.phone ? reqBody.phone.trim() : null,
-        email: reqBody.email.trim(),
+        email: reqBody.email.trim().toLowerCase(),
         user_id: userId,
         birth_date: isNaN(birthDate?.getDate()) ? null : birthDate,
         created_at: new Date(),
         updated_at: new Date(),
         communication_email: reqBody.communication_email?.trim() && !reqBody.communication_email.trim().endsWith("@14trees")
-            ? reqBody.communication_email.trim()
+            ? reqBody.communication_email.trim().toLowerCase()
             : null
     } as UserCreationAttributes;
 }

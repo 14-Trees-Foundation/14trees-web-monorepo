@@ -1896,6 +1896,7 @@ routes.post('/gen-ai', verifyToken, genAi.serveUserQuery);
 
 
 routes.post('/adhoc-tree-cards', giftCards.generateAdhocTreeCards);
+routes.post('/custom-mails', giftCards.sendCustomEmail);
 
 export default routes;
 

@@ -342,6 +342,15 @@ export const combineUsers = async (req: Request, res: Response) => {
     const giftRequests = { user_id: primary_user, updated_at: new Date() };
     await GiftCardsRepository.updateGiftCardRequests(giftRequests, { user_id: secondary_user });
 
+    const giftRequestSponsor = { sponsor_id: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequestSponsor, { sponsor_id: secondary_user });
+
+    const giftRequestCreatedBy = { created_by: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequestCreatedBy, { created_by: secondary_user });
+
+    const giftRequestProcessedBy = { processed_by: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequestProcessedBy, { processed_by: secondary_user });
+
     const giftCardsGiftedTo = { gifted_to: primary_user, updated_at: new Date() };
     await GiftCardsRepository.updateGiftCards(giftCardsGiftedTo, { gifted_to: secondary_user });
 
