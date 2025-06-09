@@ -54,6 +54,8 @@ export class GiftCardsRepository {
                     columnField = "cu.name";
                 } else if (filter.columnField === "processed_by_name") {  // NEW: Filter by processor name
                     columnField = "pu.name";
+                } else if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name";
                 }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
@@ -69,7 +71,8 @@ export class GiftCardsRepository {
                 u.phone as user_phone, 
                 g.name as group_name, 
                 cu.name as created_by_name,
-                pu.name as processed_by_name,  
+                pu.name as processed_by_name, 
+                MIN(ru.name) AS recipient_name,
                 SUM(CASE 
                     WHEN gc.tree_id is not null
                     THEN 1
@@ -106,6 +109,7 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees".gift_cards gc ON gc.gift_card_request_id = gcr.id
             LEFT JOIN "14trees".trees t ON t.id = gc.tree_id
             LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            LEFT JOIN "14trees".users ru ON ru.id = gru.recipient
             WHERE ${whereConditions || "1=1"}
             GROUP BY gcr.id, u.id, cu.id, pu.id, g.name 
             ORDER BY ${orderBy?.map(o => `gcr.${o.column} ${o.order}`).join(", ") || 'gcr.id DESC'}
@@ -113,12 +117,15 @@ export class GiftCardsRepository {
         `;
 
         const countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(DISTINCT gcr.id)  
             FROM "14trees".gift_card_requests gcr
             LEFT JOIN "14trees".users u ON u.id = gcr.user_id
             LEFT JOIN "14trees".users cu ON cu.id = gcr.created_by
             LEFT JOIN "14trees".users pu ON pu.id = gcr.processed_by  
             LEFT JOIN "14trees".groups g ON g.id = gcr.group_id
+            LEFT JOIN "14trees".gift_cards gc ON gc.gift_card_request_id = gcr.id
+            LEFT JOIN "14trees".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            LEFT JOIN "14trees".users ru ON ru.id = gru.recipient
             WHERE ${whereConditions || "1=1"};
         `;
 

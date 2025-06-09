@@ -46,6 +46,7 @@ import whatsAppRoutes from "./routes/whatsAppRoutes";
 import viewRoutes from "./routes/viewRoutes";
 import campaignRoutes from "./routes/campaignRoutes";
 import referralRoutes from "./routes/referralRoutes";
+import autoPrsReqRoutes from "./routes/autoPrsReqRoutes"
 import swaggerJSDoc from "swagger-jsdoc";
 
 interface ResponseError extends Error {
@@ -133,6 +134,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/wa", whatsAppRoutes);
   app.use("/api/campaigns", campaignRoutes);
   app.use("/api/referrals", referralRoutes);
+  app.use("/api/auto-process", autoPrsReqRoutes);
 
   app.use('/api/doc', swaggerUi.serve, swaggerSpecification())
 
