@@ -54,6 +54,8 @@ export class GiftCardsRepository {
                     columnField = "cu.name";
                 } else if (filter.columnField === "processed_by_name") {  // NEW: Filter by processor name
                     columnField = "pu.name";
+                } else if (filter.columnField === "recipient_name") {
+                    columnField = "ru.name";
                 }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
@@ -121,6 +123,9 @@ export class GiftCardsRepository {
             LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
             LEFT JOIN "14trees_2".users pu ON pu.id = gcr.processed_by  
             LEFT JOIN "14trees_2".groups g ON g.id = gcr.group_id
+            LEFT JOIN "14trees_2".gift_cards gc ON gc.gift_card_request_id = gcr.id
+            LEFT JOIN "14trees_2".gift_request_users gru ON gru.id = gc.gift_request_user_id
+            LEFT JOIN "14trees_2".users ru ON ru.id = gru.recipient
             WHERE ${whereConditions || "1=1"};
         `;
 
