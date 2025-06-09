@@ -2424,7 +2424,7 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         tags,
     } = req.body;
 
-    if (!group_id || !sponsor_name || !sponsor_email || !event_type || !event_name || !no_of_cards || isNaN(parseInt(no_of_cards))) {
+    if (!group_id || !sponsor_name || !sponsor_email || !no_of_cards || isNaN(parseInt(no_of_cards))) {
         return res.status(status.bad).json({
             message: 'Please provide valid input details!'
         });
@@ -2461,12 +2461,12 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
             created_at: new Date(),
             updated_at: new Date(),
             logo_url: null,
-            primary_message: primary_message || null,
+            primary_message: primary_message || defaultGiftMessages.primary,
             secondary_message: null,
             event_name: event_name || null,
-            event_type: event_type || null,
+            event_type: event_type || "3",
             planted_by: gifted_by || null,
-            logo_message: logo_message || null,
+            logo_message: logo_message || defaultGiftMessages.logo,
             status: GiftCardRequestStatus.pendingPlotSelection,
             validation_errors: group_id ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
             notes: null,
@@ -2491,6 +2491,11 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
                 message: 'Something went wrong while creating gift card request. Please try again later.'
             });
         }
+
+        if (!users || !Array.isArray(users) || users.length === 0) {
+            return res.status(status.created).send({ gift_request: giftCardRequest, order_id: payment.order_id });
+        }
+        
         const updated = await GiftCardsService.upsertGiftRequestUsers(giftCardRequest, users);
         res.status(status.created).send({ gift_request: updated, order_id: payment.order_id });
     } catch (error: any) {
