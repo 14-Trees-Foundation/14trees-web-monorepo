@@ -270,6 +270,7 @@ export function sendGiftCardMails() {
         try {
             const filters: FilterItem[] = [
                 { columnField: 'created_at', operatorValue: 'greaterThan', value: new Date(Date.now() - 15 * 60 * 1000).toISOString() },
+                { columnField: 'request_type', operatorValue: 'equals', value: 'Gift Cards' },
             ]
             const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
             giftCardRequests = giftCardsResp.results;
