@@ -117,7 +117,7 @@ export class GiftCardsRepository {
         `;
 
         const countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(DISTINCT gcr.id)  
             FROM "14trees_2".gift_card_requests gcr
             LEFT JOIN "14trees_2".users u ON u.id = gcr.user_id
             LEFT JOIN "14trees_2".users cu ON cu.id = gcr.created_by
