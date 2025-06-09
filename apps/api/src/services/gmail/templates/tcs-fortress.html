@@ -64,7 +64,15 @@
       .info-table th,
       .info-table td {
         padding: 6px;
-        font-size: 14px;
+        font-size: 12px;
+      }
+
+      .info-table td:last-child {
+        white-space: normal;
+      }
+
+      .info-table td:last-child a {
+        word-break: normal;
       }
     }
 
@@ -117,7 +125,6 @@
           <tr>
             <th>Tree ID</th>
             <th>Tree Name</th>
-            <th>Scientific Name</th>
             <th>Name</th>
             <th>Dashboard Link</th>
           </tr>
@@ -125,7 +132,6 @@
           <tr>
             <td>{{sapling_id}}</td>
             <td>{{plant_type}}</td>
-            <td>{{scientific_name}}</td>
             <td>{{assigned_to_name}}</td>
             <td><a href="{{dashboard_link}}">Dashboard</a></td>
           </tr>
@@ -142,7 +148,8 @@
       </p>
       <p>
         To continue following our shared mission or explore more ways to stay engaged, please connect us on
-        <a href="mailto:contact@14trees.org">contact@14trees.org</a>. We also look forward to welcoming you to the <strong>14 Trees Foundation</strong> site in the
+        <a href="mailto:contact@14trees.org">contact@14trees.org</a>. We also look forward to welcoming you to the
+        <strong>14 Trees Foundation</strong> site in the
         near future.
       </p>
       <p>
@@ -152,7 +159,7 @@
     </div>
     <div class="footer">
       <div class="footer-content">
-        <p>With warmest regards and sincere appreciation,</p>
+        <p style="line-height: normal;">With warmest regards and sincere appreciation,</p>
         <p>14 Trees Foundation</p>
         <a href="https://14trees.org">https://14trees.org</a>
       </div>
