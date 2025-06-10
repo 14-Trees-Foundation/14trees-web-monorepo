@@ -3,8 +3,8 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 interface GiftRequestUserAttributes {
     id: number;
-    recipient: number | null;
-    assignee: number | null;
+    recipient: number;
+    assignee: number;
     gift_request_id: number;
     gifted_trees: number;
     profile_image_url: string | null;
@@ -33,12 +33,12 @@ class GiftRequestUser extends Model<GiftRequestUserAttributes, GiftRequestUserCr
     @Column({
         type: DataType.NUMBER,
     })
-    recipient!: number | null;
+    recipient!: number;
 
     @Column({
         type: DataType.NUMBER,
     })
-    assignee!: number | null;
+    assignee!: number;
 
     @Column({
         type: DataType.NUMBER,

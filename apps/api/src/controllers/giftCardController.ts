@@ -23,7 +23,7 @@ import { PaymentRepository } from "../repo/paymentsRepo";
 import { PaymentHistory } from "../models/payment_history";
 import { GroupRepository } from "../repo/groupRepo";
 import moment from "moment";
-import { formatNumber, numberToWords } from "../helpers/utils";
+import { formatNumber, getUniqueRequestId, numberToWords } from "../helpers/utils";
 import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
@@ -35,6 +35,7 @@ import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
 import GiftCardsService from "../facade/giftCardsService";
 import { ReferralsRepository } from "../repo/referralsRepo";
+import PaymentService from "../facade/paymentService";
 
 export const getGiftRequestTags = async (req: Request, res: Response) => {
     try {
@@ -264,7 +265,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
 export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
 
-    const { gift_request_id, remaining_trees: remainingTrees } = req.body;
+    const { gift_request_id, remaining_trees: remainingTrees, is_corporate } = req.body;
 
     try {
 
@@ -305,6 +306,8 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
 
         res.status(status.success).send();
 
+        if (is_corporate) return;
+
         const sponsorUser = {
             id: giftRequest.user_id,
             name: (giftRequest as any).user_name,
@@ -340,6 +343,8 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         res.status(status.error).send({ message: "Failed to update payment status in system!" })
     }
 }
+
+
 export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
         gift_card_request_id: giftCardRequestId,
@@ -817,87 +822,6 @@ export const getGiftRequestUsers = async (req: Request, res: Response) => {
     }
 }
 
-const upsertGiftRequestUsersAndRelations = async (users: any[], giftCardRequestId: number) => {
-    const addUsersData: GiftRequestUserCreationAttributes[] = []
-    const updateUsersData: GiftRequestUserAttributes[] = []
-    let count = 0;
-    for (const user of users) {
-
-        // gifted To
-        const recipientUser = {
-            id: user.recipient,
-            name: user.recipient_name,
-            email: user.recipient_email,
-            phone: user.recipient_phone,
-        }
-        const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
-
-        // assigned To
-        const assigneeUser = {
-            id: user.assignee,
-            name: user.assignee_name,
-            email: user.assignee_email,
-            phone: user.assignee_phone,
-        }
-        const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
-
-        if (recipient.id !== assignee.id && user.relation?.trim()) {
-            await UserRelationRepository.createUserRelation({
-                primary_user: recipient.id,
-                secondary_user: assignee.id,
-                relation: user.relation.trim(),
-                created_at: new Date(),
-                updated_at: new Date(),
-            })
-        }
-
-        if (user.id) {
-            updateUsersData.push({
-                ...user,
-                gift_request_id: giftCardRequestId,
-                recipient: recipient.id,
-                assignee: assignee.id,
-                profile_image_url: user.image_url || null,
-                updated_at: new Date(),
-            })
-        } else {
-            addUsersData.push({
-                ...user,
-                gift_request_id: giftCardRequestId,
-                recipient: recipient.id,
-                assignee: assignee.id,
-                profile_image_url: user.image_url || null,
-                created_at: new Date(),
-                updated_at: new Date(),
-            })
-        }
-
-        count += parseInt(user.gifted_trees) || 1;
-    }
-
-    return { addUsersData, updateUsersData, count };
-}
-
-const deleteGiftRequestUsersAndResetTrees = async (deleteIds: number[], giftCards: GiftCard[], giftCardRequestId: number) => {
-    const treeIds = giftCards.filter(item => item.gift_request_user_id && item.tree_id && deleteIds.includes(item.gift_request_user_id)).map(item => item.tree_id);
-    await TreeRepository.updateTrees({
-        description: null,
-        assigned_to: null,
-        assigned_at: null,
-        gifted_to: null,
-        gifted_by: null,
-        planted_by: null,
-        gifted_by_name: null,
-        event_type: null,
-        user_tree_image: null,
-        memory_images: null,
-        updated_at: new Date()
-    }, { id: { [Op.in]: treeIds } });
-
-    await GiftCardsRepository.updateGiftCards({ gift_request_user_id: null }, { gift_card_request_id: giftCardRequestId, gift_request_user_id: { [Op.in]: deleteIds } });
-    await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
-}
-
 export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId, users } = req.body;
 
@@ -911,58 +835,9 @@ export const upsertGiftRequestUsers = async (req: Request, res: Response) => {
     try {
 
         const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', value: giftCardRequestId, operatorValue: 'equals' }])
-        const giftCardRequest: GiftCardRequestAttributes = resp.results[0];
+        const giftCardRequest = resp.results[0];
 
-        const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
-        const giftCards = cardsResp.results;
-
-        const { addUsersData, updateUsersData, count } = await upsertGiftRequestUsersAndRelations(users, giftCardRequestId);
-
-        if (count > giftCardRequest.no_of_cards) {
-            res.status(status.bad).json({
-                status: status.bad,
-                message: "Requested number of gift trees doesn't match in user details!"
-            })
-            return;
-        }
-
-        const existingUsers = await GiftCardsRepository.getGiftRequestUsers(giftCardRequestId);
-        const deleteIds = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1).map(item => item.id);
-        if (deleteIds.length > 0) {
-            await deleteGiftRequestUsersAndResetTrees(deleteIds, giftCards, giftCardRequestId);
-        }
-
-        if (addUsersData.length > 0) await GiftCardsRepository.addGiftRequestUsers(addUsersData);
-        for (const user of updateUsersData) {
-
-            const treeIds = giftCards.filter(item => item.tree_id && item.gift_request_user_id === user.id).map(item => item.tree_id);
-            await TreeRepository.updateTrees({
-                assigned_to: user.assignee,
-                assigned_at: giftCardRequest.gifted_on,
-                gifted_to: giftCardRequest.request_type === 'Normal Assignment' ? null : user.recipient,
-                user_tree_image: user.profile_image_url,
-                updated_at: new Date()
-            }, { id: { [Op.in]: treeIds } });
-
-            await GiftCardsRepository.updateGiftRequestUsers(user, { id: user.id });
-        }
-
-        // add recipients to Giftee group
-        let recipientIds: number[] = []
-        addUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
-        updateUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
-        await UserGroupRepository.addUsersToGifteeGroup(recipientIds);
-
-        // validation on user details
-        if (giftCardRequest.no_of_cards !== count && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
-            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? [...giftCardRequest.validation_errors, 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS']
-        } else if (giftCardRequest.no_of_cards === count && giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
-            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : null;
-        }
-
-        if (!giftCardRequest.validation_errors || giftCardRequest.validation_errors.length === 0) giftCardRequest.validation_errors = null;
-        giftCardRequest.updated_at = new Date();
-        const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+        const updated = await GiftCardsService.upsertGiftRequestUsers(giftCardRequest, users);
 
         res.status(status.success).json({
             ...updated,
@@ -2600,5 +2475,111 @@ export const sendCustomEmail = async (req: Request, res: Response) => {
         return res.status(status.error).send({
             messgae: 'Something went wrong. Please try again later.'
         })
+    }
+}
+
+
+/**
+ * Corporate gift card request processing controllers
+ */
+
+
+/**
+ * Create gift card request
+ */
+
+export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
+
+    const {
+        group_id,
+        sponsor_name,
+        sponsor_email,
+        no_of_cards,
+        event_type,
+        event_name,
+        gifted_by,
+        logo_message,
+        primary_message,
+        created_by,
+        users,
+        tags,
+    } = req.body;
+
+    if (!group_id || !sponsor_name || !sponsor_email || !no_of_cards || isNaN(parseInt(no_of_cards))) {
+        return res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        });
+    }
+
+    // upsert sponsor user details
+    const sponsorUser = await UserRepository.upsertUser({
+        name: sponsor_name,
+        email: sponsor_email,
+    }).catch((error: any) => {
+        console.log("[ERROR]", "GiftCardController::createGiftCardRequestV2", error);
+    });
+
+    if (!sponsorUser) {
+        return res.status(status.error).json({
+            message: 'Something went wrong while creating sponsor user. Please try again later.'
+        });
+    }
+
+    try {
+        // create payment
+        const treesCount = Number(no_of_cards);
+        const amount = treesCount * 2000;
+        const payment = await PaymentService.createPayment(amount, "Indian Citizen", undefined, true);
+    
+        const requestId = getUniqueRequestId();
+        const request: GiftCardRequestCreationAttributes = {
+            request_id: requestId,
+            user_id: sponsorUser.id,
+            sponsor_id: sponsorUser.id,
+            group_id: group_id || null,
+            no_of_cards: treesCount,
+            is_active: false,
+            created_at: new Date(),
+            updated_at: new Date(),
+            logo_url: null,
+            primary_message: primary_message || defaultGiftMessages.primary,
+            secondary_message: null,
+            event_name: event_name || null,
+            event_type: event_type || "3",
+            planted_by: gifted_by || null,
+            logo_message: logo_message || defaultGiftMessages.logo,
+            status: GiftCardRequestStatus.pendingPlotSelection,
+            validation_errors: group_id ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
+            notes: null,
+            payment_id: payment.id,
+            created_by: created_by || sponsorUser.id,
+            category: 'Public',
+            grove: null,
+            gifted_on: new Date(),
+            request_type: 'Gift Cards',
+            visit_id: null,
+            sponsorship_type: 'Unverified',
+            tags: tags && Array.isArray(tags) ? tags : null,
+        }
+    
+        const giftCardRequest = await GiftCardsRepository.createGiftCardRequest(request).catch((error: any) => {
+            console.log("[ERROR]", "GiftCardController::createGiftCardRequestV2", error);
+            return null;
+        });
+    
+        if (!giftCardRequest) {
+            return res.status(status.error).json({
+                message: 'Something went wrong while creating gift card request. Please try again later.'
+            });
+        }
+
+        if (!users || !Array.isArray(users) || users.length === 0) {
+            return res.status(status.created).send({ gift_request: giftCardRequest, order_id: payment.order_id });
+        }
+        
+        const updated = await GiftCardsService.upsertGiftRequestUsers(giftCardRequest, users);
+        res.status(status.created).send({ gift_request: updated, order_id: payment.order_id });
+    } catch (error: any) {
+        res.status(status.error).send({ message: error.message || 'Something went wrong while creating gift card request. Please try again later.' });
     }
 }

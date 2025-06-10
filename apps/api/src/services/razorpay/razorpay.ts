@@ -19,7 +19,7 @@ class RazorpayService {
         }, signature, process.env.RAZORPAY_KEY_SECRET || '');
     }
 
-    async createOrder(amount: number, notes?: Record<string, string>) {
+    async createOrder(amount: number, notes?: Record<string, string | number>) {
         try {
             const options: Orders.RazorpayOrderCreateRequestBody = {
                 amount: amount * 100,
