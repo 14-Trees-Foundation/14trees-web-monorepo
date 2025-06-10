@@ -47,7 +47,7 @@ interface CreateDonationRequest {
     grove: string | null; // Updated to match model
     trees_count: number | null;
     pledged_area_acres: number | null;
-    continution_options: ContributionOption[],
+    contribution_options: ContributionOption[],
     comments: string | null;
     amount_donated: number | null;
     visit_date: Date | null;
@@ -57,6 +57,8 @@ interface CreateDonationRequest {
     tags?: string[]
     rfr?: string | null;
     c_key?: string | null;
+    created_by?: number;
+    group_id?: number | null;
 }
 
 export class DonationService {
@@ -73,7 +75,7 @@ export class DonationService {
             visit_date,
             amount_donated,
             payment_id,
-            continution_options,
+            contribution_options,
             comments,
             donation_type,
             donation_method,
@@ -110,12 +112,13 @@ export class DonationService {
             visit_date: donation_type === 'adopt' ? visit_date : null,
             grove: grove || '',
             payment_id: payment_id || null,
-            created_by: sponsorUser.id,
-            contribution_options: continution_options || null,
+            created_by: data.created_by || sponsorUser.id,
+            contribution_options: contribution_options || null,
             comments: comments || null,
             status: status || DonationStatus_UserSubmitted,
             tags: tags || null,
             rfr_id: rfr_id,
+            group_id: data.group_id || null,
         };
 
         const donation = await DonationRepository.createdDonation(

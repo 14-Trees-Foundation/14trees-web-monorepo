@@ -14,6 +14,7 @@ import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfil
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
+import PaymentService from "../facade/paymentService";
 
 /*
     Model - Donation
@@ -103,7 +104,7 @@ export const createDonation = async (req: Request, res: Response) => {
         payment_id,
         category,
         grove,
-        continution_options: contribution_options || [],
+        contribution_options: contribution_options || [],
         comments,
         donation_type,
         donation_method,
@@ -896,6 +897,113 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         console.error('Error stack:', (error as Error).stack);
     }
 };
+
+/**
+ * Create Donations V2
+ */
+export const createDonationV2 = async (req: Request, res: Response) => {
+    const {
+        group_id,
+        sponsor_name,
+        sponsor_email,
+        sponsor_phone,
+        trees_count,
+        amount_donated,
+        tags,
+        users,
+    } = req.body;
+
+    // Validate required fields
+    if (!sponsor_name || !sponsor_email) {
+        return res.status(status.bad).json({
+            message: 'Invalid sponsor name or email. Please provide valid details!'
+        });
+    }
+
+    // Validate donation type specific fields
+    if (!trees_count) {
+        return res.status(status.bad).json({
+            message: 'Tree count is required for tree donations'
+        });
+    }
+
+    try {
+        // Create payment if needed
+        let payment = null;
+        if (amount_donated && amount_donated > 0) {
+            payment = await PaymentService.createPayment(
+                amount_donated, 
+                "Indian Citizen", 
+                undefined, 
+                true
+            );
+        }
+
+        // Create donation
+        const donation = await DonationService.createDonation({
+            sponsor_name,
+            sponsor_email,
+            sponsor_phone,
+            trees_count: trees_count || 0,
+            pledged_area_acres: 0, // Default to 0 if not provided
+            payment_id: payment ? payment.id : null,
+            category: 'Foundation',
+            grove: "",
+            contribution_options: [],
+            comments: null,
+            donation_type: "donate",
+            donation_method: "trees",
+            visit_date: null,
+            amount_donated,
+            tags,
+            group_id: group_id || null
+        }).catch((error) => {
+            console.error("[ERROR] DonationsController::createDonationV2:createDonation", error);
+            return null;
+        });
+
+        if (!donation) {
+            return res.status(status.error).json({
+                message: 'Failed to create donation'
+            });
+        }
+
+        // Update Razorpay order if payment exists
+        if (donation.payment_id) {
+            const paymentRecord = await PaymentRepository.getPayment(donation.payment_id);
+            if (paymentRecord && paymentRecord.order_id) {
+                const razorpayService = new RazorpayService();
+                await razorpayService.updateOrder(paymentRecord.order_id, { "Donation Id": donation.id.toString() });
+            }
+        }
+
+        // Create donation users if provided
+        let usersCreated = true;
+        if (users && Array.isArray(users) && users.length > 0) {
+            await DonationService.createDonationUsers(
+                donation.id,
+                users
+            ).catch((error) => {
+                console.error("[ERROR] DonationsController::createDonationV2:createDonationUsers", error);
+                usersCreated = false;
+            });
+        }
+
+        // Return the created donation with payment order ID if available
+        const responseData = {
+            donation,
+            order_id: payment ? payment.order_id : null
+        };
+
+        return res.status(status.created).send(responseData);
+    } catch (error: any) {
+        console.error("[ERROR] DonationsController::createDonationV2", error);
+        return res.status(status.error).json({
+            message: error.message || 'Something went wrong. Please try again later.'
+        });
+    }
+};
+
 
 /**
  * Auto process donation request

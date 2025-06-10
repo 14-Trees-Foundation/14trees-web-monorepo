@@ -48,9 +48,10 @@ interface DonationAttributes {
   mail_error: string | null;
   processed_by: number | null;
   rfr_id: number | null;
+  group_id: number | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id' | 'group_id'> { }
 
 @Table({
   tableName: 'donations',
@@ -206,6 +207,13 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     comment: 'ID of backoffice user who processed this donation'
   })
   processed_by!: number | null;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+  })
+  group_id!: number | null;
 
 }
 
