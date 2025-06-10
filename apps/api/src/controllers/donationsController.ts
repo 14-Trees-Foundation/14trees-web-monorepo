@@ -15,6 +15,7 @@ import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
 import PaymentService from "../facade/paymentService";
+import { PaymentHistory } from "../models/payment_history";
 
 /*
     Model - Donation
@@ -161,7 +162,7 @@ export const createDonation = async (req: Request, res: Response) => {
 };
 
 export const paymentSuccessForDonation = async (req: Request, res: Response) => {
-    const { donation_id } = req.body;
+    const { donation_id, is_corporate } = req.body;
 
     try {
 
@@ -172,7 +173,47 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
         ])
         const sponsorUser = usersResp.results[0];
 
+        if (donation.payment_id) {
+            let amountReceived: number = 0;
+            let donationDate: Date | null = null;
+
+            const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+            if (payment && payment.payment_history) {
+                const paymentHistory: PaymentHistory[] = payment.payment_history;
+                paymentHistory.forEach(payment => {
+                    if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+                })
+            }
+
+            if (payment?.order_id) {
+                const razorpayService = new RazorpayService();
+                const payments = await razorpayService.getPayments(payment.order_id);
+                payments?.forEach(item => {
+                    amountReceived += Number(item.amount) / 100;
+                })
+            }
+
+            if (amountReceived > 0) {
+                donationDate = new Date();
+            }
+
+            await DonationRepository.updateDonations({
+                donation_date: donationDate,
+                amount_received: amountReceived,
+                updated_at: new Date()
+            }, { id: donation.id })
+        }
+
         res.status(status.success).send({});
+
+        if (is_corporate) {
+            await DonationService.reserveTreesForDonation(donation).catch(error => {
+                console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
+            });
+            await DonationService.autoAssignTrees(donation.id).catch(error => {
+                console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
+            });
+        }
 
         try {
             await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
@@ -681,7 +722,7 @@ export const assignTrees = async (req: Request, res: Response) => {
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
         res.status(status.success).send(updatedDonation);
-        
+
         try {
             const userId = req.headers['X-User-Id'] as string;
             if (!donation.processed_by && userId && !isNaN(parseInt(userId))) {
@@ -932,9 +973,9 @@ export const createDonationV2 = async (req: Request, res: Response) => {
         let payment = null;
         if (amount_donated && amount_donated > 0) {
             payment = await PaymentService.createPayment(
-                amount_donated, 
-                "Indian Citizen", 
-                undefined, 
+                amount_donated,
+                "Indian Citizen",
+                undefined,
                 true
             );
         }
@@ -1025,7 +1066,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
         const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(updatedDonation, 'default');
-        
+
         res.status(status.success).send(updatedDonation);
 
         try {
@@ -1064,9 +1105,9 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
-        
+
         const data = await DonationService.getPlotTreesCntForAutoReserveTreesForDonation(donation);
-        
+
         return res.status(status.success).send(data);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::getTreesCountForAutoReserveTrees", error);

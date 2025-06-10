@@ -152,6 +152,102 @@ routes.post('/requests', donations.createDonation);
 
 /**
  * @swagger
+ * /donations/requests/v2:
+ *   post:
+ *     summary: Create a new donation (V2)
+ *     description: Creates a simplified donation with sponsor details and payment integration.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for creating a donation
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - sponsor_name
+ *             - sponsor_email
+ *             - trees_count
+ *           properties:
+ *             group_id:
+ *               type: integer
+ *               description: Optional group ID for corporate donations
+ *               example: 123
+ *             sponsor_name:
+ *               type: string
+ *               description: Name of the sponsor
+ *               example: "John Doe"
+ *             sponsor_email:
+ *               type: string
+ *               description: Email of the sponsor
+ *               example: "john.doe@example.com"
+ *             sponsor_phone:
+ *               type: string
+ *               description: Phone number of the sponsor
+ *               example: "1234567890"
+ *             trees_count:
+ *               type: integer
+ *               description: Number of trees to donate
+ *               example: 10
+ *             amount_donated:
+ *               type: number
+ *               description: Amount donated (will create a payment if provided)
+ *               example: 1000
+ *             tags:
+ *               type: array
+ *               description: Tags associated with the donation
+ *               items:
+ *                 type: string
+ *               example: ["corporate", "event2023"]
+ *             users:
+ *               type: array
+ *               description: Users associated with the donation
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   recipient:
+ *                     type: string
+ *                     example: "Recipient Name"
+ *                   assignee:
+ *                     type: string
+ *                     example: "Assignee Name"
+ *                   trees_count:
+ *                     type: integer
+ *                     example: 5
+ *     responses:
+ *       201:
+ *         description: Donation created successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             donation:
+ *               $ref: '#/definitions/Donation'
+ *             order_id:
+ *               type: string
+ *               description: Razorpay order ID if payment was created
+ *               example: "order_123456789"
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid sponsor name or email. Please provide valid details!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Failed to create donation"
+ */
+routes.post('/requests/v2', donations.createDonationV2);
+
+/**
+ * @swagger
  * /donations/{id}/process:
  *   post:
  *     summary: Mark donation as processed
