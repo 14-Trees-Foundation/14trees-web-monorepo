@@ -623,6 +623,21 @@ class GiftCardsService {
         return plotTreeCnts;
     }
 
+    public static async autoBookTreesForGiftRequest(giftRequest: GiftCardRequest) {
+        const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('gift');
+        const plotIds: number[] = plotsToUse.map(item => item.plot_id);
+        
+        // reserve trees for gift request
+        const treesCount = giftRequest.no_of_cards - Number((giftRequest as any).booked);
+        if (treesCount > 0) {
+            const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftRequest.user_id, giftRequest.sponsor_id, giftRequest.group_id, plotIds, treesCount, false, true, false);
+        
+            // add user to donations group
+            if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftRequest.user_id);
+            await GiftCardsRepository.bookGiftCards(giftRequest.id, treeIds);
+        }
+    }
+
     public static async sendCustomEmailToSponsor(giftCardRequest: any, giftCards: any[], templateName: string, attachCard: boolean, ccMails?: string[], testMails?: string[], subject?: string, attachments?: { filename: string; path: string }[]) {
         const emailData: any = {
             trees: [] as any[],
