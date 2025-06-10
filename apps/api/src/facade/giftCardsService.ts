@@ -1,6 +1,6 @@
 import moment from "moment";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, deleteUnwantedSlides, reorderSlides } from "../controllers/helper/slides";
-import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from "../models/gift_card_request";
+import { GiftCardRequest, GiftCardRequestStatus, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from "../models/gift_card_request";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 import TreeRepository from "../repo/treeRepo";
 import { copyFile, GoogleSpreadsheet } from "../services/google";
@@ -621,6 +621,29 @@ class GiftCardsService {
                 }).filter(item => item.trees_count);
 
         return plotTreeCnts;
+    }
+
+    public static async autoBookTreesForGiftRequest(giftRequest: GiftCardRequest) {
+        const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('gift');
+        const plotIds: number[] = plotsToUse.map(item => item.plot_id);
+        
+        // reserve trees for gift request
+        const treesCount = giftRequest.no_of_cards - Number((giftRequest as any).booked);
+        if (treesCount > 0) {
+            const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftRequest.user_id, giftRequest.sponsor_id, giftRequest.group_id, plotIds, treesCount, false, true, false);
+        
+            // add user to donations group
+            if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftRequest.user_id);
+            await GiftCardsRepository.bookGiftCards(giftRequest.id, treeIds);
+        }
+
+        const updatedGR: any = await this.getGiftCardsRequest(giftRequest.id);
+        if (updatedGR.no_of_cards === Number(updatedGR.booked)) {
+            await GiftCardsRepository.updateGiftCardRequests(
+                { status: updatedGR.no_of_cards === Number(updatedGR.assigned) ? GiftCardRequestStatus.completed : GiftCardRequestStatus.pendingAssignment },
+                { id: giftRequest.id }
+            );
+        }
     }
 
     public static async sendCustomEmailToSponsor(giftCardRequest: any, giftCards: any[], templateName: string, attachCard: boolean, ccMails?: string[], testMails?: string[], subject?: string, attachments?: { filename: string; path: string }[]) {

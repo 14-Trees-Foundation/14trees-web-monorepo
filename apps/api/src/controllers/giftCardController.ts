@@ -306,7 +306,17 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
 
         res.status(status.success).send();
 
-        if (is_corporate) return;
+        if (is_corporate) {
+            try {
+                await GiftCardsService.autoBookTreesForGiftRequest(giftRequest);
+            } catch (error) {
+                console.error("[ERROR] Failed to auto book trees for gift request:", {
+                    error,
+                    stack: error instanceof Error ? error.stack : undefined
+                });
+            }
+            return;
+        }
 
         const sponsorUser = {
             id: giftRequest.user_id,
