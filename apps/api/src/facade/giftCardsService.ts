@@ -1,6 +1,6 @@
 import moment from "moment";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, deleteUnwantedSlides, reorderSlides } from "../controllers/helper/slides";
-import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from "../models/gift_card_request";
+import { GiftCardRequest, GiftCardRequestStatus, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from "../models/gift_card_request";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 import TreeRepository from "../repo/treeRepo";
 import { copyFile, GoogleSpreadsheet } from "../services/google";
@@ -635,6 +635,14 @@ class GiftCardsService {
             // add user to donations group
             if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftRequest.user_id);
             await GiftCardsRepository.bookGiftCards(giftRequest.id, treeIds);
+        }
+
+        const updatedGR: any = await this.getGiftCardsRequest(giftRequest.id);
+        if (updatedGR.no_of_cards === Number(updatedGR.booked)) {
+            await GiftCardsRepository.updateGiftCardRequests(
+                { status: updatedGR.no_of_cards === Number(updatedGR.assigned) ? GiftCardRequestStatus.completed : GiftCardRequestStatus.pendingAssignment },
+                { id: giftRequest.id }
+            );
         }
     }
 
