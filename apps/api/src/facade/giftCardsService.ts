@@ -13,6 +13,13 @@ import { AutoPrsReqPlotsRepository } from "../repo/autoPrsReqPlotRepo";
 import { PlotRepository } from "../repo/plotRepo";
 import { UserRepository } from "../repo/userRepo";
 import { ReferralsRepository } from "../repo/referralsRepo";
+import { GiftRequestUser, GiftRequestUserAttributes, GiftRequestUserCreationAttributes } from "../models/gift_request_user";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
+import { GiftCard } from "../models/gift_card";
+import { Op } from "sequelize";
+import { UserGroupRepository } from "../repo/userGroupRepo";
+import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
+import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -28,6 +35,137 @@ class GiftCardsService {
         ])
 
         return resp.results[0];
+    }
+
+    private static async upsertGiftRequestUsersAndRelations(users: any[], giftCardRequestId: number) {
+        const addUsersData: GiftRequestUserCreationAttributes[] = []
+        const updateUsersData: GiftRequestUserAttributes[] = []
+        let count = 0;
+        for (const user of users) {
+
+            // gifted To
+            const recipientUser = {
+                id: user.recipient,
+                name: user.recipient_name,
+                email: user.recipient_email,
+                phone: user.recipient_phone,
+            }
+            const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
+
+            // assigned To
+            const assigneeUser = {
+                id: user.assignee,
+                name: user.assignee_name,
+                email: user.assignee_email,
+                phone: user.assignee_phone,
+            }
+            const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
+
+            if (recipient.id !== assignee.id && user.relation?.trim()) {
+                await UserRelationRepository.createUserRelation({
+                    primary_user: recipient.id,
+                    secondary_user: assignee.id,
+                    relation: user.relation.trim(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
+            if (user.id) {
+                updateUsersData.push({
+                    ...user,
+                    gift_request_id: giftCardRequestId,
+                    recipient: recipient.id,
+                    assignee: assignee.id,
+                    profile_image_url: user.image_url || null,
+                    updated_at: new Date(),
+                })
+            } else {
+                addUsersData.push({
+                    ...user,
+                    gift_request_id: giftCardRequestId,
+                    recipient: recipient.id,
+                    assignee: assignee.id,
+                    profile_image_url: user.image_url || null,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
+            count += parseInt(user.gifted_trees) || 1;
+        }
+
+        return { addUsersData, updateUsersData, count };
+    }
+
+    private static async deleteGiftRequestUsersAndResetTrees(deleteIds: number[], giftCards: GiftCard[], giftCardRequestId: number) {
+        const treeIds = giftCards.filter(item => item.gift_request_user_id && item.tree_id && deleteIds.includes(item.gift_request_user_id)).map(item => item.tree_id);
+        await TreeRepository.updateTrees({
+            description: null,
+            assigned_to: null,
+            assigned_at: null,
+            gifted_to: null,
+            gifted_by: null,
+            planted_by: null,
+            gifted_by_name: null,
+            event_type: null,
+            user_tree_image: null,
+            memory_images: null,
+            updated_at: new Date()
+        }, { id: { [Op.in]: treeIds } });
+
+        await GiftCardsRepository.updateGiftCards({ gift_request_user_id: null }, { gift_card_request_id: giftCardRequestId, gift_request_user_id: { [Op.in]: deleteIds } });
+        await GiftCardsRepository.deleteGiftRequestUsers({ id: { [Op.in]: deleteIds } });
+    }
+
+    public static async upsertGiftRequestUsers(giftCardRequest: GiftCardRequest, users: any[]) {
+        const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequest.id }]);
+        const giftCards = cardsResp.results;
+
+        const { addUsersData, updateUsersData, count } = await this.upsertGiftRequestUsersAndRelations(users, giftCardRequest.id);
+
+        if (count > giftCardRequest.no_of_cards)
+            throw new Error("Requested number of gift trees doesn't match in user details!");
+
+        const existingUsers = await GiftCardsRepository.getGiftRequestUsers(giftCardRequest.id);
+        const deleteIds = existingUsers.filter(item => users.findIndex((user: any) => user.id === item.id) === -1).map(item => item.id);
+        if (deleteIds.length > 0) {
+            await this.deleteGiftRequestUsersAndResetTrees(deleteIds, giftCards, giftCardRequest.id);
+        }
+
+        if (addUsersData.length > 0) await GiftCardsRepository.addGiftRequestUsers(addUsersData);
+        for (const user of updateUsersData) {
+
+            const treeIds = giftCards.filter(item => item.tree_id && item.gift_request_user_id === user.id).map(item => item.tree_id);
+            await TreeRepository.updateTrees({
+                assigned_to: user.assignee,
+                assigned_at: giftCardRequest.gifted_on,
+                gifted_to: giftCardRequest.request_type === 'Normal Assignment' ? null : user.recipient,
+                user_tree_image: user.profile_image_url,
+                updated_at: new Date()
+            }, { id: { [Op.in]: treeIds } });
+
+            await GiftCardsRepository.updateGiftRequestUsers(user, { id: user.id });
+        }
+
+        // add recipients to Giftee group
+        let recipientIds: number[] = []
+        addUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
+        updateUsersData.forEach(item => { if (item.recipient) recipientIds.push(item.recipient) });
+        await UserGroupRepository.addUsersToGifteeGroup(recipientIds);
+
+        // validation on user details
+        if (giftCardRequest.no_of_cards !== count && !giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? [...giftCardRequest.validation_errors, 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS']
+        } else if (giftCardRequest.no_of_cards === count && giftCardRequest.validation_errors?.includes('MISSING_USER_DETAILS')) {
+            giftCardRequest.validation_errors = giftCardRequest.validation_errors ? giftCardRequest.validation_errors.filter(error => error !== 'MISSING_USER_DETAILS') : [];
+        }
+
+        if (!giftCardRequest.validation_errors || giftCardRequest.validation_errors.length === 0) giftCardRequest.validation_errors = [];
+        giftCardRequest.updated_at = new Date();
+        const updated = await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
+
+        return updated;
     }
 
     public static async generateTreeCardsForSaplings(saplingIds: string[]) {
@@ -544,6 +682,68 @@ class GiftCardsService {
                     id: giftCardRequest.id
                 }
             );
+        }
+    }
+
+    public static async redeemGiftCards(
+        giftCards: GiftCard[],
+        recipient: GiftRequestUser,
+        sponsorUser: number | null,
+        sponsorGroup: number | null,
+        requestingUser: number,
+        eventName: string,
+        eventType: string,
+        giftedBy: string,
+        giftedOn: Date,
+        primaryMessage: string = defaultMessage,
+        logoMessage: string = ""
+    ) {
+
+        const treeUpdateRequest = {
+            assigned_at: giftedOn,
+            assigned_to: recipient.assignee,
+            gifted_to: recipient.recipient,
+            event_type: eventType?.trim() ? eventType.trim() : "3",
+            description: eventName?.trim() ? eventName.trim() : null,
+            gifted_by_name: giftedBy?.trim() ? giftedBy.trim() : null,
+            updated_at: new Date(),
+            planted_by: null,
+            gifted_by: sponsorUser,
+            user_tree_image: recipient.profile_image_url,
+        }
+    
+        await TreeRepository.updateTrees(treeUpdateRequest, { id: { [Op.in]: giftCards.map(card => card.tree_id)}});
+        await GiftCardsRepository.updateGiftCards(
+            {
+                gift_request_user_id: recipient.id,
+                assigned_to: recipient.assignee,
+                gifted_to: recipient.recipient,
+                updated_at: new Date(),
+            },
+            { id: { [Op.in]: giftCards.map(card => card.id) } }
+        );
+
+        const trnData: GiftRedeemTransactionCreationAttributes = {
+            group_id: sponsorGroup,
+            user_id: sponsorUser,
+            created_by: requestingUser,
+            modified_by: requestingUser,
+            recipient: recipient.recipient,
+            occasion_name: eventName,
+            occasion_type: eventType,
+            gifted_by: giftedBy,
+            gifted_on: giftedOn,
+            primary_message: primaryMessage,
+            secondary_message: "",
+            logo_message: logoMessage,
+            created_at: new Date(),
+            updated_at: new Date(),
+        }
+
+        const cardIds = giftCards.map(card => card.id);
+        if (sponsorGroup || sponsorUser) {
+            const trn = await GRTransactionsRepository.createTransaction(trnData);
+            await GRTransactionsRepository.addCardsToTransaction(trn.id, cardIds);
         }
     }
 }
