@@ -5,6 +5,7 @@ import { verifyToken } from '../auth/verifyToken';
 const routes = express.Router();
 
 routes.post('/verify-access', verifyToken, view.verifyUserAccessToView);
+routes.post('/verify-useraccess', verifyToken, view.verifyUserAccessByPath);
 routes.get('/', view.getViewByPath);
 routes.post('/', view.createNewView);
 routes.put('/', view.updateView);

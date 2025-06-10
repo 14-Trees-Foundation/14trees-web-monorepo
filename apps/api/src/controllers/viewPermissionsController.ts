@@ -69,6 +69,47 @@ export const verifyUserAccessToView = async (req: Request, res: Response) => {
     }
 }
 
+export const verifyUserAccessByPath = async (req: Request, res: Response) => {
+    const response = {
+        code: status.forbidden,
+        message: 'You are not authorized to access this page.',
+        view_id: '',
+        view_name: ''
+    }
+
+    const { user_id, path } = req.body;
+
+    try {
+        // Get view by path
+        const view = await ViewPermissionRepository.getViewByPath(path);
+        if (!view) {
+            response.code = status.notfound;
+            response.message = "Page doesn't exist";
+            return res.status(status.success).send(response);
+        }
+
+        // Get all users with access to this view
+        const viewPermissions = await ViewPermissionRepository.getViewUsers(view.id);
+
+        // Check if user has access
+        const hasAccess = viewPermissions.some(permission => permission.user_id === user_id);
+
+        if (hasAccess) {
+            response.code = status.success;
+            response.message = "Success";
+            response.view_id = view.view_id;
+            response.view_name = view.name;
+        }
+
+        return res.status(status.success).send(response);
+
+    } catch (error: any) {
+        console.error("[ERROR] verifyUserAccessByPath:", error);
+        return res.status(status.error).send({
+            message: "Something went wrong"
+        });
+    }
+}
 
 export const getViewByPath = async (req: Request, res: Response) => {
     const path = req.query['path'] as string;
