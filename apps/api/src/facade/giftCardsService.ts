@@ -1,6 +1,6 @@
 import moment from "moment";
 import { bulkUpdateSlides, createCopyOfTheCardTemplates, deleteUnwantedSlides, reorderSlides } from "../controllers/helper/slides";
-import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from "../models/gift_card_request";
+import { GiftCardRequest, GiftCardRequestStatus, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from "../models/gift_card_request";
 import PlantTypeTemplateRepository from "../repo/plantTypeTemplateRepo";
 import TreeRepository from "../repo/treeRepo";
 import { copyFile, GoogleSpreadsheet } from "../services/google";
@@ -285,6 +285,7 @@ class GiftCardsService {
             const giftCard = giftCardRequest.results[0];
 
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
+            const recipients = await GiftCardsRepository.getGiftRequestUsers(giftCard.id);
 
             // Prepare email content with gifting details
             const emailData = {
@@ -293,7 +294,15 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                recipients: recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
+                    trees: user.gifted_trees || 1,
+                })),
             };
 
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
@@ -345,6 +354,7 @@ class GiftCardsService {
             const giftCard = giftCardRequest.results[0];
 
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
+            const recipients = await GiftCardsRepository.getGiftRequestUsers(giftCard.id);
 
             const emailData = {
                 giftCardRequestId: giftCard.id,
@@ -352,12 +362,20 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                recipients: recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
+                    trees: user.gifted_trees || 1,
+                })),
             };
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['accounts@14trees.org'];
+                ['accounts@14trees.org', 'accounts2@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'gifting-accounts.html';
@@ -409,6 +427,8 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
 
@@ -466,6 +486,8 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
 
@@ -621,6 +643,29 @@ class GiftCardsService {
                 }).filter(item => item.trees_count);
 
         return plotTreeCnts;
+    }
+
+    public static async autoBookTreesForGiftRequest(giftRequest: GiftCardRequest) {
+        const plotsToUse = await AutoPrsReqPlotsRepository.getPlots('gift');
+        const plotIds: number[] = plotsToUse.map(item => item.plot_id);
+        
+        // reserve trees for gift request
+        const treesCount = giftRequest.no_of_cards - Number((giftRequest as any).booked);
+        if (treesCount > 0) {
+            const treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftRequest.user_id, giftRequest.sponsor_id, giftRequest.group_id, plotIds, treesCount, false, true, false);
+        
+            // add user to donations group
+            if (treeIds.length > 0) await UserGroupRepository.addUserToDonorGroup(giftRequest.user_id);
+            await GiftCardsRepository.bookGiftCards(giftRequest.id, treeIds);
+        }
+
+        const updatedGR: any = await this.getGiftCardsRequest(giftRequest.id);
+        if (updatedGR.no_of_cards === Number(updatedGR.booked)) {
+            await GiftCardsRepository.updateGiftCardRequests(
+                { status: updatedGR.no_of_cards === Number(updatedGR.assigned) ? GiftCardRequestStatus.completed : GiftCardRequestStatus.pendingAssignment },
+                { id: giftRequest.id }
+            );
+        }
     }
 
     public static async sendCustomEmailToSponsor(giftCardRequest: any, giftCards: any[], templateName: string, attachCard: boolean, ccMails?: string[], testMails?: string[], subject?: string, attachments?: { filename: string; path: string }[]) {

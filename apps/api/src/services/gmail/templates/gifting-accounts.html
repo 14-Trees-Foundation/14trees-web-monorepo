@@ -22,6 +22,10 @@
             <td>{{giftCardRequestId}}</td>
           </tr>
           <tr>
+            <td><strong>Request Date:</strong></td>
+            <td>{{giftCardDate}}</td>
+          </tr>
+          <tr>
             <td><strong>Sponsor Name:</strong></td>
             <td>{{sponsorName}}</td>
           </tr>
@@ -38,10 +42,36 @@
             <td>{{giftCardAmount}}</td>
           </tr>
           <tr>
-            <td><strong>Gifting Date:</strong></td>
-            <td>{{giftCardDate}}</td>
+            <td><strong>Total Trees:</strong></td>
+            <td>{{totalTrees}}</td>
           </tr>
+          {{#if eventName}}
+          <tr>
+            <td><strong>Event Name:</strong></td>
+            <td>{{eventName}}</td>
+          </tr>
+          {{/if}}
         </table>
+
+        {{#if recipients}}
+        <h3 style="margin-top: 20px;">Recipient Details</h3>
+        <table cellpadding="8" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 6px;">
+          <tr style="background-color: #f0f0f0;">
+            <th style="text-align: left;">Name</th>
+            <th style="text-align: left;">Email</th>
+            <th style="text-align: left;">Phone</th>
+            <th style="text-align: left;">Trees Count</th>
+          </tr>
+          {{#each recipients}}
+          <tr>
+            <td>{{this.name}}</td>
+            <td>{{this.email}}</td>
+            <td>{{this.phone}}</td>
+            <td>{{this.trees}}</td>
+          </tr>
+          {{/each}}
+        </table>
+        {{/if}}
 
         <p style="margin-top: 20px;">Please update the records accordingly.</p>
 

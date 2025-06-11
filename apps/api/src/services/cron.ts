@@ -273,7 +273,10 @@ export function sendGiftCardMails() {
                 { columnField: 'request_type', operatorValue: 'equals', value: 'Gift Cards' },
             ]
             const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
-            giftCardRequests = giftCardsResp.results;
+            giftCardRequests = giftCardsResp.results.filter((request: GiftCardRequest) => {
+                return request.request_type === 'Gift Cards' && request.tags?.includes('WebSite')
+            });
+
         } catch (error: any) {
             console.log("[ERROR]", 'CRON::sendGiftCardMails', error);
             return;
@@ -291,7 +294,7 @@ export function sendGiftCardMails() {
                     try {
                         await GiftCardsService.sendGiftingNotificationToBackOffice(giftCardRequest.id, sponsor);
                     } catch (error) {
-                        console.error("[ERROR] Failed to send gift card notification to backoffice:", error);
+                        console.error("[ERROR] Failed to send gift card notification to back-office:", error);
                     }
                 }
 
