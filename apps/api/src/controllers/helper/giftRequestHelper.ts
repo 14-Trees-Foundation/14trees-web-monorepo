@@ -398,6 +398,7 @@ export const sendGiftRequestAcknowledgement = async (
         }
 
         const amount = (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards;
+        const recipients = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id)
 
         // Generate 80G receipt if applicable
         const date = new Date();
@@ -440,10 +441,14 @@ export const sendGiftRequestAcknowledgement = async (
                 eventType: giftRequest.event_type,
                 message: giftRequest.primary_message,
                 groupName: giftRequest.group_name,
-                amount: amount,
+                amount: formatNumber(amount || 0),
                 requestId: giftRequest.id,
                 referredBy: referredBy,
                 campaignName: campaignName,
+                recipients: recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    trees: user.gifted_trees,
+                }))
             }
         };
 
@@ -464,7 +469,7 @@ export const sendGiftRequestAcknowledgement = async (
             mailIds,
             ccMailIds,
             attachments,
-            'Thank You for Your Gift Request to 14 Trees'
+            'Your Donation and A Planted Memory - Thank You!'
         );
 
     } catch (error) {
