@@ -285,6 +285,7 @@ class GiftCardsService {
             const giftCard = giftCardRequest.results[0];
 
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
+            const recipients = await GiftCardsRepository.getGiftRequestUsers(giftCard.id);
 
             // Prepare email content with gifting details
             const emailData = {
@@ -293,7 +294,15 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                recipients: recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
+                    trees: user.gifted_trees || 1,
+                })),
             };
 
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
@@ -345,6 +354,7 @@ class GiftCardsService {
             const giftCard = giftCardRequest.results[0];
 
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
+            const recipients = await GiftCardsRepository.getGiftRequestUsers(giftCard.id);
 
             const emailData = {
                 giftCardRequestId: giftCard.id,
@@ -352,12 +362,20 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                recipients: recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
+                    trees: user.gifted_trees || 1,
+                })),
             };
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['accounts@14trees.org'];
+                ['accounts@14trees.org', 'accounts2@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'gifting-accounts.html';
@@ -409,6 +427,8 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
 
@@ -466,6 +486,8 @@ class GiftCardsService {
                 sponsorEmail: sponsorUser.email,
                 sponsorPhone: sponsorUser.phone,
                 giftCardAmount: formatNumber(amount),
+                totalTrees: giftCard.no_of_cards,
+                eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
             };
 
