@@ -14,6 +14,7 @@ import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfil
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
+import { GoogleSpreadsheet } from "../services/google";
 
 /*
     Model - Donation
@@ -171,12 +172,59 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
         ])
         const sponsorUser = usersResp.results[0];
 
+        let transactionId = ""
+        if (donation.payment_id) {
+
+            const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+            if (payment?.order_id) {
+                const razorpayService = new RazorpayService();
+                const payments = await razorpayService.getPayments(payment.order_id);
+                payments?.forEach(item => {
+                    if (item.status === 'captured') {
+                        const data: any = item.acquirer_data;
+                        if (data) {
+                            const keys = Object.keys(data);
+                            for (const key of keys) {
+                                if (key.endsWith("transaction_id") && data[key]) {
+                                    transactionId = data[key];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                })
+            }
+        }
+
         res.status(status.success).send({});
 
         try {
             await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
         } catch (error) {
             console.error("[ERROR] DonationsController::paymentSuccessForDonation:sendAcknowledgement", error);
+        }
+
+        if (transactionId) {
+            const sheetName = "WebsiteTxns"
+            const spreadsheetId = process.env.DONATION_SPREADSHEET;
+            if (!spreadsheetId) {
+                console.log("[WARN]", "DonationsController::paymentSuccessForDonation", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
+                return;
+            }
+
+            const date = new Date();
+            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+            const receiptId = FY + "/" + donation.id.toString();
+
+            const googleSheet = new GoogleSpreadsheet();
+            await googleSheet.updateRowCellsByColumnValue(spreadsheetId, sheetName, "Rec", receiptId, {
+                "Mode": transactionId
+            }).catch(error => {
+                console.error("[ERROR] Failed to update Google Sheet with transaction ID:", {
+                    error,
+                    stack: error instanceof Error ? error.stack : undefined
+                });
+            })
         }
 
         if (donation.rfr_id) {
@@ -680,7 +728,7 @@ export const assignTrees = async (req: Request, res: Response) => {
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
         res.status(status.success).send(updatedDonation);
-        
+
         try {
             const userId = req.headers['X-User-Id'] as string;
             if (!donation.processed_by && userId && !isNaN(parseInt(userId))) {
@@ -917,7 +965,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
         const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(updatedDonation, 'default');
-        
+
         res.status(status.success).send(updatedDonation);
 
         try {
@@ -956,9 +1004,9 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
-        
+
         const data = await DonationService.getPlotTreesCntForAutoReserveTreesForDonation(donation);
-        
+
         return res.status(status.success).send(data);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::getTreesCountForAutoReserveTrees", error);

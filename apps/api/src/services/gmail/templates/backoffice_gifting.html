@@ -61,6 +61,10 @@
                 <td>{{giftCardRequestId}}</td>
             </tr>
             <tr>
+                <td>Request Date</td>
+                <td>{{giftCardDate}}</td>
+            </tr>
+            <tr>
                 <td>Sponsor Name</td>
                 <td>{{sponsorName}}</td>
             </tr>
@@ -69,14 +73,44 @@
                 <td>{{sponsorEmail}}</td>
             </tr>
             <tr>
-                <td><strong>Sponsor Phone:</strong></td>
+                <td>Sponsor Phone</td>
                 <td>{{sponsorPhone}}</td>
             </tr>
             <tr>
                 <td>Donation Amount</td>
                 <td>{{giftCardAmount}}</td>
             </tr>
+            <tr>
+                <td>Total Trees</td>
+                <td>{{totalTrees}}</td>
+            </tr>
+            {{#if eventName}}
+            <tr>
+                <td>Event Name</td>
+                <td>{{eventName}}</td>
+            </tr>
+            {{/if}}
         </table>
+        
+        {{#if recipients}}
+        <h3>Recipient Details</h3>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Trees Count</th>
+            </tr>
+            {{#each recipients}}
+            <tr>
+                <td>{{this.name}}</td>
+                <td>{{this.email}}</td>
+                <td>{{this.phone}}</td>
+                <td>{{this.trees}}</td>
+            </tr>
+            {{/each}}
+        </table>
+        {{/if}}
         
         <p>Please process this gift request accordingly.</p>
         

@@ -22,6 +22,10 @@
             <td>{{giftCardRequestId}}</td>
           </tr>
           <tr>
+            <td><strong>Request Date:</strong></td>
+            <td>{{giftCardDate}}</td>
+          </tr>
+          <tr>
             <td><strong>Sponsor Name:</strong></td>
             <td>{{sponsorName}}</td>
           </tr>
@@ -38,9 +42,15 @@
             <td>{{giftCardAmount}}</td>
           </tr>
           <tr>
-            <td><strong>Gifting Date:</strong></td>
-            <td>{{giftCardDate}}</td>
+            <td><strong>Total Trees:</strong></td>
+            <td>{{totalTrees}}</td>
           </tr>
+          {{#if eventName}}
+          <tr>
+            <td><strong>Event Name:</strong></td>
+            <td>{{eventName}}</td>
+          </tr>
+          {{/if}}
         </table>
 
         <p style="margin-top: 20px;">Please follow up to explore CSR partnership possibilities.</p>
