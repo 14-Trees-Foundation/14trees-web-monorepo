@@ -89,7 +89,7 @@ export const createDonation = async (req: Request, res: Response) => {
 
     }
 
-    // Validate tree plantaion details
+    // Validate tree plantation details
     if (!category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
@@ -534,13 +534,13 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!auto_reserve && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
 
     if (auto_reserve && (!plots || plots.length === 0))
-        return res.status(status.bad).send({ message: "Plese provided plots to reserve trees from." })
+        return res.status(status.bad).send({ message: "Please provided plots to reserve trees from." })
 
     try {
         if (auto_reserve) {
@@ -563,7 +563,7 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 
@@ -577,7 +577,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!unreserve_all && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -593,7 +593,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -605,7 +605,7 @@ export const mapAssignedTreesToDonation = async (req: Request, res: Response) =>
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to map trees to sponsor." })
+        return res.status(status.bad).send({ message: "Donation Id required to map trees to sponsor." })
 
     if (!tree_ids || tree_ids.length === 0)
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -621,7 +621,7 @@ export const mapAssignedTreesToDonation = async (req: Request, res: Response) =>
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::mapAssignedTreesToDonation", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -700,7 +700,7 @@ export const assignTrees = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!auto_assign && (!user_trees || user_trees.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -735,7 +735,7 @@ export const assignTrees = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -750,7 +750,7 @@ export const unassignTrees = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!unassign_all && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -767,7 +767,7 @@ export const unassignTrees = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -1056,7 +1056,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+        return res.status(status.bad).send({ message: "Donation Id required to process request." })
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
@@ -1089,7 +1089,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -1101,7 +1101,7 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+        return res.status(status.bad).send({ message: "Donation Id required to process request." })
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
@@ -1112,7 +1112,7 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::getTreesCountForAutoReserveTrees", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
