@@ -941,7 +941,7 @@ class TreeRepository {
         COUNT(DISTINCT CASE WHEN t.assigned_to IS NOT NULL THEN t.id END) AS donated_trees,
         COUNT(DISTINCT t.id) - COUNT(DISTINCT CASE WHEN t.assigned_to IS NOT NULL THEN t.id END) AS remaining_trees
       FROM "14trees_2".trees t
-      LEFT JOIN "14trees_2".donations d ON d.id = t.donation_id
+      JOIN "14trees_2".donations d ON d.id = t.donation_id
       ${whereCondition}
     `;
 
