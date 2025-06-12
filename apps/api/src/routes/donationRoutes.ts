@@ -999,7 +999,86 @@ routes.post('/trees/unassign', donations.unassignTrees)
 
 /**
  * @swagger
- * /gift-cards/trees/get:
+ * /donations/trees/bulk-assign:
+ *   post:
+ *     summary: Bulk assign trees for a group
+ *     description: Assigns trees to multiple users across donations that belong to the same group. The system will distribute users across available donations in the group that have unassigned trees.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for bulk assigning trees
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - group_id
+ *             - users
+ *           properties:
+ *             group_id:
+ *               type: integer
+ *               description: Group ID to identify related donations
+ *               example: 123
+ *             users:
+ *               type: array
+ *               description: List of users to assign trees to
+ *               items:
+ *                 type: object
+ *                 required:
+ *                   - recipient
+ *                   - trees_count
+ *                 properties:
+ *                   recipient_name:
+ *                     type: string
+ *                     description: Name of the recipient
+ *                     example: "Jane Doe"
+ *                   recipient_email:
+ *                     type: string
+ *                     description: email of the recipient
+ *                   assignee_name:
+ *                     type: string
+ *                     description: Name of the assignee (optional)
+ *                     example: "John Smith"
+ *                   assignee_email:
+ *                     type: string
+ *                     description: Email of the assignee (optional)
+ *                   trees_count:
+ *                     type: integer
+ *                     description: Number of trees to assign to this user
+ *                     example: 5
+ *     responses:
+ *       200:
+ *         description: Trees successfully bulk assigned
+ *         schema:
+ *           type: object
+ *           properties:
+ *             success:
+ *               type: boolean
+ *               example: true
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Group ID and non-empty users array are required"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong during tree assignment"
+ */
+routes.post('/trees/bulk-assign', donations.bulkAssignTrees);
+
+
+/**
+ * @swagger
+ * /donations/trees/get:
  *   post:
  *     summary: Get reserved trees for donation
  *     description: Fetches trees booked for a gift card request.

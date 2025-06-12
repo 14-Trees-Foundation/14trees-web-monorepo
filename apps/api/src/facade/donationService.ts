@@ -374,7 +374,7 @@ export class DonationService {
             throw new Error("Can not reserve more trees than originally requested.")
 
 
-        await this.reserveTreesInPlots(donation.user_id, null, plots, true, diversify, bookAllHabits, donation.id);
+        await this.reserveTreesInPlots(donation.user_id, donation.group_id, plots, true, diversify, bookAllHabits, donation.id);
     }
 
     public static async unreserveSelectedTrees(
@@ -855,7 +855,7 @@ export class DonationService {
 
         if (plotTreeCnts.length === 0) return;
 
-        await this.reserveTreesInPlots(donation.user_id, null, plotTreeCnts, true, true, false, donation.id);
+        await this.reserveTreesInPlots(donation.user_id, donation.group_id, plotTreeCnts, true, true, false, donation.id);
     }
 
 

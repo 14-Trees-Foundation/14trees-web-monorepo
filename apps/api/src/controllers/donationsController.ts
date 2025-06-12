@@ -1055,62 +1055,39 @@ export const bulkAssignTrees = async (req: Request, res: Response) => {
 
     try {
         const donationResponse = await DonationRepository.getDonations(
-            0, 1,
+            0, -1,
             [{ columnField: 'group_id', operatorValue: 'equals', value: group_id }]
         );
 
-        const donation = donationResponse?.results?.[0];
-        if (!donation) {
-            return res.status(status.notfound).json({ message: 'No donation found for this group ID' });
-        }
+        let idx = 0;
+        for (const donation of donationResponse.results) {
+            if (!donation.trees_count || (donation as any).booked == (donation as any).assigned)
+                continue; // Skip donations that are already fully assigned or have no trees
 
-        // Create donation users
-        await DonationService.createDonationUsers(donation.id, users);
-
-        const donationUsers = await DonationUserRepository.getAllDonationUsers(donation.id);
-        const sortedUsers = donationUsers.sort((a, b) => a.id - b.id);
-
-        const totalRequestedTrees = sortedUsers.reduce((sum, user) => sum + user.trees_count, 0);
-        let remainingTrees = donation.trees_count;
-
-        // CASE 1: Enough trees - Assign everyone their full request
-        if (remainingTrees >= totalRequestedTrees) {
-            for (const user of sortedUsers) {
-                await DonationService.autoAssignTrees(donation.id);
-                remainingTrees -= user.trees_count;
+            let cnt = Number((donation as any).booked) - Number((donation as any).assigned);
+            const partUsers: any[] = [];
+            for (; idx < users.length && cnt > 0; idx++) {
+                if (users[idx].trees_count <= cnt) {
+                    partUsers.push(users[idx])
+                    cnt -= users[idx].trees_count;
+                } else if (cnt > 0) {
+                    partUsers.push({
+                        ...users[idx],
+                        trees_count: cnt
+                    });
+                    users[idx].trees_count -= cnt;
+                    idx--; // Adjust index since we modified the current user
+                    cnt = 0;
+                }
             }
-            return res.status(status.success).send();
-        }
 
-        // CASE 2: Not enough trees
-        const baseAllocation = Math.floor(remainingTrees / sortedUsers.length);
-        const allocations: { user: typeof sortedUsers[0]; assignCount: number }[] = [];
-
-        // Step 1: Assign base amount (capped at user's request)
-        for (const user of sortedUsers) {
-            if (remainingTrees <= 0) break;
-
-            const allocatable = Math.min(user.trees_count, baseAllocation);
-            allocations.push({ user, assignCount: allocatable });
-            remainingTrees -= allocatable;
-        }
-
-        // Step 2: Distribute remaining trees one by one
-        let i = 0;
-        while (remainingTrees > 0 && i < allocations.length) {
-            const alloc = allocations[i];
-            if (alloc.assignCount < alloc.user.trees_count) {
-                alloc.assignCount += 1;
-                remainingTrees -= 1;
-            }
-            i = (i + 1) % allocations.length;
-        }
-
-        // Step 3: Finalize assignments
-        for (const { user, assignCount } of allocations) {
-            if (assignCount > 0) {
+            if (partUsers.length > 0) {
+                // Create donation users for this part
+                await DonationService.createDonationUsers(donation.id, partUsers);
+                // Assign trees to these users
                 await DonationService.autoAssignTrees(donation.id);
             }
+            if (idx >= users.length) break; // Stop if we've processed all users
         }
 
         return res.status(status.success).send();
