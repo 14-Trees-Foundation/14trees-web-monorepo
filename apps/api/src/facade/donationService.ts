@@ -188,7 +188,7 @@ export class DonationService {
             const headers: string[] = headerRes?.data?.values?.[0] || [];
 
             const date = new Date();
-            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;;
+            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
 
             // 2. Construct data object
             const donationData = {
@@ -1295,6 +1295,7 @@ export class DonationService {
         try {
 
             const donation = await DonationRepository.getDonation(donationId);
+            const recipients = await DonationUserRepository.getAllDonationUsers(donationId);
 
             // Prepare email content with donation details
             const emailData = {
@@ -1304,7 +1305,13 @@ export class DonationService {
                 sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
-                treesCount: donation.trees_count || 0
+                treesCount: donation.trees_count || "N/A",
+                recipients: recipients.length > 0 ? recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
+                    trees: user.trees_count || 0,
+                })) : null,
             };
 
             // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
@@ -1354,6 +1361,7 @@ export class DonationService {
         try {
 
             const donation = await DonationRepository.getDonation(donationId);
+            const recipients = await DonationUserRepository.getAllDonationUsers(donationId);
 
             const emailData = {
                 donationId: donation.id,
@@ -1362,11 +1370,18 @@ export class DonationService {
                 sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+                treesCount: donation.trees_count || "N/A",
+                recipients: recipients.length > 0 ? recipients.map((user: any) => ({
+                    name: user.recipient_name,
+                    email: user.recipient_email,
+                    phone: user.recipient_phone,
+                    trees: user.trees_count || 0,
+                })) : null,
             };
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['accounts@14trees.org'];
+                ['accounts@14trees.org', 'accounts2@14trees.org'];
 
             // Set the email template to be used
             const templateName = 'donation-accounts.html';

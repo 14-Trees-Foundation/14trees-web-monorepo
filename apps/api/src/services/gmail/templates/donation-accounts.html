@@ -38,10 +38,34 @@
             <td>{{donationAmount}}</td>
           </tr>
           <tr>
+            <td>Total Trees:</td>
+            <td>{{treesCount}}</td>
+          </tr>
+          <tr>
             <td><strong>Donation Date:</strong></td>
             <td>{{donationDate}}</td>
           </tr>
         </table>
+
+        {{#if recipients}}
+        <h3>Recipient Details</h3>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Trees Count</th>
+            </tr>
+            {{#each recipients}}
+            <tr>
+                <td>{{this.name}}</td>
+                <td>{{this.email}}</td>
+                <td>{{this.phone}}</td>
+                <td>{{this.trees}}</td>
+            </tr>
+            {{/each}}
+        </table>
+        {{/if}}
 
         <p style="margin-top: 20px;">Please update the records accordingly.</p>
 

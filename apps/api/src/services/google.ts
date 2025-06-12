@@ -166,6 +166,191 @@ export class GoogleSpreadsheet {
             },
         });
     }
+
+    /**
+     * Fetches a specific row from a spreadsheet based on a value in a specific column
+     * @param spreadsheetId The ID of the spreadsheet
+     * @param sheetName The name of the sheet
+     * @param columnName The name of the column to match against
+     * @param valueToMatch The value to match in the specified column
+     * @returns The matching row as an array of values, or null if no match is found
+     */
+    public async getRowByColumnValue(
+        spreadsheetId: string, 
+        sheetName: string, 
+        columnName: string, 
+        valueToMatch: string
+    ): Promise<{ rowData: string[], rowIndex: number } | null> {
+        try {
+            // Get all data from the sheet
+            const response = await this.sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: sheetName,
+            });
+
+            const rows = response.data.values;
+            if (!rows || rows.length === 0) {
+                console.log("No data found in the spreadsheet.");
+                return null;
+            }
+
+            // Get the header row to find the column index
+            const headers = rows[0];
+            const columnIndex = headers.findIndex(
+                (header: string) => header.trim().toLowerCase() === columnName.trim().toLowerCase()
+            );
+
+            if (columnIndex === -1) {
+                console.log(`Column "${columnName}" not found in the spreadsheet.`);
+                return null;
+            }
+
+            // Find the row with the matching value in the specified column
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row[columnIndex] === valueToMatch) {
+                    return { rowData: row, rowIndex: i + 1 }; // +1 because Google Sheets is 1-indexed
+                }
+            }
+
+            console.log(`No row found with value "${valueToMatch}" in column "${columnName}".`);
+            return null;
+        } catch (error: any) {
+            if (error?.response?.data) {
+                console.log("Error fetching row:", JSON.stringify(error.response.data));
+            } else {
+                console.log("Error fetching row:", error);
+            }
+            return null;
+        }
+    }
+    
+    /**
+     * Updates specific cells in a row identified by a matching value in a specific column
+     * @param spreadsheetId The ID of the spreadsheet
+     * @param sheetName The name of the sheet
+     * @param identifyColumnName The name of the column to match against for identifying the row
+     * @param identifyValue The value to match in the identifying column
+     * @param updateValues An object where keys are column names and values are the new values to set
+     * @returns Boolean indicating success or failure
+     */
+    public async updateRowCellsByColumnValue(
+        spreadsheetId: string,
+        sheetName: string,
+        identifyColumnName: string,
+        identifyValue: string,
+        updateValues: Record<string, string>
+    ): Promise<boolean> {
+        try {
+            // First, get all data from the sheet to find the row and headers
+            const response = await this.sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: sheetName,
+            });
+
+            const rows = response.data.values;
+            if (!rows || rows.length === 0) {
+                console.log("No data found in the spreadsheet.");
+                return false;
+            }
+
+            // Get the header row
+            const headers = rows[0];
+            
+            // Find the column index for identification
+            const identifyColumnIndex = headers.findIndex(
+                (header: string) => header.trim().toLowerCase() === identifyColumnName.trim().toLowerCase()
+            );
+
+            if (identifyColumnIndex === -1) {
+                console.log(`Identify column "${identifyColumnName}" not found in the spreadsheet.`);
+                return false;
+            }
+
+            // Find the row with the matching value
+            let rowIndex = -1;
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row[identifyColumnIndex] === identifyValue) {
+                    rowIndex = i + 1; // +1 because Google Sheets is 1-indexed
+                    break;
+                }
+            }
+
+            if (rowIndex === -1) {
+                console.log(`No row found with value "${identifyValue}" in column "${identifyColumnName}".`);
+                return false;
+            }
+
+            // Create a map of column indices to update
+            const updateMap: Record<number, string> = {};
+            for (const [columnName, newValue] of Object.entries(updateValues)) {
+                const columnIndex = headers.findIndex(
+                    (header: string) => header.trim().toLowerCase() === columnName.trim().toLowerCase()
+                );
+                
+                if (columnIndex === -1) {
+                    console.log(`Update column "${columnName}" not found in the spreadsheet.`);
+                    continue;
+                }
+                
+                updateMap[columnIndex] = newValue;
+            }
+
+            if (Object.keys(updateMap).length === 0) {
+                console.log("No valid columns to update.");
+                return false;
+            }
+
+            // Get the current row data
+            const currentRow = rows[rowIndex - 1]; // -1 to convert back to 0-indexed for the array
+            
+            // Create the updated row by applying changes
+            const updatedRow = [...currentRow];
+            for (const [columnIndex, newValue] of Object.entries(updateMap)) {
+                updatedRow[parseInt(columnIndex)] = newValue;
+            }
+
+            // Update the specific row
+            await this.sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!A${rowIndex}:${this.columnToLetter(headers.length)}${rowIndex}`,
+                valueInputOption: 'RAW',
+                requestBody: {
+                    values: [updatedRow],
+                },
+            });
+
+            console.log(`Row ${rowIndex} updated successfully.`);
+            return true;
+        } catch (error: any) {
+            if (error?.response?.data) {
+                console.log("Update error:", JSON.stringify(error.response.data));
+            } else {
+                console.log("Update error:", error);
+            }
+            return false;
+        }
+    }
+    
+    /**
+     * Converts a column number to a letter reference (e.g., 1 -> A, 27 -> AA)
+     * @param columnNumber The column number (1-indexed)
+     * @returns The column letter reference
+     */
+    private columnToLetter(columnNumber: number): string {
+        let dividend = columnNumber;
+        let columnName = '';
+        let modulo;
+
+        while (dividend > 0) {
+            modulo = (dividend - 1) % 26;
+            columnName = String.fromCharCode(65 + modulo) + columnName;
+            dividend = Math.floor((dividend - modulo) / 26);
+        }
+
+        return columnName;
+    }
 }
 
 export class GoogleDoc {

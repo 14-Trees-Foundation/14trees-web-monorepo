@@ -11,7 +11,7 @@ import { UploadFileToS3, uploadBase64DataToS3 } from "./helper/uploadtos3";
 import archiver from 'archiver';
 import axios from 'axios'
 import { Op } from "sequelize";
-import { downloadSlide } from "../services/google";
+import { downloadSlide, GoogleSpreadsheet } from "../services/google";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { AlbumRepository } from "../repo/albumRepo";
 import { UserRelationRepository } from "../repo/userRelationsRepo";
@@ -247,7 +247,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             }
         }
 
-        if (requestType === 'Gift Cards') {
+        if (giftCard.request_type === 'Gift Cards' && giftCard.tags?.includes('WebSite')) {
             try {
                 await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
             } catch (error: any) {
@@ -271,6 +271,7 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
 
         const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
 
+        let transactionId = ""
         if (giftRequest.payment_id) {
             let sponsorshipType: SponsorshipType = 'Unverified';
             let amountReceived: number = 0;
@@ -287,8 +288,21 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             if (payment?.order_id) {
                 const razorpayService = new RazorpayService();
                 const payments = await razorpayService.getPayments(payment.order_id);
+
                 payments?.forEach(item => {
                     amountReceived += Number(item.amount) / 100;
+                    if (item.status === 'captured') {
+                        const data: any = item.acquirer_data;
+                        if (data) {
+                            const keys = Object.keys(data);
+                            for (const key of keys) {
+                                if (key.endsWith("transaction_id") && data[key]) {
+                                    transactionId = data[key];
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 })
             }
 
@@ -335,6 +349,25 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
                 error,
                 stack: error instanceof Error ? error.stack : undefined
             });
+        }
+
+        if (transactionId) {
+            const sheetName = "GiftRequests"
+            const spreadsheetId = process.env.GIFTING_SPREADSHEET;
+            if (!spreadsheetId) {
+                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (GIFTING_SPREADSHEET) is not present in env");
+                return;
+            }
+
+            const googleSheet = new GoogleSpreadsheet();
+            await googleSheet.updateRowCellsByColumnValue(spreadsheetId, sheetName, "Req Id", giftRequest.id.toString(), {
+                "Mode": transactionId
+            }).catch(error => {
+                console.error("[ERROR] Failed to update Google Sheet with transaction ID:", {
+                    error,
+                    stack: error instanceof Error ? error.stack : undefined
+                });
+            })
         }
 
         if (giftRequest.rfr_id) {
