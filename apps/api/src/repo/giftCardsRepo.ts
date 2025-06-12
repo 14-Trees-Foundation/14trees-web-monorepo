@@ -71,7 +71,7 @@ export class GiftCardsRepository {
                 u.phone as user_phone, 
                 g.name as group_name, 
                 cu.name as created_by_name,
-                pu.name as processed_by_name, 
+                pu.name as processed_by_name,
                 MIN(ru.name) AS recipient_name,
                 SUM(CASE 
                     WHEN gc.tree_id is not null
@@ -83,6 +83,11 @@ export class GiftCardsRepository {
                     THEN 1
                     ELSE 0
                 END) AS mailed_count,
+                SUM(CASE 
+                    WHEN gru.mail_sent_assignee = true
+                    THEN 1
+                    ELSE 0
+                END) AS mailed_assignee_count,
                 COUNT(distinct gru.id) as users_count,
                 SUM(CASE 
                     WHEN t.assigned_to is not null
@@ -523,7 +528,7 @@ export class GiftCardsRepository {
     static async getGiftCardUserAndTreeDetails(giftCardRequestId: number): Promise<GiftCard[]> {
 
         const getQuery = `
-            SELECT gc.id, gc.card_image_url, gru.mail_sent, gc.slide_id, gru.recipient, gru.assignee,
+            SELECT gc.id, gc.card_image_url, gru.mail_sent, gru.mail_sent_assignee, gc.slide_id, gru.recipient, gru.assignee,
             ru.name as user_name, ru.email as user_email,
             au.name as assigned_to_name, au.email as assigned_to_email, ur.relation,
             t.sapling_id, t.description as event_name, t.event_type, t.gifted_by_name as planted_via, pt.name as plant_type, pt.scientific_name
