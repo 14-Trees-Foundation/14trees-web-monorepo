@@ -11,6 +11,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { VisitRepository } from "../repo/visitsRepo";
 import { OrderRepository } from "../repo/ordersRepo";
 import { SortOrder } from "../models/common";
+import GroupService from "../facade/groupService";
 
 
 /*
@@ -147,3 +148,24 @@ export const mergeGroups = async (req: Request, res: Response) => {
         res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
     }
 };
+
+export const registerGroup = async (req: Request, res: Response) => {
+
+    try {
+        const { corporate, user } = req.body;
+        if (!corporate?.name || !corporate?.type) {
+            return res.status(status.bad).send({ error: "Group name and type are required" });
+        }
+
+        if (!user?.email || !user?.name) {
+            return res.status(status.bad).send({ error: "User email and name are required" });
+        }
+
+        const response = await GroupService.registerGroup(corporate, user);
+        res.status(status.created).send(response);
+    } catch (error) {
+        console.log("[ERROR]", "groupsController.registerGroup", error);
+        res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
+    }
+
+}
