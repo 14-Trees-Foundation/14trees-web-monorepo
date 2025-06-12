@@ -2200,7 +2200,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 company_logo_url: giftCardRequest.logo_url,
                 assigned_to: giftCard.assignee,
                 gifted_to: giftCard.recipient,
-                self: giftCard.assignee === giftCard.recipient,
+                self: true,
                 is_gift: giftCardRequest.request_type === 'Gift Cards',
                 count: 1
             }
@@ -2227,11 +2227,15 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
             if (files.length > 0) attachments = files;
         }
 
+        const templatesMap: Record<string, string> = {}
         const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
-        const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
-        if (templates.length === 0) {
-            console.log("[ERROR]", "Email template not found");
-            continue;
+        if (!templatesMap[templateType]) {
+            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+            if (templates.length === 0) {
+                console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+                continue;
+            }
+            templatesMap[templateType] = templates[0].template_name
         }
 
         let subject: string | undefined = undefined;
@@ -2247,7 +2251,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         while (tries > 0) {
             try {
                 const statusMessage = await sendDashboardMail(
-                    templates[0].template_name,
+                    templatesMap[0],
                     emailData,
                     mailIds,
                     ccMailIds,
