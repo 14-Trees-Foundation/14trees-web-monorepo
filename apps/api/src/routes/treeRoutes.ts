@@ -563,5 +563,6 @@ routes.get("/count/user/:user_id", trees.getTreesCountForUser);
 routes.get("/corporate-stats/tree-logged", trees.treePlantedByCorporate);
 routes.post("/mapped-gift/get", trees.getMappedGiftTrees);
 routes.post("/mapped-gift/analytics", trees.getMappedGiftTreesAnalytics);
+routes.post("/mapped-donation/analytics", trees.getMappedDonationTreesAnalytics);
 
 export default routes;

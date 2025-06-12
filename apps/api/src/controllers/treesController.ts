@@ -408,7 +408,7 @@ export const getMappedTreesForGroup = async (req: Request, res: Response) => {
 
     const trees = await TreeRepository.getTrees(offset, limit, [
       { operatorValue: 'equals', value: groupId, columnField: 'sponsored_by_group' },
-      { operatorValue: 'isNotEmpty', value: groupId,  columnField: 'assigned_to' }
+      { operatorValue: 'isNotEmpty', value: groupId, columnField: 'assigned_to' }
     ]);
 
     console.log("Filter applied:", [
@@ -445,7 +445,7 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
     let result: any[] = await sequelize.query(query, {
       type: QueryTypes.SELECT
     })
-    
+
     result.forEach(item => {
       item.tree_count = parseInt(item.tree_count);
       const year: Date = item.year;
@@ -492,6 +492,22 @@ export const getMappedGiftTreesAnalytics = async (req: Request, res: Response) =
     res.status(status.success).send(treesData);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getMappedGiftTreesAnalytics", error);
+    res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
+  }
+}
+
+export const getMappedDonationTreesAnalytics = async (req: Request, res: Response) => {
+  const { group_id, user_id } = req.body;
+  if (!group_id && !user_id) {
+    res.status(status.bad).send({ message: "Invalid request! Corporate id or user id required." });
+    return;
+  }
+
+  try {
+    const treesData = await TreeRepository.getMappedDonationTreesAnalytics(group_id, user_id);
+    res.status(status.success).send(treesData);
+  } catch (error: any) {
+    console.log("[ERROR]", "TreesController::getMappedDonationTreesAnalytics", error);
     res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
   }
 }

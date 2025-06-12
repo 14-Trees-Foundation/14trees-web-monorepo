@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
 import { DonationService } from "../facade/donationService";
 import { UserRepository } from "../repo/userRepo";
+import TreeRepository from "../repo/treeRepo"
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
@@ -14,6 +15,8 @@ import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfil
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
+import PaymentService from "../facade/paymentService";
+import { PaymentHistory } from "../models/payment_history";
 import { GoogleSpreadsheet } from "../services/google";
 
 /*
@@ -88,7 +91,7 @@ export const createDonation = async (req: Request, res: Response) => {
 
     }
 
-    // Validate tree plantaion details
+    // Validate tree plantation details
     if (!category)
         return res.status(status.bad).json({
             message: 'Land and tree plantation details are invalid. Please provide valid details!'
@@ -104,7 +107,7 @@ export const createDonation = async (req: Request, res: Response) => {
         payment_id,
         category,
         grove,
-        continution_options: contribution_options || [],
+        contribution_options: contribution_options || [],
         comments,
         donation_type,
         donation_method,
@@ -161,7 +164,7 @@ export const createDonation = async (req: Request, res: Response) => {
 };
 
 export const paymentSuccessForDonation = async (req: Request, res: Response) => {
-    const { donation_id } = req.body;
+    const { donation_id, is_corporate } = req.body;
 
     try {
 
@@ -174,12 +177,22 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
 
         let transactionId = ""
         if (donation.payment_id) {
+            let amountReceived: number = 0;
+            let donationDate: Date | null = null;
 
             const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+            if (payment && payment.payment_history) {
+                const paymentHistory: PaymentHistory[] = payment.payment_history;
+                paymentHistory.forEach(payment => {
+                    if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+                })
+            }
+
             if (payment?.order_id) {
                 const razorpayService = new RazorpayService();
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
+                    amountReceived += Number(item.amount) / 100;
                     if (item.status === 'captured') {
                         const data: any = item.acquirer_data;
                         if (data) {
@@ -194,9 +207,28 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                     }
                 })
             }
+
+            if (amountReceived > 0) {
+                donationDate = new Date();
+            }
+
+            await DonationRepository.updateDonations({
+                donation_date: donationDate,
+                amount_received: amountReceived,
+                updated_at: new Date()
+            }, { id: donation.id })
         }
 
         res.status(status.success).send({});
+
+        if (is_corporate) {
+            await DonationService.reserveTreesForDonation(donation).catch(error => {
+                console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
+            });
+            await DonationService.autoAssignTrees(donation.id).catch(error => {
+                console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
+            });
+        }
 
         try {
             await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
@@ -540,13 +572,13 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!auto_reserve && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
 
     if (auto_reserve && (!plots || plots.length === 0))
-        return res.status(status.bad).send({ message: "Plese provided plots to reserve trees from." })
+        return res.status(status.bad).send({ message: "Please provided plots to reserve trees from." })
 
     try {
         if (auto_reserve) {
@@ -569,7 +601,7 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::reserveTreesForDonation", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 
@@ -583,7 +615,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!unreserve_all && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -599,7 +631,7 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -611,7 +643,7 @@ export const mapAssignedTreesToDonation = async (req: Request, res: Response) =>
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to map trees to sponsor." })
+        return res.status(status.bad).send({ message: "Donation Id required to map trees to sponsor." })
 
     if (!tree_ids || tree_ids.length === 0)
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -627,7 +659,7 @@ export const mapAssignedTreesToDonation = async (req: Request, res: Response) =>
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::mapAssignedTreesToDonation", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -706,7 +738,7 @@ export const assignTrees = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!auto_assign && (!user_trees || user_trees.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -741,7 +773,7 @@ export const assignTrees = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::assignTrees", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -756,7 +788,7 @@ export const unassignTrees = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to reserve trees." })
+        return res.status(status.bad).send({ message: "Donation Id required to reserve trees." })
 
     if (!unassign_all && (!tree_ids || tree_ids.length === 0))
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
@@ -773,7 +805,7 @@ export const unassignTrees = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -946,6 +978,166 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
 };
 
 /**
+ * Create Donations V2
+ */
+export const createDonationV2 = async (req: Request, res: Response) => {
+    const {
+        group_id,
+        sponsor_name,
+        sponsor_email,
+        sponsor_phone,
+        trees_count,
+        amount_donated,
+        tags,
+        users,
+    } = req.body;
+
+    // Validate required fields
+    if (!sponsor_name || !sponsor_email) {
+        return res.status(status.bad).json({
+            message: 'Invalid sponsor name or email. Please provide valid details!'
+        });
+    }
+
+    // Validate donation type specific fields
+    if (!trees_count) {
+        return res.status(status.bad).json({
+            message: 'Tree count is required for tree donations'
+        });
+    }
+
+    try {
+        // Create payment if needed
+        let payment = null;
+        if (amount_donated && amount_donated > 0) {
+            payment = await PaymentService.createPayment(
+                amount_donated,
+                "Indian Citizen",
+                undefined,
+                true
+            );
+        }
+
+        // Create donation
+        const donation = await DonationService.createDonation({
+            sponsor_name,
+            sponsor_email,
+            sponsor_phone,
+            trees_count: trees_count || 0,
+            pledged_area_acres: 0, // Default to 0 if not provided
+            payment_id: payment ? payment.id : null,
+            category: 'Foundation',
+            grove: "",
+            contribution_options: [],
+            comments: null,
+            donation_type: "donate",
+            donation_method: "trees",
+            visit_date: null,
+            amount_donated,
+            tags,
+            group_id: group_id || null
+        }).catch((error) => {
+            console.error("[ERROR] DonationsController::createDonationV2:createDonation", error);
+            return null;
+        });
+
+        if (!donation) {
+            return res.status(status.error).json({
+                message: 'Failed to create donation'
+            });
+        }
+
+        // Update Razorpay order if payment exists
+        if (donation.payment_id) {
+            const paymentRecord = await PaymentRepository.getPayment(donation.payment_id);
+            if (paymentRecord && paymentRecord.order_id) {
+                const razorpayService = new RazorpayService();
+                await razorpayService.updateOrder(paymentRecord.order_id, { "Donation Id": donation.id.toString() });
+            }
+        }
+
+        // Create donation users if provided
+        let usersCreated = true;
+        if (users && Array.isArray(users) && users.length > 0) {
+            await DonationService.createDonationUsers(
+                donation.id,
+                users
+            ).catch((error) => {
+                console.error("[ERROR] DonationsController::createDonationV2:createDonationUsers", error);
+                usersCreated = false;
+            });
+        }
+
+        // Return the created donation with payment order ID if available
+        const responseData = {
+            donation,
+            order_id: payment ? payment.order_id : null
+        };
+
+        return res.status(status.created).send(responseData);
+    } catch (error: any) {
+        console.error("[ERROR] DonationsController::createDonationV2", error);
+        return res.status(status.error).json({
+            message: error.message || 'Something went wrong. Please try again later.'
+        });
+    }
+};
+
+export const bulkAssignTrees = async (req: Request, res: Response) => {
+    const { group_id, users } = req.body;
+
+    if (!group_id || !Array.isArray(users) || users.length === 0) {
+        return res.status(status.bad).json({ message: 'Group ID and non-empty users array are required' });
+    }
+
+    try {
+        const donationResponse = await DonationRepository.getDonations(
+            0, -1,
+            [{ columnField: 'group_id', operatorValue: 'equals', value: group_id }]
+        );
+
+        let idx = 0;
+        for (const donation of donationResponse.results) {
+            if (!donation.trees_count || (donation as any).booked == (donation as any).assigned)
+                continue; // Skip donations that are already fully assigned or have no trees
+
+            let cnt = Number((donation as any).booked) - Number((donation as any).assigned);
+            const partUsers: any[] = [];
+            for (; idx < users.length && cnt > 0; idx++) {
+                if (users[idx].trees_count <= cnt) {
+                    partUsers.push(users[idx])
+                    cnt -= users[idx].trees_count;
+                } else if (cnt > 0) {
+                    partUsers.push({
+                        ...users[idx],
+                        trees_count: cnt
+                    });
+                    users[idx].trees_count -= cnt;
+                    idx--; // Adjust index since we modified the current user
+                    cnt = 0;
+                }
+            }
+
+            if (partUsers.length > 0) {
+                // Create donation users for this part
+                await DonationService.createDonationUsers(donation.id, partUsers);
+                // Assign trees to these users
+                await DonationService.autoAssignTrees(donation.id);
+            }
+            if (idx >= users.length) break; // Stop if we've processed all users
+        }
+
+        return res.status(status.success).send();
+
+    } catch (error: any) {
+        console.error("[ERROR] DonationsController::bulkAssignTrees", error);
+        return res.status(status.error).json({
+            message: error.message || 'Something went wrong during tree assignment'
+        });
+    }
+};
+
+/**
  * Auto process donation request
  */
 export const autoProcessDonationRequest = async (req: Request, res: Response) => {
@@ -955,7 +1147,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+        return res.status(status.bad).send({ message: "Donation Id required to process request." })
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
@@ -988,7 +1180,7 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }
@@ -1000,7 +1192,7 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
     } = req.body;
 
     if (!donation_id)
-        return res.status(status.bad).send({ message: "Donation Id requried to process request." })
+        return res.status(status.bad).send({ message: "Donation Id required to process request." })
 
     try {
         const donation = await DonationRepository.getDonation(donation_id);
@@ -1011,7 +1203,7 @@ export const getTreesCountForAutoReserveTrees = async (req: Request, res: Respon
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::getTreesCountForAutoReserveTrees", error);
         return res.status(status.error).send({
-            messgae: error.message
+            message: error.message
         })
     }
 }

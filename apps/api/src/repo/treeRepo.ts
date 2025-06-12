@@ -49,10 +49,10 @@ class TreeRepository {
 
     const sortOrder = orderBy && orderBy.length !== 0
       ? orderBy.map(o => {
-          if (o.column === 'assigned_to_name')
-            return 'au."name"' + " " + o.order
-          return 't.' + o.column + " " + o.order
-        }).join(", ")
+        if (o.column === 'assigned_to_name')
+          return 'au."name"' + " " + o.order
+        return 't.' + o.column + " " + o.order
+      }).join(", ")
       : null;
 
     let query = `
@@ -223,7 +223,7 @@ class TreeRepository {
   }
 
   public static async deleteTree(treeId: string): Promise<number> {
-    const resp = await Tree.update({ deleted_at: new Date() }, { where: { id: treeId }});
+    const resp = await Tree.update({ deleted_at: new Date() }, { where: { id: treeId } });
     return resp[0];
   };
 
@@ -926,6 +926,32 @@ class TreeRepository {
 
     return data[0];
   }
+
+  public static async getMappedDonationTreesAnalytics(groupId: number | null, userId: number | null): Promise<{ total_trees: number; donated_trees: number; remaining_trees: number; }> {
+    let whereCondition = "";
+    if (groupId !== null) {
+      whereCondition = `WHERE t.mapped_to_group = ${groupId}`;
+    } else if (userId !== null) {
+      whereCondition = `WHERE t.mapped_to_user = ${userId}`;
+    }
+
+    const query = `
+      SELECT 
+        COUNT(DISTINCT t.id) AS total_trees,
+        COUNT(DISTINCT CASE WHEN t.assigned_to IS NOT NULL THEN t.id END) AS donated_trees,
+        COUNT(DISTINCT t.id) - COUNT(DISTINCT CASE WHEN t.assigned_to IS NOT NULL THEN t.id END) AS remaining_trees
+      FROM "14trees_2".trees t
+      JOIN "14trees_2".donations d ON d.id = t.donation_id
+      ${whereCondition}
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+    });
+
+    return data[0] || { total_trees: 0, donated_trees: 0, remaining_trees: 0 };
+  }
+
 }
 
 export default TreeRepository;
