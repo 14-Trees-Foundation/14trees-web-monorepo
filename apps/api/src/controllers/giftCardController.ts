@@ -2541,18 +2541,20 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         const treesCount = Number(no_of_cards);
         const amount = treesCount * 2000;
         const payment = await PaymentService.createPayment(amount, "Indian Citizen", undefined, true);
+
+        const group = group_id ? await GroupRepository.getGroup(group_id) : null;
     
         const requestId = getUniqueRequestId();
         const request: GiftCardRequestCreationAttributes = {
             request_id: requestId,
             user_id: sponsorUser.id,
             sponsor_id: sponsorUser.id,
-            group_id: group_id || null,
+            group_id: group?.id || null,
             no_of_cards: treesCount,
             is_active: false,
             created_at: new Date(),
             updated_at: new Date(),
-            logo_url: null,
+            logo_url: group?.logo_url || null,
             primary_message: primary_message || defaultGiftMessages.primary,
             secondary_message: null,
             event_name: event_name || null,
@@ -2560,7 +2562,7 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
             planted_by: gifted_by || null,
             logo_message: logo_message || defaultGiftMessages.logo,
             status: GiftCardRequestStatus.pendingPlotSelection,
-            validation_errors: group_id ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
+            validation_errors: group && !group.logo_url ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
             notes: null,
             payment_id: payment.id,
             created_by: created_by || sponsorUser.id,
