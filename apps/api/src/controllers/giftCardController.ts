@@ -290,8 +290,8 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
                 const payments = await razorpayService.getPayments(payment.order_id);
 
                 payments?.forEach(item => {
-                    amountReceived += Number(item.amount) / 100;
                     if (item.status === 'captured') {
+                        amountReceived += Number(item.amount) / 100;
                         const data: any = item.acquirer_data;
                         if (data) {
                             const keys = Object.keys(data);
@@ -329,6 +329,17 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
                     stack: error instanceof Error ? error.stack : undefined
                 });
             }
+
+            try {
+                await GiftCardsService.fullFillGiftCardRequestWithTransactions(giftRequest);
+            } catch (error) {
+                console.error("[ERROR] Failed to assign trees for gift request:", {
+                    error,
+                    stack: error instanceof Error ? error.stack : undefined
+                });
+            }
+
+            await generateGiftCardsForGiftRequest(giftRequest);
             return;
         }
 
@@ -1384,15 +1395,15 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
             const user = users.find(user => user.id === tree.gift_request_user_id);
             if (user) {
                 const updateRequest = {
-                    assigned_at: normalAssignment ? new Date() : giftCardRequest.gifted_on,
+                    assigned_at: normalAssignment ? new Date() : user.gifted_on || giftCardRequest.gifted_on,
                     assigned_to: user.assignee,
                     gifted_to: normalAssignment ? null : user.recipient,
                     updated_at: new Date(),
-                    description: giftCardRequest.event_name,
+                    description: user.event_name || giftCardRequest.event_name,
                     event_type: giftCardRequest.event_type,
                     planted_by: null,
                     gifted_by: normalAssignment || visit ? null : giftCardRequest.user_id,
-                    gifted_by_name: normalAssignment || visit ? null : giftCardRequest.planted_by,
+                    gifted_by_name: normalAssignment || visit ? null : user.gifted_by || giftCardRequest.planted_by,
                     user_tree_image: user.profile_image_url,
                     visit_id: giftCardRequest.visit_id,
                     memory_images: memoryImageUrls,

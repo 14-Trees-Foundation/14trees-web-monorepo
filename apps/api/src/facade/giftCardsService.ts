@@ -87,6 +87,9 @@ class GiftCardsService {
                     recipient: recipient.id,
                     assignee: assignee.id,
                     profile_image_url: user.image_url || null,
+                    gifted_by: user.gifted_by || null,
+                    gifted_on: user.gifted_on || null,
+                    event_name: user.event_name || null,
                     created_at: new Date(),
                     updated_at: new Date(),
                 })
@@ -139,7 +142,9 @@ class GiftCardsService {
             const treeIds = giftCards.filter(item => item.tree_id && item.gift_request_user_id === user.id).map(item => item.tree_id);
             await TreeRepository.updateTrees({
                 assigned_to: user.assignee,
-                assigned_at: giftCardRequest.gifted_on,
+                assigned_at: user.gifted_on || giftCardRequest.gifted_on,
+                description: user.event_name || giftCardRequest.event_name || null,
+                gifted_by_name: user.gifted_by || giftCardRequest.planted_by || null,
                 gifted_to: giftCardRequest.request_type === 'Normal Assignment' ? null : user.recipient,
                 user_tree_image: user.profile_image_url,
                 updated_at: new Date()
@@ -789,6 +794,53 @@ class GiftCardsService {
         if (sponsorGroup || sponsorUser) {
             const trn = await GRTransactionsRepository.createTransaction(trnData);
             await GRTransactionsRepository.addCardsToTransaction(trn.id, cardIds);
+        }
+    }
+
+    public static async fullFillGiftCardRequestWithTransactions(giftRequest: GiftCardRequest) {
+
+        const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftRequest.id }]);
+        if (giftCards.results.length === 0) {
+            throw new Error("No gift cards found for the given gift request.");
+        }
+
+        const giftCardsData = giftCards.results;
+        const recipients = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id);
+        if (recipients.length === 0) {
+            throw new Error("No recipients found for the given gift request.");
+        }
+
+        let idx = 0;
+        for (const recipient of recipients) {
+            const recipientGiftCards = giftCardsData.filter(card => card.gift_request_user_id === recipient.id);
+            let treesCount = recipient.gifted_trees - recipientGiftCards.length;
+
+            let giftCards: GiftCard[] = [];
+            if (treesCount > 0) {
+                for (; idx < giftCardsData.length && treesCount > 0; idx++) {
+                    const card = giftCardsData[idx];
+                    if (card.gift_request_user_id === null) {
+                        card.gift_request_user_id = recipient.id;
+                        treesCount--;
+                        giftCards.push(card);
+                    }
+                }
+            }
+
+            // Redeem the gift cards for the recipient
+            await this.redeemGiftCards(
+                giftCards,
+                recipient,
+                giftRequest.sponsor_id || null,
+                giftRequest.group_id || null,
+                giftRequest.user_id,
+                recipient.event_name || giftRequest.event_name || "",
+                giftRequest.event_type || "",
+                recipient.gifted_by || giftRequest.planted_by || "",
+                recipient.gifted_on || giftRequest.gifted_on || new Date(),
+                giftRequest.primary_message || defaultMessage,
+                giftRequest.logo_message || ""
+            );
         }
     }
 }
