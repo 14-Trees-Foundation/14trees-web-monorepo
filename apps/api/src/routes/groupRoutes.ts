@@ -267,4 +267,97 @@ routes.delete('/:id', group.deleteGroup);
 routes.post('/merge', group.mergeGroups);
 
 
+/**
+ * @swagger
+ * /groups/register:
+ *   post:
+ *     summary: Register a new group with admin user
+ *     description: Creates a new group and associates an admin user with it in a single operation.
+ *     tags:
+ *       - Groups
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Request body for registering a group with admin user
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - corporate
+ *             - user
+ *           properties:
+ *             corporate:
+ *               type: object
+ *               required:
+ *                 - name
+ *                 - type
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   description: Name of the group
+ *                   example: "Acme Corporation"
+ *                 type:
+ *                   type: string
+ *                   description: Type of the group
+ *                   example: "Corporate"
+ *                 description:
+ *                   type: string
+ *                   description: Description of the group
+ *                   example: "A global technology company"
+ *                 address:
+ *                   type: string
+ *                   description: Address of the group
+ *                   example: "123 Tech Park, Silicon Valley"
+ *                 logo_url:
+ *                   type: string
+ *                   description: URL to the group's logo
+ *                   example: "https://example.com/logo.png"
+ *             user:
+ *               type: object
+ *               required:
+ *                 - name
+ *                 - email
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   description: Name of the admin user
+ *                   example: "John Doe"
+ *                 email:
+ *                   type: string
+ *                   description: Email of the admin user
+ *                   example: "john.doe@acme.com"
+ *                 phone:
+ *                   type: string
+ *                   description: Phone number of the admin user
+ *                   example: "+1234567890"
+ *     responses:
+ *       201:
+ *         description: Group and admin user created successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             group:
+ *               $ref: '#/definitions/Group'
+ *             user:
+ *               $ref: '#/definitions/User'
+ *       400:
+ *         description: Bad request
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Group name and type are required"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time!"
+ */
+routes.post('/register', group.registerGroup);
+
+
 export default routes;

@@ -290,8 +290,8 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
                 const payments = await razorpayService.getPayments(payment.order_id);
 
                 payments?.forEach(item => {
-                    amountReceived += Number(item.amount) / 100;
                     if (item.status === 'captured') {
+                        amountReceived += Number(item.amount) / 100;
                         const data: any = item.acquirer_data;
                         if (data) {
                             const keys = Object.keys(data);
@@ -329,6 +329,17 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
                     stack: error instanceof Error ? error.stack : undefined
                 });
             }
+
+            try {
+                await GiftCardsService.fullFillGiftCardRequestWithTransactions(giftRequest);
+            } catch (error) {
+                console.error("[ERROR] Failed to assign trees for gift request:", {
+                    error,
+                    stack: error instanceof Error ? error.stack : undefined
+                });
+            }
+
+            await generateGiftCardsForGiftRequest(giftRequest);
             return;
         }
 
@@ -1384,15 +1395,15 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
             const user = users.find(user => user.id === tree.gift_request_user_id);
             if (user) {
                 const updateRequest = {
-                    assigned_at: normalAssignment ? new Date() : giftCardRequest.gifted_on,
+                    assigned_at: normalAssignment ? new Date() : user.gifted_on || giftCardRequest.gifted_on,
                     assigned_to: user.assignee,
                     gifted_to: normalAssignment ? null : user.recipient,
                     updated_at: new Date(),
-                    description: giftCardRequest.event_name,
+                    description: user.event_name || giftCardRequest.event_name,
                     event_type: giftCardRequest.event_type,
                     planted_by: null,
                     gifted_by: normalAssignment || visit ? null : giftCardRequest.user_id,
-                    gifted_by_name: normalAssignment || visit ? null : giftCardRequest.planted_by,
+                    gifted_by_name: normalAssignment || visit ? null : user.gifted_by || giftCardRequest.planted_by,
                     user_tree_image: user.profile_image_url,
                     visit_id: giftCardRequest.visit_id,
                     memory_images: memoryImageUrls,
@@ -2530,18 +2541,20 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         const treesCount = Number(no_of_cards);
         const amount = treesCount * 2000;
         const payment = await PaymentService.createPayment(amount, "Indian Citizen", undefined, true);
+
+        const group = group_id ? await GroupRepository.getGroup(group_id) : null;
     
         const requestId = getUniqueRequestId();
         const request: GiftCardRequestCreationAttributes = {
             request_id: requestId,
             user_id: sponsorUser.id,
             sponsor_id: sponsorUser.id,
-            group_id: group_id || null,
+            group_id: group?.id || null,
             no_of_cards: treesCount,
             is_active: false,
             created_at: new Date(),
             updated_at: new Date(),
-            logo_url: null,
+            logo_url: group?.logo_url || null,
             primary_message: primary_message || defaultGiftMessages.primary,
             secondary_message: null,
             event_name: event_name || null,
@@ -2549,7 +2562,7 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
             planted_by: gifted_by || null,
             logo_message: logo_message || defaultGiftMessages.logo,
             status: GiftCardRequestStatus.pendingPlotSelection,
-            validation_errors: group_id ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
+            validation_errors: group && !group.logo_url ? ['MISSING_LOGO', 'MISSING_USER_DETAILS'] : ['MISSING_USER_DETAILS'],
             notes: null,
             payment_id: payment.id,
             created_by: created_by || sponsorUser.id,

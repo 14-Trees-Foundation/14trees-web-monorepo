@@ -10,12 +10,15 @@ interface GiftRequestUserAttributes {
     profile_image_url: string | null;
     mail_sent: boolean | null;
     mail_error: string | null;
+    gifted_on: Date | null;
+    gifted_by: string | null;
+    event_name: string | null;
     created_at: Date;
     updated_at: Date;
 }
 
 interface GiftRequestUserCreationAttributes
-    extends Optional<GiftRequestUserAttributes, 'id' | 'profile_image_url' | 'mail_error' | 'mail_sent' > { }
+    extends Optional<GiftRequestUserAttributes, 'id' | 'profile_image_url' | 'mail_error' | 'mail_sent' | 'gifted_by' | 'gifted_on' | 'event_name' > { }
 
 @Table({ tableName: 'gift_request_users' })
 class GiftRequestUser extends Model<GiftRequestUserAttributes, GiftRequestUserCreationAttributes>
@@ -56,6 +59,24 @@ class GiftRequestUser extends Model<GiftRequestUserAttributes, GiftRequestUserCr
         type: DataType.STRING,
     })
     profile_image_url!: string | null;
+
+    @Column({
+        type: DataType.DATE,
+        allowNull: true,
+    })
+    gifted_on!: Date | null;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    gifted_by!: string | null;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    event_name!: string | null;
 
     @Column({
         type: DataType.BOOLEAN,
