@@ -1168,6 +1168,7 @@ export class DonationService {
             throw new Error('Sponsor email template not found');
         }
 
+        const isTestMail = test_mails?.length ? true : false;
         const statusMessage = await sendDashboardMail(
             sponsorTemplates[0].template_name,
             sponsorEmailData,
@@ -1175,7 +1176,8 @@ export class DonationService {
             sponsor_cc_mails || []
         );
 
-        if (statusMessage) {
+        if (isTestMail) return;
+        else if (statusMessage) {
             await DonationRepository.updateDonation(donation.id, {
                 mail_error: statusMessage,
                 updated_at: new Date(),
@@ -1211,6 +1213,7 @@ export class DonationService {
         }
 
         // Send to each recipient
+        const isTestMail = test_mails?.length ? true : false;
         for (const [recipient, recipientTrees] of recipientsMap) {
             const recipientEmailData = {
                 ...commonEmailData,
@@ -1230,7 +1233,8 @@ export class DonationService {
                 recipient_cc_mails || []
             );
 
-            if (statusMessage) {
+            if (isTestMail) continue;
+            else if (statusMessage) {
                 await DonationUserRepository.updateDonationUsers({
                     mail_error: statusMessage,
                     updated_at: new Date(),
