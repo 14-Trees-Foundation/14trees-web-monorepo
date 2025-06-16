@@ -125,8 +125,8 @@ export default function Header() {
             <div className="absolute top-full right-4 mt-2 w-48 bg-white shadow-md rounded-md p-2 z-50 md:hidden">
               <NavItemsDesktop
                 items={navItems}
-                onClick={() => setMobileMenuOpen(false)} // optional if NavItemsDesktop accepts onClick
-              />
+                onClick={() => setMobileMenuOpen(false)} // optional if NavItemsDesktop accepts onClick not here
+              /> 
               <Link href="/volunteer">
                 <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
                   Volunteer
@@ -150,6 +150,11 @@ export default function Header() {
             <div className="mx-4 hidden items-center overflow-hidden md:inline-flex">
               <NavItemsDesktop items={navItems} />
             </div>
+            <Link href="/corporate-login">
+            <Button className="mr-3" variant="secondary">
+                Corporate Login
+                </Button>
+              </Link>
             <Link href="/volunteer">
               <Button className="mr-3" variant="secondary">
                 Volunteer
