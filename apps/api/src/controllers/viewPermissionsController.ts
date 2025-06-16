@@ -5,7 +5,6 @@ import { validate as isUUID, v7 as uuidv7 } from 'uuid'
 import { ViewAttributes } from "../models/permissions";
 import { Op } from "sequelize";
 import { UserRepository } from "../repo/userRepo";
-import { FilterItem } from "../models/pagination";
 
 
 export const verifyUserAccessToView = async (req: Request, res: Response) => {
@@ -137,7 +136,7 @@ export const updateViewUsers = async (req: Request, res: Response) => {
             return res.status(status.notfound).send({ message: "Request page not found!" });
         }
 
-        const exisiting = await ViewPermissionRepository.getViewUsers(view_id);
+        const exisiting = await ViewPermissionRepository.getViewUsers({ view_id: view.id });
         const removeList = exisiting.filter(item => !users.some(user => user.id === item.user_id));
         const addList = users.filter(item => !exisiting.some(user => user.user_id === item.id))
         
@@ -151,78 +150,3 @@ export const updateViewUsers = async (req: Request, res: Response) => {
         res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
     }
 }
-
-export const handleGoogleLogin = async (req: Request, res: Response) => {
-    const { email} = req.body;
-
-    if (!email) {
-        return res.status(status.bad).send({
-            success: false,
-            message: "Email is required"
-        });
-    }
-
-    try {
-        // 1. Use getUsers to fetch user with email 
-        const filters: FilterItem[] = [
-            {
-                columnField: "email",
-                operatorValue: "equals",
-                value: email
-            }
-        ];
-
-        const userResponse = await UserRepository.getUsers(0, 1, filters);
-
-        if (userResponse.total === 0) {
-            return res.status(status.notfound).send({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        const user = userResponse.results[0];
-
-        // 2. Get view permissions for user
-        const permissions = await ViewPermissionRepository.getViewUsersByUserId(Number(user.id));
-
-        if (!permissions || permissions.length === 0) {
-            return res.status(status.unauthorized).send({
-                success: false,
-                message: "User is not authorized for any views"
-            });
-        }
-
-        // 3. Take first view ID (only one view needed for login)
-        const viewId = permissions[0].view_id;
-
-        // 4. Get view details
-        const view = await ViewPermissionRepository.getViewByPk(viewId);
-
-        if (!view) {
-            return res.status(status.notfound).send({
-                success: false,
-                message: "View not found"
-            });
-        }
-
-        // 5. Send only view info
-        return res.status(status.success).send({
-            success: true,
-            views: [
-                {
-                    viewId: view.view_id,
-                    path: view.path,
-                    name: view.name
-                }
-            ]
-        });
-
-    } catch (error: any) {
-        console.error("[ERROR] GoogleLoginController:", error);
-        return res.status(status.error).send({
-            success: false,
-            message: "Failed to process Google login"
-        });
-    }
-};

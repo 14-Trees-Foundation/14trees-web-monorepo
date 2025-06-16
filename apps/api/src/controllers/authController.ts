@@ -4,6 +4,9 @@ import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { UserRepository } from '../repo/userRepo';
+import { getTokenPayload } from '../auth/verifyToken';
+import { FilterItem } from '../models/pagination';
+import { ViewPermissionRepository } from '../repo/viewPermissionsRepo';
 
 dotenv.config();
 
@@ -57,6 +60,73 @@ export const signin = async (req: CustomRequest, res: Response) => {
         res.status(status.error).json({
             status: status.error,
             message: error.message,
+        });
+    }
+};
+
+
+export const handleCorporateGoogleLogin = async (req: Request, res: Response) => {
+    const { token } = req.body;
+
+    let email = "";
+    try {
+        const payload = getTokenPayload(token);
+        email = payload.email;
+    } catch (error: any) {
+        return res.status(status.unauthorized).send({ success: false, message: error.message ? error.message : "You are not authorized!" }); 
+    }
+
+    if (!email) {
+        return res.status(status.bad).send({
+            success: false,
+            message: "Email is required"
+        });
+    }
+
+    try {
+
+        const filters: FilterItem[] = [
+            { columnField: "email", operatorValue: "equals", value: email }
+        ];
+
+        const userResponse = await UserRepository.getUsers(0, 1, filters);
+        if (userResponse.total === 0) {
+            return res.status(status.notfound).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const user = userResponse.results[0];
+        const permissions = await ViewPermissionRepository.getViewUsers({ user_id: user.id });
+        if (!permissions || permissions.length === 0) {
+            return res.status(status.unauthorized).send({
+                success: false,
+                message: "User is not authorized for any views"
+            });
+        }
+
+        const viewId = permissions[0].view_id;
+        const view = await ViewPermissionRepository.getViewByPk(viewId);
+        if (!view) {
+            return res.status(status.notfound).send({
+                success: false,
+                message: "View not found"
+            });
+        }
+
+        return res.status(status.success).send({
+            success: true,
+            view_id: view.view_id,
+            path: view.path,
+            name: view.name
+        });
+
+    } catch (error: any) {
+        console.error("[ERROR] GoogleLoginController:", error);
+        return res.status(status.error).send({
+            success: false,
+            message: "Failed to process Google login"
         });
     }
 };

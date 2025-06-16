@@ -62,15 +62,8 @@ export class ViewPermissionRepository {
         return await ViewPermission.findOne({ where: { view_id: viewId, user_id: userId}});
     }
 
-    public static async getViewUsers(viewId: number): Promise<ViewPermission[]> {
-        
-        return await ViewPermission.findAll({ where:{ view_id: viewId }});
-    }
-
-    public static async getViewUsersByUserId(userId: number): Promise<ViewPermission[]> {
-        return await ViewPermission.findAll({ 
-            where: { user_id: userId } 
-        });
+    public static async getViewUsers(whereClause: WhereOptions<ViewPermission>): Promise<ViewPermission[]> {
+        return await ViewPermission.findAll({ where: whereClause});
     }
 
     public static async addViewUsers(viewId: number, userIds: number[]): Promise<void> {
