@@ -1,4 +1,4 @@
-import { QueryTypes, WhereOptions } from "sequelize";
+import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { PaginatedResponse } from "../models/pagination";
 import { GiftRedeemTransaction, GiftRedeemTransactionCreationAttributes, GRTCard } from "../models/gift_redeem_transaction";
 import { sequelize } from "../config/postgreDB";
@@ -132,6 +132,10 @@ export class GRTransactionsRepository {
         return await GiftRedeemTransaction.create(data);
     }
 
+    public static async deleteTransactions(whereClause: WhereOptions<GRTCard>): Promise<void> {
+        await GiftRedeemTransaction.destroy({ where: whereClause });
+    }
+
     public static async addCardsToTransaction(trnId: number, gcIds: number[]) {
         const existing = await GRTCard.findAll({ where: { grt_id: trnId } });
         const newIds = gcIds.filter(id => existing.every(grc => grc.gc_id !== id));
@@ -145,6 +149,23 @@ export class GRTransactionsRepository {
                 }
             }))
         } 
+    }
+
+    public static async getGRTCards(whereClause: WhereOptions<GRTCard>): Promise<GRTCard[]> {
+        
+        return await GRTCard.findAll({
+            where: whereClause
+        });
+    }
+
+    public static async deleteCardsFromTransaction(gcIds: number[]): Promise<void> {
+        if (gcIds.length === 0) return;
+
+        await GRTCard.destroy({
+            where: {
+                gc_id: {[Op.in]: gcIds}
+            }
+        });
     }
 
     public static async updateTransactions(fields: any, whereClause: WhereOptions<GiftRedeemTransaction>) {
