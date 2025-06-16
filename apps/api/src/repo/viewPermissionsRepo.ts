@@ -67,6 +67,12 @@ export class ViewPermissionRepository {
         return await ViewPermission.findAll({ where:{ view_id: viewId }});
     }
 
+    public static async getViewUsersByUserId(userId: number): Promise<ViewPermission[]> {
+        return await ViewPermission.findAll({ 
+            where: { user_id: userId } 
+        });
+    }
+
     public static async addViewUsers(viewId: number, userIds: number[]): Promise<void> {
         const requests: ViewPermissionCreationAttributes[] = userIds.map(userId => {
             return {
