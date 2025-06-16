@@ -17,6 +17,7 @@ import { GiftRequestUser, GiftRequestUserAttributes, GiftRequestUserCreationAttr
 import { UserRelationRepository } from "../repo/userRelationsRepo";
 import { GiftCard } from "../models/gift_card";
 import { Op } from "sequelize";
+import { GroupRepository }  from "../repo/groupRepo"
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
@@ -283,16 +284,30 @@ class GiftCardsService {
     public static async sendGiftingNotificationToBackOffice(
         giftCardRequestId: number,
         sponsorUser: User,
-        testMails?: string[]
+        testMails?: string[],
     ): Promise<void> {
         try {
-            const giftCardRequest = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCardRequestId }])
+            const giftCardRequest = await GiftCardsRepository.getGiftCardRequests(0, 1, [
+                { columnField: "id", operatorValue: "equals", value: giftCardRequestId }
+            ]);
             const giftCard = giftCardRequest.results[0];
-
+    
+            const isCorporate = giftCard.tags?.includes('Corporate');
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
             const recipients = await GiftCardsRepository.getGiftRequestUsers(giftCard.id);
-
-            // Prepare email content with gifting details
+    
+            let corporateName: string | undefined = undefined;
+            if (isCorporate && giftCard.group_id) {
+                try {
+                    const group = await GroupRepository.getGroup(giftCard.group_id);
+                     console.log(group?.name); 
+                    corporateName = group?.name || 'Unknown Corporation';
+                } catch (groupErr) {
+                    console.warn("[WARN] Failed to fetch corporate name for group_id:", giftCard.group_id, groupErr);
+                    corporateName = 'Unknown Corporation';
+                }
+            }
+    
             const emailData = {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
@@ -308,59 +323,75 @@ class GiftCardsService {
                     phone: user.recipient_phone,
                     trees: user.gifted_trees || 1,
                 })),
+                ...(isCorporate && { 
+                    corporateName: corporateName || 'Unknown Corporation',
+                    tags: giftCard.tags?.join(', ') || 'No tags',
+                    tagsArray: giftCard.tags || []
+                })
             };
-
-            // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
-            const mailIds = (testMails && testMails.length !== 0) ?
-                testMails :
-                ['dashboard@14trees.org'];
-
-            // Set the email template to be used
-            const templateName = 'backoffice_gifting.html';
-
+    
+            const mailIds = (testMails && testMails.length !== 0)
+                ? testMails
+                : ['dashboard@14trees.org'];
+    
+            const templateName = isCorporate ? 'backoffice_corpGifting.html' : 'backoffice_gifting.html';
+    
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
                 mailIds,
-                undefined, // no CC
-                [], // no attachments
-                'New Gift Card Request Received - Notification'
+                undefined,
+                [],
+                isCorporate ? 'New Corporate Gift Card Request' : 'New Gift Card Request'
             );
-
+    
             if (statusMessage) {
                 await GiftCardsRepository.updateGiftCardRequests({
                     mail_error: "BackOffice: " + statusMessage,
                 }, { id: giftCard.id });
                 return;
             }
-
+    
             await GiftCardsRepository.updateGiftCardRequests({
-                mail_status: giftCard.mail_status ? [...giftCard.mail_status, GiftReqMailStatus_BackOffice] : [GiftReqMailStatus_BackOffice],
+                mail_status: giftCard.mail_status
+                    ? [...giftCard.mail_status, GiftReqMailStatus_BackOffice]
+                    : [GiftReqMailStatus_BackOffice],
             }, { id: giftCard.id });
+    
         } catch (error) {
-            // Throw a more specific error based on the caught exception
-            const errorMessage = error instanceof Error ?
-                `Failed to send gifting notification: ${error.message}` :
-                'Failed to send gifting notification due to an unknown error';
-
+            const errorMessage = error instanceof Error
+                ? `Failed to send gifting notification: ${error.message}`
+                : 'Failed to send gifting notification due to an unknown error';
             await GiftCardsRepository.updateGiftCardRequests({
                 mail_error: "BackOffice: " + errorMessage,
             }, { id: giftCardRequestId });
         }
     }
-
+    
     public static async sendGiftingNotificationToAccounts(
         giftCardRequestId: number,
         sponsorUser: User,
-        testMails?: string[]
+        testMails?: string[],
     ): Promise<void> {
         try {
             const giftCardRequest = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCardRequestId }])
             const giftCard = giftCardRequest.results[0];
-
+            const isCorporate = giftCard.tags?.includes('Corporate');
+    
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
             const recipients = await GiftCardsRepository.getGiftRequestUsers(giftCard.id);
 
+            let corporateName: string | undefined = undefined;
+            if (isCorporate && giftCard.group_id) {
+                try {
+                    const group = await GroupRepository.getGroup(giftCard.group_id);
+                    corporateName = group?.name || 'Unknown Corporation';
+                } catch (groupErr) {
+                    console.warn("[WARN] Failed to fetch corporate name for group_id:", giftCard.group_id, groupErr);
+                    corporateName = 'Unknown Corporation';
+                }
+            }
+    
             const emailData = {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
@@ -376,55 +407,69 @@ class GiftCardsService {
                     phone: user.recipient_phone,
                     trees: user.gifted_trees || 1,
                 })),
+                ...(isCorporate && { 
+                    corporateName: corporateName || 'Unknown Corporation',
+                    tags: giftCard.tags?.join(', ') || 'No tags',
+                    tagsArray: giftCard.tags || []
+                })
             };
-
+    
             const mailIds = (testMails && testMails.length !== 0) ?
-                testMails :
-                ['accounts@14trees.org', 'accounts2@14trees.org'];
-
-            // Set the email template to be used
-            const templateName = 'gifting-accounts.html';
-
+            testMails :
+            ['accounts@14trees.org', 'accounts2@14trees.org'];
+            const templateName = isCorporate ? 'gifting-corpAccounts.html' : 'gifting-accounts.html';
+    
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
                 mailIds,
-                undefined, // no CC
-                [], // no attachments
-                'New Gift Card Request Received - Notification'
+                undefined,
+                [],
+                isCorporate ? 'New Corporate Gift Card Request' : 'New Gift Card Request'
             );
-
+    
             if (statusMessage) {
                 await GiftCardsRepository.updateGiftCardRequests({
                     mail_error: "Accounts: " + statusMessage,
                 }, { id: giftCard.id });
                 return;
             }
-
+    
             await GiftCardsRepository.updateGiftCardRequests({
                 mail_status: giftCard.mail_status ? [...giftCard.mail_status, GiftReqMailStatus_Accounts] : [GiftReqMailStatus_Accounts],
             }, { id: giftCard.id });
         } catch (error) {
             const errorMessage = error instanceof Error ?
-                `Failed to send gifting notification: ${error.message}` :
-                'Failed to send gifting notification due to an unknown error';
-
+            `Failed to send gifting notification: ${error.message}` :
+            'Failed to send gifting notification due to an unknown error';            
             await GiftCardsRepository.updateGiftCardRequests({
                 mail_error: "Accounts: " + errorMessage,
             }, { id: giftCardRequestId });
         }
     }
-
+    
     public static async sendGiftingNotificationForVolunteers(
         giftCardRequestId: number,
         sponsorUser: User,
-        testMails?: string[]
+        testMails?: string[],
     ): Promise<void> {
         try {
             const giftCardRequest = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCardRequestId }])
             const giftCard = giftCardRequest.results[0];
+            const isCorporate = giftCard.tags?.includes('Corporate');
 
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
+
+            let corporateName: string | undefined = undefined;
+            if (isCorporate && giftCard.group_id) {
+                try {
+                    const group = await GroupRepository.getGroup(giftCard.group_id);
+                    corporateName = group?.name || 'Unknown Corporation';
+                } catch (groupErr) {
+                    console.warn("[WARN] Failed to fetch corporate name for group_id:", giftCard.group_id, groupErr);
+                    corporateName = 'Unknown Corporation';
+                }
+            }
 
             const emailData = {
                 giftCardRequestId: giftCard.id,
@@ -435,22 +480,24 @@ class GiftCardsService {
                 totalTrees: giftCard.no_of_cards,
                 eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                ...(isCorporate && { 
+                    corporateName: corporateName || 'Unknown Corporation',
+                    tags: giftCard.tags?.join(', ') || 'No tags'
+                })
             };
 
             const mailIds = (testMails && testMails.length !== 0) ?
-                testMails :
-                ['volunteer@14trees.org'];
-
-            // Set the email template to be used
-            const templateName = 'gifting-volunteer.html';
+            testMails :
+            ['volunteer@14trees.org'];
+            const templateName = isCorporate ? 'gifting-corpVolunteer.html' : 'gifting-volunteer.html';
 
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
                 mailIds,
-                undefined, // no CC
-                [], // no attachments
-                'New Gift Card Request Received - Notification'
+                undefined,
+                [],
+                isCorporate ? 'New Corporate Volunteer Interest' : 'New Volunteer Interest'
             );
 
             if (statusMessage) {
@@ -465,26 +512,37 @@ class GiftCardsService {
             }, { id: giftCard.id });
         } catch (error) {
             const errorMessage = error instanceof Error ?
-                `Failed to send gifting notification: ${error.message}` :
-                'Failed to send gifting notification due to an unknown error';
-
+            `Failed to send gifting notification: ${error.message}` :
+            'Failed to send gifting notification due to an unknown error';            
             await GiftCardsRepository.updateGiftCardRequests({
                 mail_error: "Volunteer: " + errorMessage,
             }, { id: giftCardRequestId });
         }
     }
-
+    
     public static async sendGiftingNotificationForCSR(
         giftCardRequestId: number,
         sponsorUser: User,
-        testMails?: string[]
+        testMails?: string[],
     ): Promise<void> {
         try {
             const giftCardRequest = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: "id", operatorValue: "equals", value: giftCardRequestId }])
             const giftCard = giftCardRequest.results[0];
-
+            const isCorporate = giftCard.tags?.includes('Corporate');
+    
             const amount = (giftCard.category === 'Public' ? 2000 : 3000) * giftCard.no_of_cards;
 
+            let corporateName: string | undefined = undefined;
+            if (isCorporate && giftCard.group_id) {
+                try {
+                    const group = await GroupRepository.getGroup(giftCard.group_id);
+                    corporateName = group?.name || 'Unknown Corporation';
+                } catch (groupErr) {
+                    console.warn("[WARN] Failed to fetch corporate name for group_id:", giftCard.group_id, groupErr);
+                    corporateName = 'Unknown Corporation';
+                }
+            }
+    
             const emailData = {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
@@ -494,40 +552,41 @@ class GiftCardsService {
                 totalTrees: giftCard.no_of_cards,
                 eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                ...(isCorporate && { 
+                    corporateName: corporateName || 'Unknown Corporation',
+                    tags: giftCard.tags?.join(', ') || 'No tags'
+                })
             };
-
+    
             const mailIds = (testMails && testMails.length !== 0) ?
-                testMails :
-                ['csr@14trees.org'];
-
-            // Set the email template to be used
-            const templateName = 'gifting-csr.html';
-
+            testMails :
+            ['csr@14trees.org'];
+            const templateName = isCorporate ? 'gifting-corpCSR.html' : 'gifting-csr.html';
+    
             const statusMessage = await sendDashboardMail(
                 templateName,
                 emailData,
                 mailIds,
-                undefined, // no CC
-                [], // no attachments
-                'New Gift Card Request Received - Notification'
+                undefined,
+                [],
+                isCorporate ? 'New Corporate CSR Interest' : 'New CSR Interest'
             );
-
+    
             if (statusMessage) {
                 await GiftCardsRepository.updateGiftCardRequests({
                     mail_error: "CSR: " + statusMessage,
                 }, { id: giftCard.id });
                 return;
             }
-
+    
             await GiftCardsRepository.updateGiftCardRequests({
                 mail_status: giftCard.mail_status ? [...giftCard.mail_status, GiftReqMailStatus_CSR] : [GiftReqMailStatus_CSR],
             }, { id: giftCard.id });
         } catch (error) {
             const errorMessage = error instanceof Error ?
-                `Failed to send gifting notification: ${error.message}` :
-                'Failed to send gifting notification due to an unknown error';
-
-            await GiftCardsRepository.updateGiftCardRequests({
+            `Failed to send gifting notification: ${error.message}` :
+            'Failed to send gifting notification due to an unknown error';           
+             await GiftCardsRepository.updateGiftCardRequests({
                 mail_error: "CSR: " + errorMessage,
             }, { id: giftCardRequestId });
         }
