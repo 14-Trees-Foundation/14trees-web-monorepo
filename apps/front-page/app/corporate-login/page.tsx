@@ -17,9 +17,7 @@ import { GoogleLogin } from "react-google-login";
 import { ToastContainer, toast } from "react-toastify";
 import { makeStyles } from "@mui/styles";
 import axios from "axios";
-//import { Spinner } from "../../components/Spinner";
 
-// Create theme with proper zIndex values
 const theme = createTheme({
   zIndex: {
     drawer: 1200,
@@ -45,7 +43,7 @@ const useStyles = makeStyles({
     background: "linear-gradient(358.58deg, #1F3625 37.04%, rgba(31, 54, 37, 0.636721) 104.2%, rgba(31, 54, 37, 0) 140.95%)",
   },
   backdrop: {
-    zIndex: 1201, // drawer zIndex + 1
+    zIndex: 1201,
   },
 });
 
@@ -75,33 +73,48 @@ export default function CorporateLogin() {
         return;
       }
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("loginInfo", JSON.stringify(response.profileObj));
-      localStorage.setItem("roles", JSON.stringify(user.roles));
-
-      const permissions = user.roles.includes("admin") ? ["all"] : [];
-      localStorage.setItem("permissions", JSON.stringify(permissions));
-
-      const accessRes = await axios.post(
-        "/api/auth/verify-access",
-        {
-          user_id: user.id,
-          path: window.location.pathname,
-        },
+      // Get user-specific dashboard URL from backend
+      const dashboardRes = await axios.post(
+        "/api/auth/corporate",
+        JSON.stringify({ token: response.tokenId }),
         { headers: { "Content-Type": "application/json" } }
       );
 
-      if (accessRes.data.code !== 200) {
-        toast.error(accessRes.data.message || "Access denied");
+      if (!dashboardRes.data.success || !dashboardRes.data.path) {
+        toast.error(dashboardRes.data.message || "Failed to get dashboard URL");
         setBackdropOpen(false);
         return;
       }
 
-      router.push("/admin");
+      const { path, view_id } = dashboardRes.data;
+      const dashboardUrl = `${window.location.protocol}//${window.location.host}${path}`;
+
+      // Store minimal required data
+      localStorage.setItem("token", token);
+      localStorage.setItem("view_id", view_id);
+
+      // Open dashboard in new tab and send auth data
+      const dashboardWindow = window.open(dashboardUrl, '_blank');
+      
+      setTimeout(() => {
+        if (dashboardWindow) {
+          dashboardWindow.postMessage(
+            {
+              type: 'auth_token',
+              token: token,
+              sourceOrigin: window.location.origin
+            },
+            new URL(dashboardUrl).origin
+          );
+        } else {
+          toast.error("Could not open dashboard. Please disable popup blockers.");
+        }
+        setBackdropOpen(false);
+      }, 1000);
+
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed. Contact Admin.");
-    } finally {
+      toast.error(error.response?.data?.message || "Login failed. Contact Admin.");
       setBackdropOpen(false);
     }
   };
