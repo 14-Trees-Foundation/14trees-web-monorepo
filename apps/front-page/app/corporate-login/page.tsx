@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -52,7 +52,13 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 export default function CorporateLogin() {
   const router = useRouter();
   const [openBackdrop, setBackdropOpen] = useState(false);
+  const [redirectUri, setRedirectUri] = useState('');
   const classes = useStyles();
+
+  useEffect(() => {
+    // Set redirect URI only on client side
+    setRedirectUri(window.location.origin);
+  }, []);
 
   const handleGoogleSuccess = async (response: any) => {
     try {
@@ -139,6 +145,7 @@ export default function CorporateLogin() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
+                  backgroundColor: '#d4dfd9',
                   gap: 2.5,
                 }}
               >
@@ -153,33 +160,16 @@ export default function CorporateLogin() {
                 </Typography>
 
                 <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
-                  <GoogleLogin
-                    clientId={GOOGLE_CLIENT_ID}
-                    buttonText="Sign in with Google"
-                    onSuccess={handleGoogleSuccess}
-                    onFailure={handleGoogleFailure}
-                    cookiePolicy={'single_host_origin'}
-                    isSignedIn={true}
-                    render={(renderProps) => (
-                      <button
-                        onClick={renderProps.onClick}
-                        disabled={renderProps.disabled}
-                        style={{
-                          backgroundColor: "#4285F4",
-                          color: "white",
-                          border: "none",
-                          padding: "10px 15px",
-                          borderRadius: "4px",
-                          fontSize: "16px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        Sign in with Google
-                      </button>
-                    )}
-                  />
+                  {redirectUri && (
+                    <GoogleLogin
+                      clientId={GOOGLE_CLIENT_ID}
+                      buttonText="Sign in with Google"
+                      onSuccess={handleGoogleSuccess}
+                      onFailure={handleGoogleFailure}
+                      cookiePolicy={'single_host_origin'}
+                      redirectUri={redirectUri}
+                    />
+                  )}
                 </Box>
               </Paper>
             </Grid>
