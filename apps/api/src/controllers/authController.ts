@@ -68,9 +68,23 @@ export const signin = async (req: CustomRequest, res: Response) => {
 export const handleCorporateGoogleLogin = async (req: Request, res: Response) => {
     const { token } = req.body;
 
-    let email = "";
+    let email: string | undefined;
     try {
-        const payload = getTokenPayload(token);
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload() as TokenPayload;
+
+        if (!payload) {
+            res.status(status.error).json({
+                status: status.error,
+                message: 'Invalid token payload',
+            });
+            return;
+        }
+
         email = payload.email;
     } catch (error: any) {
         return res.status(status.unauthorized).send({ success: false, message: error.message ? error.message : "You are not authorized!" }); 
