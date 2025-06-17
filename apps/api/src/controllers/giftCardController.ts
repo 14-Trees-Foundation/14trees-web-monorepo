@@ -1473,10 +1473,12 @@ export const assignGiftRequestTrees = async (req: Request, res: Response) => {
 
         giftRequest.updated_at = new Date();
         const updatedRequest = await GiftCardsRepository.updateGiftCardRequest(giftRequest);
+
+        const userId = req.headers['x-user-id'] as string;
+        await GiftCardsService.reconcileGiftTransactions(updatedRequest, Number(userId))
         res.status(status.success).json();
 
         try {
-            const userId = req.headers['x-user-id'] as string;
             if (!updatedRequest.processed_by && userId && !isNaN(parseInt(userId))) {
                 await GiftCardsRepository.updateGiftCardRequests({ processed_by: parseInt(userId) }, { id: updatedRequest.id, processed_by: { [Op.is]: null } });
             }
@@ -2402,6 +2404,10 @@ export const autoProcessGiftCardRequest = async (req: Request, res: Response) =>
 
         await autoProcessGiftRequest(giftRequest)
         const updatedGiftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+
+        const userId = req.headers['x-user-id'] as string;
+        await GiftCardsService.reconcileGiftTransactions(updatedGiftRequest, Number(userId))
+
         res.status(status.success).send(updatedGiftRequest);
 
         try {
