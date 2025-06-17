@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Box,
   Grid,
@@ -55,7 +54,6 @@ if (!GOOGLE_CLIENT_ID) {
 }
 
 export default function CorporateLogin() {
-  const router = useRouter();
   const [openBackdrop, setBackdropOpen] = useState(false);
   const classes = useStyles();
 
@@ -64,7 +62,7 @@ export default function CorporateLogin() {
       setBackdropOpen(true);
 
       const googleRes = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/google`,
         JSON.stringify({ token: credentialResponse.credential }),
         { headers: { "Content-Type": "application/json" } }
       );
@@ -80,7 +78,7 @@ export default function CorporateLogin() {
 
       // Get user-specific dashboard URL from backend
       const dashboardRes = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/corporate`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/corporate`,
         JSON.stringify({ token: credentialResponse.credential }),
         { headers: { "Content-Type": "application/json" } }
       );
@@ -92,27 +90,40 @@ export default function CorporateLogin() {
       }
 
       const { path, view_id } = dashboardRes.data;
-      const dashboardUrl = `${window.location.protocol}//${window.location.host}${path}?v=${view_id}`;
+      const dashboardUrl = `https://dashboard.14trees.org${path}?v=${view_id}`;
 
-      // Open dashboard in new tab and send auth data
-      const dashboardWindow = window.open(dashboardUrl, '_blank');
-
-      if (!dashboardWindow) {
-        toast.error("Could not open dashboard. Please disable popup blockers.");
+      const dashboardAppWindow = window.open(dashboardUrl, '_blank');
+      if (!dashboardAppWindow) {
+        toast.error("Could not open the other app. Please disable popup blockers.");
         setBackdropOpen(false);
         return;
       }
 
       // Wait for the window to load before sending the message
       setTimeout(() => {
-        dashboardWindow.postMessage(
+        // Send the Google credential to the other app
+        dashboardAppWindow.postMessage(
           {
-            type: 'auth_token',
-            token: token,
+            type: 'google_credential',
+            credential: credentialResponse.credential,
             sourceOrigin: window.location.origin
           },
           new URL(dashboardUrl).origin
         );
+
+        // Also open the dashboard in a new tab
+        const dashboardWindow = window.open(dashboardUrl, '_blank');
+        if (dashboardWindow) {
+          dashboardWindow.postMessage(
+            {
+              type: 'auth_token',
+              token: token,
+              sourceOrigin: window.location.origin
+            },
+            new URL(dashboardUrl).origin
+          );
+        }
+        
         setBackdropOpen(false);
       }, 1000);
 
