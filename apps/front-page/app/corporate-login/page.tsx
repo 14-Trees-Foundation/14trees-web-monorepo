@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -10,10 +10,11 @@ import {
   Typography,
   Backdrop,
   ThemeProvider,
-  createTheme
+  createTheme,
+  CircularProgress
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { GoogleLogin } from "react-google-login";
+import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
 import { makeStyles } from "@mui/styles";
 import axios from "axios";
@@ -47,26 +48,24 @@ const useStyles = makeStyles({
   },
 });
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+if (!GOOGLE_CLIENT_ID) {
+  console.error("Google Client ID is not configured. Please check your environment variables.");
+}
 
 export default function CorporateLogin() {
   const router = useRouter();
   const [openBackdrop, setBackdropOpen] = useState(false);
-  const [redirectUri, setRedirectUri] = useState('');
   const classes = useStyles();
 
-  useEffect(() => {
-    // Set redirect URI only on client side
-    setRedirectUri(window.location.origin);
-  }, []);
-
-  const handleGoogleSuccess = async (response: any) => {
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
       setBackdropOpen(true);
 
       const googleRes = await axios.post(
         "/api/auth/google",
-        JSON.stringify({ token: response.tokenId }),
+        JSON.stringify({ token: credentialResponse.credential }),
         { headers: { "Content-Type": "application/json" } }
       );
 
@@ -82,7 +81,7 @@ export default function CorporateLogin() {
       // Get user-specific dashboard URL from backend
       const dashboardRes = await axios.post(
         "/api/auth/corporate",
-        JSON.stringify({ token: response.tokenId }),
+        JSON.stringify({ token: credentialResponse.credential }),
         { headers: { "Content-Type": "application/json" } }
       );
 
@@ -98,32 +97,35 @@ export default function CorporateLogin() {
       // Open dashboard in new tab and send auth data
       const dashboardWindow = window.open(dashboardUrl, '_blank');
 
+      if (!dashboardWindow) {
+        toast.error("Could not open dashboard. Please disable popup blockers.");
+        setBackdropOpen(false);
+        return;
+      }
+
+      // Wait for the window to load before sending the message
       setTimeout(() => {
-        if (dashboardWindow) {
-          dashboardWindow.postMessage(
-            {
-              type: 'auth_token',
-              token: token,
-              sourceOrigin: window.location.origin
-            },
-            new URL(dashboardUrl).origin
-          );
-        } else {
-          toast.error("Could not open dashboard. Please disable popup blockers.");
-        }
+        dashboardWindow.postMessage(
+          {
+            type: 'auth_token',
+            token: token,
+            sourceOrigin: window.location.origin
+          },
+          new URL(dashboardUrl).origin
+        );
         setBackdropOpen(false);
       }, 1000);
 
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error.response?.data?.message || "Login failed. Contact Admin.");
+      toast.error(error.response?.data?.message || "Login failed. Please try again.");
       setBackdropOpen(false);
     }
   };
 
-  const handleGoogleFailure = (error: any) => {
-    console.error("Google login failed:", error);
+  const handleGoogleError = () => {
     toast.error("Google login failed. Please try again.");
+    setBackdropOpen(false);
   };
 
   return (
@@ -131,7 +133,7 @@ export default function CorporateLogin() {
       <div>
         <div>
           <Backdrop className={classes.backdrop} open={openBackdrop}>
-            {/* <Spinner text={"Logging you in..."} /> */}
+            <CircularProgress color="primary" />
           </Backdrop>
           <ToastContainer />
 
@@ -160,16 +162,11 @@ export default function CorporateLogin() {
                 </Typography>
 
                 <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
-                  {redirectUri && (
-                    <GoogleLogin
-                      clientId={GOOGLE_CLIENT_ID}
-                      buttonText="Sign in with Google"
-                      onSuccess={handleGoogleSuccess}
-                      onFailure={handleGoogleFailure}
-                      cookiePolicy={'single_host_origin'}
-                      redirectUri={redirectUri}
-                    />
-                  )}
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    useOneTap
+                  />
                 </Box>
               </Paper>
             </Grid>
