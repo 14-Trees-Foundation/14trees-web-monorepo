@@ -57,7 +57,7 @@ export default function CorporateLogin() {
   const handleGoogleSuccess = async (response: any) => {
     try {
       setBackdropOpen(true);
-      
+
       const googleRes = await axios.post(
         "/api/auth/google",
         JSON.stringify({ token: response.tokenId }),
@@ -87,15 +87,11 @@ export default function CorporateLogin() {
       }
 
       const { path, view_id } = dashboardRes.data;
-      const dashboardUrl = `${window.location.protocol}//${window.location.host}${path}`;
-
-      // Store minimal required data
-      localStorage.setItem("token", token);
-      localStorage.setItem("view_id", view_id);
+      const dashboardUrl = `${window.location.protocol}//${window.location.host}${path}?v=${view_id}`;
 
       // Open dashboard in new tab and send auth data
       const dashboardWindow = window.open(dashboardUrl, '_blank');
-      
+
       setTimeout(() => {
         if (dashboardWindow) {
           dashboardWindow.postMessage(
@@ -126,8 +122,8 @@ export default function CorporateLogin() {
 
   return (
     <ThemeProvider theme={theme}>
-      <div className={classes.container}>
-        <div className={classes.overlay}>
+      <div>
+        <div>
           <Backdrop className={classes.backdrop} open={openBackdrop}>
             {/* <Spinner text={"Logging you in..."} /> */}
           </Backdrop>
