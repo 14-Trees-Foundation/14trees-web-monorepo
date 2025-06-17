@@ -136,7 +136,7 @@ export const updateViewUsers = async (req: Request, res: Response) => {
             return res.status(status.notfound).send({ message: "Request page not found!" });
         }
 
-        const exisiting = await ViewPermissionRepository.getViewUsers(view_id);
+        const exisiting = await ViewPermissionRepository.getViewUsers({ view_id: view.id });
         const removeList = exisiting.filter(item => !users.some(user => user.id === item.user_id));
         const addList = users.filter(item => !exisiting.some(user => user.user_id === item.id))
         
