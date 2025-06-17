@@ -64,7 +64,7 @@ export default function CorporateLogin() {
       setBackdropOpen(true);
 
       const googleRes = await axios.post(
-        "/api/auth/google",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`,
         JSON.stringify({ token: credentialResponse.credential }),
         { headers: { "Content-Type": "application/json" } }
       );
@@ -80,7 +80,7 @@ export default function CorporateLogin() {
 
       // Get user-specific dashboard URL from backend
       const dashboardRes = await axios.post(
-        "/api/auth/corporate",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/corporate`,
         JSON.stringify({ token: credentialResponse.credential }),
         { headers: { "Content-Type": "application/json" } }
       );
