@@ -128,6 +128,12 @@ export class DonationService {
             throw new Error("Failed to save your donation request!")
         })
 
+        const date = new Date();
+        const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+        const receiptId = FY + "/" + donation.id;
+
+        await DonationRepository.updateDonation(donation.id, { donation_receipt_number: receiptId })
+
         return donation;
     }
 
@@ -425,7 +431,10 @@ export class DonationService {
     public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
 
         const updateData: Partial<TreeAttributes> = {
+            mapped_to_user: donation.user_id,
+            mapped_to_group: donation.group_id,
             sponsored_by_user: donation.user_id,
+            sponsored_by_group: donation.group_id,
             donation_id: donation.id,
             updated_at: new Date(),
         }
@@ -436,6 +445,9 @@ export class DonationService {
     public static async unmapTreesFromDonation(donation: Donation, treeIds: number[]) {
         const updateData: Partial<TreeAttributes> = {
             sponsored_by_user: null,
+            sponsored_by_group: null,
+            mapped_to_user: null,
+            mapped_to_group: null,
             donation_id: null,
             updated_at: new Date(),
         }
