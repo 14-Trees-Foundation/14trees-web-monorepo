@@ -89,43 +89,37 @@ export default function CorporateLogin() {
         return;
       }
 
-      const { path, view_id } = dashboardRes.data;
-      const dashboardUrl = `https://dashboard.14trees.org${path}?v=${view_id}`;
+      const { path, view_id, token_id } = dashboardRes.data;
+      // Encode the credential and redirect path for URL safety
+      const encodedRedirect = encodeURIComponent(`${path}?v=${view_id}`);
+      const dashboardUrl = `${process.env.NEXT_PUBLIC_DASHBOARD_URL}/login?credential=${token_id}&redirect=${encodedRedirect}`;
 
-      const dashboardAppWindow = window.open(dashboardUrl, '_blank');
-      if (!dashboardAppWindow) {
-        toast.error("Could not open the other app. Please disable popup blockers.");
-        setBackdropOpen(false);
-        return;
-      }
-
-      // Wait for the window to load before sending the message
-      setTimeout(() => {
-        // Send the Google credential to the other app
-        dashboardAppWindow.postMessage(
-          {
-            type: 'google_credential',
-            credential: credentialResponse.credential,
-            sourceOrigin: window.location.origin
-          },
-          new URL(dashboardUrl).origin
-        );
-
-        // Also open the dashboard in a new tab
-        const dashboardWindow = window.open(dashboardUrl, '_blank');
-        if (dashboardWindow) {
-          dashboardWindow.postMessage(
-            {
-              type: 'auth_token',
-              token: token,
-              sourceOrigin: window.location.origin
-            },
-            new URL(dashboardUrl).origin
-          );
-        }
+      try {
+        // Open the dashboard directly with the credential
+        const dashboardAppWindow = window.open(dashboardUrl, '_blank', 'noopener,noreferrer');
         
+        if (!dashboardAppWindow) {
+          console.error('Window.open returned null - likely blocked by popup blocker');
+          toast.error("Could not open the dashboard. Please disable popup blockers and try again.");
+          setBackdropOpen(false);
+          return;
+        }
+
+        // Check if the window was actually opened
+        if (dashboardAppWindow.closed) {
+          console.error('Window was opened but immediately closed');
+          toast.error("Dashboard window was closed. Please try again.");
+          setBackdropOpen(false);
+          return;
+        }
+
+        console.log('Dashboard window opened successfully');
         setBackdropOpen(false);
-      }, 1000);
+      } catch (error) {
+        console.error('Error opening dashboard window:', error);
+        toast.error("Failed to open dashboard. Please try again.");
+        setBackdropOpen(false);
+      }
 
     } catch (error: any) {
       console.error("Login error:", error);
