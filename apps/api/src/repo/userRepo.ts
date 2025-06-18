@@ -105,7 +105,7 @@ export class UserRepository {
         }
 
         const getQuery = `
-            SELECT u.*, ug.created_at as user_group_created_at 
+            SELECT distinct on(u.id) u.*, ug.created_at as user_group_created_at 
             FROM "14trees_2".users u 
             LEFT JOIN "14trees_2".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
@@ -113,7 +113,7 @@ export class UserRepository {
         `
 
         const countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(distinct u.id) 
             FROM "14trees_2".users u 
             LEFT JOIN "14trees_2".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
