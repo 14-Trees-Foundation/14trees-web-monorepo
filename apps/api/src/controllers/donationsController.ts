@@ -11,7 +11,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationMailStatus_DashboardsSent, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Donation, DonationMailStatus_DashboardsSent, DonationSponsorshipType, DonationSponsorshipType_DonationReceived, DonationSponsorshipType_Pledged, DonationSponsorshipType_Unverified, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
@@ -179,6 +179,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
         if (donation.payment_id) {
             let amountReceived: number = 0;
             let donationDate: Date | null = null;
+            let sponsorshipType: DonationSponsorshipType = donation.trees_count ? DonationSponsorshipType_Pledged : DonationSponsorshipType_Unverified
 
             const payment: any = await PaymentRepository.getPayment(donation.payment_id);
             if (payment && payment.payment_history) {
@@ -190,6 +191,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
 
             if (payment?.order_id) {
                 const razorpayService = new RazorpayService();
+
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
                     amountReceived += Number(item.amount) / 100;
@@ -212,9 +214,13 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                 donationDate = new Date();
             }
 
+            if (amountReceived === donation.amount_donated)
+                sponsorshipType = DonationSponsorshipType_DonationReceived;
+
             await DonationRepository.updateDonations({
                 donation_date: donationDate,
                 amount_received: amountReceived,
+                sponsorship_type: sponsorshipType,
                 updated_at: new Date()
             }, { id: donation.id })
         }
