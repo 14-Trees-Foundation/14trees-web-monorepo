@@ -391,6 +391,7 @@ export class DonationService {
 
         if (treeIds.length > 0) {
             const updateConfig = {
+                assigned_to: null,
                 mapped_to_user: null,
                 mapped_to_group: null,
                 mapped_at: null,
@@ -407,6 +408,7 @@ export class DonationService {
 
     public static async unreserveAllTrees(donationId: number) {
         const updateConfig = {
+            assigned_to: null,
             mapped_to_user: null,
             mapped_to_group: null,
             mapped_at: null,

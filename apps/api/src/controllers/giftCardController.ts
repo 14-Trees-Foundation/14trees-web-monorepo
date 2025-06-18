@@ -215,6 +215,11 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
     try {
         let giftCard = await GiftCardsRepository.createGiftCardRequest(request);
+        const date = new Date();
+        const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+        const donationReceiptNumber = FY + "/" + giftCard.id;
+              giftCard.donation_receipt_number = donationReceiptNumber;
+              await giftCard.save(); 
 
         let changed = false;
         const files: { logo: Express.Multer.File[], csv_file: Express.Multer.File[] } = req.files as any;
