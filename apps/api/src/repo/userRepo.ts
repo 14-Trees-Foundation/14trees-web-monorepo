@@ -160,6 +160,15 @@ export class UserRepository {
             where: { user_id: userId },
         });
     }
+    
+    /**
+     * Get a user by their ID
+     * @param id The user's ID
+     * @returns The user or null if not found
+     */
+    public static async getUserById(id: number): Promise<User | null> {
+        return await User.findByPk(id);
+    }
 
     public static async deleteUser(userId: number): Promise<number> {
         const resp = await User.destroy({ where: { id: userId } });
