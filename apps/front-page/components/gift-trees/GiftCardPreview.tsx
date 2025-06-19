@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { getUniqueRequestId } from "~/utils";
 
-const prefix = "Dear {recipient}" + "\n\n"
+const prefix = "Dear {recipient}," + "\n\n"
 const secondaryMessage = "\n\n" + 'We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future.'
 
 const defaultMessages = {
