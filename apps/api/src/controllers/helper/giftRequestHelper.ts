@@ -136,18 +136,18 @@ const getPersonalizedMessage = (primaryMessage: string, userName: string, eventT
         const index = primaryMessage.indexOf('<name here>');
         if (index < 0) return primaryMessage;
         if (relation && relation !== 'other') {
-            return primaryMessage.substring(0, index) + 'your ' + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
+            return primaryMessage.substring(0, index) + 'your ' + relation.toLocaleLowerCase() + ' ' + `${userName}` + primaryMessage.substring(index + 11)
         }
 
-        return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}` + primaryMessage.substring(index + 11)
+        return primaryMessage.substring(0, index) + `${userName}` + primaryMessage.substring(index + 11)
     } else {
         const index = primaryMessage.indexOf('your');
         if (index < 0) return primaryMessage;
         if (relation && relation !== 'other') {
-            return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+            return primaryMessage.substring(0, index + 5) + relation.toLocaleLowerCase() + ' ' + `${userName}'s` + primaryMessage.substring(index + 4)
         }
 
-        return primaryMessage.substring(0, index) + `${userName.split(' ')[0]}'s` + primaryMessage.substring(index + 4)
+        return primaryMessage.substring(0, index) + `${userName}'s` + primaryMessage.substring(index + 4)
     }
 }
 

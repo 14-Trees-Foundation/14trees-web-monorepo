@@ -2190,7 +2190,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         if (!giftCard.assigned_to_email || (giftCard.assigned_to_email as string).trim().endsWith('@14trees')) continue;
         if (giftCard.event_type === '2') continue;  // memorial
 
-        if (giftCard.assignee === giftCard.recipient && giftCard.mail_sent) continue;
+        if ((giftCard.assignee === giftCard.recipient && giftCard.mail_sent) || giftCard.mail_sent_assignee ) continue;
 
         const key = giftCard.assignee;
         const treeData = {
@@ -2229,8 +2229,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
     const isTestMail = (testMails && testMails.length !== 0) ? true : false
 
     for (const emailData of Object.values(userEmailDataMap)) {
-        const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
-
+        const mailIds: string[] = isTestMail ? (testMails || []) : [emailData.user_email];
         let attachments: { filename: string; path: string }[] | undefined = undefined;
         if (attachCard) {
             const files: { filename: string; path: string }[] = []
@@ -2261,7 +2260,60 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         if (eventType === 'birthday') {
             subject = `Birthday wishes from ${giftCardRequest.planted_by ? giftCardRequest.planted_by : giftCardRequest.group_name ? giftCardRequest.group_name : giftCardRequest.user_name.split(" ")[0]} and 14 Trees`;
         }
-        await sendDashboardMail(templatesMap[templateType], emailData, mailIds, ccMailIds, attachments, subject);
+
+        // Send email with status tracking
+        let mailSent = false;
+        let mailError = null;
+        let tries = 3;
+        
+        while (tries > 0) {
+            try {
+                const statusMessage = await sendDashboardMail(
+                    templatesMap[0],
+                    emailData,
+                    mailIds,
+                    ccMailIds,
+                    attachments,
+                    subject
+                );
+
+                // Only update status for non-test, non-self-gift assignees
+                if (!isTestMail && !emailData.self) {
+                    mailSent = statusMessage === '';
+                    mailError = statusMessage || null;
+                }
+                break;
+            } catch (error) {
+                tries--;
+                if (tries === 0) {
+                    console.error('[ERROR] Assignee email failed:', error);
+                    if (!isTestMail && !emailData.self) {
+                        mailSent = false;
+                        mailError = error instanceof Error ? error.message.substring(0, 255) : 'Unknown error';
+                    }
+                }
+                await new Promise(resolve => setTimeout(resolve, 2000 * (3 - tries)));
+            }
+        }
+
+        // Update database status
+        if (!isTestMail && !emailData.self) {
+            try {
+                await GiftCardsRepository.updateGiftRequestUsers(
+                    {
+                        mail_sent_assignee: mailSent,
+                        mail_error_assignee: mailError,
+                        updated_at: new Date()
+                    },
+                    {
+                        gift_request_id: giftCardRequest.id,
+                        assignee: emailData.assigned_to
+                    }
+                );
+            } catch (updateError) {
+                console.error('[ERROR] Failed to update assignee status:', updateError);
+            }
+        }
 
         count = count - 1;
         if (isTestMail && count === 0) break;
@@ -2492,7 +2544,7 @@ export const sendCustomEmail = async (req: Request, res: Response) => {
         await GiftCardsService.sendCustomEmailToSponsor(giftCardRequest, giftCards, template_name, attach_cards, undefined, test_emails, subject, attachments);
         res.status(status.success).send();
 
-    } catch(error) {
+    } catch (error) {
         console.log("[ERROR]", "GiftCardController::sendCustomEmail", error);
         return res.status(status.error).send({
             messgae: 'Something went wrong. Please try again later.'
@@ -2585,12 +2637,12 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
             sponsorship_type: 'Unverified',
             tags: tags && Array.isArray(tags) ? tags : null,
         }
-    
+
         const giftCardRequest = await GiftCardsRepository.createGiftCardRequest(request).catch((error: any) => {
             console.log("[ERROR]", "GiftCardController::createGiftCardRequestV2", error);
             return null;
         });
-    
+
         if (!giftCardRequest) {
             return res.status(status.error).json({
                 message: 'Something went wrong while creating gift card request. Please try again later.'
@@ -2600,7 +2652,7 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         if (!users || !Array.isArray(users) || users.length === 0) {
             return res.status(status.created).send({ gift_request: giftCardRequest, order_id: payment.order_id });
         }
-        
+
         const updated = await GiftCardsService.upsertGiftRequestUsers(giftCardRequest, users);
         res.status(status.created).send({ gift_request: updated, order_id: payment.order_id });
     } catch (error: any) {
