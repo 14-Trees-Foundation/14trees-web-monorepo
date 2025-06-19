@@ -5,6 +5,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 interface DedicatedName {
     recipient_name: string;
     recipient_email: string;
+    recipient_communication_email?: string;
     assignee_name: string;
     assignee_email: string;
     trees_count: number;
@@ -22,21 +23,22 @@ interface RecipeintProps {
     setHasAssigneeError: (hasError: boolean) => void;
 }
 
-const Recipeint: React.FC<RecipeintProps> = ({ 
-    maxTrees, 
-    index, 
-    user, 
-    errors, 
-    handleNameChange, 
+const Recipeint: React.FC<RecipeintProps> = ({
+    maxTrees,
+    index,
+    user,
+    errors,
+    handleNameChange,
     handleRemoveName,
     allRecipients,
     setHasAssigneeError
 }) => {
     const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
     const [assigneeError, setAssigneeError] = useState("");
+    const [hasTouchedCommEmail, setHasTouchedCommEmail] = useState(false);
 
     useEffect(() => {
-        // Validate assignee name when checkbox is toggled or name changes
+        // Validate assignee name
         if (isAssigneeDifferent && !user.assignee_name?.trim()) {
             setAssigneeError("Assignee name is required");
             setHasAssigneeError(true);
@@ -49,7 +51,7 @@ const Recipeint: React.FC<RecipeintProps> = ({
     const isDuplicateName = (): boolean => {
         const currentName = user.recipient_name.trim().toLowerCase();
         if (!currentName) return false;
-        
+
         return allRecipients.some((recipient, i) => {
             if (i === index) return false;
             const otherName = recipient.recipient_name.trim().toLowerCase();
@@ -64,7 +66,6 @@ const Recipeint: React.FC<RecipeintProps> = ({
     const handleAssigneeToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
         setIsAssigneeDifferent(e.target.checked);
         if (!e.target.checked) {
-            // Clear assignee fields when unchecking
             handleNameChange(index, "assignee_name", "");
             handleNameChange(index, "assignee_email", "");
         }
@@ -140,9 +141,7 @@ const Recipeint: React.FC<RecipeintProps> = ({
                     <input
                         type="text"
                         placeholder="The one who receives the card"
-                        className={`w-full rounded-md border ${
-                            errors[`dedicatedName-${index}`] ? "border-red-500" : "border-gray-300"
-                        } px-4 py-3 text-gray-700`}
+                        className={`w-full rounded-md border ${errors[`dedicatedName-${index}`] ? "border-red-500" : "border-gray-300"} px-4 py-3 text-gray-700`}
                         value={user.recipient_name}
                         onChange={handleRecipientNameChange}
                     />
@@ -159,15 +158,37 @@ const Recipeint: React.FC<RecipeintProps> = ({
                     <input
                         type="email"
                         placeholder="Type Recipient's email"
-                        className={`w-full rounded-md border ${
-                            errors[`dedicatedEmail-${index}`] ? "border-red-500" : "border-gray-300"
-                        } px-4 py-3 text-gray-700`}
+                        className={`w-full rounded-md border ${errors[`dedicatedEmail-${index}`] ? "border-red-500" : "border-gray-300"} px-4 py-3 text-gray-700`}
                         value={user.recipient_email}
                         onChange={(e) => handleNameChange(index, "recipient_email", e.target.value)}
                     />
                     {errors[`dedicatedEmail-${index}`] && (
                         <p className="mt-1 text-sm text-red-600">{errors[`dedicatedEmail-${index}`]}</p>
                     )}
+
+                    {/* Recipient Communication Email */}
+                    <div className="mt-4">
+                        <label className="block text-gray-700 mb-1">
+                            Recipient Communication Email:
+                            <Tooltip title="Used to send tree updates. Required if Recipient Email is not provided.">
+                                <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help ml-1" />
+                            </Tooltip>
+                        </label>
+                        <input
+                            type="email"
+                            placeholder="Enter communication email"
+                            className={`w-full rounded-md border ${(!user.recipient_email?.trim() && !user.recipient_communication_email?.trim() && hasTouchedCommEmail) ? "border-red-500" : "border-gray-300"} px-4 py-3 text-gray-700`}
+                            value={user.recipient_communication_email || ""}
+                            onChange={(e) => handleNameChange(index, "recipient_communication_email", e.target.value)}
+                            onBlur={() => setHasTouchedCommEmail(true)}
+                        />
+                        {(!user.recipient_email?.trim() && !user.recipient_communication_email?.trim() && hasTouchedCommEmail) && (
+                            <p className="mt-1 text-sm text-red-600">
+                                Please provide at least one email address (Recipient or Communication).
+                            </p>
+                        )}
+                    </div>
+
                 </div>
             </div>
 

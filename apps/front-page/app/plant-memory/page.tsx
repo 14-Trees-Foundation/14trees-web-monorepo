@@ -214,6 +214,13 @@ function GiftTrees() {
     setHasDuplicateNames(duplicateFound);
   }, [dedicatedNames]);
 
+  const isEmailValidForAllRecipients = dedicatedNames.every(
+    (user) =>
+      user.recipient_email?.trim() ||
+      (user as any).recipient_communication_email?.trim()
+  );
+  
+
   const handleRecipientOptionChange = (option: 'manual' | 'csv') => {
     setRecipientOption(option);
 
@@ -614,6 +621,7 @@ function GiftTrees() {
         user.assignee_email = user.recipient_email;
         user.assignee_phone = user.recipient_phone;
       }
+      user.recipient_communication_email = item.recipient_communication_email || "";
 
       if (user.recipient_email) {
         user.recipient_email = user.recipient_email.replace("donor", donor);
@@ -1411,6 +1419,7 @@ function GiftTrees() {
                             const transformedData = result.validData.map(row => ({
                               recipient_name: row['Recipient Name'],
                               recipient_email: row['Recipient Email'],
+                              recipient_communication_email: row['Recipient Communication Email'],
                               assignee_name: row['Recipient Name'],
                               assignee_email: row['Recipient Email'],
                               relation: 'other',
@@ -1716,12 +1725,12 @@ function GiftTrees() {
                           alert("Please fill all required fields");
                         }
                       }}
-                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError || csvHasErrors
+                      className={`px-6 py-3 rounded-md transition-colors text-white ${!isEmailValidForAllRecipients || hasDuplicateNames || hasAssigneeError || csvHasErrors
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
                         }`}
 
-                      disabled={hasDuplicateNames || hasAssigneeError || csvHasErrors}
+                      disabled={!isEmailValidForAllRecipients || hasDuplicateNames || hasAssigneeError || csvHasErrors}
                     >
                       Proceed to pay
                     </button>

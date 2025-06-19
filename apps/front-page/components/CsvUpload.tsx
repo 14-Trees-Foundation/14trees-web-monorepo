@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 interface CsvRow {
   'Recipient Name': string;
   'Recipient Email': string;
+  'Recipient Communication Email': string;
   'Number of Trees': string;
   _errors?: string[];
 }
@@ -32,10 +33,9 @@ const CsvUpload = ({ onDataParsed, maxTrees }: CsvUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rowsPerPage = 5;
 
-  const sampleCsvData = `Recipient Name,Recipient Email,Number of Trees
-John Doe,john@example.com,2
-Jane Smith,jane@example.com,5
-Team Members,team@company.org,10`;
+  const sampleCsvData = `Recipient Name,Recipient Email,Recipient Communication Email,Number of Trees
+John Doe,john@example.com,john.communication@example.com,2
+Jane Smith,jane@example.com,,5`;
 
   const totalPages = Math.ceil(csvData.length / rowsPerPage);
   const currentRows = csvData.slice(
@@ -58,8 +58,16 @@ Team Members,team@company.org,10`;
 
   const validateHeaders = (headers: string[] | undefined): boolean => {
     if (!headers) return false;
-    const requiredHeaders = ['Recipient Name', 'Recipient Email', 'Number of Trees'];
-    return requiredHeaders.every(header => headers.includes(header));
+    const requiredHeaders = ['Recipient Name', 'Number of Trees'];
+    const optionalHeaders = ['Recipient Email', 'Recipient Communication Email'];
+    
+    // Check all required headers are present
+    const hasRequired = requiredHeaders.every(header => headers.includes(header));
+    
+    // Check at least one email header is present
+    const hasAtLeastOneEmail = optionalHeaders.some(header => headers.includes(header));
+    
+    return hasRequired && hasAtLeastOneEmail;
   };
 
   const validateRow = (row: any): CsvRow => {
@@ -69,9 +77,28 @@ Team Members,team@company.org,10`;
       rowErrors.push('Recipient Name is required');
     }
 
-    if (row['Recipient Email']?.trim()) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row['Recipient Email'])) {
-        rowErrors.push('Invalid email format');
+    // Get email values
+    const recipientEmail = row['Recipient Email']?.trim();
+    const communicationEmail = row['Recipient Communication Email']?.trim();
+    
+    // Determine final email values based on business rules
+    let finalRecipientEmail = recipientEmail;
+    let finalCommunicationEmail = communicationEmail;
+    
+    if (!recipientEmail && !communicationEmail) {
+      rowErrors.push('Either Recipient Email or Recipient Communication Email is required');
+    } else {
+      if (recipientEmail && !communicationEmail) {
+        finalCommunicationEmail = recipientEmail;
+      }
+      
+      // Validate email formats if they exist
+      if (finalRecipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalRecipientEmail)) {
+        rowErrors.push('Invalid Recipient Email format');
+      }
+      
+      if (finalCommunicationEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalCommunicationEmail)) {
+        rowErrors.push('Invalid Recipient Communication Email format');
       }
     }
 
@@ -85,6 +112,8 @@ Team Members,team@company.org,10`;
 
     return {
       ...row,
+      'Recipient Email': finalRecipientEmail,
+      'Recipient Communication Email': finalCommunicationEmail,
       _errors: rowErrors.length > 0 ? rowErrors : undefined
     };
   };
@@ -104,7 +133,7 @@ Team Members,team@company.org,10`;
         const headerValid = validateHeaders(results.meta.fields);
 
         if (!headerValid) {
-          const headerError = 'CSV must contain headers: Recipient Name, Recipient Email, Number of Trees';
+          const headerError = 'CSV must contain headers: Recipient Name, Number of Trees, and at least one email field (Recipient Email or Recipient Communication Email)';
           setErrors([headerError]);
           if (fileInputRef.current) fileInputRef.current.value = '';
 
@@ -254,6 +283,7 @@ Team Members,team@company.org,10`;
                   <th className="px-4 py-2 text-left">Status</th>
                   <th className="px-4 py-2 text-left">Recipient Name</th>
                   <th className="px-4 py-2 text-left">Recipient Email</th>
+                  <th className="px-4 py-2 text-left">Communication Email</th>
                   <th className="px-4 py-2 text-left">Number of Trees</th>
                 </tr>
               </thead>
@@ -269,6 +299,7 @@ Team Members,team@company.org,10`;
                     </td>
                     <td className="px-4 py-2">{row['Recipient Name']}</td>
                     <td className="px-4 py-2">{row['Recipient Email']}</td>
+                    <td className="px-4 py-2">{row['Recipient Communication Email']}</td>
                     <td className="px-4 py-2">{row['Number of Trees']}</td>
                   </tr>
                 ))}
