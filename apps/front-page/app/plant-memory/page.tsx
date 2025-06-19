@@ -10,6 +10,7 @@ import { apiClient } from "~/api/apiClient";
 import { getUniqueRequestId } from "~/utils";
 import { SummaryPaymentPage } from "./giftingSummary";
 import Recipients from "components/Recipients";
+import CsvUpload from "components/CsvUpload";
 import GiftCardPreview from "components/gift-trees/GiftCardPreview";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Tooltip from '@mui/material/Tooltip';
@@ -69,6 +70,18 @@ function GiftTrees() {
   const [giftedOn, setGiftedOn] = useState<Date>(new Date()); // New state for gifted on
   const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [recipientOption, setRecipientOption] = useState<'manual' | 'csv'>('manual');
+  const [manualDedicatedNames, setManualDedicatedNames] = useState<DedicatedName[]>([{
+    recipient_name: "",
+    recipient_email: "",
+    assignee_name: "",
+    assignee_email: "",
+    relation: "",
+    trees_count: 1
+  }]);
+
+  const [csvDedicatedNames, setCsvDedicatedNames] = useState<DedicatedName[]>([]);
+  const [treeCountValid, setTreeCountValid] = useState(false);
   const [presentationId, setPresentationId] = useState<string | null>(null);
   const [slideId, setSlideId] = useState<string | null>(null);
   const [treeLocation, setTreeLocation] = useState("");
@@ -105,6 +118,7 @@ function GiftTrees() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [csvHasErrors, setCsvHasErrors] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -134,6 +148,13 @@ function GiftTrees() {
   useEffect(() => {
     setWindowWidth(window.innerWidth);
   }, []);
+
+  useEffect(() => {
+    const treesCount = parseInt(formData.numberOfTrees) || 0;
+    const treesAssigned = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 0), 0);
+
+    setTreeCountValid(treesAssigned === treesCount);
+  }, [formData.numberOfTrees, dedicatedNames]);
 
   useEffect(() => {
     const fetchReferralDetails = async () => {
@@ -192,6 +213,39 @@ function GiftTrees() {
     });
     setHasDuplicateNames(duplicateFound);
   }, [dedicatedNames]);
+
+  const handleRecipientOptionChange = (option: 'manual' | 'csv') => {
+    setRecipientOption(option);
+
+    if (option === 'manual') {
+      setCsvFile(null);
+      setCsvPreview([]);
+      setCsvErrors([]);
+
+      const manualData = [{
+        recipient_name: "",
+        recipient_email: "",
+        assignee_name: "",
+        assignee_email: "",
+        relation: "",
+        trees_count: 1
+      }];
+      setManualDedicatedNames(manualData);
+      setDedicatedNames(manualData);
+    } else {
+      const emptyManual = [{
+        recipient_name: "",
+        recipient_email: "",
+        assignee_name: "",
+        assignee_email: "",
+        relation: "",
+        trees_count: 1
+      }];
+      setManualDedicatedNames(emptyManual);
+      setDedicatedNames([]);
+    }
+  };
+
 
   const getOccasionQuestion = () => {
     const treeCount = parseInt(formData.numberOfTrees) || 0;
@@ -1312,16 +1366,76 @@ function GiftTrees() {
                     </div>
                   </div>
 
-                  <div>
-                    <Recipients
-                      dedicatedNames={dedicatedNames}
-                      errors={errors}
-                      formData={formData}
-                      handleNameChange={handleNameChange}
-                      handleAddName={handleAddName}
-                      handleRemoveName={handleRemoveName}
-                      setHasAssigneeError={setHasAssigneeError}
-                    />
+                  {/* Recipient Entry Method Toggle */}
+                  <div className="space-y-4">
+                    <h3 className="text-2xl font-semibold">Who would you like to honour with this living tribute?</h3>
+                    {/* Recipient Entry Method Toggle */}
+                    <div className="flex items-center space-x-6 mb-4">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={recipientOption === 'manual'}
+                          onChange={() => handleRecipientOptionChange('manual')}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">Add recipients manually</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={recipientOption === 'csv'}
+                          onChange={() => handleRecipientOptionChange('csv')}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">Upload CSV file</span>
+                      </label>
+                    </div>
+
+                    {/* Conditional Rendering */}
+                    {recipientOption === 'manual' ? (
+                      <>
+                        <Recipients
+                          dedicatedNames={dedicatedNames}
+                          errors={errors}
+                          formData={formData}
+                          handleNameChange={handleNameChange}
+                          handleAddName={handleAddName}
+                          handleRemoveName={handleRemoveName}
+                          setHasAssigneeError={setHasAssigneeError}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <CsvUpload
+                          onDataParsed={(result) => {
+                            const transformedData = result.validData.map(row => ({
+                              recipient_name: row['Recipient Name'],
+                              recipient_email: row['Recipient Email'],
+                              assignee_name: row['Recipient Name'],
+                              assignee_email: row['Recipient Email'],
+                              relation: 'other',
+                              trees_count: parseInt(row['Number of Trees']) || 1
+                            }));
+
+                            setDedicatedNames(transformedData);
+                            setCsvPreview(transformedData);
+                            setCsvHasErrors(result.hasErrors);
+                          }}
+                          maxTrees={Number(formData.numberOfTrees)}
+                        />
+
+                        {csvErrors.length > 0 && (
+                          <div className="text-red-600 text-sm mt-2">
+                            Please fix all CSV errors before proceeding:
+                            <ul className="list-disc pl-5 mt-1">
+                              {csvErrors.map((error, index) => (
+                                <li key={index}>{error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Occasion Details */}
@@ -1602,12 +1716,12 @@ function GiftTrees() {
                           alert("Please fill all required fields");
                         }
                       }}
-                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError
+                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError || csvHasErrors
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
                         }`}
 
-                      disabled={hasDuplicateNames || hasAssigneeError}
+                      disabled={hasDuplicateNames || hasAssigneeError || csvHasErrors}
                     >
                       Proceed to pay
                     </button>
