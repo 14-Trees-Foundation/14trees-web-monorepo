@@ -105,7 +105,7 @@ export class UserRepository {
         }
 
         const getQuery = `
-            SELECT u.*, ug.created_at as user_group_created_at 
+            SELECT distinct on(u.id) u.*, ug.created_at as user_group_created_at 
             FROM "14trees".users u 
             LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
@@ -113,7 +113,7 @@ export class UserRepository {
         `
 
         const countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(distinct u.id) 
             FROM "14trees".users u 
             LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
@@ -159,6 +159,15 @@ export class UserRepository {
         return await User.findOne({
             where: { user_id: userId },
         });
+    }
+    
+    /**
+     * Get a user by their ID
+     * @param id The user's ID
+     * @returns The user or null if not found
+     */
+    public static async getUserById(id: number): Promise<User | null> {
+        return await User.findByPk(id);
     }
 
     public static async deleteUser(userId: number): Promise<number> {

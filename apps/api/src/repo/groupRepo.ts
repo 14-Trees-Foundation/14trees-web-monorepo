@@ -13,6 +13,7 @@ export class GroupRepository {
             description: data.description ? data.description as string : undefined,
             logo_url: data.logo_url ? data.logo_url : null,
             address: data.address ? data.address : null,
+            billing_email: data.billing_email?.trim() ? data.billing_email.trim() : null,
             created_at: new Date(),
             updated_at: new Date(),
         };

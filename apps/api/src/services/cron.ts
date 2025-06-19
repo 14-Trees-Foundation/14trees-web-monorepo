@@ -274,7 +274,9 @@ export function sendGiftCardMails() {
             ]
             const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
             giftCardRequests = giftCardsResp.results.filter((request: GiftCardRequest) => {
-                return request.request_type === 'Gift Cards' && request.tags?.includes('WebSite')
+                return request.request_type === 'Gift Cards' && 
+                       (request.tags?.includes('WebSite') || 
+                        request.tags?.includes('Corporate'));
             });
 
         } catch (error: any) {
