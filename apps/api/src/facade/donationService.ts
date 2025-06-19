@@ -47,7 +47,7 @@ interface CreateDonationRequest {
     grove: string | null; // Updated to match model
     trees_count: number | null;
     pledged_area_acres: number | null;
-    continution_options: ContributionOption[],
+    contribution_options: ContributionOption[],
     comments: string | null;
     amount_donated: number | null;
     visit_date: Date | null;
@@ -57,6 +57,8 @@ interface CreateDonationRequest {
     tags?: string[]
     rfr?: string | null;
     c_key?: string | null;
+    created_by?: number;
+    group_id?: number | null;
 }
 
 export class DonationService {
@@ -73,7 +75,7 @@ export class DonationService {
             visit_date,
             amount_donated,
             payment_id,
-            continution_options,
+            contribution_options,
             comments,
             donation_type,
             donation_method,
@@ -110,12 +112,13 @@ export class DonationService {
             visit_date: donation_type === 'adopt' ? visit_date : null,
             grove: grove || '',
             payment_id: payment_id || null,
-            created_by: sponsorUser.id,
-            contribution_options: continution_options || null,
+            created_by: data.created_by || sponsorUser.id,
+            contribution_options: contribution_options || null,
             comments: comments || null,
             status: status || DonationStatus_UserSubmitted,
             tags: tags || null,
             rfr_id: rfr_id,
+            group_id: data.group_id || null,
         };
 
         const donation = await DonationRepository.createdDonation(
@@ -124,6 +127,12 @@ export class DonationService {
             console.error("DonationService::createDonation", error)
             throw new Error("Failed to save your donation request!")
         })
+
+        const date = new Date();
+        const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+        const receiptId = FY + "/" + donation.id;
+
+        await DonationRepository.updateDonation(donation.id, { donation_receipt_number: receiptId })
 
         return donation;
     }
@@ -371,7 +380,7 @@ export class DonationService {
             throw new Error("Can not reserve more trees than originally requested.")
 
 
-        await this.reserveTreesInPlots(donation.user_id, null, plots, true, diversify, bookAllHabits, donation.id);
+        await this.reserveTreesInPlots(donation.user_id, donation.group_id, plots, true, diversify, bookAllHabits, donation.id);
     }
 
     public static async unreserveSelectedTrees(
@@ -388,6 +397,7 @@ export class DonationService {
 
         if (treeIds.length > 0) {
             const updateConfig = {
+                assigned_to: null,
                 mapped_to_user: null,
                 mapped_to_group: null,
                 mapped_at: null,
@@ -404,6 +414,7 @@ export class DonationService {
 
     public static async unreserveAllTrees(donationId: number) {
         const updateConfig = {
+            assigned_to: null,
             mapped_to_user: null,
             mapped_to_group: null,
             mapped_at: null,
@@ -420,7 +431,10 @@ export class DonationService {
     public static async mapTreesToDonation(donation: Donation, treeIds: number[]) {
 
         const updateData: Partial<TreeAttributes> = {
+            mapped_to_user: donation.user_id,
+            mapped_to_group: donation.group_id,
             sponsored_by_user: donation.user_id,
+            sponsored_by_group: donation.group_id,
             donation_id: donation.id,
             updated_at: new Date(),
         }
@@ -431,6 +445,9 @@ export class DonationService {
     public static async unmapTreesFromDonation(donation: Donation, treeIds: number[]) {
         const updateData: Partial<TreeAttributes> = {
             sponsored_by_user: null,
+            sponsored_by_group: null,
+            mapped_to_user: null,
+            mapped_to_group: null,
             donation_id: null,
             updated_at: new Date(),
         }
@@ -852,7 +869,7 @@ export class DonationService {
 
         if (plotTreeCnts.length === 0) return;
 
-        await this.reserveTreesInPlots(donation.user_id, null, plotTreeCnts, true, true, false, donation.id);
+        await this.reserveTreesInPlots(donation.user_id, donation.group_id, plotTreeCnts, true, true, false, donation.id);
     }
 
 
@@ -1165,6 +1182,7 @@ export class DonationService {
             throw new Error('Sponsor email template not found');
         }
 
+        const isTestMail = test_mails?.length ? true : false;
         const statusMessage = await sendDashboardMail(
             sponsorTemplates[0].template_name,
             sponsorEmailData,
@@ -1172,7 +1190,8 @@ export class DonationService {
             sponsor_cc_mails || []
         );
 
-        if (statusMessage) {
+        if (isTestMail) return;
+        else if (statusMessage) {
             await DonationRepository.updateDonation(donation.id, {
                 mail_error: statusMessage,
                 updated_at: new Date(),
@@ -1208,6 +1227,7 @@ export class DonationService {
         }
 
         // Send to each recipient
+        const isTestMail = test_mails?.length ? true : false;
         for (const [recipient, recipientTrees] of recipientsMap) {
             const recipientEmailData = {
                 ...commonEmailData,
@@ -1227,7 +1247,8 @@ export class DonationService {
                 recipient_cc_mails || []
             );
 
-            if (statusMessage) {
+            if (isTestMail) continue;
+            else if (statusMessage) {
                 await DonationUserRepository.updateDonationUsers({
                     mail_error: statusMessage,
                     updated_at: new Date(),

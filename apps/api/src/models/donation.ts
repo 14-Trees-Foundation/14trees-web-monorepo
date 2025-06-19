@@ -23,6 +23,12 @@ export const DonationMailStatus_Accounts: DonationMailStatus = 'Accounts';
 export const DonationMailStatus_Volunteer: DonationMailStatus = 'Volunteer';
 export const DonationMailStatus_CSR: DonationMailStatus = 'CSR';
 
+export type DonationSponsorshipType = 'Unverified' | 'Pledged' | 'Promotional' | 'Unsponsored Visit' | 'Donation Received'
+export const DonationSponsorshipType_Unverified: DonationSponsorshipType = 'Unverified'
+export const DonationSponsorshipType_Pledged: DonationSponsorshipType = 'Pledged'
+export const DonationSponsorshipType_UnsponsoredVisit: DonationSponsorshipType = 'Unsponsored Visit'
+export const DonationSponsorshipType_DonationReceived: DonationSponsorshipType = 'Donation Received'
+
 interface DonationAttributes {
   id: number;
   user_id: number;
@@ -48,9 +54,14 @@ interface DonationAttributes {
   mail_error: string | null;
   processed_by: number | null;
   rfr_id: number | null;
+  group_id: number | null;
+  donation_date: Date | null;
+  amount_received: number | null;
+  donation_receipt_number: string | null;
+  sponsorship_type: DonationSponsorshipType;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id' | 'group_id' | 'donation_date' | 'amount_received' | 'donation_receipt_number' | 'sponsorship_type'> { }
 
 @Table({
   tableName: 'donations',
@@ -207,6 +218,38 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   })
   processed_by!: number | null;
 
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+  })
+  group_id!: number | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    comment: 'Date when donation payment was received'
+  })
+  donation_date!: Date | null;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  donation_receipt_number!: string
+
+  @Column({
+    type: DataType.ENUM('Unverified', 'Pledged', 'Promotional', 'Unsponsored Visit', 'Donation Received'),
+    defaultValue: DonationSponsorshipType_Unverified,
+  })
+  sponsorship_type!: DonationSponsorshipType;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    comment: 'Amount received for this donation'
+  })
+  amount_received!: number | null;
 }
 
 export { Donation }

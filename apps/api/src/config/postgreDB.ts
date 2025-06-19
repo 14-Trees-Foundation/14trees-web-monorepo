@@ -46,6 +46,7 @@ import { EventMessage } from "../models/event_message";
 import { AutoPrsReqPlot } from "../models/auto_prs_req_plot";
 import { Referral } from "../models/referral";
 import { Campaign } from "../models/campaign";
+import { AuthToken } from "../models/auth_token";
 
 
 class Database {
@@ -127,6 +128,7 @@ class Database {
         AutoPrsReqPlot,
         Referral,
         Campaign,
+        AuthToken,
       ]
     });
 

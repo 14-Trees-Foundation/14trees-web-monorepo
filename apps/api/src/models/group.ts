@@ -12,11 +12,12 @@ interface GroupAttributes {
   address: string | null;
   created_at: Date;
   updated_at: Date;
-  sponsored_trees?: number; 
+  sponsored_trees?: number;
+  billing_email: string | null;
 }
 
 interface GroupCreationAttributes
-	extends Optional<GroupAttributes, 'id' | 'logo_url'> {}
+	extends Optional<GroupAttributes, 'id' | 'logo_url' | 'billing_email'> {}
 
 @Table({ tableName: 'groups' })
 class Group extends Model<GroupAttributes, GroupCreationAttributes>
@@ -48,6 +49,9 @@ implements GroupAttributes {
 
   @Column(DataType.TEXT)
   address!: string;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  billing_email!: string | null;
 
   @Column(DataType.DATE)
   created_at!: Date;

@@ -58,3 +58,21 @@ export function verifyTreeLogger(req: Request, res: Response, next: any) {
     next();
   }
 }
+
+export const getTokenPayload = (token: string) => {
+
+  if (!token) throw new Error('No token provided.')
+
+  let payload: any = null;
+  const key = process.env.SECRET_KEY || 'secret';
+
+  jwt.verify(token as string, key, function (err: any, decoded: any) {
+    if (err) {
+      throw new Error('Failed to authenticate token.');
+    } else {
+      payload = decoded;
+    }
+  });
+
+  return payload;
+}
