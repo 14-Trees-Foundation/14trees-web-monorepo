@@ -11,7 +11,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationMailStatus_DashboardsSent, DonationSponsorshipType, DonationSponsorshipType_DonationReceived, DonationSponsorshipType_Pledged, DonationSponsorshipType_Unverified, DonationStatus_OrderFulfilled, DonationStatus_UserSubmitted } from '../models/donation';
+import { Donation, DonationMailStatus_DashboardsSent, DonationSponsorshipType, DonationSponsorshipType_DonationReceived, DonationSponsorshipType_Pledged, DonationSponsorshipType_Unverified, DonationStatus, DonationStatus_OrderFulfilled, DonationStatus_Paid, DonationStatus_PendingPayment } from '../models/donation';
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
@@ -167,31 +167,35 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
     const { donation_id, is_corporate } = req.body;
 
     try {
-
         const donation = await DonationRepository.getDonation(donation_id);
 
         const usersResp = await UserRepository.getUsers(0, 1, [
             { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
-        ])
+        ]);
         const sponsorUser = usersResp.results[0];
 
-        let transactionId = ""
+        let transactionId = "";
         if (donation.payment_id) {
             let amountReceived: number = 0;
             let donationDate: Date | null = null;
-            let sponsorshipType: DonationSponsorshipType = donation.trees_count ? DonationSponsorshipType_Pledged : DonationSponsorshipType_Unverified
+            let sponsorshipType: DonationSponsorshipType = donation.trees_count ? DonationSponsorshipType_Pledged : DonationSponsorshipType_Unverified;
+            let donationStatus: DonationStatus = donation.status || DonationStatus_PendingPayment;
+
+            // Calculate donation receipt number
+            const currentDate = new Date();
+            const financialYear = currentDate.getMonth() < 3 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+            const receiptNumber = `${financialYear.toString().slice(2)}-${donation.id.toString().padStart(5, '0')}`;
 
             const payment: any = await PaymentRepository.getPayment(donation.payment_id);
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
                     if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
-                })
+                });
             }
 
             if (payment?.order_id) {
                 const razorpayService = new RazorpayService();
-
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
                     amountReceived += Number(item.amount) / 100;
@@ -207,25 +211,30 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                             }
                         }
                     }
-                })
+                });
             }
 
             if (amountReceived > 0) {
                 donationDate = new Date();
             }
 
-            if (amountReceived === donation.amount_donated)
+            if (amountReceived === donation.amount_donated) {
                 sponsorshipType = DonationSponsorshipType_DonationReceived;
+                donationStatus = DonationStatus_Paid;
+            }
 
             await DonationRepository.updateDonations({
                 donation_date: donationDate,
                 amount_received: amountReceived,
                 sponsorship_type: sponsorshipType,
+                status: donationStatus,
+                donation_receipt_number: receiptNumber,
                 updated_at: new Date()
             }, { id: donation.id })
         }
 
-        res.status(status.success).send({});
+        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        res.status(status.success).send(updatedDonation);
 
         if (is_corporate) {
             await DonationService.reserveTreesForDonation(donation).catch(error => {
@@ -736,7 +745,6 @@ export const getMappedTreesByDonation = async (req: Request, res: Response) => {
 
 
 export const assignTrees = async (req: Request, res: Response) => {
-
     const {
         donation_id,
         auto_assign,
@@ -750,27 +758,36 @@ export const assignTrees = async (req: Request, res: Response) => {
         return res.status(status.bad).send({ message: "Tree Ids not provided." })
 
     try {
+        const donation: any = await DonationRepository.getDonation(donation_id);
+        
+        // Check if donation status is PendingPayment
+        if (donation.status === DonationStatus_PendingPayment) {
+            return res.status(status.bad).send({ 
+                message: "Cannot assign trees to a donation with PendingPayment status." 
+            });
+        }
+
         if (auto_assign) {
             await DonationService.autoAssignTrees(donation_id);
         } else {
             await DonationService.assignTrees(donation_id, user_trees)
         }
 
-        const donation: any = await DonationRepository.getDonation(donation_id);
+        const updatedDonation: any = await DonationRepository.getDonation(donation_id);
 
-        if (Number(donation.assigned) === donation.trees_count) {
-            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_OrderFulfilled });
+        if (Number(updatedDonation.assigned) === updatedDonation.trees_count) {
+            await DonationRepository.updateDonation(updatedDonation.id, { status: DonationStatus_OrderFulfilled });
         } else {
-            await DonationRepository.updateDonation(donation.id, { status: DonationStatus_UserSubmitted });
+            await DonationRepository.updateDonation(updatedDonation.id, { status: DonationStatus_Paid });
         }
 
-        const updatedDonation = await DonationRepository.getDonation(donation_id);
-        res.status(status.success).send(updatedDonation);
+        const finalDonation = await DonationRepository.getDonation(donation_id);
+        res.status(status.success).send(finalDonation);
 
         try {
             const userId = req.headers['X-User-Id'] as string;
-            if (!donation.processed_by && userId && !isNaN(parseInt(userId))) {
-                await DonationRepository.updateDonation(donation.id, { processed_by: parseInt(userId) });
+            if (!updatedDonation.processed_by && userId && !isNaN(parseInt(userId))) {
+                await DonationRepository.updateDonation(updatedDonation.id, { processed_by: parseInt(userId) });
             }
         } catch (error: any) {
             console.log("[ERROR]", "donationsController::assignTrees", error);
