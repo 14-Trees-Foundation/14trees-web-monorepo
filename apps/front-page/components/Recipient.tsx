@@ -35,10 +35,10 @@ const Recipeint: React.FC<RecipeintProps> = ({
 }) => {
     const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
     const [assigneeError, setAssigneeError] = useState("");
+    const [hasTouchedRecipientEmail, setHasTouchedRecipientEmail] = useState(false);
     const [hasTouchedCommEmail, setHasTouchedCommEmail] = useState(false);
 
     useEffect(() => {
-        // Validate assignee name
         if (isAssigneeDifferent && !user.assignee_name?.trim()) {
             setAssigneeError("Assignee name is required");
             setHasAssigneeError(true);
@@ -161,37 +161,31 @@ const Recipeint: React.FC<RecipeintProps> = ({
                         className={`w-full rounded-md border ${errors[`dedicatedEmail-${index}`] ? "border-red-500" : "border-gray-300"} px-4 py-3 text-gray-700`}
                         value={user.recipient_email}
                         onChange={(e) => handleNameChange(index, "recipient_email", e.target.value)}
+                        onBlur={() => setHasTouchedRecipientEmail(true)}
                     />
                     {errors[`dedicatedEmail-${index}`] && (
                         <p className="mt-1 text-sm text-red-600">{errors[`dedicatedEmail-${index}`]}</p>
                     )}
+                </div>
 
-                    {/* Recipient Communication Email */}
-                    <div className="mt-4">
-                        <label className="block text-gray-700 mb-1">
-                            Recipient Communication Email:
-                            <Tooltip title="Used to send tree updates. Required if Recipient Email is not provided.">
-                                <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help ml-1" />
-                            </Tooltip>
-                        </label>
-                        <input
-                            type="email"
-                            placeholder="Enter communication email"
-                            className={`w-full rounded-md border ${(!user.recipient_email?.trim() && !user.recipient_communication_email?.trim() && hasTouchedCommEmail) ? "border-red-500" : "border-gray-300"} px-4 py-3 text-gray-700`}
-                            value={user.recipient_communication_email || ""}
-                            onChange={(e) => handleNameChange(index, "recipient_communication_email", e.target.value)}
-                            onBlur={() => setHasTouchedCommEmail(true)}
-                        />
-                        {(!user.recipient_email?.trim() && !user.recipient_communication_email?.trim() && hasTouchedCommEmail) && (
-                            <p className="mt-1 text-sm text-red-600">
-                                Please provide at least one email address (Recipient or Communication).
-                            </p>
-                        )}
-                    </div>
-
+                {/* Recipient Communication Email */}
+                <div className="mt-4">
+                    <label className="block text-gray-700 mb-1">
+                    Recipient Communication email:
+                        <Tooltip title="Provide this if the recipient doesn't have an email. This will be used for tree updates.">
+                            <InfoOutlinedIcon fontSize="small" className="text-gray-500 cursor-help ml-1" />
+                        </Tooltip>
+                    </label>
+                    <input
+                        type="email"
+                        placeholder="Enter communication email"
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                        value={user.recipient_communication_email || ""}
+                        onChange={(e) => handleNameChange(index, "recipient_communication_email", e.target.value)}
+                        onBlur={() => setHasTouchedCommEmail(true)}
+                    />
                 </div>
             </div>
-
             {/* Assignee Section */}
             {/* <div className="mt-4 pt-4 border-t">
                 <label className="flex items-center space-x-3 mb-4">

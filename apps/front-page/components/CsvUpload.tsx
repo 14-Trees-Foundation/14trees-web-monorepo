@@ -59,15 +59,7 @@ Jane Smith,jane@example.com,,5`;
   const validateHeaders = (headers: string[] | undefined): boolean => {
     if (!headers) return false;
     const requiredHeaders = ['Recipient Name', 'Number of Trees'];
-    const optionalHeaders = ['Recipient Email', 'Recipient Communication Email'];
-    
-    // Check all required headers are present
-    const hasRequired = requiredHeaders.every(header => headers.includes(header));
-    
-    // Check at least one email header is present
-    const hasAtLeastOneEmail = optionalHeaders.some(header => headers.includes(header));
-    
-    return hasRequired && hasAtLeastOneEmail;
+    return requiredHeaders.every(header => headers.includes(header));
   };
 
   const validateRow = (row: any): CsvRow => {
@@ -81,25 +73,13 @@ Jane Smith,jane@example.com,,5`;
     const recipientEmail = row['Recipient Email']?.trim();
     const communicationEmail = row['Recipient Communication Email']?.trim();
     
-    // Determine final email values based on business rules
-    let finalRecipientEmail = recipientEmail;
-    let finalCommunicationEmail = communicationEmail;
+    // Validate email formats if they exist
+    if (recipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      rowErrors.push('Invalid Recipient Email format');
+    }
     
-    if (!recipientEmail && !communicationEmail) {
-      rowErrors.push('Either Recipient Email or Recipient Communication Email is required');
-    } else {
-      if (recipientEmail && !communicationEmail) {
-        finalCommunicationEmail = recipientEmail;
-      }
-      
-      // Validate email formats if they exist
-      if (finalRecipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalRecipientEmail)) {
-        rowErrors.push('Invalid Recipient Email format');
-      }
-      
-      if (finalCommunicationEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalCommunicationEmail)) {
-        rowErrors.push('Invalid Recipient Communication Email format');
-      }
+    if (communicationEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(communicationEmail)) {
+      rowErrors.push('Invalid Recipient Communication Email format');
     }
 
     if (!row['Number of Trees']?.trim()) {
@@ -112,8 +92,8 @@ Jane Smith,jane@example.com,,5`;
 
     return {
       ...row,
-      'Recipient Email': finalRecipientEmail,
-      'Recipient Communication Email': finalCommunicationEmail,
+      'Recipient Email': recipientEmail,
+      'Recipient Communication Email': communicationEmail,
       _errors: rowErrors.length > 0 ? rowErrors : undefined
     };
   };
@@ -133,7 +113,7 @@ Jane Smith,jane@example.com,,5`;
         const headerValid = validateHeaders(results.meta.fields);
 
         if (!headerValid) {
-          const headerError = 'CSV must contain headers: Recipient Name, Number of Trees, and at least one email field (Recipient Email or Recipient Communication Email)';
+          const headerError = 'CSV must contain headers: Recipient Name and Number of Trees';
           setErrors([headerError]);
           if (fileInputRef.current) fileInputRef.current.value = '';
 
@@ -298,8 +278,8 @@ Jane Smith,jane@example.com,,5`;
                       )}
                     </td>
                     <td className="px-4 py-2">{row['Recipient Name']}</td>
-                    <td className="px-4 py-2">{row['Recipient Email']}</td>
-                    <td className="px-4 py-2">{row['Recipient Communication Email']}</td>
+                    <td className="px-4 py-2">{row['Recipient Email'] || '-'}</td>
+                    <td className="px-4 py-2">{row['Recipient Communication Email'] || '-'}</td>
                     <td className="px-4 py-2">{row['Number of Trees']}</td>
                   </tr>
                 ))}
