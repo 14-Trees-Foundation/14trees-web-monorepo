@@ -1197,6 +1197,27 @@ function Donation() {
               <div className="mt-12 space-y-6">
                 <h2 className="text-4xl font-bold text-green-800">We don&apos;t just plant trees, we rebuild forests.</h2>
 
+                {/* Referral Campaign Details */}
+                {referralDetails && (referralDetails.name || referralDetails.description || referralDetails.referred_by) && (
+                  <div className="my-8 p-6 rounded-xl border border-green-200 bg-green-50 shadow-sm flex flex-col gap-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7" /></svg>
+                      <span className="text-xl font-bold text-green-800">{referralDetails.name || 'Campaign'}</span>
+                    </div>
+                    {referralDetails.description && (
+                      <div className="text-gray-700 mb-1 pl-8" style={{ whiteSpace: 'pre-line' }}>
+                        {referralDetails.description}
+                      </div>
+                    )}
+                    {referralDetails.referred_by && (
+                      <div className="flex items-center gap-2 text-sm text-green-700 italic pl-8 mt-1">
+                        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        <span>Referred by: {referralDetails.referred_by}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <p className="text-gray-700 leading-relaxed">
                   By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
                 </p>
@@ -1267,29 +1288,7 @@ function Donation() {
                   By funding 14Trees, you&apos;re enabling long-term environmental healing and economic empowerment for those who depend most on the land.
                 </p>
 
-                {/* Referral Campaign Details */}
-                {referralDetails && (referralDetails.name || referralDetails.description || referralDetails.referred_by) && (
-                  <div className="my-8 p-6 rounded-xl border border-green-200 bg-green-50 shadow-sm flex flex-col gap-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7" /></svg>
-                      <span className="text-xl font-bold text-green-800">{referralDetails.name || 'Campaign'}</span>
-                    </div>
-                    {referralDetails.description && (
-                      <div className="text-gray-700 mb-1 pl-8" style={{ whiteSpace: 'pre-line' }}>
-                        {referralDetails.description}
-                      </div>
-                    )}
-                    {referralDetails.referred_by && (
-                      <div className="flex items-center gap-2 text-sm text-green-700 italic pl-8 mt-1">
-                        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        <span>Referred by: {referralDetails.referred_by}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-
-              
             </div>
           </div>
         </MotionDiv>
