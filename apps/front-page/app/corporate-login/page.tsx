@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { GoogleLogin } from "@react-oauth/google";
-import { ToastContainer, toast } from "react-toastify";
 import { makeStyles } from "@mui/styles";
 import axios from "axios";
 
@@ -49,17 +48,21 @@ const useStyles = makeStyles({
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-if (!GOOGLE_CLIENT_ID) {
-  console.error("Google Client ID is not configured. Please check your environment variables.");
-}
-
 export default function CorporateLogin() {
   const [openBackdrop, setBackdropOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const classes = useStyles();
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      setError("Google login is not working at the moment. Please try again later!");
+    }
+  }, [])
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
       setBackdropOpen(true);
+      setError(null);
 
       const googleRes = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/google`,
@@ -68,10 +71,9 @@ export default function CorporateLogin() {
       );
 
       const user = googleRes.data.user;
-      const token = googleRes.data.token;
 
-      if (!user || !user.roles) {
-        toast.error("User not authorized! Contact Admin");
+      if (!user) {
+        setError("User not authorized! Contact Admin");
         setBackdropOpen(false);
         return;
       }
@@ -84,7 +86,7 @@ export default function CorporateLogin() {
       );
 
       if (!dashboardRes.data.success || !dashboardRes.data.path) {
-        toast.error(dashboardRes.data.message || "Failed to get dashboard URL");
+        setError(dashboardRes.data.message || "Failed to get dashboard URL");
         setBackdropOpen(false);
         return;
       }
@@ -99,8 +101,7 @@ export default function CorporateLogin() {
         const dashboardAppWindow = window.open(dashboardUrl, '_blank', 'noopener,noreferrer');
         
         if (!dashboardAppWindow) {
-          console.error('Window.open returned null - likely blocked by popup blocker');
-          toast.error("Could not open the dashboard. Please disable popup blockers and try again.");
+          setError("If dashboard window didn't open then please disable popup blockers and try again.");
           setBackdropOpen(false);
           return;
         }
@@ -108,28 +109,25 @@ export default function CorporateLogin() {
         // Check if the window was actually opened
         if (dashboardAppWindow.closed) {
           console.error('Window was opened but immediately closed');
-          toast.error("Dashboard window was closed. Please try again.");
+          setError("Dashboard window was closed. Please try again.");
           setBackdropOpen(false);
           return;
         }
 
-        console.log('Dashboard window opened successfully');
         setBackdropOpen(false);
       } catch (error) {
-        console.error('Error opening dashboard window:', error);
-        toast.error("Failed to open dashboard. Please try again.");
+        setError("Failed to open dashboard. Please try again.");
         setBackdropOpen(false);
       }
 
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error.response?.data?.message || "Login failed. Please try again.");
+      setError(error.response?.data?.message || "Login failed. Please try again.");
       setBackdropOpen(false);
     }
   };
 
   const handleGoogleError = () => {
-    toast.error("Google login failed. Please try again.");
+    setError("Google login failed. Please try again.");
     setBackdropOpen(false);
   };
 
@@ -140,7 +138,6 @@ export default function CorporateLogin() {
           <Backdrop className={classes.backdrop} open={openBackdrop}>
             <CircularProgress color="primary" />
           </Backdrop>
-          <ToastContainer />
 
           <Grid container justifyContent="center" alignItems="center" style={{ minHeight: "100vh" }}>
             <Grid item>
@@ -165,6 +162,12 @@ export default function CorporateLogin() {
                 <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
                   Please sign in with your corporate Google account
                 </Typography>
+
+                {error && (
+                  <Typography variant="body2" sx={{ color: 'red', mb: 2, textAlign: 'center' }}>
+                    {error}
+                  </Typography>
+                )}
 
                 <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
                   <GoogleLogin
