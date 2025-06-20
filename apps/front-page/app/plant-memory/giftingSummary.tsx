@@ -50,9 +50,14 @@ export const SummaryPaymentPage = ({
   giftedOn,
   plantedBy,
 }: SummaryPaymentProps) => {
-
   const [hasDifferentAssignee, setHasDifferentAssignee] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const targetRef = useRef<HTMLDivElement>(null);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = dedicatedNames.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(dedicatedNames.length / itemsPerPage);
 
   const scrollToDiv = () => {
     const el = targetRef.current;
@@ -72,7 +77,6 @@ export const SummaryPaymentPage = ({
     setHasDifferentAssignee(differentAssignee);
   }, [dedicatedNames])
 
-
   const handleCompleteGifting = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isAboveLimit && !paymentProof) {
@@ -84,6 +88,11 @@ export const SummaryPaymentPage = ({
       preventDefault: () => { },
     } as React.FormEvent;
     handleSubmit(syntheticEvent);
+  };
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    scrollToDiv();
   };
 
   return (
@@ -127,7 +136,7 @@ export const SummaryPaymentPage = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {dedicatedNames.map((recipient, i) => (
+                  {currentItems.map((recipient, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_name}</td>
                       <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
@@ -143,9 +152,37 @@ export const SummaryPaymentPage = ({
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-end items-center gap-4 mt-4">
+                <span className="text-sm text-gray-600">
+                  {currentPage} of {totalPages}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:bg-green-50'}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:bg-green-50'}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
-
 
         <button
           type="button"

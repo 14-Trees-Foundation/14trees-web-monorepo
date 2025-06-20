@@ -3,13 +3,12 @@
 
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
-import labels from "~/assets/labels.json";
 import { useState, useEffect, Suspense } from "react";
-import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import { getUniqueRequestId } from "~/utils";
 import { SummaryPaymentPage } from "./giftingSummary";
 import Recipients from "components/Recipients";
+import CsvUpload from "components/CsvUpload";
 import GiftCardPreview from "components/gift-trees/GiftCardPreview";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Tooltip from '@mui/material/Tooltip';
@@ -69,10 +68,12 @@ function GiftTrees() {
   const [giftedOn, setGiftedOn] = useState<Date>(new Date()); // New state for gifted on
   const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [recipientOption, setRecipientOption] = useState<'manual' | 'csv'>('manual');
+
+  const [treeCountValid, setTreeCountValid] = useState(false);
   const [presentationId, setPresentationId] = useState<string | null>(null);
   const [slideId, setSlideId] = useState<string | null>(null);
   const [treeLocation, setTreeLocation] = useState("");
-  const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
     recipient_name: "",
     recipient_email: "",
@@ -83,9 +84,7 @@ function GiftTrees() {
   }]);
   const [primaryMessage, setPrimaryMessage] = useState("");
   const [secondaryMessage, setSecondaryMessage] = useState("");
-  const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [razorpayPaymentId, setRazorpayPaymentId] = useState<number | null>(null);
   const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
   const [rpPaymentSuccess, setRpPaymentSuccess] = useState<boolean>(false);
@@ -98,14 +97,9 @@ function GiftTrees() {
     panNumber: "",
     comments: ""
   });
-  const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
-  const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
-  const [csvErrors, setCsvErrors] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [csvHasErrors, setCsvHasErrors] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [giftRequestId, setGiftRequestId] = useState<string | null>(null);
@@ -136,6 +130,13 @@ function GiftTrees() {
   }, []);
 
   useEffect(() => {
+    const treesCount = parseInt(formData.numberOfTrees) || 0;
+    const treesAssigned = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 0), 0);
+
+    setTreeCountValid(treesAssigned === treesCount);
+  }, [formData.numberOfTrees, dedicatedNames]);
+
+  useEffect(() => {
     const fetchReferralDetails = async () => {
       if (rfr || c_key) {
         try {
@@ -161,17 +162,7 @@ function GiftTrees() {
     setTotalAmount(total);
     setIsAboveLimit(total > 500000);
 
-    if (total > 100000) {
-      setPaymentOption("bank-transfer");
-    }
   }, [treeLocation, formData.numberOfTrees]);
-
-  useEffect(() => {
-    if (nameEntryMethod === "csv" && csvPreview.length > 0 && csvErrors.length === 0) {
-      setDedicatedNames(csvPreview);
-      setMultipleNames(true);
-    }
-  }, [csvPreview, nameEntryMethod, csvErrors]);
 
   useEffect(() => {
     setErrors(prev => {
@@ -192,6 +183,27 @@ function GiftTrees() {
     });
     setHasDuplicateNames(duplicateFound);
   }, [dedicatedNames]);
+  
+
+  const handleRecipientOptionChange = (option: 'manual' | 'csv') => {
+    setRecipientOption(option);
+
+    if (option === 'manual') {
+
+      const manualData = [{
+        recipient_name: "",
+        recipient_email: "",
+        assignee_name: "",
+        assignee_email: "",
+        relation: "",
+        trees_count: 1
+      }];
+      setDedicatedNames(manualData);
+    } else {
+      setDedicatedNames([]);
+    }
+  };
+
 
   const getOccasionQuestion = () => {
     const treeCount = parseInt(formData.numberOfTrees) || 0;
@@ -321,138 +333,10 @@ function GiftTrees() {
         isValid = false;
       }
 
-      if (isAssigneeDifferent) {
-        if (!name.assignee_name.trim()) {
-          newErrors[`assigneeName-${index}`] = "Assignee name is required";
-          isValid = false;
-        }
-      }
-
     });
     setErrors(prev => ({ ...prev, ...newErrors }));
     return isValid;
   };
-
-  // Updated CSV handling functions
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setCsvFile(files[0]);
-    setCsvErrors([]);
-    setCsvPreview([]);
-    setCurrentPage(0);
-
-    // Handle CSV file
-    Papa.parse(files[0], {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => {
-        // Map the CSV headers to our internal field names
-        const headerMap: Record<string, string> = {
-          'Recipient Name': 'recipient_name',
-          'Recipient Email': 'recipient_email',
-          'Recipient Communication Email (optional)': 'recipient_communication_email',
-          'Recipient Phone (optional)': 'recipient_phone',
-          'Number of trees to assign': 'trees_count',
-          'Assignee Name': 'assignee_name',
-          'Assignee Email (optional)': 'assignee_email',
-          'Assignee Communication Email (optional)': 'assignee_communication_email',
-          'Assignee Phone (optional)': 'assignee_phone',
-          'Relation with the person': 'relation',
-          'Image Name (optional)': 'image'
-        };
-        return headerMap[header] || header.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '');
-      },
-      complete: (results) => {
-        const data = results.data as DedicatedName[];
-        const errors: string[] = [];
-        const validRecipients: DedicatedName[] = [];
-
-        data.forEach((row, index) => {
-          // Validate required fields
-          if (!row.recipient_name) {
-            errors.push(`Row ${index + 1}: Recipient Name is required`);
-            return;
-          }
-
-          // Validate email formats if provided
-          if (row.recipient_email && !validationPatterns.email.test(String(row.recipient_email))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Email format`);
-          }
-          if (row.assignee_email && !validationPatterns.email.test(String(row.assignee_email))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
-          }
-
-          // Validate phone numbers if provided
-          if (row.recipient_phone && !validationPatterns.phone.test(String(row.recipient_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Phone number (10-15 digits required)`);
-          }
-          if (row.assignee_phone && !validationPatterns.phone.test(String(row.assignee_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
-          }
-
-          // Validate tree count
-          if (row.trees_count && isNaN(parseInt(row.trees_count.toString()))) {
-            errors.push(`Row ${index + 1}: Tree count must be a number`);
-          }
-
-          // Create valid recipient object
-          validRecipients.push({
-            recipient_name: String(row.recipient_name),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_communication_email ? String(row.recipient_communication_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
-            recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
-            trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
-            image: row.image ? String(row.image) : undefined,
-            assignee_name: row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
-            assignee_email: row.assignee_email ? String(row.assignee_email) : row.assignee_communication_email ? String(row.assignee_communication_email) : row.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
-            assignee_phone: row.assignee_phone ? String(row.assignee_phone) : '',
-            relation: row.relation ? String(row.relation) : 'other'
-          });
-        });
-
-        setCsvErrors(errors);
-        setCsvPreview(validRecipients);
-      },
-      error: (error) => {
-        setCsvErrors([`Error parsing CSV: ${error.message}`]);
-      }
-    });
-
-    // Handle image files if any
-    if (files.length > 1) {
-      const imageFiles = Array.from(files).slice(1);
-      // Match images to CSV rows (example: by filename convention)
-      const updatedPreview = [...csvPreview];
-      imageFiles.forEach((file) => {
-        const match = file.name.match(/(\d+)/); // Look for numbers in filename
-        if (match) {
-          const rowIndex = parseInt(match[0]) - 1;
-          if (rowIndex >= 0 && rowIndex < updatedPreview.length) {
-            updatedPreview[rowIndex].image = URL.createObjectURL(file);
-          }
-        }
-      });
-      setCsvPreview(updatedPreview);
-    }
-  };
-
-  const downloadSampleCsv = () => {
-    const url = "https://docs.google.com/spreadsheets/d/1DDM5nyrvP9YZ09B60cwWICa_AvbgThUx-yeDVzT4Kw4/gviz/tq?tqx=out:csv&sheet=Sheet1";
-    const fileName = "UserDetails.csv";  // Set your desired file name here
-
-    fetch(url)
-      .then(response => response.blob())
-      .then(blob => {
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch(error => console.error("Download failed:", error));
-  }
 
   // Existing form submission (unchanged)
   const handleSubmit = async () => {
@@ -488,12 +372,10 @@ function GiftTrees() {
       console.log(errors);
       alert("Please fix the errors in the form before submitting");
       setIsLoading(false);
-      setIsSubmitting(false);
       return;
     }
 
     setIsLoading(true);
-    setIsSubmitting(true);
     setIsProcessing(true);
 
     const uniqueRequestId = getUniqueRequestId();
@@ -515,14 +397,12 @@ function GiftTrees() {
         alert("Failed to create your request. Please try again later!");
         setIsProcessing(false);
         setIsLoading(false);
-        setIsSubmitting(false);
         return;
       }
     }
 
     if (!paymentId) {
       setIsLoading(false);
-      setIsSubmitting(false);
       setIsProcessing(false);
       return;
     }
@@ -543,7 +423,6 @@ function GiftTrees() {
       console.error("User creation error:", error);
       alert(error.message || "Failed to create user");
       setIsLoading(false);
-      setIsSubmitting(false);
       setIsProcessing(false);
       return;
     }
@@ -560,6 +439,7 @@ function GiftTrees() {
         user.assignee_email = user.recipient_email;
         user.assignee_phone = user.recipient_phone;
       }
+      user.recipient_communication_email = item.recipient_communication_email || "";
 
       if (user.recipient_email) {
         user.recipient_email = user.recipient_email.replace("donor", donor);
@@ -717,7 +597,6 @@ function GiftTrees() {
       alert(err.message || "Failed to create gift trees request");
     } finally {
       setIsLoading(false);
-      setIsSubmitting(false);
       setIsProcessing(false);
     }
   };
@@ -942,25 +821,6 @@ function GiftTrees() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const previewUrls: Record<string, string> = {};
-
-    Array.from(files).forEach(file => {
-      const key = file.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/\s+/g, '_');
-      previewUrls[key] = URL.createObjectURL(file);
-    });
-
-    setCsvPreview(prev => prev.map(recipient => {
-      const imageKey = recipient.recipient_name.toLowerCase().replace(/\s+/g, '_');
-      return previewUrls[imageKey]
-        ? { ...recipient, image: previewUrls[imageKey] }
-        : recipient;
-    }));
-  };
-
   // Add this new component before your return statement
   const SuccessDialog = () => {
     const [additionalInvolvement, setAdditionalInvolvement] = useState<string[]>([]);
@@ -1008,11 +868,6 @@ function GiftTrees() {
       setPlantedBy(null);
       setCurrentStep(1);
       setTreeLocation("");
-      setMultipleNames(false);
-      setPaymentOption("razorpay");
-      setCsvFile(null);
-      setCsvPreview([]);
-      setCsvErrors([]);
       setErrors({});
       setRpPaymentSuccess(false);
       setRazorpayOrderId(null);
@@ -1312,16 +1167,65 @@ function GiftTrees() {
                     </div>
                   </div>
 
-                  <div>
-                    <Recipients
-                      dedicatedNames={dedicatedNames}
-                      errors={errors}
-                      formData={formData}
-                      handleNameChange={handleNameChange}
-                      handleAddName={handleAddName}
-                      handleRemoveName={handleRemoveName}
-                      setHasAssigneeError={setHasAssigneeError}
-                    />
+                  {/* Recipient Entry Method Toggle */}
+                  <div className="space-y-4">
+                    <h3 className="text-2xl font-semibold">Who would you like to honour with this living tribute?</h3>
+                    {/* Recipient Entry Method Toggle */}
+                    <div className="flex items-center space-x-6 mb-4">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={recipientOption === 'manual'}
+                          onChange={() => handleRecipientOptionChange('manual')}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">Add recipients manually</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={recipientOption === 'csv'}
+                          onChange={() => handleRecipientOptionChange('csv')}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">Upload CSV file</span>
+                      </label>
+                    </div>
+
+                    {/* Conditional Rendering */}
+                    {recipientOption === 'manual' ? (
+                      <>
+                        <Recipients
+                          dedicatedNames={dedicatedNames}
+                          errors={errors}
+                          formData={formData}
+                          handleNameChange={handleNameChange}
+                          handleAddName={handleAddName}
+                          handleRemoveName={handleRemoveName}
+                          setHasAssigneeError={setHasAssigneeError}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <CsvUpload
+                          onDataParsed={(result) => {
+                            const transformedData = result.validData.map(row => ({
+                              recipient_name: row['Recipient Name'],
+                              recipient_email: row['Recipient Email'],
+                              recipient_communication_email: row['Recipient Communication Email'],
+                              assignee_name: row['Recipient Name'],
+                              assignee_email: row['Recipient Email'],
+                              relation: 'other',
+                              trees_count: parseInt(row['Number of Trees']) || 1
+                            }));
+
+                            setDedicatedNames(transformedData);
+                            setCsvHasErrors(result.hasErrors);
+                          }}
+                          maxTrees={Number(formData.numberOfTrees)}
+                        />
+                      </>
+                    )}
                   </div>
 
                   {/* Occasion Details */}
@@ -1602,12 +1506,12 @@ function GiftTrees() {
                           alert("Please fill all required fields");
                         }
                       }}
-                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError
+                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError || csvHasErrors
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
                         }`}
 
-                      disabled={hasDuplicateNames || hasAssigneeError}
+                      disabled={hasDuplicateNames || hasAssigneeError || csvHasErrors}
                     >
                       Proceed to pay
                     </button>
