@@ -31,25 +31,14 @@ const Recipients: React.FC<RecipientsProps> = ({
 }) => {
 
     const [treesCount, setTreesCount] = useState(0);
-    const [emailValidationErrors, setEmailValidationErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const cnt = dedicatedNames
             .filter(user => user.recipient_name.trim())
             .map(user => user.trees_count || 1)
             .reduce((prev, count) => prev + count, 0);
+
         setTreesCount(cnt);
-    
-        const newErrors: Record<string, string> = {};
-        dedicatedNames.forEach((user, i) => {
-            const hasRecipientEmail = user.recipient_email?.trim();
-            const hasCommEmail = (user as any).recipient_communication_email?.trim();
-            const key = `commEmail-${i}`;
-            if (!hasRecipientEmail && !hasCommEmail) {
-                newErrors[key] = "Please provide at least one email address.";
-            }
-        });
-        setEmailValidationErrors(newErrors);
     }, [dedicatedNames]);
 
     return (
@@ -66,7 +55,7 @@ const Recipients: React.FC<RecipientsProps> = ({
                     key={index}
                     index={index}
                     maxTrees={Number(formData.numberOfTrees) - dedicatedNames.filter((item, idx) => idx != index).map(user => user.trees_count).reduce((prev, curr) => prev + curr, 0)}
-                    errors={{ ...errors, ...emailValidationErrors }}
+                    errors={{ ...errors }}
                     user={user}
                     handleNameChange={handleNameChange}
                     handleRemoveName={handleRemoveName}
