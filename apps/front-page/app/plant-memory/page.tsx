@@ -4,7 +4,6 @@
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import { useState, useEffect, Suspense } from "react";
-import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import { getUniqueRequestId } from "~/utils";
 import { SummaryPaymentPage } from "./giftingSummary";
@@ -75,7 +74,6 @@ function GiftTrees() {
   const [presentationId, setPresentationId] = useState<string | null>(null);
   const [slideId, setSlideId] = useState<string | null>(null);
   const [treeLocation, setTreeLocation] = useState("");
-  const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
     recipient_name: "",
     recipient_email: "",
@@ -86,9 +84,7 @@ function GiftTrees() {
   }]);
   const [primaryMessage, setPrimaryMessage] = useState("");
   const [secondaryMessage, setSecondaryMessage] = useState("");
-  const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [razorpayPaymentId, setRazorpayPaymentId] = useState<number | null>(null);
   const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
   const [rpPaymentSuccess, setRpPaymentSuccess] = useState<boolean>(false);
@@ -101,15 +97,9 @@ function GiftTrees() {
     panNumber: "",
     comments: ""
   });
-  const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
   const [totalAmount, setTotalAmount] = useState(0);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
-  const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvPreview, setCsvPreview] = useState<DedicatedName[]>([]);
-  const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [csvHasErrors, setCsvHasErrors] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [giftRequestId, setGiftRequestId] = useState<string | null>(null);
@@ -172,17 +162,7 @@ function GiftTrees() {
     setTotalAmount(total);
     setIsAboveLimit(total > 500000);
 
-    if (total > 100000) {
-      setPaymentOption("bank-transfer");
-    }
   }, [treeLocation, formData.numberOfTrees]);
-
-  useEffect(() => {
-    if (nameEntryMethod === "csv" && csvPreview.length > 0 && csvErrors.length === 0) {
-      setDedicatedNames(csvPreview);
-      setMultipleNames(true);
-    }
-  }, [csvPreview, nameEntryMethod, csvErrors]);
 
   useEffect(() => {
     setErrors(prev => {
@@ -203,21 +183,12 @@ function GiftTrees() {
     });
     setHasDuplicateNames(duplicateFound);
   }, [dedicatedNames]);
-
-  const isEmailValidForAllRecipients = dedicatedNames.every(
-    (user) =>
-      user.recipient_email?.trim() ||
-      (user as any).recipient_communication_email?.trim()
-  );
   
 
   const handleRecipientOptionChange = (option: 'manual' | 'csv') => {
     setRecipientOption(option);
 
     if (option === 'manual') {
-      setCsvFile(null);
-      setCsvPreview([]);
-      setCsvErrors([]);
 
       const manualData = [{
         recipient_name: "",
@@ -362,13 +333,6 @@ function GiftTrees() {
         isValid = false;
       }
 
-      if (isAssigneeDifferent) {
-        if (!name.assignee_name.trim()) {
-          newErrors[`assigneeName-${index}`] = "Assignee name is required";
-          isValid = false;
-        }
-      }
-
     });
     setErrors(prev => ({ ...prev, ...newErrors }));
     return isValid;
@@ -408,12 +372,10 @@ function GiftTrees() {
       console.log(errors);
       alert("Please fix the errors in the form before submitting");
       setIsLoading(false);
-      setIsSubmitting(false);
       return;
     }
 
     setIsLoading(true);
-    setIsSubmitting(true);
     setIsProcessing(true);
 
     const uniqueRequestId = getUniqueRequestId();
@@ -435,14 +397,12 @@ function GiftTrees() {
         alert("Failed to create your request. Please try again later!");
         setIsProcessing(false);
         setIsLoading(false);
-        setIsSubmitting(false);
         return;
       }
     }
 
     if (!paymentId) {
       setIsLoading(false);
-      setIsSubmitting(false);
       setIsProcessing(false);
       return;
     }
@@ -463,7 +423,6 @@ function GiftTrees() {
       console.error("User creation error:", error);
       alert(error.message || "Failed to create user");
       setIsLoading(false);
-      setIsSubmitting(false);
       setIsProcessing(false);
       return;
     }
@@ -638,7 +597,6 @@ function GiftTrees() {
       alert(err.message || "Failed to create gift trees request");
     } finally {
       setIsLoading(false);
-      setIsSubmitting(false);
       setIsProcessing(false);
     }
   };
@@ -863,25 +821,6 @@ function GiftTrees() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const previewUrls: Record<string, string> = {};
-
-    Array.from(files).forEach(file => {
-      const key = file.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/\s+/g, '_');
-      previewUrls[key] = URL.createObjectURL(file);
-    });
-
-    setCsvPreview(prev => prev.map(recipient => {
-      const imageKey = recipient.recipient_name.toLowerCase().replace(/\s+/g, '_');
-      return previewUrls[imageKey]
-        ? { ...recipient, image: previewUrls[imageKey] }
-        : recipient;
-    }));
-  };
-
   // Add this new component before your return statement
   const SuccessDialog = () => {
     const [additionalInvolvement, setAdditionalInvolvement] = useState<string[]>([]);
@@ -929,11 +868,6 @@ function GiftTrees() {
       setPlantedBy(null);
       setCurrentStep(1);
       setTreeLocation("");
-      setMultipleNames(false);
-      setPaymentOption("razorpay");
-      setCsvFile(null);
-      setCsvPreview([]);
-      setCsvErrors([]);
       setErrors({});
       setRpPaymentSuccess(false);
       setRazorpayOrderId(null);
@@ -1286,22 +1220,10 @@ function GiftTrees() {
                             }));
 
                             setDedicatedNames(transformedData);
-                            setCsvPreview(transformedData);
                             setCsvHasErrors(result.hasErrors);
                           }}
                           maxTrees={Number(formData.numberOfTrees)}
                         />
-
-                        {csvErrors.length > 0 && (
-                          <div className="text-red-600 text-sm mt-2">
-                            Please fix all CSV errors before proceeding:
-                            <ul className="list-disc pl-5 mt-1">
-                              {csvErrors.map((error, index) => (
-                                <li key={index}>{error}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>
@@ -1584,12 +1506,12 @@ function GiftTrees() {
                           alert("Please fill all required fields");
                         }
                       }}
-                      className={`px-6 py-3 rounded-md transition-colors text-white ${!isEmailValidForAllRecipients || hasDuplicateNames || hasAssigneeError || csvHasErrors
+                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError || csvHasErrors
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
                         }`}
 
-                      disabled={!isEmailValidForAllRecipients || hasDuplicateNames || hasAssigneeError || csvHasErrors}
+                      disabled={hasDuplicateNames || hasAssigneeError || csvHasErrors}
                     >
                       Proceed to pay
                     </button>
