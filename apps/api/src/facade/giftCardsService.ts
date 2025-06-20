@@ -49,6 +49,7 @@ class GiftCardsService {
                 id: user.recipient,
                 name: user.recipient_name,
                 email: user.recipient_email,
+                communication_email: user.recipient_communication_email,
                 phone: user.recipient_phone,
             }
             const recipient = await UserRepository.upsertUserByEmailAndName(recipientUser);
@@ -58,6 +59,7 @@ class GiftCardsService {
                 id: user.assignee,
                 name: user.assignee_name,
                 email: user.assignee_email,
+                communication_email: user.assignee_communication_email,
                 phone: user.assignee_phone,
             }
             const assignee = await UserRepository.upsertUserByEmailAndName(assigneeUser);
