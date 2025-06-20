@@ -54,7 +54,6 @@ const Recipients: React.FC<RecipientsProps> = ({
 
     return (
         <div className="space-y-6" id="gift-recipients">
-          {/*  <h3 className="text-2xl font-semibold">Who would you like to honour with this living tribute?</h3> */}
 
             {errors["totalTrees"] && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">

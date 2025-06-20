@@ -3,7 +3,6 @@
 
 import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
-import labels from "~/assets/labels.json";
 import { useState, useEffect, Suspense } from "react";
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
@@ -71,16 +70,7 @@ function GiftTrees() {
   const [plantedBy, setPlantedBy] = useState<string | null>(null); // New state for planted by
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [recipientOption, setRecipientOption] = useState<'manual' | 'csv'>('manual');
-  const [manualDedicatedNames, setManualDedicatedNames] = useState<DedicatedName[]>([{
-    recipient_name: "",
-    recipient_email: "",
-    assignee_name: "",
-    assignee_email: "",
-    relation: "",
-    trees_count: 1
-  }]);
 
-  const [csvDedicatedNames, setCsvDedicatedNames] = useState<DedicatedName[]>([]);
   const [treeCountValid, setTreeCountValid] = useState(false);
   const [presentationId, setPresentationId] = useState<string | null>(null);
   const [slideId, setSlideId] = useState<string | null>(null);
@@ -237,18 +227,8 @@ function GiftTrees() {
         relation: "",
         trees_count: 1
       }];
-      setManualDedicatedNames(manualData);
       setDedicatedNames(manualData);
     } else {
-      const emptyManual = [{
-        recipient_name: "",
-        recipient_email: "",
-        assignee_name: "",
-        assignee_email: "",
-        relation: "",
-        trees_count: 1
-      }];
-      setManualDedicatedNames(emptyManual);
       setDedicatedNames([]);
     }
   };
@@ -393,127 +373,6 @@ function GiftTrees() {
     setErrors(prev => ({ ...prev, ...newErrors }));
     return isValid;
   };
-
-  // Updated CSV handling functions
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setCsvFile(files[0]);
-    setCsvErrors([]);
-    setCsvPreview([]);
-    setCurrentPage(0);
-
-    // Handle CSV file
-    Papa.parse(files[0], {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => {
-        // Map the CSV headers to our internal field names
-        const headerMap: Record<string, string> = {
-          'Recipient Name': 'recipient_name',
-          'Recipient Email': 'recipient_email',
-          'Recipient Communication Email (optional)': 'recipient_communication_email',
-          'Recipient Phone (optional)': 'recipient_phone',
-          'Number of trees to assign': 'trees_count',
-          'Assignee Name': 'assignee_name',
-          'Assignee Email (optional)': 'assignee_email',
-          'Assignee Communication Email (optional)': 'assignee_communication_email',
-          'Assignee Phone (optional)': 'assignee_phone',
-          'Relation with the person': 'relation',
-          'Image Name (optional)': 'image'
-        };
-        return headerMap[header] || header.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '');
-      },
-      complete: (results) => {
-        const data = results.data as DedicatedName[];
-        const errors: string[] = [];
-        const validRecipients: DedicatedName[] = [];
-
-        data.forEach((row, index) => {
-          // Validate required fields
-          if (!row.recipient_name) {
-            errors.push(`Row ${index + 1}: Recipient Name is required`);
-            return;
-          }
-
-          // Validate email formats if provided
-          if (row.recipient_email && !validationPatterns.email.test(String(row.recipient_email))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Email format`);
-          }
-          if (row.assignee_email && !validationPatterns.email.test(String(row.assignee_email))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Email format`);
-          }
-
-          // Validate phone numbers if provided
-          if (row.recipient_phone && !validationPatterns.phone.test(String(row.recipient_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Recipient Phone number (10-15 digits required)`);
-          }
-          if (row.assignee_phone && !validationPatterns.phone.test(String(row.assignee_phone))) {
-            errors.push(`Row ${index + 1}: Invalid Assignee Phone number (10-15 digits required)`);
-          }
-
-          // Validate tree count
-          if (row.trees_count && isNaN(parseInt(row.trees_count.toString()))) {
-            errors.push(`Row ${index + 1}: Tree count must be a number`);
-          }
-
-          // Create valid recipient object
-          validRecipients.push({
-            recipient_name: String(row.recipient_name),
-            recipient_email: row.recipient_email ? String(row.recipient_email) : row.recipient_communication_email ? String(row.recipient_communication_email) : row.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
-            recipient_phone: row.recipient_phone ? String(row.recipient_phone) : '',
-            trees_count: row.trees_count ? parseInt(String(row.trees_count)) : 1,
-            image: row.image ? String(row.image) : undefined,
-            assignee_name: row.assignee_name ? String(row.assignee_name) : String(row.recipient_name),
-            assignee_email: row.assignee_email ? String(row.assignee_email) : row.assignee_communication_email ? String(row.assignee_communication_email) : row.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
-            assignee_phone: row.assignee_phone ? String(row.assignee_phone) : '',
-            relation: row.relation ? String(row.relation) : 'other'
-          });
-        });
-
-        setCsvErrors(errors);
-        setCsvPreview(validRecipients);
-      },
-      error: (error) => {
-        setCsvErrors([`Error parsing CSV: ${error.message}`]);
-      }
-    });
-
-    // Handle image files if any
-    if (files.length > 1) {
-      const imageFiles = Array.from(files).slice(1);
-      // Match images to CSV rows (example: by filename convention)
-      const updatedPreview = [...csvPreview];
-      imageFiles.forEach((file) => {
-        const match = file.name.match(/(\d+)/); // Look for numbers in filename
-        if (match) {
-          const rowIndex = parseInt(match[0]) - 1;
-          if (rowIndex >= 0 && rowIndex < updatedPreview.length) {
-            updatedPreview[rowIndex].image = URL.createObjectURL(file);
-          }
-        }
-      });
-      setCsvPreview(updatedPreview);
-    }
-  };
-
-  const downloadSampleCsv = () => {
-    const url = "https://docs.google.com/spreadsheets/d/1DDM5nyrvP9YZ09B60cwWICa_AvbgThUx-yeDVzT4Kw4/gviz/tq?tqx=out:csv&sheet=Sheet1";
-    const fileName = "UserDetails.csv";  // Set your desired file name here
-
-    fetch(url)
-      .then(response => response.blob())
-      .then(blob => {
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch(error => console.error("Download failed:", error));
-  }
 
   // Existing form submission (unchanged)
   const handleSubmit = async () => {
