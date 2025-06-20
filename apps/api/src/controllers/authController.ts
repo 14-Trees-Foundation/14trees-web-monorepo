@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status';
-import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import { auth, OAuth2Client, TokenPayload } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { UserRepository } from '../repo/userRepo';
@@ -62,7 +62,8 @@ export const signin = async (req: CustomRequest, res: Response) => {
             res.status(201).json({
                 user: user.results[0],
                 token: jwtToken,
-                token_id: authToken.token_id
+                token_id: authToken.token_id,
+                expires_at: new Date(authToken.expires_at).getTime(),
             });
         } else {
             throw new Error("email is empty or is undefined")
@@ -160,6 +161,7 @@ export const handleCorporateGoogleLogin = async (req: Request, res: Response) =>
             path: view.path,
             name: view.name,
             token: jwtToken,
+            expires_at: new Date(authToken.expires_at).getTime(),
             token_id: authToken.token_id
         });
 
@@ -212,7 +214,8 @@ export const validateTokenId = async (req: Request, res: Response) => {
         return res.status(status.success).json({
             success: true,
             user: userResponse,
-            token: authToken.token
+            token: authToken.token,
+            expires_at: new Date(authToken.expires_at).getTime()
         });
     } catch (error: any) {
         console.error("[ERROR] ValidateTokenId:", error);
