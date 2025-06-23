@@ -973,7 +973,32 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Donation not found' });
         }
 
+        const { sponsorMailSent, allRecipientsMailed } = await DonationService.getDonationMailStatus(donation_id);
+
+        const alreadySent: string[] = [];
+
+        if (email_sponsor && sponsorMailSent) {
+            alreadySent.push("Sponsor");
+        }
+
+        if (email_recipient && allRecipientsMailed) {
+            alreadySent.push("Recipient");
+        }
+
+        if (
+            (email_sponsor && sponsorMailSent) &&
+            (email_recipient && allRecipientsMailed) &&
+            !email_assignee
+        ) {
+            const message =
+                alreadySent.length === 2
+                    ? `${alreadySent[0]} and ${alreadySent[1]} mail already sent.`
+                    : `${alreadySent[0]} mail already sent.`;
+
+            return res.status(200).json({ message });
+        }
         const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(donation, event_type);
+
         if (treeData.length === 0) {
             return res.status(400).json({ error: 'No trees found for this donation' });
         }
@@ -981,12 +1006,12 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         res.status(200).json();
 
         // Send email to sponsor if enabled
-        if (!donation.mail_status?.includes(DonationMailStatus_DashboardsSent) && email_sponsor) {
+        if (email_sponsor && !sponsorMailSent) {
             await DonationService.sendDashboardEmailToSponsor(donation, commonEmailData, treeData, event_type, test_mails, sponsor_cc_mails);
         }
 
         // Send email to recipient if enabled
-        if (email_recipient) {
+        if (email_recipient && !allRecipientsMailed) {
             await DonationService.sendDashboardEmailsToRecipients(donation, commonEmailData, treeData, event_type, test_mails, recipient_cc_mails);
         }
 
