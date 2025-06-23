@@ -239,6 +239,53 @@ class GiftCardsService {
         return presentationId;
     }
 
+    public static async getMailSentStatus(giftCardRequestId: number): Promise<{ sponsorMailSent: boolean, allRecipientsMailed: boolean, allAssigneesMailed: boolean, hasRecipients: boolean }> {
+        try {
+            const response = await GiftCardsRepository.getGiftCardRequests(0, 1, [
+                { columnField: "id", operatorValue: "equals", value: giftCardRequestId }
+            ]);
+    
+            if (response.results.length !== 1) {
+                throw new Error("Gift card request not found");
+            }
+    
+            const request = response.results[0];
+
+            const users = await GiftCardsRepository.getGiftRequestUsers(giftCardRequestId);
+            const hasRecipients = users.length > 0;
+    
+            let allRecipientsMailed = true;
+            let allAssigneesMailed = true;
+    
+            users.forEach(user => {
+                const isSame = user.recipient === user.assignee;
+                if (!user.mail_sent) {
+                    allRecipientsMailed = false;
+                }
+                if (isSame) {
+                    if (!user.mail_sent) {
+                        allAssigneesMailed = false;
+                    }
+                } else {
+                    if (!user.mail_sent_assignee) {
+                        allAssigneesMailed = false;
+                    }
+                }
+            });                     
+    
+            return {
+                sponsorMailSent: request.mail_sent || false,
+                allRecipientsMailed,
+                allAssigneesMailed,
+                hasRecipients,
+            };
+    
+        } catch (error) {
+            console.error("[ERROR] GiftCardService::getMailSentStatus", error);
+            throw new Error("Failed to check email statuses");
+        }
+    }
+    
     public static async addGiftRequestToSpreadsheet(giftRequest: GiftCardRequest) {
         const sheet = new GoogleSpreadsheet();
 
