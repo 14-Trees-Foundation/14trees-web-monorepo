@@ -2312,7 +2312,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         while (tries > 0) {
             try {
                 const statusMessage = await sendDashboardMail(
-                    templatesMap[0],
+                    templatesMap[templateType],
                     emailData,
                     mailIds,
                     ccMailIds,
