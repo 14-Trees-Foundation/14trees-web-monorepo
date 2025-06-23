@@ -2350,11 +2350,35 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
         }
 
         const giftCardRequest: any = resp.results[0];
+        const { sponsorMailSent, allRecipientsMailed, allAssigneesMailed } = await GiftCardsService.getMailSentStatus(giftCardRequestId);        
         const giftCards: any[] = await GiftCardsRepository.getGiftCardUserAndTreeDetails(parseInt(giftCardRequestId));
 
-        if (emailSponsor) sendMailsToSponsors(giftCardRequest, giftCards, eventType, attach_card, sponsorCC, testMails);
-        if (emailReceiver) await sendMailsToReceivers(giftCardRequest, giftCards, eventType, attach_card, receiverCC, testMails);
-        if (emailAssignee) await sendMailsToAssigneeReceivers(giftCardRequest, giftCards, eventType, attach_card, receiverCC, testMails);
+        if (emailSponsor && sponsorMailSent) {
+            res.status(status.success).json({ message: 'Sponsor mail already sent.' });
+            return;
+        }
+
+        if (emailReceiver && allRecipientsMailed) {
+            res.status(status.success).json({ message: 'Recipient mail already sent.' });
+            return;
+        }
+
+        if (emailAssignee && allAssigneesMailed) {
+            res.status(status.success).json({ message: 'Assignee mail already sent.' });
+            return;
+        }
+
+        if (emailSponsor && !sponsorMailSent) {
+            sendMailsToSponsors(giftCardRequest, giftCards, eventType, attach_card, sponsorCC, testMails);
+        }
+
+        if (emailReceiver && !allRecipientsMailed) {
+            sendMailsToReceivers(giftCardRequest, giftCards, eventType, attach_card, receiverCC, testMails);
+        }
+
+        if (emailAssignee && !allAssigneesMailed) {
+            sendMailsToAssigneeReceivers(giftCardRequest, giftCards, eventType, attach_card, receiverCC, testMails);
+        }
 
         res.status(status.success).send();
     } catch (error: any) {
