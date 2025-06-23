@@ -1,6 +1,6 @@
 import { LandCategory, SortOrder } from "../models/common";
 import { FilterItem, PaginatedResponse } from "../models/pagination"
-import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_DashboardsSent, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_UserSubmitted } from "../models/donation";
+import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_DashboardsSent, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_PendingPayment } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
@@ -115,7 +115,7 @@ export class DonationService {
             created_by: data.created_by || sponsorUser.id,
             contribution_options: contribution_options || null,
             comments: comments || null,
-            status: status || DonationStatus_UserSubmitted,
+            status: status || DonationStatus_PendingPayment,
             tags: tags || null,
             rfr_id: rfr_id,
             group_id: data.group_id || null,
