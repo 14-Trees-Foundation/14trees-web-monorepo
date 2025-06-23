@@ -183,8 +183,8 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
 
             // Calculate donation receipt number
             const currentDate = new Date();
-            const financialYear = currentDate.getMonth() < 3 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
-            const receiptNumber = `${financialYear.toString().slice(2)}-${donation.id.toString().padStart(5, '0')}`;
+            const FY = currentDate.getMonth() < 3 ? currentDate.getFullYear() : currentDate.getFullYear() + 1;
+            const receiptNumber = FY + "/" + donation.id;
 
             const payment: any = await PaymentRepository.getPayment(donation.payment_id);
             if (payment && payment.payment_history) {

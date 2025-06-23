@@ -195,7 +195,7 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   @Column({
     type: DataType.ENUM('PendingPayment','Paid', 'OrderFulfilled'),
     allowNull: false,
-    defaultValue: DonationStatus_Paid,
+    defaultValue: DonationStatus_PendingPayment,
   })
   status!: DonationStatus;
 
