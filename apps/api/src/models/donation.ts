@@ -11,8 +11,9 @@ export const ContributionOption_CSR: ContributionOption = 'CSR';
 export const ContributionOption_VOLUNTEER: ContributionOption = 'Volunteer';
 export const ContributionOption_SHARE: ContributionOption = 'Share';
 
-export type DonationStatus = 'UserSubmitted' | 'OrderFulfilled';
-export const DonationStatus_UserSubmitted: DonationStatus = 'UserSubmitted';
+export type DonationStatus = 'PendingPayment' | 'Paid' | 'OrderFulfilled';
+export const DonationStatus_PendingPayment: DonationStatus = 'PendingPayment';
+export const DonationStatus_Paid: DonationStatus = 'Paid';
 export const DonationStatus_OrderFulfilled: DonationStatus = 'OrderFulfilled';
 
 export type DonationMailStatus = 'AckSent' | 'DashboardsSent' | 'BackOffice' | 'Accounts' | 'Volunteer' | 'CSR';
@@ -192,9 +193,9 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
   visit_date!: Date | null;
 
   @Column({
-    type: DataType.ENUM('UserSubmitted', 'OrderFulfilled'),
+    type: DataType.ENUM('PendingPayment','Paid', 'OrderFulfilled'),
     allowNull: false,
-    defaultValue: DonationStatus_UserSubmitted,
+    defaultValue: DonationStatus_PendingPayment,
   })
   status!: DonationStatus;
 
