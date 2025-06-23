@@ -535,7 +535,7 @@ function Donation() {
         category: treeLocation === "adopt" ? "Foundation" : "Public",
         donation_type: treeLocation === "adopt" ? "adopt" : "donate",
         donation_method: treeLocation === "donate" ? donationMethod : undefined,
-        payment_id: razorpayPaymentId,
+        payment_id: paymentId,
         contribution_options: [],
         comments: formData.comments,
         // Always include the calculated amount
