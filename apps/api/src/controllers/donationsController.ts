@@ -190,7 +190,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
-                    if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+                    if (payment.status !== 'payment_not_received') { amountReceived += Number(payment.amount)}
                 });
             }
 
@@ -198,7 +198,8 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                 const razorpayService = new RazorpayService();
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
-                    amountReceived += Number(item.amount) / 100;
+                    const amount = Number(item.amount) / 100;
+                    amountReceived += amount;
                     if (item.status === 'captured') {
                         const data: any = item.acquirer_data;
                         if (data) {
@@ -214,18 +215,21 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                 });
             }
 
-            if (amountReceived > 0) {
+            const numericAmountReceived = Number(amountReceived);
+            const numericAmountDonated = Number(donation.amount_donated);
+
+            if (numericAmountReceived > 0) {
                 donationDate = new Date();
             }
 
-            if (amountReceived === donation.amount_donated) {
+            if (numericAmountReceived === numericAmountDonated) {
                 sponsorshipType = DonationSponsorshipType_DonationReceived;
                 donationStatus = DonationStatus_Paid;
             }
 
             await DonationRepository.updateDonations({
                 donation_date: donationDate,
-                amount_received: amountReceived,
+                amount_received: numericAmountReceived,
                 sponsorship_type: sponsorshipType,
                 status: donationStatus,
                 donation_receipt_number: receiptNumber,
