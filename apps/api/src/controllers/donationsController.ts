@@ -11,7 +11,7 @@ import { SortOrder } from "../models/common";
 import { EmailTemplateRepository } from "../repo/emailTemplatesRepo";
 import { sendDashboardMail } from "../services/gmail/gmail";
 import { TemplateType } from "../models/email_template";
-import { Donation, DonationMailStatus_DashboardsSent, DonationSponsorshipType, DonationSponsorshipType_DonationReceived, DonationSponsorshipType_Pledged, DonationSponsorshipType_Unverified, DonationStatus, DonationStatus_OrderFulfilled, DonationStatus_Paid, DonationStatus_PendingPayment } from '../models/donation';
+import { Donation, DonationMailStatus_DashboardsSent, DonationPrsStatus_Completed, DonationPrsStatus_PendingAssignment, DonationPrsStatus_PendingReservation, DonationSponsorshipType, DonationSponsorshipType_DonationReceived, DonationSponsorshipType_Pledged, DonationSponsorshipType_Unverified, DonationStatus, DonationStatus_OrderFulfilled, DonationStatus_Paid, DonationStatus_PendingPayment } from '../models/donation';
 import { Op } from 'sequelize';
 import RazorpayService from "../services/razorpay/razorpay";
 import { PaymentRepository } from "../repo/paymentsRepo";
@@ -602,7 +602,15 @@ export const reserveTreesForDonation = async (req: Request, res: Response) => {
             await DonationService.reserveSelectedTrees(donation_id, tree_ids);
         }
 
-        const donation = await DonationRepository.getDonation(donation_id);
+        let donation = await DonationRepository.getDonation(donation_id);
+        if (donation.trees_count && donation.donation_type === 'donate') {
+            await DonationRepository.updateDonation(donation.id, { 
+                prs_status: donation.trees_count === Number((donation as any).booked) 
+                    ? DonationPrsStatus_PendingAssignment 
+                    : DonationPrsStatus_PendingReservation
+            });
+            donation = await DonationRepository.getDonation(donation_id);
+        }
         res.status(status.success).send(donation);
 
         try {
@@ -641,7 +649,15 @@ export const unreserveTreesForDonation = async (req: Request, res: Response) => 
             await DonationService.unreserveSelectedTrees(donation_id, tree_ids);
         }
 
-        const donation = await DonationRepository.getDonation(donation_id);
+        let donation = await DonationRepository.getDonation(donation_id);
+        if (donation.trees_count && donation.donation_type === 'donate') {
+            await DonationRepository.updateDonation(donation.id, { 
+                prs_status: donation.trees_count === Number((donation as any).booked) 
+                    ? DonationPrsStatus_PendingAssignment 
+                    : DonationPrsStatus_PendingReservation
+            });
+            donation = await DonationRepository.getDonation(donation_id);
+        }
         return res.status(status.success).send(donation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unreserveTreesForDonation", error);
@@ -776,9 +792,17 @@ export const assignTrees = async (req: Request, res: Response) => {
         const updatedDonation: any = await DonationRepository.getDonation(donation_id);
 
         if (Number(updatedDonation.assigned) === updatedDonation.trees_count) {
-            await DonationRepository.updateDonation(updatedDonation.id, { status: DonationStatus_OrderFulfilled });
+            await DonationRepository.updateDonation(updatedDonation.id, { 
+                status: DonationStatus_OrderFulfilled, 
+                prs_status: updatedDonation.donation_type === 'donate' ? DonationPrsStatus_Completed : null,
+            });
         } else {
-            await DonationRepository.updateDonation(updatedDonation.id, { status: DonationStatus_Paid });
+            await DonationRepository.updateDonation(updatedDonation.id, { 
+                status: DonationStatus_Paid,
+                prs_status: ( updatedDonation.donation_type === 'donate' && updatedDonation.trees_count === Number((updatedDonation as any).booked) )
+                    ? DonationPrsStatus_PendingAssignment 
+                    : DonationPrsStatus_PendingReservation
+            });
         }
 
         const finalDonation = await DonationRepository.getDonation(donation_id);
@@ -823,7 +847,22 @@ export const unassignTrees = async (req: Request, res: Response) => {
             await DonationService.unassignTrees(donation_id);
         }
 
-        const updatedDonation = await DonationRepository.getDonation(donation_id);
+        let donation: any = await DonationRepository.getDonation(donation_id);
+        if (Number(donation.assigned) === donation.trees_count) {
+            await DonationRepository.updateDonation(donation.id, { 
+                status: DonationStatus_OrderFulfilled, 
+                prs_status: donation.donation_type === 'donate' ? DonationPrsStatus_Completed : null,
+            });
+        } else {
+            await DonationRepository.updateDonation(donation.id, { 
+                status: DonationStatus_Paid,
+                prs_status: ( donation.donation_type === 'donate' && donation.trees_count === Number((donation as any).booked) )
+                    ? DonationPrsStatus_PendingAssignment 
+                    : DonationPrsStatus_PendingReservation
+            });
+        }
+
+        const updatedDonation: any = await DonationRepository.getDonation(donation_id);
         return res.status(status.success).send(updatedDonation);
     } catch (error: any) {
         console.log("[ERROR]", "donationsController::unassignTrees", error);
@@ -1178,10 +1217,24 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
         await DonationService.reserveTreesForDonation(donation);
         await DonationService.assignTreesForDonation(donation);
 
-        const updatedDonation = await DonationRepository.getDonation(donation_id);
-        const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(updatedDonation, 'default');
+        const updatedDonation: any = await DonationRepository.getDonation(donation_id);
+        if (Number(updatedDonation.assigned) === updatedDonation.trees_count) {
+            await DonationRepository.updateDonation(updatedDonation.id, { 
+                status: DonationStatus_OrderFulfilled, 
+                prs_status: updatedDonation.donation_type === 'donate' ? DonationPrsStatus_Completed : null,
+            });
+        } else {
+            await DonationRepository.updateDonation(updatedDonation.id, { 
+                status: DonationStatus_Paid,
+                prs_status: ( updatedDonation.donation_type === 'donate' && updatedDonation.trees_count === Number((updatedDonation as any).booked) )
+                    ? DonationPrsStatus_PendingAssignment 
+                    : DonationPrsStatus_PendingReservation
+            });
+        }
+        const finalDonation = await DonationRepository.getDonation(donation_id);
+        const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(finalDonation, 'default');
 
-        res.status(status.success).send(updatedDonation);
+        res.status(status.success).send(finalDonation);
 
         try {
             const userId = req.headers['x-user-id'] as string;
@@ -1194,8 +1247,8 @@ export const autoProcessDonationRequest = async (req: Request, res: Response) =>
 
         if (treeData.length > 0) {
             try {
-                await DonationService.sendDashboardEmailToSponsor(updatedDonation, commonEmailData, treeData, 'default');
-                await DonationService.sendDashboardEmailsToRecipients(updatedDonation, commonEmailData, treeData, 'default');
+                await DonationService.sendDashboardEmailToSponsor(finalDonation, commonEmailData, treeData, 'default');
+                await DonationService.sendDashboardEmailsToRecipients(finalDonation, commonEmailData, treeData, 'default');
             } catch (error) {
                 console.log("[ERROR]", "donationsController::autoProcessDonationRequest", error);
             }
