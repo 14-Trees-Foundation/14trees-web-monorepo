@@ -36,15 +36,17 @@ export class DonationRepository {
                     u.name as user_name,               
                     u.email as user_email,
                     u.phone as user_phone,
+                    du.mail_sent as mail_sent,
                     pu.name as processed_by_name,    
                     count(t.mapped_to_user) as booked,
                     count(t.assigned_to) as assigned
                 FROM "14trees_2".donations d
                 LEFT JOIN "14trees_2".users u ON u.id = d.user_id          
+                LEFT JOIN "14trees_2".donation_users du ON du.donation_id = d.id       
                 LEFT JOIN "14trees_2".users pu ON pu.id = d.processed_by
                 LEFT JOIN "14trees_2".trees t ON t.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-                GROUP BY d.id, u.id, pu.id           
+                GROUP BY d.id, u.id, pu.id, du.mail_sent           
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
@@ -53,6 +55,7 @@ export class DonationRepository {
                 FROM "14trees_2".donations d
                 LEFT JOIN "14trees_2".users u ON u.id = d.user_id
                 LEFT JOIN "14trees_2".users pu ON pu.id = d.processed_by
+                LEFT JOIN "14trees_2".donation_users du ON du.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
     
