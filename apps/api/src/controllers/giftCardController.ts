@@ -2391,59 +2391,41 @@ export const sendEmailForGiftCardRequest = async (req: Request, res: Response) =
 export const generateFundRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
     if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
-        res.status(status.bad).json({
+        return res.status(status.bad).json({
             message: 'Please provide valid input details!'
-        })
+        });
     }
 
     try {
-        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }])
-        if (resp.results.length !== 1) {
-            res.status(status.bad).json({
-                message: 'Please provide valid input details!'
-            })
-            return;
-        }
-
-        const giftCardRequest = resp.results[0];
-        if (!giftCardRequest.group_id) {
-            res.status(status.bad).json({
-                message: 'Fund request can be generated only for corporate requests!'
-            })
-            return;
-        }
-        const group = await GroupRepository.getGroup(giftCardRequest.group_id);
-        if (!group) {
-            res.status(status.bad).json({
-                message: 'Group not found!'
-            })
-            return;
-        }
-
-        const perTreeCost =
-            giftCardRequest.category === 'Public'
-                ? giftCardRequest.request_type === 'Normal Assignment' || giftCardRequest.request_type === 'Visit'
-                    ? 1500
-                    : 2000
-                : 3000
-
-        const filename = `${group.name} [Req. No: ${giftCardRequest.id}] ${new Date().toDateString()}.pdf`;
-        const totalAmount = giftCardRequest.no_of_cards * (perTreeCost);
-        let data: any = {
-            address: group.address?.split('\n').join('<br/>'),
-            date: moment(new Date()).format('MMMM DD, YYYY'),
-            no_of_trees: giftCardRequest.no_of_cards,
-            per_tree_cost: perTreeCost,
-            total_amount: formatNumber(totalAmount),
-            total_amount_words: "Rupees " + numberToWords(totalAmount).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + " only",
-        }
-
-        const base64Data = await generateFundRequestPdf(data);
-        const s3Resp = await uploadBase64DataToS3(filename, 'gift_cards', base64Data, { 'Content-Type': 'application/pdf' }, giftCardRequest.request_id);
-        res.status(status.success).send({ url: s3Resp.location });
+        const result = await GiftCardsService.generateFundRequestPdf(parseInt(giftCardRequestId));
+        return res.status(status.success).send({ url: result.pdfUrl.location });
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::generateFundRequest", error);
-        res.status(status.bad).send({ message: 'Something went wrong. Please try again later.' });
+        return res.status(status.bad).send({ 
+            message: error.message || 'Something went wrong. Please try again later.' 
+        });
+    }
+}
+
+export const sendFundRequest = async (req: Request, res: Response) => {
+    const { gift_card_request_id: giftCardRequestId } = req.params;
+    if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
+        return res.status(status.bad).json({
+            message: 'Please provide valid input details!'
+        });
+    }
+
+    try {
+        const result = await GiftCardsService.sendFundRequestEmail(parseInt(giftCardRequestId));
+        return res.status(status.success).json({
+            message: result.message,
+            pdf_url: result.pdfUrl
+        });
+    } catch (error: any) {
+        console.log("[ERROR]", "GiftCardController::sendFundRequest", error);
+        return res.status(status.error).send({ 
+            message: error.message || 'Something went wrong. Please try again later.' 
+        });
     }
 }
 
