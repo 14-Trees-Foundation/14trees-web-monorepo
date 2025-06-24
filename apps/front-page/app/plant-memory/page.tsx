@@ -126,6 +126,13 @@ function GiftTrees() {
   };
 
   useEffect(() => {
+    if (recipientOption === 'csv') {
+      const totalTrees = dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 0), 0);
+      setCsvHasErrors(totalTrees > Number(formData.numberOfTrees));
+    }
+  }, [formData.numberOfTrees, recipientOption]);
+
+  useEffect(() => {
     setWindowWidth(window.innerWidth);
   }, []);
 
@@ -183,7 +190,7 @@ function GiftTrees() {
     });
     setHasDuplicateNames(duplicateFound);
   }, [dedicatedNames]);
-  
+
 
   const handleRecipientOptionChange = (option: 'manual' | 'csv') => {
     setRecipientOption(option);
@@ -843,6 +850,7 @@ function GiftTrees() {
         panNumber: "",
         comments: ""
       });
+      setRecipientOption('manual');
       setDedicatedNames([{
         recipient_name: "",
         recipient_email: "",
@@ -1199,18 +1207,30 @@ function GiftTrees() {
                           onDataParsed={(result) => {
                             const transformedData = result.validData.map(row => ({
                               recipient_name: row['Recipient Name'],
-                              recipient_email: row['Recipient Email'],
-                              recipient_communication_email: row['Recipient Communication Email'],
+                              recipient_email: row['Recipient Email'] || '',
+                              recipient_communication_email: row['Recipient Communication Email'] || '',
                               assignee_name: row['Recipient Name'],
-                              assignee_email: row['Recipient Email'],
+                              assignee_email: row['Recipient Email'] || '',
                               relation: 'other',
                               trees_count: parseInt(row['Number of Trees']) || 1
                             }));
 
                             setDedicatedNames(transformedData);
-                            setCsvHasErrors(result.hasErrors);
+                            setCsvHasErrors(
+                              result.hasErrors || 
+                              transformedData.reduce((sum, name) => sum + (name.trees_count || 0), 0) > 
+                                Number(formData.numberOfTrees)
+                            );
                           }}
                           maxTrees={Number(formData.numberOfTrees)}
+                          initialData={recipientOption === 'csv' 
+                            ? dedicatedNames.map(name => ({
+                                'Recipient Name': name.recipient_name,
+                                'Recipient Email': name.recipient_email?.toString() || '',
+                                'Recipient Communication Email': name.recipient_communication_email?.toString() || '',
+                                'Number of Trees': name.trees_count.toString()
+                              }))
+                            : []}
                         />
                       </>
                     )}
@@ -1494,12 +1514,16 @@ function GiftTrees() {
                           alert("Please fill all required fields");
                         }
                       }}
-                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError || csvHasErrors
+                      className={`px-6 py-3 rounded-md transition-colors text-white ${hasDuplicateNames || hasAssigneeError || (recipientOption === 'csv' && csvHasErrors) ||
+                        dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 0), 0) !== 
+                        Number(formData.numberOfTrees)
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
                         }`}
 
-                      disabled={hasDuplicateNames || hasAssigneeError || csvHasErrors}
+                      disabled={hasDuplicateNames || hasAssigneeError || (recipientOption === 'csv' && csvHasErrors) ||
+                        dedicatedNames.reduce((sum, name) => sum + (name.trees_count || 0), 0) !== 
+                        Number(formData.numberOfTrees)}
                     >
                       Proceed to pay
                     </button>
