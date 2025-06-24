@@ -245,11 +245,6 @@ function GiftTrees() {
     }
 
     switch (name) {
-      case "fullName":
-        if (!validationPatterns.name.test(value)) {
-          error = "Please enter a valid name (letters and spaces only)";
-        }
-        break;
       case "email":
         if (!validationPatterns.email.test(value)) {
           error = "Please enter a valid email address";
@@ -322,9 +317,6 @@ function GiftTrees() {
       }
       if (!name.recipient_name.trim()) {
         newErrors[`dedicatedName-${index}`] = "Name is required";
-        isValid = false;
-      } else if (!validationPatterns.name.test(name.recipient_name)) {
-        newErrors[`dedicatedName-${index}`] = "Please enter a valid name";
         isValid = false;
       }
 
@@ -641,9 +633,7 @@ function GiftTrees() {
     });
 
     if (field === "recipient_name" && value) {
-      const error = !validationPatterns.name.test(value.toString())
-        ? "Please enter a valid name"
-        : "";
+      const error = "";
       setErrors(prev => ({ ...prev, [`dedicatedName-${index}`]: error }));
     } else if (field === "recipient_email" && value) {
       const error = !validationPatterns.email.test(value.toString())
@@ -681,9 +671,7 @@ function GiftTrees() {
 
       setErrors(prev => ({ ...prev, [`dedicatedTreeCount-${index}`]: error }));
     } else if (field === "assignee_name" && value) {
-      const error = !validationPatterns.name.test(value.toString())
-        ? "Please enter a valid name"
-        : "";
+      const error = "";
       setErrors(prev => ({ ...prev, [`assigneeName-${index}`]: error }));
     } else if (field === "recipient_email" && value) {
       const error = !validationPatterns.email.test(value.toString())
