@@ -294,6 +294,7 @@ Jane Smith,jane@example.com,,5`;
             </div>
             <div className="flex space-x-2">
               <button
+                type='button'
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'
@@ -305,6 +306,7 @@ Jane Smith,jane@example.com,,5`;
                 Page {currentPage} of {totalPages}
               </span>
               <button
+                type='button'
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
                 className={`px-3 py-1 rounded-md ${currentPage === totalPages
