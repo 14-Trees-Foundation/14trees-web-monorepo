@@ -1152,6 +1152,34 @@ export class DonationService {
         }
     }
 
+    public static async getDonationMailStatus(donationId: number): Promise<{ sponsorMailSent: boolean, allRecipientsMailed: boolean, hasRecipients: boolean  }> {
+        try {
+       
+          const donation = await DonationRepository.getDonation(donationId);
+          if (!donation) throw new Error("Donation not found");
+      
+          
+          const donationUsers = await DonationUserRepository.getAllDonationUsers(donationId);
+          const hasRecipients = donationUsers.length > 0;
+      
+         
+          let allRecipientsMailed = true;
+      
+          donationUsers.forEach(user => {
+            if (!user.mail_sent) allRecipientsMailed = false;
+          });
+      
+          return {
+            sponsorMailSent: donation.mail_status?.includes('DashboardsSent') ?? false,
+            allRecipientsMailed: hasRecipients ? allRecipientsMailed : false,
+            hasRecipients
+          };
+        } catch (error) {
+          console.error("[ERROR] DonationService::getDonationMailStatus", error);
+          throw new Error("Failed to fetch donation email status");
+        }
+    }
+
     public static async sendDashboardEmailToSponsor(donation: Donation, commonEmailData: any, treeData: any[], event_type: string, test_mails?: string[], sponsor_cc_mails?: string[]) {
 
         // Get user details

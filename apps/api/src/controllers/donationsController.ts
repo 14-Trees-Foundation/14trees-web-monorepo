@@ -190,7 +190,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
-                    if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+                    if (payment.status !== 'payment_not_received') { amountReceived += Number(payment.amount)}
                 });
             }
 
@@ -198,7 +198,8 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                 const razorpayService = new RazorpayService();
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
-                    amountReceived += Number(item.amount) / 100;
+                    const amount = Number(item.amount) / 100;
+                    amountReceived += amount;
                     if (item.status === 'captured') {
                         const data: any = item.acquirer_data;
                         if (data) {
@@ -214,18 +215,21 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                 });
             }
 
-            if (amountReceived > 0) {
+            const numericAmountReceived = Number(amountReceived);
+            const numericAmountDonated = Number(donation.amount_donated);
+
+            if (numericAmountReceived > 0) {
                 donationDate = new Date();
             }
 
-            if (amountReceived === donation.amount_donated) {
+            if (numericAmountReceived === numericAmountDonated) {
                 sponsorshipType = DonationSponsorshipType_DonationReceived;
                 donationStatus = DonationStatus_Paid;
             }
 
             await DonationRepository.updateDonations({
                 donation_date: donationDate,
-                amount_received: amountReceived,
+                amount_received: numericAmountReceived,
                 sponsorship_type: sponsorshipType,
                 status: donationStatus,
                 donation_receipt_number: receiptNumber,
@@ -973,7 +977,32 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Donation not found' });
         }
 
+        const { sponsorMailSent, allRecipientsMailed } = await DonationService.getDonationMailStatus(donation_id);
+
+        const alreadySent: string[] = [];
+
+        if (email_sponsor && sponsorMailSent) {
+            alreadySent.push("Sponsor");
+        }
+
+        if (email_recipient && allRecipientsMailed) {
+            alreadySent.push("Recipient");
+        }
+
+        if (
+            (email_sponsor && sponsorMailSent) &&
+            (email_recipient && allRecipientsMailed) &&
+            !email_assignee
+        ) {
+            const message =
+                alreadySent.length === 2
+                    ? `${alreadySent[0]} and ${alreadySent[1]} mail already sent.`
+                    : `${alreadySent[0]} mail already sent.`;
+
+            return res.status(200).json({ message });
+        }
         const { commonEmailData, treeData } = await DonationService.getEmailDataForDonation(donation, event_type);
+
         if (treeData.length === 0) {
             return res.status(400).json({ error: 'No trees found for this donation' });
         }
@@ -981,12 +1010,12 @@ export const sendEmailForDonation = async (req: Request, res: Response) => {
         res.status(200).json();
 
         // Send email to sponsor if enabled
-        if (!donation.mail_status?.includes(DonationMailStatus_DashboardsSent) && email_sponsor) {
+        if (email_sponsor && !sponsorMailSent) {
             await DonationService.sendDashboardEmailToSponsor(donation, commonEmailData, treeData, event_type, test_mails, sponsor_cc_mails);
         }
 
         // Send email to recipient if enabled
-        if (email_recipient) {
+        if (email_recipient && !allRecipientsMailed) {
             await DonationService.sendDashboardEmailsToRecipients(donation, commonEmailData, treeData, event_type, test_mails, recipient_cc_mails);
         }
 
