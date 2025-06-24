@@ -56,8 +56,8 @@ export class GroupRepository {
         const query = `
             SELECT 
                 g.*,
-                (SELECT COUNT(*) FROM "14trees".trees t WHERE t.mapped_to_group = g.id) AS reserved_trees,
-                (SELECT COUNT(*) FROM "14trees".trees t WHERE t.sponsored_by_group = g.id) AS sponsored_trees
+                (SELECT COUNT(*) FROM "14trees_2".trees t WHERE t.mapped_to_group = g.id) AS reserved_trees,
+                (SELECT COUNT(*) FROM "14trees_2".trees t WHERE t.sponsored_by_group = g.id) AS sponsored_trees
             FROM 
                 "14trees_2".groups g
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
