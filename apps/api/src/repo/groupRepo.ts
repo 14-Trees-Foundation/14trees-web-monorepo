@@ -61,8 +61,6 @@ export class GroupRepository {
             FROM 
                 "14trees_2".groups g
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
-            GROUP BY 
-                g.id
             ${orderByClause}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''}
         `;
