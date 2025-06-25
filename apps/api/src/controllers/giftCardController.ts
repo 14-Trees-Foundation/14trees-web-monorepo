@@ -359,10 +359,10 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         }
 
         if (razorpayPaymentId) {
-            const sheetName = "GiftRequests"
-            const spreadsheetId = process.env.GIFTING_SPREADSHEET;
+            const sheetName = "Website-Gifting"
+            const spreadsheetId = process.env.DONATION_SPREADSHEET;
             if (!spreadsheetId) {
-                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (GIFTING_SPREADSHEET) is not present in env");
+                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
                 return;
             }
 
@@ -1320,9 +1320,15 @@ export const unBookTrees = async (req: Request, res: Response) => {
     try {
 
         let treeIds: number[] = tree_ids ? tree_ids : [];
+        let gcIds: number[] = [];
         if (unmapAll) {
             const bookedTreesResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
             treeIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.tree_id);
+            gcIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.id);
+        } else if (treeIds.length > 0 ) {
+            const bookedTreesResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'tree_id', operatorValue: 'isAnyOf', value: treeIds }]);
+            treeIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.tree_id);
+            gcIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.id);
         }
 
         if (treeIds.length > 0) {
@@ -1348,7 +1354,11 @@ export const unBookTrees = async (req: Request, res: Response) => {
             }
 
             await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
+            await GRTransactionsRepository.deleteCardsFromTransaction(gcIds);
             await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
+
+            const giftCardRequest = await GiftCardsService.getGiftCardsRequest(giftCardRequestId);
+            await GiftCardsService.reconcileGiftTransactions(giftCardRequest)
         }
 
         // delete gift request plots
@@ -1680,9 +1690,13 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
         logo,
         logo_message: logoMessage,
         trees_count: treeCount,
+        assignee_name: assigneeName,
+        event_type: eventType,
     } = req.body;
 
-    let message = (treeCount && treeCount > 1) ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage;
+    let message = (eventType && assigneeName && assigneeName != userName) ? GiftRequestHelper.getPersonalizedMessage(primaryMessage, assigneeName, eventType) : primaryMessage;
+    message = (treeCount && treeCount > 1) ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(message, treeCount) : message;
+
     if (userName) message = message.replace("{recipient}", userName);
     if (giftedBy) message = message.replace("{giftedBy}", giftedBy);
     const record = {
@@ -2269,7 +2283,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 );
 
                 // Only update status for non-test, non-self-gift assignees
-                if (!isTestMail && !emailData.self) {
+                if (!isTestMail) {
                     mailSent = statusMessage === '';
                     mailError = statusMessage || null;
                 }
@@ -2278,7 +2292,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 tries--;
                 if (tries === 0) {
                     console.error('[ERROR] Assignee email failed:', error);
-                    if (!isTestMail && !emailData.self) {
+                    if (!isTestMail) {
                         mailSent = false;
                         mailError = error instanceof Error ? error.message.substring(0, 255) : 'Unknown error';
                     }
@@ -2288,7 +2302,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         }
 
         // Update database status
-        if (!isTestMail && !emailData.self) {
+        if (!isTestMail) {
             try {
                 await GiftCardsRepository.updateGiftRequestUsers(
                     {

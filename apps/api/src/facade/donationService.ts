@@ -1,6 +1,6 @@
 import { LandCategory, SortOrder } from "../models/common";
 import { FilterItem, PaginatedResponse } from "../models/pagination"
-import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_DashboardsSent, DonationMailStatus_Volunteer, DonationStatus, DonationStatus_PendingPayment } from "../models/donation";
+import { ContributionOption, Donation, DonationCreationAttributes, DonationMailStatus_Accounts, DonationMailStatus_AckSent, DonationMailStatus_BackOffice, DonationMailStatus_CSR, DonationMailStatus_DashboardsSent, DonationMailStatus_Volunteer, DonationPrsStatus_PendingReservation, DonationStatus, DonationStatus_PendingPayment } from "../models/donation";
 import { UserRepository } from "../repo/userRepo";
 import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
@@ -116,6 +116,7 @@ export class DonationService {
             contribution_options: contribution_options || null,
             comments: comments || null,
             status: status || DonationStatus_PendingPayment,
+            prs_status: donation_type === 'donate' && trees_count ? DonationPrsStatus_PendingReservation : null,
             tags: tags || null,
             rfr_id: rfr_id,
             group_id: data.group_id || null,
