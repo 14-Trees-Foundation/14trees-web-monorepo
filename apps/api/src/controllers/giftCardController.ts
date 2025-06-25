@@ -1575,7 +1575,9 @@ export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, 
         }
 
         const giftCardRequest = resp.results[0];
-        if (!giftCardRequest.presentation_id) {
+        const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequest.id }]);
+        const hasAllImageUrls = giftCards.results.every(giftCard => giftCard.card_image_url);
+        if (!hasAllImageUrls) {
             res.status(status.error).json({
                 message: 'Gift cards not generated yet!'
             })
@@ -1603,7 +1605,6 @@ export const downloadGiftCardTemplatesForGiftCardRequest = async (req: Request, 
 
             archive.pipe(res);
 
-            const giftCards = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequest.id }]);
             for (const giftCard of giftCards.results) {
                 if (!giftCard.card_image_url) continue;
 

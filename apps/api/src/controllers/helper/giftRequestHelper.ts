@@ -493,7 +493,9 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
         event_name: giftCardRequest.event_name,
         group_name: giftCardRequest.group_name,
         company_logo_url: giftCardRequest.logo_url,
-        count: 0
+        count: 0,
+        has_download_link: false,
+        download_url: ''
     };
 
     for (const giftCard of giftCards) {
@@ -518,17 +520,22 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
 
     let attachments: { filename: string; path: string }[] | undefined = undefined;
     if (attachCard) {
-        const files: { filename: string; path: string }[] = []
-        for (const tree of emailData.trees) {
-            if (tree.card_image_url) {
-                files.push({
-                    filename: tree.assigned_to_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
-                    path: tree.card_image_url
-                })
+        if (emailData.count > 5) {
+            emailData.has_download_link = true;
+            emailData.download_url = `https://api.14trees.org/api/gift-cards/download/${giftCardRequest.id}?downloadType=zip`;
+        } else {
+            const files: { filename: string; path: string }[] = []
+            for (const tree of emailData.trees) {
+                if (tree.card_image_url) {
+                    files.push({
+                        filename: tree.assigned_to_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                        path: tree.card_image_url
+                    })
+                }
             }
-        }
 
-        if (files.length > 0) attachments = files;
+            if (files.length > 0) attachments = files;
+        }
     }
 
     const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
