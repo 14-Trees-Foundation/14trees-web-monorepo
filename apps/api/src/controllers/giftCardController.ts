@@ -1689,9 +1689,13 @@ export const updateGiftCardTemplate = async (req: Request, res: Response) => {
         logo,
         logo_message: logoMessage,
         trees_count: treeCount,
+        assignee_name: assigneeName,
+        event_type: eventType,
     } = req.body;
 
-    let message = (treeCount && treeCount > 1) ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(primaryMessage, treeCount) : primaryMessage;
+    let message = (eventType && assigneeName && assigneeName != userName) ? GiftRequestHelper.getPersonalizedMessage(primaryMessage, assigneeName, eventType) : primaryMessage;
+    message = (treeCount && treeCount > 1) ? GiftRequestHelper.getPersonalizedMessageForMoreTrees(message, treeCount) : message;
+
     if (userName) message = message.replace("{recipient}", userName);
     if (giftedBy) message = message.replace("{giftedBy}", giftedBy);
     const record = {
