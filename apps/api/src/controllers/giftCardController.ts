@@ -276,7 +276,7 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
 
         const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
 
-        let transactionId = ""
+        let razorpayPaymentId = ""
         if (giftRequest.payment_id) {
             let sponsorshipType: SponsorshipType = 'Unverified';
             let amountReceived: number = 0;
@@ -297,16 +297,7 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
                 payments?.forEach(item => {
                     if (item.status === 'captured') {
                         amountReceived += Number(item.amount) / 100;
-                        const data: any = item.acquirer_data;
-                        if (data) {
-                            const keys = Object.keys(data);
-                            for (const key of keys) {
-                                if (key.endsWith("transaction_id") && data[key]) {
-                                    transactionId = data[key];
-                                    break;
-                                }
-                            }
-                        }
+                        razorpayPaymentId = item.id;
                     }
                 })
             }
@@ -367,17 +358,17 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             });
         }
 
-        if (transactionId) {
-            const sheetName = "GiftRequests"
-            const spreadsheetId = process.env.GIFTING_SPREADSHEET;
+        if (razorpayPaymentId) {
+            const sheetName = "Website-Gifting"
+            const spreadsheetId = process.env.DONATION_SPREADSHEET;
             if (!spreadsheetId) {
-                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (GIFTING_SPREADSHEET) is not present in env");
+                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
                 return;
             }
 
             const googleSheet = new GoogleSpreadsheet();
             await googleSheet.updateRowCellsByColumnValue(spreadsheetId, sheetName, "Req Id", giftRequest.id.toString(), {
-                "Mode": transactionId
+                "Mode": razorpayPaymentId
             }).catch(error => {
                 console.error("[ERROR] Failed to update Google Sheet with transaction ID:", {
                     error,

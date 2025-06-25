@@ -1343,6 +1343,11 @@ export class DonationService {
 
             const donation = await DonationRepository.getDonation(donationId);
             const recipients = await DonationUserRepository.getAllDonationUsers(donationId);
+            let panNumber = "";
+            if (donation.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
 
             // Prepare email content with donation details
             const emailData = {
@@ -1353,6 +1358,7 @@ export class DonationService {
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                 treesCount: donation.trees_count || "N/A",
+                panNumber: panNumber || "N/A",
                 recipients: recipients.length > 0 ? recipients.map((user: any) => ({
                     name: user.recipient_name,
                     email: user.recipient_email,
@@ -1389,7 +1395,6 @@ export class DonationService {
                 mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_BackOffice] : [DonationMailStatus_BackOffice],
             });
         } catch (error) {
-            // Throw a more specific error based on the caught exception
             const errorMessage = error instanceof Error ?
                 `Failed to send donation notification: ${error.message}` :
                 'Failed to send donation notification due to an unknown error';
@@ -1409,6 +1414,11 @@ export class DonationService {
 
             const donation = await DonationRepository.getDonation(donationId);
             const recipients = await DonationUserRepository.getAllDonationUsers(donationId);
+            let panNumber = "";
+            if (donation.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
 
             const emailData = {
                 donationId: donation.id,
@@ -1418,6 +1428,7 @@ export class DonationService {
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                 treesCount: donation.trees_count || "N/A",
+                panNumber: panNumber || "N/A",
                 recipients: recipients.length > 0 ? recipients.map((user: any) => ({
                     name: user.recipient_name,
                     email: user.recipient_email,
@@ -1471,6 +1482,11 @@ export class DonationService {
         try {
 
             const donation = await DonationRepository.getDonation(donationId);
+            let panNumber = "";
+            if (donation.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
 
             const emailData = {
                 donationId: donation.id,
@@ -1479,6 +1495,7 @@ export class DonationService {
                 sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+                panNumber: panNumber || "N/A",
             };
 
             const mailIds = (testMails && testMails.length !== 0) ?
@@ -1525,6 +1542,11 @@ export class DonationService {
     ): Promise<void> {
         try {
             const donation = await DonationRepository.getDonation(donationId);
+            let panNumber = "";
+            if (donation.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(donation.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
 
             const emailData = {
                 donationId: donation.id,
@@ -1533,6 +1555,7 @@ export class DonationService {
                 sponsorPhone: sponsorUser.phone,
                 donationAmount: formatNumber(donation.amount_donated || 0),
                 donationDate: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+                panNumber: panNumber || "N/A",
             };
 
             const mailIds = (testMails && testMails.length !== 0) ?
