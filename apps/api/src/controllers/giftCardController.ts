@@ -1329,9 +1329,15 @@ export const unBookTrees = async (req: Request, res: Response) => {
     try {
 
         let treeIds: number[] = tree_ids ? tree_ids : [];
+        let gcIds: number[] = [];
         if (unmapAll) {
             const bookedTreesResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
             treeIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.tree_id);
+            gcIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.id);
+        } else if (treeIds.length > 0 ) {
+            const bookedTreesResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'tree_id', operatorValue: 'isAnyOf', value: treeIds }]);
+            treeIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.tree_id);
+            gcIds = bookedTreesResp.results.filter(card => card.tree_id).map(card => card.id);
         }
 
         if (treeIds.length > 0) {
@@ -1357,7 +1363,11 @@ export const unBookTrees = async (req: Request, res: Response) => {
             }
 
             await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
+            await GRTransactionsRepository.deleteCardsFromTransaction(gcIds);
             await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
+
+            const giftCardRequest = await GiftCardsService.getGiftCardsRequest(giftCardRequestId);
+            await GiftCardsService.reconcileGiftTransactions(giftCardRequest)
         }
 
         // delete gift request plots
