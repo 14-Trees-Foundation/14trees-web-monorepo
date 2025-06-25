@@ -764,8 +764,8 @@ function Donation() {
         }),
         users: dedicatedNames.map(user => ({
           ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '.') + ".donor@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '.') + ".donor@14trees"
+          recipient_email: user.recipient_email || user.recipient_name.trim().toLowerCase().replace(/\s+/g, '.') + ".donor@14trees",
+          assignee_email: user.assignee_email || user.assignee_name.trim().toLowerCase().replace(/\s+/g, '.') + ".donor@14trees"
         })),
         tags: ["WebSite"],
       };
