@@ -159,8 +159,9 @@ class GiftCardRequest extends Model<GiftCardRequestAttributes, GiftCardRequestCr
 
     @Column({
         type: DataType.STRING,
+        allowNull: true
     })
-    logo_message!: string;
+    logo_message!: string | null; 
 
     @Column({
         type: DataType.NUMBER,
