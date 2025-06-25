@@ -174,7 +174,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
         ]);
         const sponsorUser = usersResp.results[0];
 
-        let transactionId = "";
+        let paymentId = "";
         if (donation.payment_id) {
             let amountReceived: number = 0;
             let donationDate: Date | null = null;
@@ -199,18 +199,9 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
                     const amount = Number(item.amount) / 100;
-                    amountReceived += amount;
                     if (item.status === 'captured') {
-                        const data: any = item.acquirer_data;
-                        if (data) {
-                            const keys = Object.keys(data);
-                            for (const key of keys) {
-                                if (key.endsWith("transaction_id") && data[key]) {
-                                    transactionId = data[key];
-                                    break;
-                                }
-                            }
-                        }
+                        amountReceived += amount;
+                        paymentId = item.id;
                     }
                 });
             }
@@ -255,7 +246,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
             console.error("[ERROR] DonationsController::paymentSuccessForDonation:sendAcknowledgement", error);
         }
 
-        if (transactionId) {
+        if (paymentId) {
             const sheetName = "WebsiteTxns"
             const spreadsheetId = process.env.DONATION_SPREADSHEET;
             if (!spreadsheetId) {
@@ -269,9 +260,9 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
 
             const googleSheet = new GoogleSpreadsheet();
             await googleSheet.updateRowCellsByColumnValue(spreadsheetId, sheetName, "Rec", receiptId, {
-                "Mode": transactionId
+                "Mode": paymentId
             }).catch(error => {
-                console.error("[ERROR] Failed to update Google Sheet with transaction ID:", {
+                console.error("[ERROR] Failed to update Google Sheet with payment ID:", {
                     error,
                     stack: error instanceof Error ? error.stack : undefined
                 });
