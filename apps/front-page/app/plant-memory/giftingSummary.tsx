@@ -52,8 +52,9 @@ export const SummaryPaymentPage = ({
 }: SummaryPaymentProps) => {
   const [hasDifferentAssignee, setHasDifferentAssignee] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const targetRef = useRef<HTMLDivElement>(null);
+  const pageSizeOptions = [5, 10, 20, 50, 100];
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dedicatedNames.slice(indexOfFirstItem, indexOfLastItem);
@@ -70,7 +71,7 @@ export const SummaryPaymentPage = ({
 
   useEffect(() => {
     scrollToDiv()
-  }, [targetRef])
+  }, [targetRef, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const differentAssignee = dedicatedNames.some(user => user.assignee_name !== "" && user.assignee_name !== user.recipient_name);
@@ -95,6 +96,11 @@ export const SummaryPaymentPage = ({
     scrollToDiv();
   };
 
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
   return (
     <div ref={targetRef} className="space-y-8">
       <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
@@ -113,71 +119,93 @@ export const SummaryPaymentPage = ({
           <p>Gifted On: {giftedOn.toLocaleDateString()}</p>
         </div>
 
-
         {/* Dedication Info */}
         {dedicatedNames[0]?.recipient_name && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Trees will be assigned to</h3>
 
-            {/* Horizontal scroll on small screens */}
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-[600px] w-full border border-gray-200 rounded text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="whitespace-nowrap px-4 py-2 text-left border-b">Recipient</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-left border-b">Recipient Email</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-left border-b">Trees</th>
-                    {hasDifferentAssignee && (
-                      <>
-                        <th className="whitespace-nowrap px-4 py-2 text-left border-b">Assignee</th>
-                        <th className="whitespace-nowrap px-4 py-2 text-left border-b">Assignee Email</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.map((recipient, i) => (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_name}</td>
-                      <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
-                      <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.trees_count}</td>
+            {/* Page size selector */}
+            <div className="flex justify-end">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Rows per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={handlePageSizeChange}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  {pageSizeOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Table with scrollable container */}
+            <div className="border border-gray-200 rounded overflow-hidden">
+              <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                <table className="min-w-full divide-y">
+                  <thead className="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th className="whitespace-nowrap px-4 py-2 text-left border-b">Recipient</th>
+                      <th className="whitespace-nowrap px-4 py-2 text-left border-b">Recipient Email</th>
+                      <th className="whitespace-nowrap px-4 py-2 text-left border-b">Trees</th>
                       {hasDifferentAssignee && (
                         <>
-                          <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
-                          <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
+                          <th className="whitespace-nowrap px-4 py-2 text-left border-b">Assignee</th>
+                          <th className="whitespace-nowrap px-4 py-2 text-left border-b">Assignee Email</th>
                         </>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y">
+                    {currentItems.map((recipient, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_name}</td>
+                        <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.recipient_email || '-'}</td>
+                        <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.trees_count}</td>
+                        {hasDifferentAssignee && (
+                          <>
+                            <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.assignee_name || '-'}</td>
+                            <td className="whitespace-nowrap px-4 py-2 border-b">{recipient.assignee_email || '-'}</td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-4 mt-4">
-                <span className="text-sm text-gray-600">
-                  {currentPage} of {totalPages}
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:bg-green-50'}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:bg-green-50'}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+                <div className="text-sm text-gray-600">
+                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, dedicatedNames.length)} of {dedicatedNames.length} entries
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => paginate(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:bg-green-50'}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => paginate(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:bg-green-50'}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -186,7 +214,7 @@ export const SummaryPaymentPage = ({
 
         <button
           type="button"
-          onClick={() => setCurrentStep(1)}
+          onClick={() =>{ setCurrentStep(1)}}
           className="mt-4 text-green-600 hover:text-green-800 underline"
         >
           ← Back to Edit

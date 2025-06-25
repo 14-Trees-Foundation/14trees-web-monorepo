@@ -1,7 +1,7 @@
 // apps/front-page/components/CsvUpload.tsx
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 
 interface CsvRow {
@@ -24,14 +24,22 @@ interface ValidationResult {
 interface CsvUploadProps {
   onDataParsed: (result: ValidationResult) => void;
   maxTrees: number;
+  initialData?: CsvRow[];
 }
 
-const CsvUpload = ({ onDataParsed, maxTrees }: CsvUploadProps) => {
-  const [csvData, setCsvData] = useState<CsvRow[]>([]);
+const CsvUpload = ({ onDataParsed, maxTrees, initialData = [] }: CsvUploadProps) => {
+  const [csvData, setCsvData] = useState<CsvRow[]>(initialData);
   const [errors, setErrors] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const rowsPerPage = 5;
+  const pageSizeOptions = [5, 10, 20, 50, 100];
+
+  useEffect(() => {
+    const validationResult = validateCsvData(initialData);
+    setCsvData(initialData);
+    setErrors(validationResult.rowErrors);
+  }, [initialData]);
 
   const sampleCsvData = `Recipient Name,Recipient Email,Recipient Communication Email,Number of Trees
 John Doe,john@example.com,john.communication@example.com,2
@@ -42,6 +50,62 @@ Jane Smith,jane@example.com,,5`;
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  const validateCsvData = (data: CsvRow[]): ValidationResult => {
+    let totalTrees = 0;
+    const validRows: CsvRow[] = [];
+    const invalidRows: CsvRow[] = [];
+    const rowErrorMessages: string[] = [];
+    const nameMap = new Map<string, number[]>();
+
+    data.forEach((row, idx) => {
+      const validatedRow = validateRow(row);
+      const name = validatedRow['Recipient Name']?.trim();
+      
+      if (name) {
+        if (!nameMap.has(name)) nameMap.set(name, []);
+        nameMap.get(name)!.push(idx);
+      }
+
+      if (validatedRow._errors) {
+        invalidRows.push(validatedRow);
+        validatedRow._errors.forEach(error => {
+          rowErrorMessages.push(`Row ${idx + 1}: ${error}`);
+        });
+      } else {
+        validRows.push(validatedRow);
+        totalTrees += Number(validatedRow['Number of Trees']) || 0;
+      }
+    });
+
+    const duplicateNameSet = new Set<string>();
+    Array.from(nameMap.entries())
+      .filter(([_, indices]) => indices.length > 1)
+      .forEach(([name, indices]) => {
+        duplicateNameSet.add(name);
+        indices.forEach(i => {
+          const row = data[i];
+          row._errors = row._errors || [];
+          row._errors.push(`Duplicate recipient name '${name}' not allowed`);
+          if (!invalidRows.includes(row)) {
+            invalidRows.push(row);
+          }
+        });
+      });
+
+    if (duplicateNameSet.size > 0) {
+      rowErrorMessages.push(`Duplicate recipient names found: ${Array.from(duplicateNameSet).join(', ')}`);
+    }
+
+    return {
+      validData: validRows,
+      invalidData: invalidRows,
+      totalTrees,
+      headerErrors: [],
+      rowErrors: rowErrorMessages,
+      hasErrors: rowErrorMessages.length > 0
+    };
+  };
 
   const downloadSampleCsv = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -69,11 +133,9 @@ Jane Smith,jane@example.com,,5`;
       rowErrors.push('Recipient Name is required');
     }
 
-    // Get email values
     const recipientEmail = row['Recipient Email']?.trim();
     const communicationEmail = row['Recipient Communication Email']?.trim();
     
-    // Validate email formats if they exist
     if (recipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
       rowErrors.push('Invalid Recipient Email format');
     }
@@ -103,7 +165,6 @@ Jane Smith,jane@example.com,,5`;
     if (!file) return;
 
     setErrors([]);
-    setCsvData([]);
     setCurrentPage(1);
 
     Papa.parse(file, {
@@ -128,76 +189,26 @@ Jane Smith,jane@example.com,,5`;
           return;
         }
 
-        let validatedData = (results.data as CsvRow[]).map((row, i) => validateRow(row));
+        const parsedData = (results.data as CsvRow[]).map(row => validateRow(row));
+        const validationResult = validateCsvData(parsedData);
 
-        const nameMap = new Map<string, number[]>();
-        validatedData.forEach((row, idx) => {
-          const name = row['Recipient Name']?.trim();
-          if (name) {
-            if (!nameMap.has(name)) nameMap.set(name, []);
-            nameMap.get(name)!.push(idx);
-          }
-        });
-
-        const duplicateNameSet = new Set<string>();
-        const duplicateIndexes = Array.from(nameMap.entries())
-          .filter(([_, indices]) => indices.length > 1)
-          .flatMap(([name, indices]) => {
-            duplicateNameSet.add(name);
-            return indices.map(i => ({ index: i, name }));
-          });
-
-        duplicateIndexes.forEach(({ index, name }) => {
-          const row = validatedData[index];
-          row._errors = row._errors || [];
-          row._errors.push(`Duplicate recipient name '${name}' not allowed`);
-        });
-
-        const validRows = validatedData.filter(row => !row._errors);
-        const invalidRows = validatedData.filter(row => row._errors);
-
-        const totalTrees = validRows.reduce((sum, row) => {
-          return sum + (Number(row['Number of Trees']) || 0);
-        }, 0);
-
-        if (totalTrees > maxTrees) {
-          const treeLimitError = `Total trees (${totalTrees}) exceeds the selected limit of ${maxTrees}`;
-          setErrors([treeLimitError]);
+        if (validationResult.totalTrees > maxTrees) {
+          const treeLimitError = `Total trees (${validationResult.totalTrees}) exceeds the selected limit of ${maxTrees}`;
+          setErrors([treeLimitError, ...validationResult.rowErrors]);
           if (fileInputRef.current) fileInputRef.current.value = '';
 
           onDataParsed({
-            validData: [],
-            invalidData: validatedData,
-            totalTrees,
-            headerErrors: [],
-            rowErrors: [treeLimitError],
+            ...validationResult,
+            rowErrors: [treeLimitError, ...validationResult.rowErrors],
             hasErrors: true
           });
           return;
         }
 
-        const rowErrorMessages = invalidRows.flatMap((row, i) =>
-          row._errors?.map(error => `Row ${i + 1}: ${error}`) || []
-        );
+        setCsvData(parsedData);
+        setErrors(validationResult.rowErrors);
 
-        if (rowErrorMessages.length > 0 || duplicateNameSet.size > 0) {
-          const duplicateSummary = duplicateNameSet.size > 0
-            ? [`Duplicate recipient names found: ${Array.from(duplicateNameSet).join(', ')}`]
-            : [];
-
-          setErrors([...duplicateSummary, ...rowErrorMessages]);
-        }
-
-        setCsvData(validatedData);
-
-        onDataParsed({
-          validData: validRows,
-          invalidData: invalidRows,
-          totalTrees,
-          headerErrors: [],
-          rowErrors: rowErrorMessages,
-          hasErrors: rowErrorMessages.length > 0
-        });
+        onDataParsed(validationResult);
 
         if (fileInputRef.current) fileInputRef.current.value = '';
       },
@@ -220,6 +231,12 @@ Jane Smith,jane@example.com,,5`;
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSize = Number(e.target.value);
+    setRowsPerPage(newSize);
+    setCurrentPage(1);
   };
 
   return (
@@ -256,60 +273,79 @@ Jane Smith,jane@example.com,,5`;
 
       {csvData.length > 0 && (
         <div className="mt-4">
-          <div className="border rounded overflow-hidden">
-            <table className="min-w-full divide-y">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-left">Recipient Name</th>
-                  <th className="px-4 py-2 text-left">Recipient Email</th>
-                  <th className="px-4 py-2 text-left">Communication Email</th>
-                  <th className="px-4 py-2 text-left">Number of Trees</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {currentRows.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2">
-                      {row._errors ? (
-                        <span className="text-red-500" title={row._errors.join('\n')}>✕</span>
-                      ) : (
-                        <span className="text-green-500" title="Valid">✓</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">{row['Recipient Name']}</td>
-                    <td className="px-4 py-2">{row['Recipient Email'] || '-'}</td>
-                    <td className="px-4 py-2">{row['Recipient Communication Email'] || '-'}</td>
-                    <td className="px-4 py-2">{row['Number of Trees']}</td>
-                  </tr>
+          <div className="flex justify-between items-center mb-2">
+            <div className="text-sm text-gray-500">
+              Showing {(currentPage - 1) * rowsPerPage + 1} to{' '}
+              {Math.min(currentPage * rowsPerPage, csvData.length)} of {csvData.length} records
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">Rows per page:</span>
+              <select
+                value={rowsPerPage}
+                onChange={handlePageSizeChange}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                {pageSizeOptions.map(option => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </div>
+          </div>
+
+          <div className="border rounded overflow-hidden">
+            <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+              <table className="min-w-full divide-y">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Status</th>
+                    <th className="px-4 py-2 text-left">Recipient Name</th>
+                    <th className="px-4 py-2 text-left">Recipient Email</th>
+                    <th className="px-4 py-2 text-left">Communication Email</th>
+                    <th className="px-4 py-2 text-left">Number of Trees</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y bg-white">
+                  {currentRows.map((row, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-4 py-2">
+                        {row._errors ? (
+                          <span className="text-red-500" title={row._errors.join('\n')}>✕</span>
+                        ) : (
+                          <span className="text-green-500" title="Valid">✓</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">{row['Recipient Name']}</td>
+                      <td className="px-4 py-2">{row['Recipient Email'] || '-'}</td>
+                      <td className="px-4 py-2">{row['Recipient Communication Email'] || '-'}</td>
+                      <td className="px-4 py-2">{row['Number of Trees']}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="flex items-center justify-between mt-3">
             <div className="text-sm text-gray-500">
-              Showing {(currentPage - 1) * rowsPerPage + 1} to{' '}
-              {Math.min(currentPage * rowsPerPage, csvData.length)} of {csvData.length} records
+              Page {currentPage} of {totalPages}
             </div>
             <div className="flex space-x-2">
               <button
                 type='button'
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'
+                className={`px-3 py-1 rounded-md text-sm ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'
                   }`}
               >
                 Previous
               </button>
-              <span className="px-3 py-1 bg-gray-100 rounded-md">
-                Page {currentPage} of {totalPages}
-              </span>
               <button
                 type='button'
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-md ${currentPage === totalPages
+                className={`px-3 py-1 rounded-md text-sm ${currentPage === totalPages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-gray-200 hover:bg-gray-300'
                   }`}
