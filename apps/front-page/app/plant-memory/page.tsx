@@ -436,13 +436,13 @@ function GiftTrees() {
       if (user.recipient_email) {
         user.recipient_email = user.recipient_email.replace("donor", donor);
       } else {
-        user.recipient_email = user.recipient_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+        user.recipient_email = user.recipient_name.trim().toLowerCase().replace(/\s+/g, '.') + "." + donor + "@14trees"
       }
 
       if (user.assignee_email) {
         user.assignee_email = user.assignee_email.replace("donor", donor);
       } else {
-        user.assignee_email = user.assignee_name.toLowerCase().replace(/\s+/g, '') + "." + donor + "@14trees"
+        user.assignee_email = user.assignee_name.trim().toLowerCase().replace(/\s+/g, '.') + "." + donor + "@14trees"
       }
 
       return user;
