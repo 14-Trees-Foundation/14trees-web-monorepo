@@ -368,10 +368,10 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         }
 
         if (transactionId) {
-            const sheetName = "GiftRequests"
-            const spreadsheetId = process.env.GIFTING_SPREADSHEET;
+            const sheetName = "Website-Gifting"
+            const spreadsheetId = process.env.DONATION_SPREADSHEET;
             if (!spreadsheetId) {
-                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (GIFTING_SPREADSHEET) is not present in env");
+                console.log("[WARN]", "GiftCardsService::addGiftRequestToSpreadsheet", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
                 return;
             }
 
