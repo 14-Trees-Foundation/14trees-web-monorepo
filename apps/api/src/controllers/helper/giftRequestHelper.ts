@@ -540,7 +540,7 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
 
     const statusMessage: string = await sendDashboardMail(templates[0].template_name, emailData, mailIds, ccMailIds, attachments);
 
-    if (statusMessage === '') {
+    if (statusMessage === '' && (!testMails || testMails.length === 0)) {
         await GiftCardsRepository.updateGiftCardRequests(
             {
                 mail_sent: true,

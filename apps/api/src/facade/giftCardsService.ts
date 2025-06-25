@@ -21,6 +21,8 @@ import { GroupRepository }  from "../repo/groupRepo"
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import { GiftRedeemTransactionCreationAttributes, GRTCard } from "../models/gift_redeem_transaction";
+import { generateFundRequestPdf } from "../services/invoice/generatePdf";
+import { uploadBase64DataToS3 } from "../controllers/helper/uploadtos3";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -285,7 +287,161 @@ class GiftCardsService {
             throw new Error("Failed to check email statuses");
         }
     }
-    
+
+    /**
+     * Generates a fund request PDF for a gift card request and uploads it to S3
+     * 
+     * @param giftCardRequestId - The ID of the gift card request
+     * @returns Object containing the gift card request, group, PDF URL, and other details
+     * @throws Error if the gift card request or group is not found, or if the request is not for a corporate
+     */
+    public static async generateFundRequestPdf(giftCardRequestId: number): Promise<{
+        giftCardRequest: GiftCardRequest,
+        group: any,
+        filename: string,
+        pdfUrl: { location: string },
+        totalAmount: number,
+        perTreeCost: number
+    }> {
+        // Get the gift card request
+        const resp = await GiftCardsRepository.getGiftCardRequests(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: giftCardRequestId }
+        ]);
+        
+        if (resp.results.length !== 1) {
+            throw new Error('Gift card request not found');
+        }
+
+        const giftCardRequest = resp.results[0];
+        
+        // Validate it's a corporate request
+        if (!giftCardRequest.group_id) {
+            throw new Error('Fund request can be generated only for corporate requests');
+        }
+
+        // Get the group
+        const group = await GroupRepository.getGroup(giftCardRequest.group_id);
+        if (!group) {
+            throw new Error('Group not found');
+        }
+
+        // Calculate the cost per tree based on request type and category
+        const perTreeCost =
+            giftCardRequest.category === 'Public'
+                ? giftCardRequest.request_type === 'Normal Assignment' || giftCardRequest.request_type === 'Visit'
+                    ? 1500
+                    : 2000
+                : 3000;
+
+        // Generate the filename
+        const filename = `${group.name} [Req. No: ${giftCardRequest.id}] ${new Date().toDateString()}.pdf`;
+        
+        // Calculate the total amount
+        const totalAmount = giftCardRequest.no_of_cards * perTreeCost;
+        
+        // Prepare data for the PDF
+        const data = {
+            address: group.address?.split('\n').join('<br/>'),
+            date: moment(new Date()).format('MMMM DD, YYYY'),
+            no_of_trees: giftCardRequest.no_of_cards,
+            per_tree_cost: perTreeCost,
+            total_amount: formatNumber(totalAmount),
+            total_amount_words: "Rupees " + numberToWords(totalAmount)
+                .split(' ')
+                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ') + " only",
+        };
+
+        // Generate the PDF and upload to S3
+        const base64Data = await generateFundRequestPdf(data);
+        const pdfUrl = await uploadBase64DataToS3(
+            filename, 
+            'gift_cards', 
+            base64Data, 
+            { 'Content-Type': 'application/pdf' }, 
+            giftCardRequest.request_id
+        );
+
+        return {
+            giftCardRequest,
+            group,
+            filename,
+            pdfUrl,
+            totalAmount,
+            perTreeCost
+        };
+    }
+
+    /**
+     * Sends a fund request email with the PDF attachment to the corporate billing email
+     * 
+     * @param giftCardRequestId - The ID of the gift card request
+     * @returns Object containing the status of the email sending and the PDF URL
+     * @throws Error if the gift card request or group is not found, or if the request is not for a corporate
+     */
+    public static async sendFundRequestEmail(giftCardRequestId: number): Promise<{
+        message: string,
+        pdfUrl: { location: string }
+    }> {
+        // Generate the fund request PDF
+        const { 
+            giftCardRequest, 
+            group, 
+            filename, 
+            pdfUrl, 
+            totalAmount 
+        } = await this.generateFundRequestPdf(giftCardRequestId);
+
+        // Validate billing email exists
+        if (!group.billing_email) {
+            throw new Error('Billing email not found for the corporate');
+        }
+
+        // Get creator information
+        let requestCreatedBy = (giftCardRequest as any).user_name || "14 Trees Team";
+
+        // Prepare email data
+        const emailData = {
+            corporateName: group.name,
+            requestNumber: giftCardRequest.id.toString(),
+            treesCount: giftCardRequest.no_of_cards.toString(),
+            amount: formatNumber(totalAmount),
+            date: moment(new Date()).format('MMMM DD, YYYY'),
+            requestCreatedBy: requestCreatedBy
+        };
+
+        // Prepare email recipients
+        const toEmails = [group.billing_email];
+        
+        // Add attachments
+        const attachments = [
+            { 
+                filename: filename, 
+                path: pdfUrl.location
+            }
+        ];
+
+        // Send email
+        const emailSubject = `Fund Request - ${group.name} - ${giftCardRequest.no_of_cards} Trees`;
+        const statusMessage = await sendDashboardMail(
+            "corporate_fund_request.html",
+            emailData,
+            toEmails,
+            undefined,
+            attachments,
+            emailSubject
+        );
+
+        if (statusMessage) {
+            console.log("[WARNING]", "GiftCardsService::sendFundRequestEmail", "Email sending issue:", statusMessage);
+        }
+
+        return {
+            message: 'Fund request sent successfully!',
+            pdfUrl
+        };
+    }
+
     public static async addGiftRequestToSpreadsheet(giftRequest: GiftCardRequest) {
         const sheet = new GoogleSpreadsheet();
 
