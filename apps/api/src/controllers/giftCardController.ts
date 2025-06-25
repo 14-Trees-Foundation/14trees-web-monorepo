@@ -2325,7 +2325,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 );
 
                 // Only update status for non-test, non-self-gift assignees
-                if (!isTestMail && !emailData.self) {
+                if (!isTestMail) {
                     mailSent = statusMessage === '';
                     mailError = statusMessage || null;
                 }
@@ -2334,7 +2334,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
                 tries--;
                 if (tries === 0) {
                     console.error('[ERROR] Assignee email failed:', error);
-                    if (!isTestMail && !emailData.self) {
+                    if (!isTestMail) {
                         mailSent = false;
                         mailError = error instanceof Error ? error.message.substring(0, 255) : 'Unknown error';
                     }
@@ -2344,7 +2344,7 @@ const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any
         }
 
         // Update database status
-        if (!isTestMail && !emailData.self) {
+        if (!isTestMail) {
             try {
                 await GiftCardsRepository.updateGiftRequestUsers(
                     {
