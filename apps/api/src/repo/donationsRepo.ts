@@ -31,20 +31,39 @@ export class DonationRepository {
             const sortOrderQuery = orderBy && orderBy.length > 0 ? orderBy.map(order => `d.${order.column} ${order.order}`).join(', ') : 'd.id DESC';
     
             const getQuery = `
+                WITH tree_counts AS (
+                    SELECT 
+                        donation_id,
+                        COUNT(*) AS booked,
+                        COUNT(assigned_to) AS assigned  -- NULLs ignored automatically
+                    FROM "14trees_2".trees
+                    GROUP BY donation_id
+                ),
+                donation_user_stats AS (
+                    SELECT 
+                        donation_id,
+                        COUNT(DISTINCT id) AS users_count,
+                        SUM(CASE WHEN mail_sent THEN 1 ELSE 0 END) AS mailed_count
+                    FROM "14trees_2".donation_users
+                    GROUP BY donation_id
+                )
+
                 SELECT 
                     d.*,
-                    u.name as user_name,               
-                    u.email as user_email,
-                    u.phone as user_phone,
-                    pu.name as processed_by_name,    
-                    count(t.mapped_to_user) as booked,
-                    count(t.assigned_to) as assigned
+                    u.name AS user_name,
+                    u.email AS user_email,
+                    u.phone AS user_phone,
+                    pu.name AS processed_by_name,
+                    COALESCE(dus.mailed_count, 0) AS mailed_count,
+                    COALESCE(dus.users_count, 0) AS users_count,
+                    COALESCE(tc.booked, 0) AS booked,
+                    COALESCE(tc.assigned, 0) AS assigned
                 FROM "14trees_2".donations d
-                LEFT JOIN "14trees_2".users u ON u.id = d.user_id          
+                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
                 LEFT JOIN "14trees_2".users pu ON pu.id = d.processed_by
-                LEFT JOIN "14trees_2".trees t ON t.donation_id = d.id
+                LEFT JOIN donation_user_stats dus ON dus.donation_id = d.id
+                LEFT JOIN tree_counts tc ON tc.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
-                GROUP BY d.id, u.id, pu.id           
                 ORDER BY ${sortOrderQuery} ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
             `;
     
