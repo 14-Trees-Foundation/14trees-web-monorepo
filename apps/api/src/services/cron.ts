@@ -19,6 +19,7 @@ import GiftCardsService from '../facade/giftCardsService';
 import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffice, GiftReqMailStatus_CSR, GiftReqMailStatus_Volunteer } from '../models/gift_card_request';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
 import { updateInventoryStates } from '../facade/autoProcessInventory';
+import { PaymentRepository } from '../repo/paymentsRepo';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -213,6 +214,9 @@ export function sendDonationMails() {
         }
 
         for (const donation of donations) {
+            if (!donation.amount_received) {
+                continue;
+            }
             const sponsor: any = {
                 name: (donation as any).user_name,
                 email: (donation as any).user_email,
@@ -274,9 +278,9 @@ export function sendGiftCardMails() {
             ]
             const giftCardsResp = await GiftCardsRepository.getGiftCardRequests(0, -1, filters)
             giftCardRequests = giftCardsResp.results.filter((request: GiftCardRequest) => {
-                return request.request_type === 'Gift Cards' && 
-                       (request.tags?.includes('WebSite') || 
-                        request.tags?.includes('Corporate'));
+                const isEligible = request.request_type === 'Gift Cards' && 
+                                   (request.tags?.includes('WebSite') || request.tags?.includes('Corporate'));
+                return isEligible && request.amount_received && request.amount_received > 0;
             });
 
         } catch (error: any) {

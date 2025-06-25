@@ -1783,6 +1783,64 @@ routes.get('/requests/tags', giftCards.getGiftRequestTags);
  */
 routes.get('/requests/fund-request/:gift_card_request_id', giftCards.generateFundRequest);
 
+/**
+ * @swagger
+ * /gift-cards/requests/send-fund-request/{gift_card_request_id}:
+ *   post:
+ *     summary: Send fund request email
+ *     description: Generates a fund request PDF and sends it to the corporate billing email
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - in: path
+ *         name: gift_card_request_id
+ *         required: true
+ *         description: ID of the gift card request
+ *         schema:
+ *           type: integer
+ *           example: 123
+ *     responses:
+ *       200:
+ *         description: Fund request sent successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Fund request sent successfully!"
+ *             pdf_url:
+ *               type: object
+ *               properties:
+ *                 location:
+ *                   type: string
+ *                   example: "https://s3.amazonaws.com/14trees/gift_cards/Company_Name_Req_No_123.pdf"
+ *       400:
+ *         description: Bad request - missing or invalid parameters
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Please provide valid input details!"
+ *       404:
+ *         description: Gift request or group not found
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Gift card request not found"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.post('/requests/send-fund-request/:gift_card_request_id', giftCards.sendFundRequest);
+
 routes.get('/transactions/:id', transactions.getTransactions);
 routes.post('/transactions/send-email', transactions.sendEmailForTransaction);
 

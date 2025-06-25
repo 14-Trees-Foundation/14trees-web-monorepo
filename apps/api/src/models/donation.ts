@@ -16,6 +16,11 @@ export const DonationStatus_PendingPayment: DonationStatus = 'PendingPayment';
 export const DonationStatus_Paid: DonationStatus = 'Paid';
 export const DonationStatus_OrderFulfilled: DonationStatus = 'OrderFulfilled';
 
+export type DonationPrsStatus = 'Pending Tree Reservation' | 'Pending Assignment' | 'Completed';
+export const DonationPrsStatus_PendingReservation: DonationPrsStatus = 'Pending Tree Reservation';
+export const DonationPrsStatus_PendingAssignment: DonationPrsStatus = 'Pending Assignment';
+export const DonationPrsStatus_Completed: DonationPrsStatus = 'Completed';
+
 export type DonationMailStatus = 'AckSent' | 'DashboardsSent' | 'BackOffice' | 'Accounts' | 'Volunteer' | 'CSR';
 export const DonationMailStatus_AckSent: DonationMailStatus = 'AckSent';
 export const DonationMailStatus_DashboardsSent: DonationMailStatus = 'DashboardsSent';
@@ -51,6 +56,7 @@ interface DonationAttributes {
   donation_type: DonationType;
   donation_method: DonationMethod | null;
   status: DonationStatus;
+  prs_status: DonationPrsStatus | null;
   mail_status: DonationMailStatus[] | null;
   mail_error: string | null;
   processed_by: number | null;
@@ -62,7 +68,7 @@ interface DonationAttributes {
   sponsorship_type: DonationSponsorshipType;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id' | 'group_id' | 'donation_date' | 'amount_received' | 'donation_receipt_number' | 'sponsorship_type'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id' | 'group_id' | 'donation_date' | 'amount_received' | 'donation_receipt_number' | 'sponsorship_type' | 'prs_status'> { }
 
 @Table({
   tableName: 'donations',
@@ -198,6 +204,13 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     defaultValue: DonationStatus_PendingPayment,
   })
   status!: DonationStatus;
+
+  @Column({
+    type: DataType.ENUM('Pending Tree Reservation', 'Pending Assignment', 'Completed'),
+    allowNull: true,
+    defaultValue: null,
+  })
+  prs_status!: DonationPrsStatus | null;
 
   @Column({
     type: DataType.ARRAY(DataType.ENUM('AckSent', 'DashboardsSent', 'BackOffice', 'Accounts', 'Volunteer', 'CSR')),
