@@ -512,6 +512,11 @@ class GiftCardsService {
                     corporateName = 'Unknown Corporation';
                 }
             }
+            let panNumber = "";
+            if (giftCard.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(giftCard.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
     
             const emailData = {
                 giftCardRequestId: giftCard.id,
@@ -522,6 +527,7 @@ class GiftCardsService {
                 totalTrees: giftCard.no_of_cards,
                 eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                panNumber: panNumber || "N/A",
                 recipients: recipients.map((user: any) => ({
                     name: user.recipient_name,
                     email: user.recipient_email,
@@ -596,6 +602,11 @@ class GiftCardsService {
                     corporateName = 'Unknown Corporation';
                 }
             }
+            let panNumber = "";
+            if (giftCard.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(giftCard.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
     
             const emailData = {
                 giftCardRequestId: giftCard.id,
@@ -606,6 +617,7 @@ class GiftCardsService {
                 totalTrees: giftCard.no_of_cards,
                 eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                panNumber: panNumber || "N/A",
                 recipients: recipients.map((user: any) => ({
                     name: user.recipient_name,
                     email: user.recipient_email,
@@ -676,6 +688,11 @@ class GiftCardsService {
                 }
             }
 
+            let panNumber = "";
+            if (giftCard.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(giftCard.payment_id);
+                panNumber = payment?.pan_number || "";
+            }   
             const emailData = {
                 giftCardRequestId: giftCard.id,
                 sponsorName: sponsorUser.name,
@@ -685,6 +702,7 @@ class GiftCardsService {
                 totalTrees: giftCard.no_of_cards,
                 eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                panNumber: panNumber || "N/A",
                 ...(isCorporate && { 
                     corporateName: corporateName || 'Unknown Corporation',
                     tags: giftCard.tags?.join(', ') || 'No tags'
@@ -747,6 +765,11 @@ class GiftCardsService {
                     corporateName = 'Unknown Corporation';
                 }
             }
+            let panNumber = "";
+            if (giftCard.payment_id) {
+                const payment: any = await PaymentRepository.getPayment(giftCard.payment_id);
+                panNumber = payment?.pan_number || "";
+            }
     
             const emailData = {
                 giftCardRequestId: giftCard.id,
@@ -757,6 +780,7 @@ class GiftCardsService {
                 totalTrees: giftCard.no_of_cards,
                 eventName: giftCard.event_name,
                 giftCardDate: moment(new Date(giftCard.created_at)).format('MMMM DD, YYYY'),
+                panNumber: panNumber || "N/A",
                 ...(isCorporate && { 
                     corporateName: corporateName || 'Unknown Corporation',
                     tags: giftCard.tags?.join(', ') || 'No tags'
