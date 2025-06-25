@@ -456,13 +456,13 @@ function Donation() {
       if (user.recipient_email) {
         user.recipient_email = user.recipient_email.trim().replace("donor", donor);
       } else {
-        user.recipient_email = user.recipient_name.toLowerCase().trim().replace(/\s+/g, '') + "." + donor + "@14trees"
+        user.recipient_email = user.recipient_name.toLowerCase().trim().replace(/\s+/g, '.') + "." + donor + "@14trees"
       }
 
       if (user.assignee_email) {
         user.assignee_email = user.assignee_email.trim().replace("donor", donor);
       } else {
-        user.assignee_email = user.assignee_name.toLowerCase().trim().replace(/\s+/g, '') + "." + donor + "@14trees"
+        user.assignee_email = user.assignee_name.toLowerCase().trim().replace(/\s+/g, '.') + "." + donor + "@14trees"
       }
 
       return user;
@@ -764,8 +764,8 @@ function Donation() {
         }),
         users: dedicatedNames.map(user => ({
           ...user,
-          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees",
-          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '') + ".donor@14trees"
+          recipient_email: user.recipient_email || user.recipient_name.toLowerCase().replace(/\s+/g, '.') + ".donor@14trees",
+          assignee_email: user.assignee_email || user.assignee_name.toLowerCase().replace(/\s+/g, '.') + ".donor@14trees"
         })),
         tags: ["WebSite"],
       };
