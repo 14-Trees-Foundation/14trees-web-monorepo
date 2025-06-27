@@ -317,25 +317,25 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
         res.status(status.success).send();
 
         if (is_corporate) {
-            try {
-                await GiftCardsService.autoBookTreesForGiftRequest(giftRequest);
-            } catch (error) {
-                console.error("[ERROR] Failed to auto book trees for gift request:", {
-                    error,
-                    stack: error instanceof Error ? error.stack : undefined
-                });
-            }
+            // try {
+            //     await GiftCardsService.autoBookTreesForGiftRequest(giftRequest);
+            // } catch (error) {
+            //     console.error("[ERROR] Failed to auto book trees for gift request:", {
+            //         error,
+            //         stack: error instanceof Error ? error.stack : undefined
+            //     });
+            // }
 
-            try {
-                await GiftCardsService.fullFillGiftCardRequestWithTransactions(giftRequest);
-            } catch (error) {
-                console.error("[ERROR] Failed to assign trees for gift request:", {
-                    error,
-                    stack: error instanceof Error ? error.stack : undefined
-                });
-            }
+            // try {
+            //     await GiftCardsService.fullFillGiftCardRequestWithTransactions(giftRequest);
+            // } catch (error) {
+            //     console.error("[ERROR] Failed to assign trees for gift request:", {
+            //         error,
+            //         stack: error instanceof Error ? error.stack : undefined
+            //     });
+            // }
 
-            await generateGiftCardsForGiftRequest(giftRequest);
+            // await generateGiftCardsForGiftRequest(giftRequest);
             return;
         }
 
@@ -1873,9 +1873,9 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
         const requestIds = giftRequests.results.map(request => request.id);
 
         const giftCards = await GiftCardsRepository.getGiftCards(0, treesCount, { gift_card_request_id: { [Op.in]: requestIds }, gift_request_user_id: { [Op.is]: null } });
-        if (giftCards.results.length === 0) {
+        if (giftCards.results.length !== treesCount) {
             res.status(status.bad).json({
-                message: 'Tree cards not found!'
+                message: 'Enough trees are not available for your request!'
             })
             return;
         }
@@ -1959,7 +1959,22 @@ export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
         }
         const requestIds = giftRequests.results.map(request => request.id);
 
+        const requestedTrees = users.reduce((acc: number, user: any) => {
+            if (user.trees_count) {
+                return acc + user.trees_count;
+            }
+            return acc;
+        }, 0);
 
+        const giftCards = await GiftCardsRepository.getGiftCards(0, requestedTrees, { gift_card_request_id: { [Op.in]: requestIds }, gift_request_user_id: { [Op.is]: null } });
+        if (giftCards.results.length !== requestedTrees) {
+            res.status(status.bad).json({
+                message: 'Enough trees are not available for your request!'
+            })
+            return;
+        }
+
+        let idx = 0;
         for (const user of users) {
             let userId = user?.id;
             if (!userId) {
@@ -1967,13 +1982,8 @@ export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
                 userId = usr.id;
             }
 
-            const giftCards = await GiftCardsRepository.getGiftCards(0, user.trees_count, { gift_card_request_id: { [Op.in]: requestIds }, gift_request_user_id: { [Op.is]: null } });
-            if (giftCards.results.length === 0) {
-                res.status(status.bad).json({
-                    message: 'Tree cards not found!'
-                })
-                return;
-            }
+            const cards = giftCards.results.slice(idx, idx + user.trees_count);
+            idx += user.trees_count;
 
             const {
                 event_type: eventType,
@@ -1983,7 +1993,7 @@ export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
                 profile_image_url: profileImageUrl,
             } = user;
 
-            for (const card of giftCards.results) {
+            for (const card of cards) {
                 await redeemSingleGiftCard(card, userId, eventType, eventName, giftedBy, giftedOn, profileImageUrl);
             }
 
@@ -2004,7 +2014,7 @@ export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
                 updated_at: new Date(),
             }
 
-            const cardIds = giftCards.results.map(card => card.id);
+            const cardIds = cards.map(card => card.id);
             if (sponsorGroup || sponsorUser) {
                 const trn = await GRTransactionsRepository.createTransaction(trnData);
                 await GRTransactionsRepository.addCardsToTransaction(trn.id, cardIds);
@@ -2064,6 +2074,13 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
         if (!giftCard) {
             res.status(status.bad).json({
                 message: 'Gift card not found!'
+            })
+            return;
+        }
+
+        if (giftCard.gift_request_user_id) {
+            res.status(status.bad).json({
+                message: 'Gift card already redeemed!'
             })
             return;
         }

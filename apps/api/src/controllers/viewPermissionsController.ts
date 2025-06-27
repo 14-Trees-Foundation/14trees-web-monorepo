@@ -150,3 +150,53 @@ export const updateViewUsers = async (req: Request, res: Response) => {
         res.status(status.error).send({ message: "Something went wrong. Please try again later!" })
     }
 }
+
+export const addViewUsers = async (req: Request, res: Response) => {
+    const { view_id } = req.body;
+    const users: any[] = req.body.users;
+    
+    try {
+        const view = await ViewPermissionRepository.getViewByPk(view_id);
+        if (!view) {
+            return res.status(status.notfound).send({ message: "Request page not found!" });
+        }
+
+        const exisiting = await ViewPermissionRepository.getViewUsers({ view_id: view.id });
+        const addList = users.filter(item => !exisiting.some(user => user.user_id === item.id));
+        
+        if (addList.length > 0) { await ViewPermissionRepository.addViewUsers(view.id, addList.map(item => item.id)) }
+
+        const viewData = await ViewPermissionRepository.getViewByPath(view.path);
+        res.status(status.success).send(viewData);
+    } catch (error: any) {
+        console.log("[ERROR]", "ViewPermissionsController::addViewUsers", error);
+        res.status(status.error).send({ message: "Something went wrong. Please try again later!" });
+    }
+}
+
+export const deleteViewUsers = async (req: Request, res: Response) => {
+    const { view_id } = req.body;
+    const users: any[] = req.body.users;
+    
+    try {
+        const view = await ViewPermissionRepository.getViewByPk(view_id);
+        if (!view) {
+            return res.status(status.notfound).send({ message: "Request page not found!" });
+        }
+
+        const usersToDelete = users.map(user => user.id);
+        
+        if (usersToDelete.length > 0) {
+            await ViewPermissionRepository.deleteViewUsers({ 
+                view_id: view.id, 
+                user_id: { [Op.in]: usersToDelete }
+            });
+        }
+
+        const viewData = await ViewPermissionRepository.getViewByPath(view.path);
+        res.status(status.success).send(viewData);
+    } catch (error: any) {
+        console.log("[ERROR]", "ViewPermissionsController::deleteViewUsers", error);
+        res.status(status.error).send({ message: "Something went wrong. Please try again later!" });
+    }
+}
