@@ -246,7 +246,7 @@ export class UserRepository {
             if (data.id)
                 return await users[0].update(obj);
 
-            else if (users[0].name.toLowerCase() !== obj.name.toLowerCase() && !obj.email.endsWith("@14trees")) {
+            else if (users[0].name.trim().toLowerCase() !== obj.name.trim().toLowerCase() && !obj.email.endsWith("@14trees")) {
                 obj.communication_email = obj.email;
                 obj.email = obj.name.split(" ").join(".") + "@14trees";
 
