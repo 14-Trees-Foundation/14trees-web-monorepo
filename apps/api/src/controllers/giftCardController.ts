@@ -1810,7 +1810,7 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
 
         let userId = user?.id;
         if (!userId) {
-            const usr = await UserRepository.upsertUser(user);
+            const usr = await UserRepository.upsertUserByEmailAndName(user);
             userId = usr.id;
         }
 
@@ -1935,7 +1935,7 @@ export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
         for (const user of users) {
             let userId = user?.id;
             if (!userId) {
-                const usr = await UserRepository.upsertUser(user);
+                const usr = await UserRepository.upsertUserByEmailAndName(user);
                 userId = usr.id;
             }
 
@@ -2023,7 +2023,7 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
 
         let userId = user?.id;
         if (!userId) {
-            const usr = await UserRepository.upsertUser(user);
+            const usr = await UserRepository.upsertUserByEmailAndName(user);
             userId = usr.id;
         }
 
