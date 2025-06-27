@@ -58,12 +58,26 @@ export const signin = async (req: CustomRequest, res: Response) => {
             if (!authToken) {
                 throw new Error("Failed to create authentication token");
             }
+
+            let path = "";
+            let view_id = "";
+            const permissions = await ViewPermissionRepository.getViewUsers({ user_id: user.results[0].id });
+            if (permissions.length > 0) {
+                const viewId = permissions[0].view_id;
+                const view = await ViewPermissionRepository.getViewByPk(viewId);
+                if (view) {
+                    view_id= view.view_id;
+                    path = view.path;
+                }
+            }
     
             res.status(201).json({
                 user: user.results[0],
                 token: jwtToken,
                 token_id: authToken.token_id,
                 expires_at: new Date(authToken.expires_at).getTime(),
+                view_id: view_id,
+                path: path,
             });
         } else {
             throw new Error("email is empty or is undefined")
