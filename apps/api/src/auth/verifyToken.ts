@@ -4,10 +4,14 @@ import * as jwt from 'jsonwebtoken';
 require('dotenv').config();
 
 export function verifyToken(req: Request, res: Response, next: any) {
-  next();
-  // var token = req.headers['x-access-token'] as string;
-  // if (!token)
-  //   return res.status(403).send({ auth: false, message: 'No token provided.' });
+  // Skip authentication in development environment
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    return next();
+  }
+
+  var token = req.headers['x-access-token'] as string;
+  if (!token)
+    return res.status(403).send({ auth: false, message: 'No token provided.' });
 
   // const key = process.env.SECRET_KEY || 'secret';
   // jwt.verify(token, key, function (err, decoded) {
