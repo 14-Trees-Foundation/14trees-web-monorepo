@@ -1,3 +1,5 @@
+import ChatBot from "components/Chatbot/ChatBot";
+import ChatbotV2 from "components/Chatbot/ChatBotV2";
 import { HomePage } from "components/Partials/HomePage";
 import { Metadata } from "next";
 import labels from "~/assets/labels.json";
@@ -9,7 +11,11 @@ export const metadata: Metadata = {
 
 const Home = () => {
   return (
-    <HomePage />
+    <>
+      <HomePage />
+      <ChatBot />
+      <ChatbotV2 />
+    </>
   );
 }
 
