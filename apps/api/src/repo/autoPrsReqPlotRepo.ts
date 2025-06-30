@@ -38,4 +38,30 @@ export class AutoPrsReqPlotsRepository {
         if (createData.length === 0) return existing;
         return AutoPrsReqPlot.bulkCreate(createData, { returning: true });
     }
+
+    public static async removePlots(
+        plotData: {
+            plot_ids: number[];
+            type: 'donation' | 'gift';
+        }
+    ): Promise<number> {
+        const deletedCount = await AutoPrsReqPlot.destroy({
+            where: {
+                plot_id: { [Op.in]: plotData.plot_ids },
+                type: plotData.type
+            }
+        });
+
+        return deletedCount;
+    }
+
+    public static async removeAllPlots(type: 'donation' | 'gift'): Promise<number> {
+        const deletedCount = await AutoPrsReqPlot.destroy({
+            where: {
+                type: type
+            }
+        });
+
+        return deletedCount;
+    }
 }
