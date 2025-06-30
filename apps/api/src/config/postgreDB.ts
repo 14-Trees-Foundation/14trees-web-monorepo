@@ -54,11 +54,12 @@ class Database {
   public sequelize: Sequelize;
 
 
-  private POSTGRES_DB =  'defaultdb';
-  private POSTGRES_HOST = 'vivek-tree-vivek-tree.e.aivencloud.com';
-  private POSTGRES_PORT = 15050;
-  private POSTGRES_USER = 'avnadmin';
+  private POSTGRES_DB = process.env.POSTGRES_DB || 'defaultdb';
+  private POSTGRES_HOST = process.env.POSTGRES_HOST || 'vivek-tree-vivek-tree.e.aivencloud.com';
+  private POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT || '15050');
+  private POSTGRES_USER = process.env.POSTGRES_USER || 'avnadmin';
   private POSTGRES_PD = process.env.POSTGRES_PD;
+  private POSTGRES_SCHEMA = process.env.POSTGRES_SCHEMA || '14trees_2';
 
   constructor() {
     this.sequelize = new Sequelize({
@@ -66,7 +67,7 @@ class Database {
       username: this.POSTGRES_USER,
       password: this.POSTGRES_PD,
       host: this.POSTGRES_HOST,
-      schema: "14trees",
+      schema: this.POSTGRES_SCHEMA,
       port: this.POSTGRES_PORT,
       attributeBehavior: 'escape',
       dialect: "postgres",
