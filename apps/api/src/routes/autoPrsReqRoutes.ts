@@ -6,12 +6,12 @@ const routes = Router();
 
 /**
  * @swagger
- * /auto-process/create:
+ * /auto-process/addPlots:
  *   post:
- *     summary: Create a new plot record
- *     description: Creates a new plot record with type either 'donation' or 'gift'. A plot_id can exist once per type.
+ *     summary: Add plots for auto-processing
+ *     description: Adds plots to be used for auto-processing gift or donation requests. Duplicate plot_ids for the same type are ignored.
  *     tags:
- *       - Plots
+ *       - Auto-Processing Configuration
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -21,23 +21,27 @@ const routes = Router();
  *           schema:
  *             type: object
  *             required:
- *               - plot_id
+ *               - plot_ids
  *               - type
  *             properties:
- *               plot_id:
- *                 type: string
- *                 example: "2,125"
+ *               plot_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 example: [1, 2, 125]
  *               type:
  *                 type: string
  *                 enum: [donation, gift]
- *                 example: "donation"
+ *                 example: "gift"
  *     responses:
  *       201:
- *         description: Plot created successfully
+ *         description: Plots added successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/definitions/AutoPrsReqPlot'
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/AutoPrsReqPlot'
  *       400:
  *         description: Bad request (validation errors)
  *         content:
@@ -47,22 +51,164 @@ const routes = Router();
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "type must be either 'donation' or 'gift'"
- *       409:
- *         description: Conflict (plot_id already exists for this type)
+ *                   example: "plot_ids and type are required"
+ *       500:
+ *         description: Internal server error
+ */
+routes.post('/addPlots', verifyToken, autoPrsReq.addPlot);
+
+/**
+ * @swagger
+ * /auto-process/getPlots:
+ *   post:
+ *     summary: Get configured plots for auto-processing
+ *     description: Retrieves plots configured for auto-processing of the specified type (gift or donation).
+ *     tags:
+ *       - Auto-Processing Configuration
+ *     parameters:
+ *       - name: type
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [donation, gift]
+ *         example: "gift"
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               filters:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/definitions/Filter'
+ *               order_by:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/definitions/OrderBy'
+ *     responses:
+ *       200:
+ *         description: Plots retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 error:
- *                   type: string
- *                   example: "Plot 1,896 already exists for type donation"
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 total:
+ *                   type: integer
+ *                 offset:
+ *                   type: integer
+ *       400:
+ *         description: Bad request (invalid type)
+ *       404:
+ *         description: No plots found for this type
  *       500:
  *         description: Internal server error
  */
-routes.post('/addPlots', verifyToken, autoPrsReq.addPlot); // Add auth middleware if needed
+routes.post('/getPlots', autoPrsReq.getPlotData);
 
-routes.post('/getPlot', autoPrsReq.getPlotData);
+/**
+ * @swagger
+ * /auto-process/removePlots:
+ *   delete:
+ *     summary: Remove specific plots from auto-processing
+ *     description: Removes specified plots from auto-processing configuration for the given type.
+ *     tags:
+ *       - Auto-Processing Configuration
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - plot_ids
+ *               - type
+ *             properties:
+ *               plot_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 example: [1, 2, 125]
+ *               type:
+ *                 type: string
+ *                 enum: [donation, gift]
+ *                 example: "gift"
+ *     responses:
+ *       200:
+ *         description: Plots removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully removed 3 plot(s)"
+ *                 deletedCount:
+ *                   type: integer
+ *                   example: 3
+ *       400:
+ *         description: Bad request (validation errors)
+ *       404:
+ *         description: No plots found to remove
+ *       500:
+ *         description: Internal server error
+ */
+routes.delete('/removePlots', verifyToken, autoPrsReq.removePlot);
+
+/**
+ * @swagger
+ * /auto-process/removeAllPlots:
+ *   delete:
+ *     summary: Remove all plots for a type from auto-processing
+ *     description: Removes all plots configured for auto-processing of the specified type.
+ *     tags:
+ *       - Auto-Processing Configuration
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [donation, gift]
+ *                 example: "gift"
+ *     responses:
+ *       200:
+ *         description: All plots removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully removed all 5 plot(s) for type \"gift\""
+ *                 deletedCount:
+ *                   type: integer
+ *                   example: 5
+ *       400:
+ *         description: Bad request (validation errors)
+ *       404:
+ *         description: No plots found to remove
+ *       500:
+ *         description: Internal server error
+ */
+routes.delete('/removeAllPlots', verifyToken, autoPrsReq.removeAllPlots);
 
 export default routes;

@@ -90,3 +90,70 @@ export const getPlotData = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const removePlot = async (req: Request, res: Response) => {
+    try {
+        const { plot_ids, type } = req.body;
+
+        if (!plot_ids || plot_ids.length === 0 || !type) {
+            return res.status(400).json({ error: 'plot_ids and type are required' });
+        }
+
+        if (type !== 'donation' && type !== 'gift') {
+            return res.status(400).json({ error: 'type must be either "donation" or "gift"' });
+        }
+
+        // Remove plots
+        const deletedCount = await AutoPrsReqPlotsRepository.removePlots({
+            plot_ids,
+            type
+        });
+
+        if (deletedCount === 0) {
+            return res.status(404).json({ message: 'No plots found to remove for the specified criteria' });
+        }
+
+        return res.status(200).json({ 
+            message: `Successfully removed ${deletedCount} plot(s)`,
+            deletedCount 
+        });
+
+    } catch (error) {
+        console.error('Error removing plots:', error);
+        return res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to remove plots'
+        });
+    }
+};
+
+export const removeAllPlots = async (req: Request, res: Response) => {
+    try {
+        const { type } = req.body;
+
+        if (!type) {
+            return res.status(400).json({ error: 'type is required' });
+        }
+
+        if (type !== 'donation' && type !== 'gift') {
+            return res.status(400).json({ error: 'type must be either "donation" or "gift"' });
+        }
+
+        // Remove all plots for the type
+        const deletedCount = await AutoPrsReqPlotsRepository.removeAllPlots(type);
+
+        if (deletedCount === 0) {
+            return res.status(404).json({ message: `No plots found to remove for type "${type}"` });
+        }
+
+        return res.status(200).json({ 
+            message: `Successfully removed all ${deletedCount} plot(s) for type "${type}"`,
+            deletedCount 
+        });
+
+    } catch (error) {
+        console.error('Error removing all plots:', error);
+        return res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to remove all plots'
+        });
+    }
+};
