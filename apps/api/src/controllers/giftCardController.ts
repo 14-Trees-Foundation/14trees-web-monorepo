@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
 import { FilterItem } from "../models/pagination";
 import { GiftCardsRepository } from "../repo/giftCardsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
@@ -42,8 +43,8 @@ export const getGiftRequestTags = async (req: Request, res: Response) => {
         const tags = await GiftCardsRepository.getGiftRequestTags(0, 100);
         res.status(status.success).send(tags);
     } catch (error: any) {
-        console.log("[ERROR]", "PlantTypeController::getGiftRequestTags", error);
-        res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+        await Logger.logError('giftCardController', 'getGiftRequestTags', error, req);
+        res.status(status.error).send({ error: error });
     }
 }
 

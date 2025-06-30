@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import CryptoJS from 'crypto-js';
 
 import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
 import { PaymentRepository } from "../repo/paymentsRepo";
 import { PaymentCreationAttributes } from "../models/payment";
 import { PaymentHistoryCreationAttributes } from "../models/payment_history";
@@ -22,11 +23,8 @@ export const getPayment = async (req: Request, res: Response) => {
         }
         res.status(status.success).json(result);
     } catch (error) {
-        console.log("[ERROR]", "PaymentController::getPayment", error);
-        res.status(status.error).send({
-            status: status.error,
-            message: 'Something went wrong. Please try again later.',
-        })
+        await Logger.logError('paymentController', 'getPayment', error, req);
+        res.status(status.error).send({ error: error });
     }
 }
 
@@ -67,11 +65,8 @@ export const createPayment = async (req: Request, res: Response) => {
         res.status(status.created).json(result);
 
     } catch (error: any) {
-        console.log("[ERROR]", "PaymentController::createPayment", error);
-        res.status(status.error).send({
-            status: status.error,
-            message: 'Something went wrong. Please try again later.',
-        })
+        await Logger.logError('paymentController', 'createPayment', error, req);
+        res.status(status.error).send({ error: error });
     }
 }
 

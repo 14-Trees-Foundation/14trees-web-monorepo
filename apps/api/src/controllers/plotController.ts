@@ -1,5 +1,6 @@
 import { PlotRepository } from "../repo/plotRepo";
 import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
 import { FilterItem } from "../models/pagination";
@@ -27,8 +28,8 @@ export const updatePlot = async (req: Request, res: Response) => {
         
         res.status(status.success).json(updatedPlot);
     } catch (error) {
-        console.log(error)
-        res.status(status.error).json({ error: error });
+        await Logger.logError('plotController', 'updatePlot', error, req);
+        res.status(status.error).send({ error: error });
     }
 }
 
@@ -56,7 +57,8 @@ export const addPlot = async (req: Request, res: Response) => {
         }
         res.status(status.created).json(plot);
     } catch (error: any) {
-        res.status(status.error).json({ error: error.message });
+        await Logger.logError('plotController', 'addPlot', error, req);
+        res.status(status.error).send({ error: error });
     }
 }
 

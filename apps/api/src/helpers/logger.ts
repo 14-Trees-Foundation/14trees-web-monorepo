@@ -1,4 +1,5 @@
 import { LogsInfoRepository } from '../repo/logsInfoRepo';
+import { Request } from 'express';
 
 interface ErrorLogData {
   controller: string;
@@ -11,9 +12,39 @@ interface ErrorLogData {
 
 export class Logger {
   /**
-   * Log error to console and database
+   * Log error to console and database (compact format)
    */
-  static async logError(data: ErrorLogData): Promise<void> {
+  static async logError(controller: string, method: string, error: any, req?: Request): Promise<void>;
+  /**
+   * Log error to console and database (detailed format)
+   */
+  static async logError(data: ErrorLogData): Promise<void>;
+  /**
+   * Implementation for both overloads
+   */
+  static async logError(controllerOrData: string | ErrorLogData, method?: string, error?: any, req?: Request): Promise<void> {
+    let data: ErrorLogData;
+    
+    if (typeof controllerOrData === 'string') {
+      // Compact format: logError('controller', 'method', error, req)
+      data = {
+        controller: controllerOrData,
+        method: method!,
+        error: error,
+        requestData: req ? this.extractRequestData(req) : undefined,
+      };
+    } else {
+      // Detailed format: logError({ controller, method, error, ... })
+      data = controllerOrData;
+    }
+
+    this.performErrorLogging(data);
+  }
+
+  /**
+   * Internal method to perform the actual error logging
+   */
+  private static async performErrorLogging(data: ErrorLogData): Promise<void> {
     const timestamp = new Date();
     const logMessage = {
       level: 'ERROR',

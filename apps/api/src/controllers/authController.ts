@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status';
+import { Logger } from '../helpers/logger';
 import { auth, OAuth2Client, TokenPayload } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -83,11 +84,8 @@ export const signin = async (req: CustomRequest, res: Response) => {
             throw new Error("email is empty or is undefined")
         }
     } catch (error: any) {
-        console.log(error);
-        res.status(status.error).json({
-            status: status.error,
-            message: error.message,
-        });
+        await Logger.logError('authController', 'signin', error, req);
+        res.status(status.error).send({ error: error });
     }
 };
 
