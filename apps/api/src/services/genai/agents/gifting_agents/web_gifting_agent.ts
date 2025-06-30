@@ -95,7 +95,30 @@ const responseSchema = z.object({
 const responseOpenAIFunction = {
     name: "response",
     description: "Return the response to the user",
-    parameters: zodToJsonSchema(responseSchema),
+    parameters: {
+        type: "object",
+        properties: {
+            text_output: {
+                type: "string",
+                description: "Markdown formatted text/message to be displayed/conwayed to the user"
+            },
+            sponsor_details: {
+                type: "object",
+                properties: {
+                    name: {
+                        type: "string",
+                        description: "Name of the sponsor user"
+                    },
+                    email: {
+                        type: "string", 
+                        description: "Email of the sponsor user"
+                    }
+                },
+                description: "Sponsor details if it were captured previously in conversations"
+            }
+        },
+        required: ["text_output"]
+    }
 };
 
 function parseToolCall(function_call: any, message: AIMessage): FunctionsAgentAction | AgentFinish {
