@@ -2,7 +2,8 @@ import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { TreesSnapshot, TreesSnapshotCreationAttributes } from '../models/trees_snapshots';
-import { Op, QueryTypes, WhereOptions } from 'sequelize'
+import { Op, QueryTypes, WhereOptions } from 'sequelize';
+import { getSchema } from '../helpers/utils';
 export class TreesSnapshotRepository {
 
     static async addTreesSnapshot(data: TreesSnapshotCreationAttributes): Promise<TreesSnapshot> {
@@ -32,9 +33,9 @@ export class TreesSnapshotRepository {
 
         let query = `
             SELECT ts.*
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON t.sapling_id = ts.sapling_id
-            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            FROM "${getSchema()}".trees_snapshots ts
+            JOIN "${getSchema()}".trees t ON t.sapling_id = ts.sapling_id
+            JOIN "${getSchema()}".plots p ON p.id = t.plot_id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             ORDER BY ts.id DESC
         `
@@ -48,9 +49,9 @@ export class TreesSnapshotRepository {
 
         const countQuery = `
             SELECT count(*) as count
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON t.sapling_id = ts.sapling_id
-            JOIN "14trees_2".plots p ON p.id = t.plot_id
+            FROM "${getSchema()}".trees_snapshots ts
+            JOIN "${getSchema()}".trees t ON t.sapling_id = ts.sapling_id
+            JOIN "${getSchema()}".plots p ON p.id = t.plot_id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         `
         const resp = await sequelize.query(countQuery, {
@@ -62,7 +63,7 @@ export class TreesSnapshotRepository {
     public static async getDeletedTreesSnapshotsFromList(treeSnapshotIds: number[]): Promise<number[]> {
         const query = `SELECT num
             FROM unnest(array[:tree_snapshot_ids]::int[]) AS num
-            LEFT JOIN "14trees_2".trees_snapshots AS v
+            LEFT JOIN "${getSchema()}".trees_snapshots AS v
             ON num = v.id
             WHERE v.id IS NULL;`
 
@@ -87,11 +88,11 @@ export class TreesSnapshotRepository {
                 s.name_english AS site_name, 
                 DATE(ts.image_date) AS audit_date, 
                 COUNT(t.sapling_id) AS trees_audited
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON ts.sapling_id = t.sapling_id
-            JOIN "14trees_2".plots p ON t.plot_id = p.id
-            JOIN "14trees_2".sites s ON p.site_id = s.id
-            JOIN "14trees_2".users u ON ts.user_id = u.id
+            FROM "${getSchema()}".trees_snapshots ts
+            JOIN "${getSchema()}".trees t ON ts.sapling_id = t.sapling_id
+            JOIN "${getSchema()}".plots p ON t.plot_id = p.id
+            JOIN "${getSchema()}".sites s ON p.site_id = s.id
+            JOIN "${getSchema()}".users u ON ts.user_id = u.id
             GROUP BY u.id, p.id, p.name, s.id, s.name_english, DATE(ts.image_date)
             ORDER BY audit_date DESC;
         `
@@ -109,9 +110,9 @@ export class TreesSnapshotRepository {
                 DATE(ts.image_date) AS audit_date, 
                 u.name AS user_name, 
                 COUNT(t.sapling_id) AS total_trees_audited
-            FROM "14trees_2".trees_snapshots ts
-            JOIN "14trees_2".trees t ON ts.sapling_id = t.sapling_id
-            JOIN "14trees_2".users u ON ts.user_id = u.id
+            FROM "${getSchema()}".trees_snapshots ts
+            JOIN "${getSchema()}".trees t ON ts.sapling_id = t.sapling_id
+            JOIN "${getSchema()}".users u ON ts.user_id = u.id
             GROUP BY u.id, DATE(ts.image_date)
             ORDER BY audit_date DESC;
         `;
@@ -129,17 +130,17 @@ export class TreesSnapshotRepository {
                 p."name" AS plot_name,
                 t.sapling_id,
                 latest_ts.image_date
-            FROM "14trees_2".trees t
-            JOIN "14trees_2".plots p ON t.plot_id = p.id
+            FROM "${getSchema()}".trees t
+            JOIN "${getSchema()}".plots p ON t.plot_id = p.id
             LEFT JOIN (
                 SELECT DISTINCT ON (sapling_id) sapling_id, image_date
-                FROM "14trees_2".trees_snapshots
+                FROM "${getSchema()}".trees_snapshots
                 ORDER BY sapling_id, image_date DESC
             ) latest_ts ON latest_ts.sapling_id = t.sapling_id
             WHERE t.plot_id IN (
                 SELECT DISTINCT t.plot_id
-                FROM "14trees_2".trees t
-                JOIN "14trees_2".trees_snapshots ts ON ts.sapling_id = t.sapling_id
+                FROM "${getSchema()}".trees t
+                JOIN "${getSchema()}".trees_snapshots ts ON ts.sapling_id = t.sapling_id
             );
         `;
     

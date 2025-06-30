@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status'; 
+import { Logger } from '../helpers/logger';
 import TreeRepository from '../repo/treeRepo';
 import PlantTypeRepository from '../repo/plantTypeRepo';
 import { UserRepository } from '../repo/userRepo';
@@ -42,6 +43,13 @@ export const summary = async (req: Request, res: Response) => {
       totalGiftedTrees: giftCardCounts.total_gifted_trees
     });
   } catch (error) {
+    await Logger.logError({
+      controller: 'analyticsController',
+      method: 'summary',
+      error,
+      requestData: Logger.extractRequestData(req),
+    });
+    
     res.status(status.error).send({
       error: error,
     });
@@ -55,6 +63,13 @@ export const getTotalTree = async (req: Request, res: Response) => {
       count,
     });
   } catch (error) {
+    await Logger.logError({
+      controller: 'analyticsController',
+      method: 'getTotalTree',
+      error,
+      requestData: Logger.extractRequestData(req),
+    });
+    
     res.status(status.error).send({
       error: error,
     });
@@ -68,6 +83,13 @@ export const getTotalPlantType = async (req: Request, res: Response) => {
       count,
     });
   } catch (error) {
+    await Logger.logError({
+      controller: 'analyticsController',
+      method: 'getTotalPlantType',
+      error,
+      requestData: Logger.extractRequestData(req),
+    });
+    
     res.status(status.error).send({
       error: error,
     });
@@ -81,6 +103,13 @@ export const getUniqueUsers = async (req: Request, res: Response) => {
       count,
     });
   } catch (error) {
+    await Logger.logError({
+      controller: 'analyticsController',
+      method: 'getUniqueUsers',
+      error,
+      requestData: Logger.extractRequestData(req),
+    });
+    
     res.status(status.error).send({
       error: error,
     });
@@ -94,6 +123,13 @@ export const getTotalPlots = async (req: Request, res: Response) => {
       count,
     });
   } catch (error) {
+    await Logger.logError({
+      controller: 'analyticsController',
+      method: 'getTotalPlots',
+      error,
+      requestData: Logger.extractRequestData(req),
+    });
+    
     res.status(status.error).send({
       error: error,
     });
@@ -107,6 +143,13 @@ export const getTotalPonds = async (req: Request, res: Response) => {
           count,
         });
     } catch (error) {
+        await Logger.logError({
+          controller: 'analyticsController',
+          method: 'getTotalPonds',
+          error,
+          requestData: Logger.extractRequestData(req),
+        });
+        
         res.status(status.error).send({
           error: error,
         });
@@ -120,6 +163,13 @@ export const getTotalEmployees = async (req: Request, res: Response) => {
           count,
         });
     } catch (error) {
+        await Logger.logError({
+          controller: 'analyticsController',
+          method: 'getTotalEmployees',
+          error,
+          requestData: Logger.extractRequestData(req),
+        });
+        
         res.status(status.error).send({
           error: error,
         });

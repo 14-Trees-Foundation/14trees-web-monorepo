@@ -4,6 +4,7 @@ import { Campaign, CampaignAttributes } from "../models/campaign";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { SortOrder } from "../models/common";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
+import { getSchema } from '../helpers/utils';
 
 interface CampaignSummaryResult {
     donationCount: number;
@@ -76,7 +77,7 @@ export class CampaignsRepository {
             // Main query to get paginated results
             const getQuery = `
                 SELECT c.*
-                FROM "14trees_2".campaigns c
+                FROM "${getSchema()}".campaigns c
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
                 ORDER BY ${sortOrderQuery}
                 ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -85,7 +86,7 @@ export class CampaignsRepository {
             // Count query for pagination
             const countQuery = `
                 SELECT COUNT(*) 
-                FROM "14trees_2".campaigns c
+                FROM "${getSchema()}".campaigns c
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
 
@@ -149,7 +150,7 @@ export class CampaignsRepository {
                         END
                     ) as amount,
                     SUM(no_of_cards) as trees
-                FROM "14trees_2".gift_card_requests
+                FROM "${getSchema()}".gift_card_requests
                 WHERE request_type = 'Gift Cards'
                 GROUP BY rfr_id
             )
@@ -158,8 +159,8 @@ export class CampaignsRepository {
                 COALESCE(SUM(vgc.count), 0) as "giftRequestCount",
                 COALESCE(SUM(d.amount_donated), 0) + COALESCE(SUM(vgc.amount), 0) as "totalAmount",
                 COALESCE(SUM(d.trees_count), 0) + COALESCE(SUM(vgc.trees), 0) as "treesCount"
-            FROM "14trees_2".referrals r
-            LEFT JOIN "14trees_2".donations d ON r.id = d.rfr_id
+            FROM "${getSchema()}".referrals r
+            LEFT JOIN "${getSchema()}".donations d ON r.id = d.rfr_id
             LEFT JOIN valid_gift_cards vgc ON r.id = vgc.rfr_id
             WHERE r.c_key = :c_key
         `;
@@ -184,7 +185,7 @@ export class CampaignsRepository {
                     END) as gift_card_amount,
                     COUNT(*) as gift_card_count,
                     SUM(no_of_cards) as gift_card_trees
-                FROM "14trees_2".gift_card_requests
+                FROM "${getSchema()}".gift_card_requests
                 WHERE request_type = 'Gift Cards'
                 GROUP BY rfr_id
             ),
@@ -198,8 +199,8 @@ export class CampaignsRepository {
                     COALESCE(vgc.gift_card_count, 0) as gift_card_count,
                     COALESCE(vgc.gift_card_trees, 0) as gift_card_trees,
                     COALESCE(SUM(d.amount_donated), 0) + COALESCE(vgc.gift_card_amount, 0) as total_amount
-                FROM "14trees_2".referrals r
-                LEFT JOIN "14trees_2".donations d ON r.id = d.rfr_id
+                FROM "${getSchema()}".referrals r
+                LEFT JOIN "${getSchema()}".donations d ON r.id = d.rfr_id
                 LEFT JOIN valid_gift_cards vgc ON r.id = vgc.rfr_id
                 WHERE r.c_key = :c_key AND (d.rfr_id IS NOT NULL OR vgc.rfr_id IS NOT NULL)
                 GROUP BY r.id, r.rfr, vgc.gift_card_amount, vgc.gift_card_count, vgc.gift_card_trees
@@ -213,7 +214,7 @@ export class CampaignsRepository {
                 (dgs.donation_trees + dgs.gift_card_trees) as "treesSponsored",
                 (dgs.gift_card_count + 0) as "giftedTrees"
             FROM donation_gift_summary dgs
-            LEFT JOIN "14trees_2".users u ON u.rfr = dgs.rfr_code
+            LEFT JOIN "${getSchema()}".users u ON u.rfr = dgs.rfr_code
             ORDER BY (dgs.donation_amount + dgs.gift_card_amount) DESC
         `;
 
@@ -231,7 +232,7 @@ export class CampaignsRepository {
                 COUNT(*) FILTER (WHERE c_key IS NULL) AS "personalReferrals",
                 COUNT(*) FILTER (WHERE c_key IS NOT NULL) AS "campaignReferrals",
                 COUNT(*) AS "totalReferrals"
-            FROM "14trees_2".referrals
+            FROM "${getSchema()}".referrals
         `;
 
         const [result] = await sequelize.query<ReferralCountsResult>(query, {
@@ -244,7 +245,7 @@ export class CampaignsRepository {
     public static async getReferralDashboard(rfr: string): Promise<ReferralDashboardResult> {
         const query = `
             WITH referral_cte AS (
-                SELECT id FROM "14trees_2".referrals WHERE rfr = :rfr
+                SELECT id FROM "${getSchema()}".referrals WHERE rfr = :rfr
             ),
             donation_data AS (
                 SELECT 
@@ -259,9 +260,9 @@ export class CampaignsRepository {
                     END as "donationTypeLabel",
                     NULLIF(d.trees_count, 0) as "treesCount",
                     NULLIF(d.amount_donated, 0) as "amount"
-                FROM "14trees_2".donations d
+                FROM "${getSchema()}".donations d
                 JOIN referral_cte r ON d.rfr_id = r.id
-                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
+                LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
             ),
             gift_data AS (
                 SELECT 
@@ -273,9 +274,9 @@ export class CampaignsRepository {
                         WHEN g.category = 'Foundation' THEN 3000 * g.no_of_cards
                         ELSE NULL
                     END as "amount"
-                FROM "14trees_2".gift_card_requests g
+                FROM "${getSchema()}".gift_card_requests g
                 JOIN referral_cte r ON g.rfr_id = r.id
-                LEFT JOIN "14trees_2".users u ON u.id = g.user_id
+                LEFT JOIN "${getSchema()}".users u ON u.id = g.user_id
                 WHERE g.request_type = 'Gift Cards'
             )
             SELECT

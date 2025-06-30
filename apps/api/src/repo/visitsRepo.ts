@@ -3,6 +3,7 @@ import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { Visit, VisitAttributes, VisitCreationAttributes } from '../models/visits';
 import { QueryTypes, WhereOptions } from 'sequelize';
+import { getSchema } from '../helpers/utils';
 
 export class VisitRepository {
     public static async updateVisit(visitData: VisitAttributes): Promise<Visit> {
@@ -54,11 +55,11 @@ export class VisitRepository {
 
         const getQuery = `
             SELECT v.*, s.name_english as site_name, g.name as group_name, array_agg(distinct(vi.image_url)) AS visit_images, count(DISTINCT vu.user_id) as user_count
-            FROM "14trees_2".visits v
-            LEFT JOIN "14trees_2".visit_images vi ON v.id = vi.visit_id
-            LEFT JOIN "14trees_2".visit_users vu ON v.id = vu.visit_id
-            LEFT JOIN "14trees_2".sites s ON s.id = v.site_id
-            LEFT JOIN "14trees_2".groups g ON g.id = v.group_id
+            FROM "${getSchema()}".visits v
+            LEFT JOIN "${getSchema()}".visit_images vi ON v.id = vi.visit_id
+            LEFT JOIN "${getSchema()}".visit_users vu ON v.id = vu.visit_id
+            LEFT JOIN "${getSchema()}".sites s ON s.id = v.site_id
+            LEFT JOIN "${getSchema()}".groups g ON g.id = v.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             GROUP BY v.id, g.id, s.id
             ORDER BY v.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -66,9 +67,9 @@ export class VisitRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees_2".visits v
-            LEFT JOIN "14trees_2".sites s ON s.id = v.site_id
-            LEFT JOIN "14trees_2".groups g ON g.id = v.group_id
+            FROM "${getSchema()}".visits v
+            LEFT JOIN "${getSchema()}".sites s ON s.id = v.site_id
+            LEFT JOIN "${getSchema()}".groups g ON g.id = v.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -109,7 +110,7 @@ export class VisitRepository {
     public static async getDeletedVisitsFromList(visitIds: number[]): Promise<number[]> {
         const query = `SELECT num
     FROM unnest(array[:visit_ids]::int[]) AS num
-    LEFT JOIN "14trees_2".visits AS v
+    LEFT JOIN "${getSchema()}".visits AS v
     ON num = v.id
     WHERE v.id IS NULL;`
 

@@ -4,6 +4,7 @@ import { Group, GroupAttributes, GroupCreationAttributes, GroupType} from '../mo
 import { PaginatedResponse, FilterItem }from '../models/pagination';
 import { getSqlQueryExpression } from "../controllers/helper/filters";
 import { SortOrder } from "../models/common"; 
+import { getSchema } from '../helpers/utils';
 
 export class GroupRepository {
     public static async addGroup(data: any): Promise<Group> {
@@ -56,10 +57,10 @@ export class GroupRepository {
         const query = `
             SELECT 
                 g.*,
-                (SELECT COUNT(*) FROM "14trees_2".trees t WHERE t.mapped_to_group = g.id) AS reserved_trees,
-                (SELECT COUNT(*) FROM "14trees_2".trees t WHERE t.sponsored_by_group = g.id) AS sponsored_trees
+                (SELECT COUNT(*) FROM "${getSchema()}".trees t WHERE t.mapped_to_group = g.id) AS reserved_trees,
+                (SELECT COUNT(*) FROM "${getSchema()}".trees t WHERE t.sponsored_by_group = g.id) AS sponsored_trees
             FROM 
-                "14trees_2".groups g
+                "${getSchema()}".groups g
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
             ${orderByClause}
             ${limit > 0 ? `LIMIT ${limit} OFFSET ${offset}` : ''}
@@ -67,7 +68,7 @@ export class GroupRepository {
     
         const countQuery = `
             SELECT COUNT(*) as count
-            FROM "14trees_2".groups g
+            FROM "${getSchema()}".groups g
             ${whereCondition ? `WHERE ${whereCondition}` : ''}
         `;
     

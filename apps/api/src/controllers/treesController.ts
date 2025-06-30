@@ -9,6 +9,7 @@ import { FilterItem } from "../models/pagination";
 import { Tree } from "../models/tree";
 import { SortOrder } from "../models/common";
 import { GroupRepository } from "../repo/groupRepo";
+import { getSchema } from '../helpers/utils';
 
 /*
   Model - Tree
@@ -154,7 +155,7 @@ export const treeLoggedByDate = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     const query = `SELECT DATE(t.created_at) AS "_id", COUNT(t.id)
-                        FROM "14trees_2".trees AS t
+                        FROM "${getSchema()}".trees AS t
                         GROUP BY DATE(t.created_at)
                         ORDER BY DATE(t.created_at) DESC;
                         -- OFFSET ${offset} LIMIT ${limit};
@@ -437,7 +438,7 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
 
   try {
     const query = `SELECT DATE_TRUNC('year', t.mapped_at) AS year, COUNT(t.id) AS tree_count
-                    FROM "14trees_2".trees AS t
+                    FROM "${getSchema()}".trees AS t
                     WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`}
                     GROUP BY year
                     ORDER BY year ASC;

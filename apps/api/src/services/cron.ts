@@ -19,6 +19,7 @@ import { GiftCardRequest, GiftReqMailStatus_Accounts, GiftReqMailStatus_BackOffi
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
 import { updateInventoryStates } from '../facade/autoProcessInventory';
 import { PaymentRepository } from '../repo/paymentsRepo';
+import { getSchema } from '../helpers/utils';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -62,7 +63,7 @@ export function updatePlotPlantTypes() {
             // fetch distinct plot plant types
             const query = `
                 SELECT DISTINCT plot_id, plant_type_id
-                FROM "14trees_2".trees;
+                FROM "${getSchema()}".trees;
             `
 
             const plotPlantTypes: any[] = await sequelize.query(query, { type: QueryTypes.SELECT });

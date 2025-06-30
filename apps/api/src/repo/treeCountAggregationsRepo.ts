@@ -2,6 +2,7 @@ import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { PaginatedResponse } from "../models/pagination";
 import { TreeCountAggregation, TreeCountAggregationAttributes, TreeCountAggregationCreationAttributes } from "../models/tree_count_aggregation";
 import { sequelize } from "../config/postgreDB";
+import { getSchema } from '../helpers/utils';
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -111,11 +112,11 @@ export class TreeCountAggregationsRepo {
                 THEN 1 
                 ELSE 0 
             END) AS unbooked_assigned
-            FROM "14trees_2".plots p
-            LEFT JOIN "14trees_2".trees t ON t.plot_id = p.id
-            LEFT JOIN "14trees_2".plant_types pt on pt.id = t.plant_type_id
-            LEFT JOIN "14trees_2".plant_type_card_templates ptct on ptct.plant_type = pt."name"
-            LEFT JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
+            FROM "${getSchema()}".plots p
+            LEFT JOIN "${getSchema()}".trees t ON t.plot_id = p.id
+            LEFT JOIN "${getSchema()}".plant_types pt on pt.id = t.plant_type_id
+            LEFT JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+            LEFT JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
             GROUP by p.id, pt.id
             ORDER BY p.id
             OFFSET ${offset} LIMIT ${limit};

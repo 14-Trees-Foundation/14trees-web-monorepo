@@ -5,6 +5,8 @@ import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { QueryTypes, WhereOptions } from 'sequelize';
 import { Tree } from '../models/tree';
 import { SortOrder } from '../models/common';
+import { getSchema } from '../helpers/utils';
+
 export class DonationRepository {
 
     public static async getDonations(offset: number, limit: number, filters?: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Donation>> {
@@ -36,7 +38,7 @@ export class DonationRepository {
                         donation_id,
                         COUNT(*) AS booked,
                         COUNT(assigned_to) AS assigned  -- NULLs ignored automatically
-                    FROM "14trees_2".trees
+                    FROM "${getSchema()}".trees
                     GROUP BY donation_id
                 ),
                 donation_user_stats AS (
@@ -44,7 +46,7 @@ export class DonationRepository {
                         donation_id,
                         COUNT(DISTINCT id) AS users_count,
                         SUM(CASE WHEN mail_sent THEN 1 ELSE 0 END) AS mailed_count
-                    FROM "14trees_2".donation_users
+                    FROM "${getSchema()}".donation_users
                     GROUP BY donation_id
                 )
 
@@ -58,9 +60,9 @@ export class DonationRepository {
                     COALESCE(dus.users_count, 0) AS users_count,
                     COALESCE(tc.booked, 0) AS booked,
                     COALESCE(tc.assigned, 0) AS assigned
-                FROM "14trees_2".donations d
-                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-                LEFT JOIN "14trees_2".users pu ON pu.id = d.processed_by
+                FROM "${getSchema()}".donations d
+                LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
+                LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
                 LEFT JOIN donation_user_stats dus ON dus.donation_id = d.id
                 LEFT JOIN tree_counts tc ON tc.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
@@ -69,9 +71,9 @@ export class DonationRepository {
     
             const countQuery = `
                 SELECT COUNT(*) 
-                FROM "14trees_2".donations d
-                LEFT JOIN "14trees_2".users u ON u.id = d.user_id
-                LEFT JOIN "14trees_2".users pu ON pu.id = d.processed_by
+                FROM "${getSchema()}".donations d
+                LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
+                LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
     
@@ -190,12 +192,12 @@ export class DonationRepository {
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
             ur.relation, du.mail_sent
-            FROM "14trees_2".trees t
-            LEFT JOIN "14trees_2".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
-            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
-            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
-            LEFT JOIN "14trees_2".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id
+            FROM "${getSchema()}".trees t
+            LEFT JOIN "${getSchema()}".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
+            LEFT JOIN "${getSchema()}".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
+            LEFT JOIN "${getSchema()}".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
+            LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY t.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
@@ -207,11 +209,11 @@ export class DonationRepository {
 
         const countQuery = `
             SELECT count(t.id)
-            FROM "14trees_2".trees t
-            LEFT JOIN "14trees_2".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
-            LEFT JOIN "14trees_2".users ru ON ru.id = t.gifted_to
-            LEFT JOIN "14trees_2".users au ON au.id = t.assigned_to
-            LEFT JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id    
+            FROM "${getSchema()}".trees t
+            LEFT JOIN "${getSchema()}".donation_users du on du.donation_id = t.donation_id AND du.recipient = t.gifted_to
+            LEFT JOIN "${getSchema()}".users ru ON ru.id = t.gifted_to
+            LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
+            LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id    
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -233,14 +235,14 @@ export class DonationRepository {
 
             const getUniqueTagsQuery =
                 `SELECT DISTINCT tag
-                    FROM "14trees_2".donations d,
+                    FROM "${getSchema()}".donations d,
                     unnest(d.tags) AS tag
                     ORDER BY tag
                     OFFSET ${offset} LIMIT ${limit};`;
 
             const countUniqueTagsQuery =
                 `SELECT count(DISTINCT tag)
-                    FROM "14trees_2".donations d,
+                    FROM "${getSchema()}".donations d,
                     unnest(d.tags) AS tag;`;
 
             const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
