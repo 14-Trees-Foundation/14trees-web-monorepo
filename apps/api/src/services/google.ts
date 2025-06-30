@@ -7,6 +7,9 @@ const KEY_FILE_PATH = process.env.GOOGLE_APP_CREDENTIALS || ''
 
 const auth = new google.auth.GoogleAuth({
     keyFile: KEY_FILE_PATH,
+    clientOptions: {
+        subject: 'dashboard@14trees.org'
+    },
     scopes: ['https://www.googleapis.com/auth/drive'],
 });
 
@@ -18,7 +21,7 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
         fileId: fileId,
         requestBody: {
             name: fileName,
-            parents: ['1k-3bfz7ReFyYWWXytYlNGsiz09cq1r2B']
+            parents: ['1T_mBriFGk7hD7fxLqVeX22I8IGCiHYtC']
         },
     });
 
@@ -27,6 +30,16 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
     }
 
     const newFileId = response.data.id;
+
+    await drive.permissions.create({
+        fileId: newFileId,
+        requestBody: {
+            role: 'owner',
+            type: 'user',
+            emailAddress: 'dashboard@14trees.org',
+        },
+        transferOwnership: true,
+    });
 
     await drive.permissions.create({
         fileId: newFileId,
@@ -94,6 +107,7 @@ export class GoogleSpreadsheet {
         const auth = new google.auth.JWT({
             email: credentials.client_email,
             key: credentials.private_key,
+            subject: 'dashboard@14trees.org',
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
 
@@ -364,6 +378,7 @@ export class GoogleDoc {
         const auth = new google.auth.JWT({
             email: credentials.client_email,
             key: credentials.private_key,
+            subject: 'dashboard@14trees.org',
             scopes: [
                 'https://www.googleapis.com/auth/documents',
             ],
