@@ -110,7 +110,8 @@ const getHtmlTemplate = (templateName: string, emailData: any) => {
     return template(emailData);
   } catch (error) {
     console.error(`Error loading template ${templateName}:`, error);
-    return `<p>Error loading email template: ${error.message}</p><pre>${JSON.stringify(emailData, null, 2)}</pre>`;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return `<p>Error loading email template: ${errorMessage}</p><pre>${JSON.stringify(emailData, null, 2)}</pre>`;
   }
 }
 
@@ -145,7 +146,8 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
     return { status: response.status, statusText: response.statusText };
   } catch (error) {
     console.error('Error sending email:', error);
-    return { status: 500, statusText: error.message || 'Failed to send email' };
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send email';
+    return { status: 500, statusText: errorMessage };
   }
 };
 
