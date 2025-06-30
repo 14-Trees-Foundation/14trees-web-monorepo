@@ -6,18 +6,14 @@
     "outDir": "./dist",
     "target": "ES2020",
     "sourceMap": true,
-    
-   
     "moduleResolution": "node",
     "allowJs": true,
-    
-        "module": "commonjs",
-        "strict": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        // other options...
-      
-    
-    
+    "module": "commonjs",
+    "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
