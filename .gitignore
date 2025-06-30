@@ -39,7 +39,6 @@ dist/
 
 # DB Volume
 db/data
-db/mongodb
 
 content/**/*
 !content/*.d.ts
