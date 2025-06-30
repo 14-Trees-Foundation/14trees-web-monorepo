@@ -42,6 +42,7 @@ async function getJwtToken(
             email: credentials.client_email,
             key: credentials.private_key,
             scopes: scopes,
+            subject: 'dashboard@14trees.org'
         });
 
         // Authenticate the client and retrieve the token
