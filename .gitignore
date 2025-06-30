@@ -42,3 +42,6 @@ db/data
 
 content/**/*
 !content/*.d.ts
+
+# External repositories
+apps/frontend
