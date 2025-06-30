@@ -767,7 +767,7 @@ class TreeRepository {
       JOIN "14trees_2".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
       JOIN "14trees_2".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
-    if (!include_no_giftable) '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+    if (!include_no_giftable) countQuery += '\nJOIN "14trees_2".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
 
     countQuery += `
         WHERE t.deleted_at IS NULL
