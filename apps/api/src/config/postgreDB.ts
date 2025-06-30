@@ -141,6 +141,8 @@ class Database {
         console.log(
           "✅ PostgreSQL Connection has been established successfully."
         );
+        console.log(`🗄️  Using database schema: ${this.POSTGRES_SCHEMA}`);
+        console.log(`📊 Connected to database: ${this.POSTGRES_DB} on ${this.POSTGRES_HOST}:${this.POSTGRES_PORT}`);
       })
       .catch((err) => {
         console.error("❌ Unable to connect to the PostgreSQL database:", err);
