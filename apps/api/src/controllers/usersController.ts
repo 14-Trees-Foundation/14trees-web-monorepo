@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
 import { User } from "../models/user";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { UserRepository, getUserDocumentFromRequestBody } from "../repo/userRepo";
@@ -39,8 +40,8 @@ export const getUser = async (req: Request, res: Response) => {
       res.status(status.success).json(user);
     }
   } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
+    await Logger.logError('usersController', 'getUser', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -52,8 +53,8 @@ export const getUsers = async (req: Request, res: Response) => {
     let users = await UserRepository.getUsers(offset, limit, filters);
     res.status(status.success).json(users);
   } catch (error: any) {
-    res.status(status.error).send({ error: error.message });
-    return;
+    await Logger.logError('usersController', 'getUsers', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -67,10 +68,9 @@ export const searchUsers = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
     const users = await UserRepository.searchUsers(req.params.search, offset, limit);
     res.status(status.success).send(users);
-    return;
   } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
+    await Logger.logError('usersController', 'searchUsers', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -93,10 +93,8 @@ export const addUser = async (req: Request, res: Response) => {
     let user = await UserRepository.addUser(req.body);
     res.status(status.created).json(user);
   } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
+    await Logger.logError('usersController', 'addUser', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 

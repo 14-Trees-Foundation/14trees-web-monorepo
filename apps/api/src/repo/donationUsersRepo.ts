@@ -3,6 +3,7 @@ import { sequelize } from "../config/postgreDB";
 import { DonationUser, DonationUserAttributes, DonationUserCreationAttributes } from "../models/donation_user";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
+import { getSchema } from '../helpers/utils';
 
 export class DonationUserRepository {
   static async getDonationUsers(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<DonationUser>> {
@@ -33,11 +34,11 @@ export class DonationUserRepository {
       ru."name" as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
       au."name" as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
       ur.relation, count(t.id) as assigned_trees
-      FROM "14trees".donation_users du 
-      JOIN "14trees".users ru ON ru.id = du.recipient
-      JOIN "14trees".users au ON au.id = du.assignee
-      LEFT JOIN "14trees".user_relations ur ON ur.primary_user = du.recipient AND ur.secondary_user = du.assignee
-      LEFT JOIN "14trees".trees t ON t.gifted_to = du.recipient AND t.assigned_to = du.assignee AND t.donation_id = du.donation_id
+      FROM "${getSchema()}".donation_users du 
+      JOIN "${getSchema()}".users ru ON ru.id = du.recipient
+      JOIN "${getSchema()}".users au ON au.id = du.assignee
+      LEFT JOIN "${getSchema()}".user_relations ur ON ur.primary_user = du.recipient AND ur.secondary_user = du.assignee
+      LEFT JOIN "${getSchema()}".trees t ON t.gifted_to = du.recipient AND t.assigned_to = du.assignee AND t.donation_id = du.donation_id
       WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
       GROUP BY du.id, ru.id, au.id, ur.id
       ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
@@ -45,11 +46,11 @@ export class DonationUserRepository {
 
     const countQuery = `
       SELECT count(distinct du.id)
-      FROM "14trees".donation_users du 
-      JOIN "14trees".users ru ON ru.id = du.recipient
-      JOIN "14trees".users au ON au.id = du.assignee
-      LEFT JOIN "14trees".user_relations ur ON ur.primary_user = du.recipient AND ur.secondary_user = du.assignee
-      LEFT JOIN "14trees".trees t ON t.gifted_to = du.recipient AND t.assigned_to = du.assignee AND t.donation_id = du.donation_id
+      FROM "${getSchema()}".donation_users du 
+      JOIN "${getSchema()}".users ru ON ru.id = du.recipient
+      JOIN "${getSchema()}".users au ON au.id = du.assignee
+      LEFT JOIN "${getSchema()}".user_relations ur ON ur.primary_user = du.recipient AND ur.secondary_user = du.assignee
+      LEFT JOIN "${getSchema()}".trees t ON t.gifted_to = du.recipient AND t.assigned_to = du.assignee AND t.donation_id = du.donation_id
       WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
     `;
 

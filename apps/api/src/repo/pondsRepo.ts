@@ -4,6 +4,7 @@ import { UploadFileToS3 } from "../controllers/helper/uploadtos3";
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { sequelize } from '../config/postgreDB';
+import { getSchema } from '../helpers/utils';
 
 export class PondRepository {
   public static async addPond(data: any, files?: Express.Multer.File[]): Promise<Pond> {
@@ -66,8 +67,8 @@ export class PondRepository {
     const query = `
         SELECT p.*,
             s.name_english as site_name
-        FROM "14trees".ponds p
-        LEFT JOIN "14trees".sites s ON p.site_id = s.id
+        FROM "${getSchema()}".ponds p
+        LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         ORDER BY p.id DESC
         OFFSET ${offset} ${limit === -1 ? "" : `LIMIT ${limit}`};
@@ -75,8 +76,8 @@ export class PondRepository {
 
     const countPondsQuery =
       `SELECT count(p.id)
-        FROM "14trees".ponds AS p
-        LEFT JOIN "14trees".sites s ON p.site_id = s.id
+        FROM "${getSchema()}".ponds AS p
+        LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"};`
 
     const ponds: any = await sequelize.query(query, {

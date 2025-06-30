@@ -3,6 +3,7 @@ import { User, UserAttributes, UserCreationAttributes } from '../models/user';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { sequelize } from '../config/postgreDB';
+import { getSchema } from '../helpers/utils';
 
 export const getUserId = (name: string, email: string) => {
     let userId = name.toLowerCase() + email.toLowerCase();
@@ -106,16 +107,16 @@ export class UserRepository {
 
         const getQuery = `
             SELECT distinct on(u.id) u.*, ug.created_at as user_group_created_at 
-            FROM "14trees".users u 
-            LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
+            FROM "${getSchema()}".users u 
+            LEFT JOIN "${getSchema()}".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY u.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `
             SELECT COUNT(distinct u.id) 
-            FROM "14trees".users u 
-            LEFT JOIN "14trees".user_groups ug ON u.id = ug.user_id
+            FROM "${getSchema()}".users u 
+            LEFT JOIN "${getSchema()}".user_groups ug ON u.id = ug.user_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 
@@ -187,9 +188,9 @@ export class UserRepository {
             SELECT u.id, u.name, 
                 count(distinct mt.id) as sponsored_trees,
                 jsonb_agg(distinct jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_image)) AS assigned_trees
-            FROM "14trees".users u
-            left JOIN "14trees".trees t ON t.assigned_to = u.id
-            left JOIN "14trees".trees mt ON mt.sponsored_by_user = u.id
+            FROM "${getSchema()}".users u
+            left JOIN "${getSchema()}".trees t ON t.assigned_to = u.id
+            left JOIN "${getSchema()}".trees mt ON mt.sponsored_by_user = u.id
             WHERE ${condition}
             GROUP BY u.id;
         `
@@ -205,7 +206,7 @@ export class UserRepository {
         FROM unnest(array[:user_ids]::int[]) AS num
         WHERE num NOT IN (
             SELECT u.id
-            FROM "14trees".users as u
+            FROM "${getSchema()}".users as u
         );`
 
         const result = await sequelize.query(query, {

@@ -4,6 +4,7 @@ import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { SortOrder } from '../models/common';
+import { getSchema } from '../helpers/utils';
 
 export class SiteRepository {
 
@@ -16,7 +17,7 @@ export class SiteRepository {
                 COUNT(DISTINCT (s.district)) as districts,
                 COUNT(DISTINCT (s.taluka)) as talukas,
                 COUNT(DISTINCT (s.village)) as villages
-            FROM "14trees".sites as s;
+            FROM "${getSchema()}".sites as s;
         `
 
         const resp: any[] = await sequelize.query(query, {
@@ -29,9 +30,9 @@ export class SiteRepository {
     static async getLandTypeTreesCount() {
         const query = `
             SELECT s.land_type, SUM(COALESCE(tcg.total, 0)) as count
-            FROM "14trees".sites as s
-            JOIN "14trees".plots as p ON p.site_id = s.id
-            JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
+            FROM "${getSchema()}".sites as s
+            JOIN "${getSchema()}".plots as p ON p.site_id = s.id
+            JOIN "${getSchema()}".tree_count_aggregations tcg ON tcg.plot_id = p.id
             WHERE s.land_type IS NOT NULL
             GROUP BY s.land_type;
         `
@@ -88,7 +89,7 @@ export class SiteRepository {
     public static async getDeletedSitesFromList(siteIds: number[]): Promise<number[]> {
         const query = `SELECT num
         FROM unnest(array[:site_ids]::int[]) AS num
-        LEFT JOIN "14trees".sites AS s
+        LEFT JOIN "${getSchema()}".sites AS s
         ON num = s.id
         WHERE s.id IS NULL;`
 
@@ -101,7 +102,7 @@ export class SiteRepository {
     }
 
     public static async updateSitesDataUsingNotionData() {
-        const query = `UPDATE "14trees".sites 
+        const query = `UPDATE "${getSchema()}".sites 
         SET 
             name_marathi = n."नाव (मराठी)",
             name_english  = n."Name",
@@ -125,7 +126,7 @@ export class SiteRepository {
             account = n."Account",
             data_errors = n."Data errors",
             category = n."Site Type",
-            maintenance_type = n."Service offered"::"14trees".maintenence_type_enum
+            maintenance_type = n."Service offered"::"${getSchema()}".maintenence_type_enum
         FROM notion_db n
         WHERE n.id = notion_id
           AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
@@ -135,7 +136,7 @@ export class SiteRepository {
     }
 
     public static async insertNewSitesDataUsingNotionData() {
-        const query = `INSERT INTO "14trees".sites (
+        const query = `INSERT INTO "${getSchema()}".sites (
             notion_id,
             name_marathi,
             name_english, 
@@ -187,11 +188,11 @@ export class SiteRepository {
             n."Account", 
             n."Data errors",
             n."Site Type",
-            n."Service offered"::"14trees".maintenence_type_enum
+            n."Service offered"::"${getSchema()}".maintenence_type_enum
         FROM notion_db n
         WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
           AND n."Name" IS NOT NULL
-          AND n.id NOT IN (SELECT notion_id FROM "14trees".sites where notion_id is not null);`
+          AND n.id NOT IN (SELECT notion_id FROM "${getSchema()}".sites where notion_id is not null);`
 
         await sequelize.query(query);
     }
@@ -227,7 +228,7 @@ export class SiteRepository {
         const query = `
             WITH plot_areas AS (
                 SELECT p.site_id, SUM(p.acres_area) AS total_acres_area
-                FROM "14trees".plots p
+                FROM "${getSchema()}".plots p
                 GROUP BY p.site_id
             )
             SELECT s.id, 
@@ -338,10 +339,10 @@ export class SiteRepository {
                     THEN tcg.card_available
                     ELSE 0 
                 END) AS card_available_shrubs
-            FROM "14trees".sites s
-            LEFT JOIN "14trees".plots p ON s.id = p.site_id
-            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
-            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
+            FROM "${getSchema()}".sites s
+            LEFT JOIN "${getSchema()}".plots p ON s.id = p.site_id
+            LEFT JOIN "${getSchema()}".tree_count_aggregations tcg ON tcg.plot_id = p.id
+            LEFT JOIN "${getSchema()}".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
             LEFT JOIN plot_areas pa ON pa.site_id = s.id
             WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.id
@@ -356,10 +357,10 @@ export class SiteRepository {
 
         const countQuery = `
             SELECT count(distinct s.id) as count
-            FROM "14trees".sites s
-            LEFT JOIN "14trees".plots p ON s.id = p.site_id
-            LEFT JOIN "14trees".tree_count_aggregations tcg ON tcg.plot_id = p.id
-            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
+            FROM "${getSchema()}".sites s
+            LEFT JOIN "${getSchema()}".plots p ON s.id = p.site_id
+            LEFT JOIN "${getSchema()}".tree_count_aggregations tcg ON tcg.plot_id = p.id
+            LEFT JOIN "${getSchema()}".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''} 
             WHERE ${whereCondition ? whereCondition : '1=1'}
         `
 
@@ -492,10 +493,10 @@ export class SiteRepository {
                     THEN tcg.card_available
                     ELSE 0 
                 END) AS card_available_shrubs
-            FROM "14trees".tree_count_aggregations tcg
-            LEFT JOIN "14trees".plots p ON tcg.plot_id = p.id
-            LEFT JOIN "14trees".sites s ON p.site_id = s.id
-            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+            FROM "${getSchema()}".tree_count_aggregations tcg
+            LEFT JOIN "${getSchema()}".plots p ON tcg.plot_id = p.id
+            LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
+            LEFT JOIN "${getSchema()}".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
             WHERE ${whereCondition ? whereCondition : '1=1'}
             GROUP BY s.${field} ${field === 'category' ? '' : ', s.category'}
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
@@ -511,10 +512,10 @@ export class SiteRepository {
             WITH data as (
                 SELECT s.${field}, ${field === 'category' ? '' : 's.category, '}
                     SUM(COALESCE(tcg.booked, 0)) as booked
-                FROM "14trees".tree_count_aggregations tcg
-                LEFT JOIN "14trees".plots p ON tcg.plot_id = p.id
-                LEFT JOIN "14trees".sites s ON p.site_id = s.id
-                LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+                FROM "${getSchema()}".tree_count_aggregations tcg
+                LEFT JOIN "${getSchema()}".plots p ON tcg.plot_id = p.id
+                LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
+                LEFT JOIN "${getSchema()}".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
                 WHERE ${whereCondition ? whereCondition : '1=1'}
                 GROUP BY s.${field} ${field === 'category' ? '' : ', s.category'}
             )
@@ -534,7 +535,7 @@ export class SiteRepository {
     public static async getDistrictsData() {
         const query = `
             SELECT DISTINCT(s.district, s.taluka, s.village) as data
-            FROM "14trees".sites s;
+            FROM "${getSchema()}".sites s;
         `
 
         const sites: any[] = await sequelize.query(query, {
@@ -671,14 +672,14 @@ export class SiteRepository {
                     THEN tcg.card_available
                     ELSE 0 
                 END) AS card_available_shrubs
-            FROM "14trees".tree_count_aggregations tcg
+            FROM "${getSchema()}".tree_count_aggregations tcg
             JOIN (
                 SELECT id, site_id, unnest(tags) AS tag
-                FROM "14trees".plots
+                FROM "${getSchema()}".plots
             ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
-            JOIN "14trees".tags as t on tag_grouped.tag = t.tag
-            LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
-            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+            JOIN "${getSchema()}".tags as t on tag_grouped.tag = t.tag
+            LEFT JOIN "${getSchema()}".sites s ON s.id = tag_grouped.site_id
+            LEFT JOIN "${getSchema()}".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
             WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
             GROUP BY tag_grouped.tag
             ${orderBy && orderBy.length !== 0 ? `ORDER BY ${orderBy.map(o => o.column + ' ' + o.order).join(', ')}` : ''}
@@ -692,14 +693,14 @@ export class SiteRepository {
 
         const countQuery = `
             SELECT count(DISTINCT(tag_grouped.tag)) as count
-            FROM "14trees".tree_count_aggregations tcg
+            FROM "${getSchema()}".tree_count_aggregations tcg
             LEFT JOIN (
                 SELECT id, site_id, unnest(tags) AS tag
-                FROM "14trees".plots
+                FROM "${getSchema()}".plots
             ) AS tag_grouped ON tag_grouped.id = tcg.plot_id
-            JOIN "14trees".tags as t on tag_grouped.tag = t.tag
-            LEFT JOIN "14trees".sites s ON s.id = tag_grouped.site_id
-            LEFT JOIN "14trees".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
+            JOIN "${getSchema()}".tags as t on tag_grouped.tag = t.tag
+            LEFT JOIN "${getSchema()}".sites s ON s.id = tag_grouped.site_id
+            LEFT JOIN "${getSchema()}".plant_types pt ON tcg.plant_type_id = pt.id ${plantTypeCondition !== '' ? 'AND ' + plantTypeCondition : ''}
             WHERE t.type = 'SYSTEM_DEFINED' AND ${whereCondition ? whereCondition : '1=1'}
         `
 
@@ -726,9 +727,9 @@ export class SiteRepository {
                     END) AS available,
                 COUNT(t.assigned_to) AS assigned,
                 count(t.id) AS total
-            FROM "14trees".trees t
-            JOIN "14trees".plots p ON p.id = t.plot_id
-            LEFT JOIN "14trees".sites s on s.id = p.site_id
+            FROM "${getSchema()}".trees t
+            JOIN "${getSchema()}".plots p ON p.id = t.plot_id
+            LEFT JOIN "${getSchema()}".sites s on s.id = p.site_id
             WHERE t.mapped_to_group = :groupId
             GROUP BY p.id, s.id
         `
@@ -782,12 +783,12 @@ export class SiteRepository {
                 THEN 1 
                 ELSE 0 
             END) AS card_available
-        FROM "14trees".sites s
-        LEFT JOIN "14trees".plots p ON p.site_id = s.id
-        LEFT JOIN "14trees".trees t ON t.plot_id = p.id
-        LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
-        LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
-        LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
+        FROM "${getSchema()}".sites s
+        LEFT JOIN "${getSchema()}".plots p ON p.site_id = s.id
+        LEFT JOIN "${getSchema()}".trees t ON t.plot_id = p.id
+        LEFT JOIN "${getSchema()}".plant_types pt on pt.id = t.plant_type_id
+        LEFT JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY s.id
         HAVING SUM(CASE 
@@ -801,9 +802,9 @@ export class SiteRepository {
 
         const countSitesQuery =
             `SELECT count(distinct s.id)
-            FROM "14trees".plots p
-            LEFT JOIN "14trees".sites s ON p.site_id = s.id
-            LEFT JOIN "14trees".trees t ON t.plot_id = p.id
+            FROM "${getSchema()}".plots p
+            LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
+            LEFT JOIN "${getSchema()}".trees t ON t.plot_id = p.id
             WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND ${whereCondition !== "" ? whereCondition : "1=1"};
             `
 

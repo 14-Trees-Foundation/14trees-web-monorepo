@@ -4,6 +4,7 @@ import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { SortOrder } from '../models/common';
+import { getSchema } from '../helpers/utils';
 
 export class PlotRepository {
     public static async updatePlot(plotData: PlotAttributes): Promise<Plot> {
@@ -338,12 +339,12 @@ export class PlotRepository {
                 THEN ptct.plant_type 
                 ELSE NULL 
             END) AS distinct_plants
-        FROM "14trees".plots p
-        LEFT JOIN "14trees".sites s ON p.site_id = s.id
-        LEFT JOIN "14trees".trees t ON t.plot_id = p.id
-        LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
-        LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
-        LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
+        FROM "${getSchema()}".plots p
+        LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
+        LEFT JOIN "${getSchema()}".trees t ON t.plot_id = p.id
+        LEFT JOIN "${getSchema()}".plant_types pt on pt.id = t.plant_type_id
+        LEFT JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
         ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
@@ -352,8 +353,8 @@ export class PlotRepository {
 
         const countPlotsQuery =
             `SELECT count(*)
-            FROM "14trees".plots p
-            LEFT JOIN "14trees".sites s ON p.site_id = s.id
+            FROM "${getSchema()}".plots p
+            LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
             `
 
@@ -385,14 +386,14 @@ export class PlotRepository {
 
         const getUniqueTagsQuery =
             `SELECT DISTINCT tag
-                FROM "14trees".plots p,
+                FROM "${getSchema()}".plots p,
                 unnest(p.tags) AS tag
                 ORDER BY tag
                 OFFSET ${offset} LIMIT ${limit};`;
 
         const countUniqueTagsQuery =
             `SELECT count(DISTINCT tag)
-                FROM "14trees".plots p,
+                FROM "${getSchema()}".plots p,
                 unnest(p.tags) AS tag;`;
 
         const tagsResp: any[] = await sequelize.query(getUniqueTagsQuery, { type: QueryTypes.SELECT });
@@ -406,7 +407,7 @@ export class PlotRepository {
     public static async getDeletedPlotsFromList(plotIds: number[]): Promise<number[]> {
         const query = `SELECT num
         FROM unnest(array[:plot_ids]::int[]) AS num
-        LEFT JOIN "14trees".plots AS p
+        LEFT JOIN "${getSchema()}".plots AS p
         ON num = p.id
         WHERE p.id IS NULL;`
 
@@ -438,8 +439,8 @@ export class PlotRepository {
                     THEN 1 
                     ELSE 0 
                 END) AS available
-            FROM "14trees".trees t
-            LEFT JOIN "14trees".plots p ON p.id = t.plot_id
+            FROM "${getSchema()}".trees t
+            LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
             WHERE (t.tree_status is null or t.tree_status in ('healthy', 'diseased'))
             GROUP BY p.category;
             `
@@ -499,8 +500,8 @@ export class PlotRepository {
                     THEN 1 
                     ELSE 0 
                 END) AS unbooked_assigned
-            FROM "14trees".plots p
-            LEFT JOIN "14trees".trees t ON p.id = t.plot_id ${treeCondition !== "" ? "AND " + treeCondition : ""}
+            FROM "${getSchema()}".plots p
+            LEFT JOIN "${getSchema()}".trees t ON p.id = t.plot_id ${treeCondition !== "" ? "AND " + treeCondition : ""}
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
             GROUP BY p.id
             ORDER BY ${orderBy && orderBy.length !== 0 ? orderBy.map(o => o.column + " " + o.order).join(", ") : 'p.id DESC'}
@@ -509,7 +510,7 @@ export class PlotRepository {
 
         const countPlotsQuery =
             `SELECT count(*)
-            FROM "14trees".plots p
+            FROM "${getSchema()}".plots p
             WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
             `
 
@@ -594,12 +595,12 @@ export class PlotRepository {
                 THEN 1 
                 ELSE 0 
             END) AS card_available
-        FROM "14trees".plots p
-        LEFT JOIN "14trees".sites s ON p.site_id = s.id
-        LEFT JOIN "14trees".trees t ON t.plot_id = p.id
-        LEFT JOIN "14trees".plant_types pt on pt.id = t.plant_type_id
-        LEFT JOIN "14trees".plant_type_card_templates ptct on ptct.plant_type = pt."name"
-        LEFT JOIN "14trees".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
+        FROM "${getSchema()}".plots p
+        LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
+        LEFT JOIN "${getSchema()}".trees t ON t.plot_id = p.id
+        LEFT JOIN "${getSchema()}".plant_types pt on pt.id = t.plant_type_id
+        LEFT JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"
+        LEFT JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id
         WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
         GROUP BY p.id, s.id
         HAVING SUM(CASE 
@@ -613,9 +614,9 @@ export class PlotRepository {
 
         const countPlotsQuery =
             `SELECT count(distinct p.id)
-            FROM "14trees".plots p
-            LEFT JOIN "14trees".sites s ON p.site_id = s.id
-            LEFT JOIN "14trees".trees t ON t.plot_id = p.id
+            FROM "${getSchema()}".plots p
+            LEFT JOIN "${getSchema()}".sites s ON p.site_id = s.id
+            LEFT JOIN "${getSchema()}".trees t ON t.plot_id = p.id
             WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : 't.mapped_to_group is NOT NULL'} AND ${whereCondition !== "" ? whereCondition : "1=1"};
             `
 
@@ -640,9 +641,9 @@ export class PlotRepository {
                 count(t.id) as sponsored_trees,
                 sum(case when t.assigned_to is not null then 1 else 0 end) as assigned_trees,
                 count(distinct t.plant_type_id) as plant_types
-            FROM "14trees".trees t
-            JOIN "14trees".plots p ON p.id = t.plot_id
-            JOIN "14trees".groups g on g.id = t.mapped_to_group
+            FROM "${getSchema()}".trees t
+            JOIN "${getSchema()}".plots p ON p.id = t.plot_id
+            JOIN "${getSchema()}".groups g on g.id = t.mapped_to_group
             WHERE ${groupId ? `g.id = ${groupId}` : `1 = 1`}
         `
 
@@ -652,9 +653,9 @@ export class PlotRepository {
 
         const areaQuery = `
             SELECT SUM(COALESCE(p.acres_area, 0)) as area
-            FROM "14trees".plots p
+            FROM "${getSchema()}".plots p
             WHERE p.id IN (SELECT distinct t.plot_id 
-                FROM "14trees".trees t
+                FROM "${getSchema()}".trees t
                 WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`})
         `
 

@@ -3,6 +3,7 @@ import { Order, OrderAttributes, OrderCreationAttributes } from '../models/order
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { sequelize } from '../config/postgreDB';
+import { getSchema } from '../helpers/utils';
 
 export class OrderRepository {
     static async getOrders(offset: number, limit: number, filters?: FilterItem[]): Promise<PaginatedResponse<Order>> {
@@ -26,18 +27,18 @@ export class OrderRepository {
 
         const getQuery = `
             SELECT o.*, u.name as user_name, u.email as user_email, u.phone as user_phone, g.name as group_name
-            FROM "14trees".orders o
-            LEFT JOIN "14trees".users u ON u.id = o.user_id
-            LEFT JOIN "14trees".groups g ON g.id = o.group_id
+            FROM "${getSchema()}".orders o
+            LEFT JOIN "${getSchema()}".users u ON u.id = o.user_id
+            LEFT JOIN "${getSchema()}".groups g ON g.id = o.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY o.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees".orders o
-            LEFT JOIN "14trees".users u ON u.id = o.user_id
-            LEFT JOIN "14trees".groups g ON g.id = o.group_id
+            FROM "${getSchema()}".orders o
+            LEFT JOIN "${getSchema()}".users u ON u.id = o.user_id
+            LEFT JOIN "${getSchema()}".groups g ON g.id = o.group_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 

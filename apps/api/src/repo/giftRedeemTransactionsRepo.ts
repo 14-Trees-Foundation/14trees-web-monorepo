@@ -2,6 +2,7 @@ import { Op, QueryTypes, WhereOptions } from "sequelize";
 import { PaginatedResponse } from "../models/pagination";
 import { GiftRedeemTransaction, GiftRedeemTransactionCreationAttributes, GRTCard } from "../models/gift_redeem_transaction";
 import { sequelize } from "../config/postgreDB";
+import { getSchema } from '../helpers/utils';
 
 
 export class GRTransactionsRepository {
@@ -30,15 +31,15 @@ export class GRTransactionsRepository {
                 ru.communication_email AS recipient_communication_email,
                 gca.gc_count AS trees_count,
                 COALESCE(tree_details.tree_info, '[]'::jsonb) AS tree_details
-            FROM "14trees".gift_redeem_transactions grt
-            JOIN "14trees".users cu ON cu.id = grt.created_by
-            JOIN "14trees".users ru ON ru.id = grt.recipient
+            FROM "${getSchema()}".gift_redeem_transactions grt
+            JOIN "${getSchema()}".users cu ON cu.id = grt.created_by
+            JOIN "${getSchema()}".users ru ON ru.id = grt.recipient
 
             -- Subquery to count gift_cards per grt
             JOIN (
                 SELECT grt_id, COUNT(gc.id) AS gc_count
-                FROM "14trees".gift_redeem_transaction_cards grtc
-                JOIN "14trees".gift_cards gc ON gc.id = grtc.gc_id
+                FROM "${getSchema()}".gift_redeem_transaction_cards grtc
+                JOIN "${getSchema()}".gift_cards gc ON gc.id = grtc.gc_id
                 GROUP BY grt_id
             ) AS gca ON gca.grt_id = grt.id
 
@@ -54,12 +55,12 @@ export class GRTransactionsRepository {
                         'template_image', ptct.template_image,
                         'logo_url', gcr.logo_url
                     ) AS tree_data
-                    FROM "14trees".gift_redeem_transaction_cards grtc
-                    JOIN "14trees".gift_cards gc ON gc.id = grtc.gc_id
-                    JOIN "14trees".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
-                    JOIN "14trees".trees t ON t.id = gc.tree_id
-                    JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
-                    JOIN "14trees".plant_type_card_templates ptct ON ptct.plant_type = pt.name
+                    FROM "${getSchema()}".gift_redeem_transaction_cards grtc
+                    JOIN "${getSchema()}".gift_cards gc ON gc.id = grtc.gc_id
+                    JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+                    JOIN "${getSchema()}".trees t ON t.id = gc.tree_id
+                    JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
+                    JOIN "${getSchema()}".plant_type_card_templates ptct ON ptct.plant_type = pt.name
                     WHERE grtc.grt_id = grt.id
                     ORDER BY grtc.gc_id  -- Change ordering as needed
                     LIMIT 5
@@ -83,8 +84,8 @@ export class GRTransactionsRepository {
 
         const countQuery = `
             SELECT COUNT(*)
-            FROM "14trees".gift_redeem_transactions grt
-            JOIN "14trees".users ru ON ru.id = grt.recipient
+            FROM "${getSchema()}".gift_redeem_transactions grt
+            JOIN "${getSchema()}".users ru ON ru.id = grt.recipient
             WHERE ${type === 'group' ? 'grt.group_id = :id' : 'grt.user_id = :id'} ${search ? 'AND ru.name ILIKE :search' : ''}
         `
         const count: any = await sequelize.query(countQuery, {
@@ -109,10 +110,10 @@ export class GRTransactionsRepository {
                 ru.email AS recipient_email,
                 u.name AS sponsor_name,
                 u.email AS sponsor_email
-            FROM "14trees".gift_redeem_transactions grt
-            JOIN "14trees".users ru ON ru.id = grt.recipient
-            LEFT JOIN "14trees".groups g ON g.id = grt.group_id
-            LEFT JOIN "14trees".users u ON u.id = grt.user_id
+            FROM "${getSchema()}".gift_redeem_transactions grt
+            JOIN "${getSchema()}".users ru ON ru.id = grt.recipient
+            LEFT JOIN "${getSchema()}".groups g ON g.id = grt.group_id
+            LEFT JOIN "${getSchema()}".users u ON u.id = grt.user_id
             WHERE grt.id = :transactionId
         `
         const result: GiftRedeemTransaction[] = await sequelize.query(query, {
@@ -176,10 +177,10 @@ export class GRTransactionsRepository {
     public static async getTransactionTrees(transactionId: number) {
         const query = `
             SELECT t.sapling_id, pt.name AS plant_type, pt.scientific_name, gc.card_image_url
-            FROM "14trees".gift_redeem_transaction_cards grtc
-            JOIN "14trees".gift_cards gc ON gc.id = grtc.gc_id
-            JOIN "14trees".trees t ON t.id = gc.tree_id
-            JOIN "14trees".plant_types pt ON pt.id = t.plant_type_id
+            FROM "${getSchema()}".gift_redeem_transaction_cards grtc
+            JOIN "${getSchema()}".gift_cards gc ON gc.id = grtc.gc_id
+            JOIN "${getSchema()}".trees t ON t.id = gc.tree_id
+            JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
             WHERE grtc.grt_id = :transactionId
         `
 

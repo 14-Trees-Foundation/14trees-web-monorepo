@@ -4,6 +4,7 @@ import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { User } from '../models/user';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
 import { sequelize } from '../config/postgreDB';
+import { getSchema } from '../helpers/utils';
 
 export class VisitUsersRepository {
 
@@ -28,8 +29,8 @@ export class VisitUsersRepository {
 
         const getQuery = `
             SELECT u.*, vg.created_at as visit_user_created_at 
-            FROM "14trees".users u 
-            JOIN "14trees".visit_users vg ON u.id = vg.user_id
+            FROM "${getSchema()}".users u 
+            JOIN "${getSchema()}".visit_users vg ON u.id = vg.user_id
             WHERE vg.visit_id = ${visitId} ${whereConditions !== "" ? "AND " + whereConditions : ""}
             ORDER BY u.id DESC
             OFFSET ${offset} LIMIT ${limit};
@@ -37,8 +38,8 @@ export class VisitUsersRepository {
 
         const countQuery = `
             SELECT COUNT(*) 
-            FROM "14trees".users u 
-            JOIN "14trees".visit_users vg ON u.id = vg.user_id
+            FROM "${getSchema()}".users u 
+            JOIN "${getSchema()}".visit_users vg ON u.id = vg.user_id
             WHERE vg.visit_id = ${visitId} ${whereConditions !== "" ? "AND " + whereConditions : ""};
         `
 

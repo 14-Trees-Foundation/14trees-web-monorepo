@@ -42,3 +42,8 @@ export async function parseCsv(buffer: Buffer): Promise<any[]> {
 export const getUniqueRequestId = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
+
+// Database utility functions
+export const getSchema = (): string => {
+    return process.env.POSTGRES_SCHEMA || '14trees_2';
+}

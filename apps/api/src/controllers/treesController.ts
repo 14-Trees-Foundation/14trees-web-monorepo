@@ -1,6 +1,7 @@
 
 import { Request, Response } from "express";
 import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
 import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Op, QueryTypes, WhereOptions } from "sequelize";
@@ -9,6 +10,7 @@ import { FilterItem } from "../models/pagination";
 import { Tree } from "../models/tree";
 import { SortOrder } from "../models/common";
 import { GroupRepository } from "../repo/groupRepo";
+import { getSchema } from '../helpers/utils';
 
 /*
   Model - Tree
@@ -21,10 +23,8 @@ export const addTree = async (req: Request, res: Response) => {
     let tree = await TreeRepository.addTree(req.body);
     res.status(status.created).send(tree);
   } catch (error: any) {
-    console.log("Tree add error : ", JSON.stringify(error));
-    res.status(status.error).send({
-      error: error,
-    });
+    await Logger.logError('treesController', 'addTree', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -42,10 +42,8 @@ export const getTree = async (req: Request, res: Response) => {
       res.status(status.success).send(result);
     }
   } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
+    await Logger.logError('treesController', 'getTree', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -58,10 +56,8 @@ export const getTrees = async (req: Request, res: Response) => {
     let result = await TreeRepository.getTrees(offset, limit, filters, orderBy);
     res.status(status.success).send(result);
   } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
+    await Logger.logError('treesController', 'getTrees', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -70,8 +66,8 @@ export const updateTree = async (req: Request, res: Response) => {
     const tree = await TreeRepository.updateTree(req.body, Array.isArray(req.files) ? req.files : [])
     res.status(status.success).json(tree);
   } catch (error: any) {
-    console.error("Tree update error:", error);
-    res.status(status.error).send({ error: error.message });
+    await Logger.logError('treesController', 'updateTree', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -86,19 +82,18 @@ export const changeTreesPlot = async (req: Request, res: Response) => {
     await TreeRepository.updateTrees(updateFields, whereClause)
     res.status(status.success).send();
   } catch (error: any) {
-    console.log("[ERROR]", "TreesController::changeTreesPlot", error);
-    res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
+    await Logger.logError('treesController', 'changeTreesPlot', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
 export const deleteTree = async (req: Request, res: Response) => {
   try {
     const resp = await TreeRepository.deleteTree(req.params.id);
-    console.log("Deleted tree with the id:", req.params.id, resp);
     res.status(status.success).send({ message: "Tree deleted successfully" });
   } catch (error: any) {
-    console.error("Tree delete error:", error);
-    res.status(status.error).send({ error: error.message });
+    await Logger.logError('treesController', 'deleteTree', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -107,8 +102,8 @@ export const getTreeTags = async (req: Request, res: Response) => {
     const response = await TreeRepository.getTreeTags(0, 100);
     res.status(status.success).send(response);
   } catch (error: any) {
-    console.log("[ERROR]", "TreeController::getTreeTags", error);
-    res.status(status.error).send({ message: "Something went wrong. Please try again after some time" });
+    await Logger.logError('treesController', 'getTreeTags', error, req);
+    res.status(status.error).send({ error: error });
   }
 }
 
@@ -120,10 +115,8 @@ export const getTreeFromId = async (req: Request, res: Response) => {
     let result = await TreeRepository.getTreeByTreeId(Number(req.query.id));
     res.status(status.success).send(result);
   } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
+    await Logger.logError('treesController', 'getTreeFromId', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -140,13 +133,10 @@ export const treeCountByPlot = async (req: Request, res: Response) => {
     let result = await sequelize.query(query, {
       type: QueryTypes.SELECT
     })
-    console.log(result);
     res.status(status.success).send(result);
   } catch (error: any) {
-    res.status(status.error).json({
-      status: status.error,
-      message: error.message,
-    });
+    await Logger.logError('treesController', 'treeCountByPlot', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -154,7 +144,7 @@ export const treeLoggedByDate = async (req: Request, res: Response) => {
   const { offset, limit } = getOffsetAndLimitFromRequest(req);
   try {
     const query = `SELECT DATE(t.created_at) AS "_id", COUNT(t.id)
-                        FROM "14trees".trees AS t
+                        FROM "${getSchema()}".trees AS t
                         GROUP BY DATE(t.created_at)
                         ORDER BY DATE(t.created_at) DESC;
                         -- OFFSET ${offset} LIMIT ${limit};
@@ -437,7 +427,7 @@ export const treePlantedByCorporate = async (req: Request, res: Response) => {
 
   try {
     const query = `SELECT DATE_TRUNC('year', t.mapped_at) AS year, COUNT(t.id) AS tree_count
-                    FROM "14trees".trees AS t
+                    FROM "${getSchema()}".trees AS t
                     WHERE ${groupId ? `t.mapped_to_group = ${groupId}` : `t.mapped_to_group IS NOT NULL`}
                     GROUP BY year
                     ORDER BY year ASC;
