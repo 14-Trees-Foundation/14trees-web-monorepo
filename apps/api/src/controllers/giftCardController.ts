@@ -486,9 +486,35 @@ const updateTreesForGiftRequest = async (giftRequestId: number, updateFields: an
 export const updateGiftCardRequest = async (req: Request, res: Response) => {
 
     const giftCardRequest: GiftCardRequestAttributes = req.body;
-    if (!req.body.validation_errors) giftCardRequest.validation_errors = null;
-    else giftCardRequest.validation_errors = req.body.validation_errors?.split(',') ?? null
-    if (req.body.tags) giftCardRequest.tags = req.body.tags?.split(',') ?? null;
+    
+    // Handle array fields sent as comma-separated strings from frontend
+    if (!req.body.validation_errors) {
+        giftCardRequest.validation_errors = null;
+    } else {
+        const validationErrors = req.body.validation_errors.split(',').filter(v => v.trim() !== '');
+        giftCardRequest.validation_errors = validationErrors.length > 0 ? validationErrors : null;
+    }
+    
+    if (!req.body.tags) {
+        giftCardRequest.tags = null;
+    } else {
+        const tags = req.body.tags.split(',').filter(t => t.trim() !== '');
+        giftCardRequest.tags = tags.length > 0 ? tags : null;
+    }
+    
+    if (!req.body.mail_status) {
+        giftCardRequest.mail_status = null;
+    } else {
+        const mailStatus = req.body.mail_status.split(',').filter(m => m.trim() !== '');
+        giftCardRequest.mail_status = mailStatus.length > 0 ? mailStatus : null;
+    }
+    
+    if (!req.body.contribution_options) {
+        giftCardRequest.contribution_options = null;
+    } else {
+        const contributionOptions = req.body.contribution_options.split(',').filter(c => c.trim() !== '');
+        giftCardRequest.contribution_options = contributionOptions.length > 0 ? contributionOptions : null;
+    }
 
     if (!giftCardRequest.sponsor_id && giftCardRequest.request_type !== 'Visit') {
         return res.status(status.bad).send({

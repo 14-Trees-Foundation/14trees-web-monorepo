@@ -55,6 +55,7 @@ export class SiteRepository {
             where: whereClause,
             offset: Number(offset),
             limit: Number(limit),
+            order: [['created_at', 'DESC']], // Order by created_at in descending order
         });
         const count = await Site.count({ where: whereClause });
         return { results: sites, total: count, offset: offset };
@@ -72,7 +73,10 @@ export class SiteRepository {
         if (!site) {
             throw new Error('Site not found for given id');
         }
-
+        
+        // Ensure updated_at is set to current time
+        siteData.updated_at = new Date();
+        
         const updatedSite = site.update(siteData);
         return updatedSite;
     }
