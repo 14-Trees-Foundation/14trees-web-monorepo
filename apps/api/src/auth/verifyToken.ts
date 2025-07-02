@@ -13,13 +13,13 @@ export function verifyToken(req: Request, res: Response, next: any) {
   if (!token)
     return res.status(403).send({ auth: false, message: 'No token provided.' });
 
-  // const key = process.env.SECRET_KEY || 'secret';
-  // jwt.verify(token, key, function (err, decoded) {
-  //   if (err) {
-  //     return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
-  //   }
-  //   next();
-  // });
+  const key = process.env.SECRET_KEY || 'secret';
+  jwt.verify(token, key, function (err, decoded) {
+    if (err) {
+      return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+    }
+    next();
+  });
 }
 
 const tokenPayloadFromRequest = (req: Request, res: Response) => {
