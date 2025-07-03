@@ -3575,30 +3575,13 @@
   resolved "https://registry.npmjs.org/@glideapps/ts-necessities/-/ts-necessities-2.2.3.tgz"
   integrity sha512-gXi0awOZLHk3TbW55GZLCPP6O+y/b5X1pBXKBVckFONSwF1z1E5ND2BGJsghQFah+pW7pkkyFb2VhUQI2qhL5w==
 
-"@google-cloud/local-auth@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.npmjs.org/@google-cloud/local-auth/-/local-auth-3.0.1.tgz"
-  integrity sha512-YJ3GFbksfHyEarbVHPSCzhKpjbnlAhdzg2SEf79l6ODukrSM1qUOqfopY232Xkw26huKSndyzmJz+A6b2WYn7Q==
-  dependencies:
-    arrify "^2.0.1"
-    google-auth-library "^9.0.0"
-    open "^7.0.3"
-    server-destroy "^1.0.1"
-
 "@googlemaps/js-api-loader@1.16.2":
   version "1.16.2"
-<<<<<<< HEAD
-  resolved "https://registry.npmjs.org/@googlemaps/js-api-loader/-/js-api-loader-1.16.2.tgz"
-  integrity sha512-psGw5u0QM6humao48Hn4lrChOM2/rA43ZCm3tKK9qQsEj1/VzqkCqnvGfEOshDbBQflydfaRovbKwZMF4AyqbA==
-  dependencies:
-    fast-deep-equal "^3.1.3"
-=======
   dependencies:
     fast-deep-equal "^3.1.3"
 
 "@googlemaps/js-api-loader@1.16.8":
   version "1.16.8"
->>>>>>> dev
 
 "@googlemaps/markerclusterer@2.5.3":
   version "2.5.3"
@@ -4443,22 +4426,6 @@
 
 "@kurkle/color@^0.3.0":
   version "0.3.4"
-
-"@langchain/community@^0.3.29":
-  version "0.3.47"
-  resolved "https://registry.npmjs.org/@langchain/community/-/community-0.3.47.tgz"
-  integrity sha512-Vo42kAfkXpTFSevhEkeqqE55az8NyQgDktCbitXYuhipNbFYx08XVvqEDkFkB20MM/Z7u+cvLb+DxCqnKuH0CQ==
-  dependencies:
-    "@langchain/openai" ">=0.2.0 <0.6.0"
-    "@langchain/weaviate" "^0.2.0"
-    binary-extensions "^2.2.0"
-    expr-eval "^2.0.2"
-    flat "^5.0.2"
-    js-yaml "^4.1.0"
-    langchain ">=0.2.3 <0.3.0 || >=0.3.4 <0.4.0"
-    langsmith "^0.3.33"
-    uuid "^10.0.0"
-    zod "^3.25.32"
 
 "@langchain/core@^0.3.38":
   version "0.3.49"
@@ -7757,8 +7724,6 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
   version "0.0.0"
   resolved "file:apps/api"
   dependencies:
-    "@google-cloud/local-auth" "^3.0.1"
-    "@langchain/community" "^0.3.29"
     "@langchain/core" "^0.3.38"
     "@langchain/langgraph" "^0.2.46"
     "@langchain/openai" "^0.4.2"
@@ -7778,6 +7743,7 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     express "^4.18.2"
     geolib "^3.3.4"
     google-auth-library "^7.11.0"
+    google-logging-utils "^1.1.1"
     google-spreadsheet "^3.3.0"
     googleapis "^144.0.0"
     handlebars "^4.7.8"
@@ -9186,7 +9152,7 @@ cheerio-select@^2.1.0:
     domhandler "^5.0.3"
     domutils "^3.0.1"
 
-cheerio@*, cheerio@^1.0.0, cheerio@^1.0.0-rc.12:
+cheerio@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/cheerio/-/cheerio-1.0.0.tgz"
   integrity sha512-quS9HgjQpdaXOvsZz82Oz7uxtXiy6UIsIQcpBj7HRw2M63Skasm9qlDocAM7jNuaxdhpPU7c4kJN+gA5MCu4ww==
@@ -10320,14 +10286,10 @@ deep-is@^0.1.3, deep-is@~0.1.3:
   resolved "https://registry.npmjs.org/deep-is/-/deep-is-0.1.4.tgz"
   integrity sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==
 
-<<<<<<< HEAD
-deepmerge@^4.0.0, deepmerge@^4.2.2, deepmerge@^4.3.1:
-=======
 deepmerge@^3.2.0:
   version "3.3.0"
 
 deepmerge@^4.0.0, deepmerge@^4.2.2, deepmerge@^4.3.0:
->>>>>>> dev
   version "4.3.1"
   resolved "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz"
   integrity sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==
@@ -11890,8 +11852,6 @@ exponential-backoff@^3.1.1:
 
 expr-eval@^2.0.2:
   version "2.0.2"
-  resolved "https://registry.npmjs.org/expr-eval/-/expr-eval-2.0.2.tgz"
-  integrity sha512-4EMSHGOPSwAfBiibw3ndnP0AvjDWLsMvGOvWEZ2F96IGk0bIVdjQisOHxReSkE13mHcfbuCiXw+G4y0zv6N8Eg==
 
 express@^4.17.1, express@^4.18.2:
   version "4.21.2"
@@ -12222,6 +12182,11 @@ flat-cache@^3.0.4:
     flatted "^3.2.9"
     keyv "^4.5.3"
     rimraf "^3.0.2"
+
+flat@^5.0.2:
+  version "5.0.2"
+  resolved "https://registry.npmjs.org/flat/-/flat-5.0.2.tgz"
+  integrity sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==
 
 flatted@^3.2.7, flatted@^3.2.9:
   version "3.3.1"
@@ -12916,6 +12881,11 @@ google-logging-utils@^0.0.2:
   resolved "https://registry.npmjs.org/google-logging-utils/-/google-logging-utils-0.0.2.tgz"
   integrity sha512-NEgUnEcBiP5HrPzufUkBzJOD/Sxsco3rLNo1F1TNf7ieU8ryUzBhqba8r756CjLX7rn3fHl6iLEwPYuqpoKgQQ==
 
+google-logging-utils@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/google-logging-utils/-/google-logging-utils-1.1.1.tgz"
+  integrity sha512-rcX58I7nqpu4mbKztFeOAObbomBbHU2oIb/d3tJfF3dizGSApqtSwYJigGCooHdnMyQBIw8BrWyK96w3YXgr6A==
+
 google-p12-pem@^3.1.3:
   version "3.1.4"
   resolved "https://registry.npmjs.org/google-p12-pem/-/google-p12-pem-3.1.4.tgz"
@@ -13466,8 +13436,6 @@ immer@8.0.1:
 
 immutable@^4.0.0:
   version "4.3.6"
-  resolved "https://registry.npmjs.org/immutable/-/immutable-4.3.6.tgz"
-  integrity sha512-Ju0+lEMyzMVZarkTn/gqRpdqd5dOPaz1mCZ0SH3JV6iFw81PldE/PEB1hWVEA288HPt4WXW8O7AWxB10M+03QQ==
 
 immutable@^5.0.2:
   version "5.1.3"
@@ -15398,12 +15366,9 @@ kleur@^3.0.3:
 kleur@^4.0.3:
   version "4.1.5"
 
-<<<<<<< HEAD
-=======
 klona@^2.0.4:
   version "2.0.6"
 
->>>>>>> dev
 langchain@^0.3.15, "langchain@>=0.2.3 <0.3.0 || >=0.3.4 <0.4.0":
   version "0.3.24"
   resolved "https://registry.npmjs.org/langchain/-/langchain-0.3.24.tgz"
@@ -18175,7 +18140,7 @@ open@^7.0.2, open@^7.0.3:
     is-docker "^2.0.0"
     is-wsl "^2.1.1"
 
-openai@*, openai@^4.62.1, openai@^4.87.3:
+openai@^4.87.3:
   version "4.96.0"
   resolved "https://registry.npmjs.org/openai/-/openai-4.96.0.tgz"
   integrity sha512-dKoW56i02Prv2XQolJ9Rl9Svqubqkzg3QpwEOBuSVZLk05Shelu7s+ErRTwFc1Bs3JZ2qBqBfVpXQiJhwOGG8A==
@@ -20716,12 +20681,9 @@ react@^17.0.2:
     object-assign "^4.1.1"
 
 react@^18.2.0:
-  version "17.0.2"
-  resolved "https://registry.npmjs.org/react/-/react-17.0.2.tgz"
-  integrity sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==
+  version "18.2.0"
   dependencies:
     loose-envify "^1.1.0"
-    object-assign "^4.1.1"
 
 read-cache@^1.0.0:
   version "1.0.0"
@@ -21739,8 +21701,6 @@ serve-static@^1.13.1, serve-static@1.16.2:
 
 server-destroy@^1.0.1:
   version "1.0.1"
-  resolved "https://registry.npmjs.org/server-destroy/-/server-destroy-1.0.1.tgz"
-  integrity sha512-rb+9B5YBIEzYcD6x2VKidaa+cqYBJQKnU4oe4E3ANwRRN56yk/ua1YCJT1n21NTS8w6CcOclAKNP3PhdCXKYtQ==
 
 set-blocking@^2.0.0:
   version "2.0.0"
@@ -24830,11 +24790,7 @@ zip-stream@^6.0.1:
     compress-commons "^6.0.2"
     readable-stream "^4.0.0"
 
-<<<<<<< HEAD
-zod-to-json-schema@^3.22.3, zod-to-json-schema@^3.22.5, zod-to-json-schema@^3.23.5, zod-to-json-schema@^3.24.5, zod-to-json-schema@^3.x:
-=======
 zod-to-json-schema@^3.22.3, zod-to-json-schema@^3.24.5:
->>>>>>> dev
   version "3.24.5"
   resolved "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.24.5.tgz"
   integrity sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==
