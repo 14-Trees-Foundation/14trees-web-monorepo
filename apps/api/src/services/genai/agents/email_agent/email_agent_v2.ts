@@ -10,6 +10,7 @@ import {
 } from "@langchain/langgraph";
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatPromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from '@langchain/core/prompts';
+import { AIMessage } from '@langchain/core/messages';
 
 const systemMessage = `
 You are an email chat bot. Your primary task is to understand user queries, collect necessary information, and fulfill user requests using tools. You must ensure clear communication and provide a seamless user experience by guiding the user step by step.
@@ -85,7 +86,7 @@ const toolNodeForGraph = new ToolNode(tools)
 const shouldContinue = (state: typeof MessagesAnnotation.State) => {
     const { messages } = state;
     const lastMessage = messages[messages.length - 1];
-    if ("tool_calls" in lastMessage && Array.isArray(lastMessage.tool_calls) && lastMessage.tool_calls?.length) {
+    if (lastMessage instanceof AIMessage && Array.isArray(lastMessage.tool_calls) && lastMessage.tool_calls?.length) {
         return "tools";
     }
     return END;
