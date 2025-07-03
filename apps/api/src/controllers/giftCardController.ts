@@ -491,28 +491,28 @@ export const updateGiftCardRequest = async (req: Request, res: Response) => {
     if (!req.body.validation_errors) {
         giftCardRequest.validation_errors = null;
     } else {
-        const validationErrors = req.body.validation_errors.split(',').filter(v => v.trim() !== '');
+        const validationErrors = req.body.validation_errors.split(',').filter((v: string) => v.trim() !== '');
         giftCardRequest.validation_errors = validationErrors.length > 0 ? validationErrors : null;
     }
     
     if (!req.body.tags) {
         giftCardRequest.tags = null;
     } else {
-        const tags = req.body.tags.split(',').filter(t => t.trim() !== '');
+        const tags = req.body.tags.split(',').filter((t: string) => t.trim() !== '');
         giftCardRequest.tags = tags.length > 0 ? tags : null;
     }
     
     if (!req.body.mail_status) {
         giftCardRequest.mail_status = null;
     } else {
-        const mailStatus = req.body.mail_status.split(',').filter(m => m.trim() !== '');
+        const mailStatus = req.body.mail_status.split(',').filter((m: string) => m.trim() !== '');
         giftCardRequest.mail_status = mailStatus.length > 0 ? mailStatus : null;
     }
     
     if (!req.body.contribution_options) {
         giftCardRequest.contribution_options = null;
     } else {
-        const contributionOptions = req.body.contribution_options.split(',').filter(c => c.trim() !== '');
+        const contributionOptions = req.body.contribution_options.split(',').filter((c: string) => c.trim() !== '');
         giftCardRequest.contribution_options = contributionOptions.length > 0 ? contributionOptions : null;
     }
 

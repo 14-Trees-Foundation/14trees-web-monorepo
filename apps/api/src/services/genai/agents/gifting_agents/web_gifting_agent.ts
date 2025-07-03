@@ -1,5 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { AgentExecutor, AgentFinish, AgentStep, createOpenAIToolsAgent } from "langchain/agents";
+import { AgentExecutor, AgentFinish, AgentStep, createOpenAIToolsAgent, AgentAction } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { BaseMessage, AIMessage, FunctionMessage } from "@langchain/core/messages";
@@ -156,8 +156,8 @@ const structuredOutputParser = (
 
 const formatAgentSteps = (steps: AgentStep[]): BaseMessage[] =>
     steps.flatMap(({ action, observation }) => {
-        if ("messageLog" in action && action.messageLog !== undefined) {
-            const log = action.messageLog as BaseMessage[];
+        if ("messageLog" in action && (action as any).messageLog !== undefined) {
+            const log = (action as any).messageLog as BaseMessage[];
             return log.concat(new FunctionMessage(observation, action.tool));
         } else {
             return [new AIMessage(action.log)];

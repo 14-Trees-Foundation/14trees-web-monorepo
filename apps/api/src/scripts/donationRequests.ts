@@ -355,7 +355,7 @@ export async function processDonationRequestSheet(spreadsheetId: string): Promis
         processRow: async (row): Promise<Record<string, any>> => {
 
             const update: any = {};
-            if (row["Vivek To process"] === "Y" && !row["System ReqId"]) {
+            if (row["Vivek To process"] === "Y" && !row["System ReqId"] && user) {
                 const resp = await processDonationData(row, user.id);
                 update["System ReqId"] = typeof resp === 'string' ? '' : resp;
                 update["System Status"] = typeof resp === 'string' ? 'Failed' : 'Success';
