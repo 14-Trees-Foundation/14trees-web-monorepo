@@ -490,7 +490,7 @@ class TreeRepository {
       FROM "${getSchema()}".trees t
       JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id ${booAllHabitats ? '' : "AND pt.habit = 'Tree'"}
       JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true
-      ${bookNonGiftable ? '' : 'JOIN "${getSchema()}".plant_type_card_templates ptct ON ptct.plant_type = pt."name"'}
+      ${bookNonGiftable ? '' : `JOIN "${getSchema()}".plant_type_card_templates ptct ON ptct.plant_type = pt."name"`}
       WHERE t.deleted_at IS NULL
         AND t.mapped_to_user IS NULL 
         AND t.mapped_to_group IS NULL 
@@ -741,7 +741,7 @@ class TreeRepository {
       JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
     if (!include_no_giftable) {
-      query += '\nJOIN "${getSchema()}".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+      query += `\nJOIN "${getSchema()}".plant_type_card_templates ptt ON ptt.plant_type = pt.name`
     }
 
     query += `
@@ -768,7 +768,7 @@ class TreeRepository {
       JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id ${include_all_habits ? '' : 'AND pt.habit = \'Tree\''}
       JOIN "${getSchema()}".plot_plant_types ppt ON ppt.plot_id = t.plot_id AND ppt.plant_type_id = t.plant_type_id AND ppt.sustainable = true`
 
-    if (!include_no_giftable) countQuery += '\nJOIN "${getSchema()}".plant_type_card_templates ptt ON ptt.plant_type = pt.name'
+    if (!include_no_giftable) countQuery += `\nJOIN "${getSchema()}".plant_type_card_templates ptt ON ptt.plant_type = pt.name`
 
     countQuery += `
         WHERE t.deleted_at IS NULL
