@@ -78,7 +78,7 @@ class TreeRepository {
     LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
-    WHERE t.deleted_at IS NULL AND ${whereCondition !== "" ? whereCondition : "1=1"}
+    WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
     ORDER BY ${sortOrder ? sortOrder : 't.sapling_id'}
     `
 
@@ -100,7 +100,7 @@ class TreeRepository {
     LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
-    WHERE t.deleted_at IS NULL AND ${whereCondition !== "" ? whereCondition : "1=1"};
+    WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
     `
     const resp = await sequelize.query(countQuery, {
       replacements: replacements,
