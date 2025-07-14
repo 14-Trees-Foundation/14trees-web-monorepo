@@ -5,6 +5,8 @@
 		}
 	],
 	"settings": {
-		"zencoder.enableRepoIndexing": true
+		"zencoder.enableRepoIndexing": true,
+		"search.useGlobalIgnoreFiles": true,
+		"search.useParentIgnoreFiles": true
 	}
 }

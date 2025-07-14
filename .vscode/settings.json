@@ -3,5 +3,7 @@
     "cSpell.words": [
         "Razorpay"
     ],
-    "zencoder.enableRepoIndexing": true
+    "zencoder.enableRepoIndexing": true,
+    "search.useGlobalIgnoreFiles": true,
+    "search.useParentIgnoreFiles": true
 }
