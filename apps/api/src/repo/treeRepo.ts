@@ -40,6 +40,10 @@ class TreeRepository {
           columnField = 'pt.habit'
         } else if (filter.columnField === "tree_health") {
           columnField = 't.tree_status'
+        } else if (filter.columnField === "association_type") {
+          columnField = 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' ELSE NULL END'
+        } else if (filter.columnField === "request_id") {
+          columnField = 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END'
         }
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
         whereCondition = whereCondition + " " + condition + " AND";
@@ -52,6 +56,10 @@ class TreeRepository {
       ? orderBy.map(o => {
         if (o.column === 'assigned_to_name')
           return 'au."name"' + " " + o.order
+        else if (o.column === 'association_type')
+          return 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' ELSE NULL END' + " " + o.order
+        else if (o.column === 'request_id')
+          return 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END' + " " + o.order
         return 't.' + o.column + " " + o.order
       }).join(", ")
       : null;
@@ -68,7 +76,17 @@ class TreeRepository {
       su."name" as sponsor_user_name, 
       sg."name" as sponsor_group_name, 
       au."name" as assigned_to_name,
-      t.tree_status as tree_health
+      t.tree_status as tree_health,
+      CASE 
+        WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text
+        WHEN t.donation_id IS NOT NULL THEN 'Donation'
+        ELSE NULL
+      END as association_type,
+      CASE 
+        WHEN gcr.id IS NOT NULL THEN gcr.id
+        WHEN t.donation_id IS NOT NULL THEN t.donation_id
+        ELSE NULL
+      END as request_id
     FROM "${getSchema()}".trees t 
     LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
@@ -78,6 +96,8 @@ class TreeRepository {
     LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
+    LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+    LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
     ORDER BY ${sortOrder ? sortOrder : 't.sapling_id'}
     `
@@ -100,6 +120,8 @@ class TreeRepository {
     LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
     LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
+    LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+    LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
     `
     const resp = await sequelize.query(countQuery, {
