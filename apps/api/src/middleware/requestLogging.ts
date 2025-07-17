@@ -107,10 +107,23 @@ function getSanitizedBody(req: Request): any {
 
     // For file uploads, just log metadata
     if (req.files) {
-        sanitized._files = Object.keys(req.files).map(key => ({
-            fieldName: key,
-            fileCount: Array.isArray(req.files![key]) ? (req.files![key] as any[]).length : 1
-        }));
+        if (Array.isArray(req.files)) {
+            // req.files is File[]
+            sanitized._files = {
+                type: 'array',
+                fileCount: req.files.length
+            };
+        } else {
+            // req.files is { [fieldname: string]: Express.Multer.File[]; }
+            const filesObj = req.files as { [fieldname: string]: Express.Multer.File[] };
+            sanitized._files = Object.keys(filesObj).map(key => {
+                const fileField = filesObj[key];
+                return {
+                    fieldName: key,
+                    fileCount: Array.isArray(fileField) ? fileField.length : 1
+                };
+            });
+        }
     }
 
     return sanitized;
