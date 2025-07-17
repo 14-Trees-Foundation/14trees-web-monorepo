@@ -23,6 +23,7 @@ import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import { GiftRedeemTransactionCreationAttributes, GRTCard } from "../models/gift_redeem_transaction";
 import { generateFundRequestPdf } from "../services/invoice/generatePdf";
 import { uploadBase64DataToS3 } from "../controllers/helper/uploadtos3";
+import { defaultGiftMessages } from "../controllers/helper/giftRequestHelper";
 
 const defaultMessage = "Dear {recipient},\n\n"
     + 'We are immensely delighted to share that a tree has been planted in your name at the 14 Trees Foundation, Pune. This tree will be nurtured in your honour, rejuvenating ecosystems, supporting biodiversity, and helping offset the harmful effects of climate change.'
@@ -1034,7 +1035,7 @@ class GiftCardsService {
         giftedBy: string,
         giftedOn: Date,
         primaryMessage: string = defaultMessage,
-        logoMessage: string = ""
+        logoMessage: string = defaultGiftMessages.logo
     ) {
 
         const treeUpdateRequest = {
@@ -1195,9 +1196,9 @@ class GiftCardsService {
                         occasion_type: giftRequest.event_type,
                         gifted_by: recipient?.gifted_by || giftRequest.planted_by,
                         gifted_on: recipient?.gifted_on || giftRequest.gifted_on,
-                        primary_message: giftRequest.primary_message,
-                        secondary_message: "",
-                        logo_message: giftRequest.logo_message,
+                        primary_message: giftRequest.primary_message || defaultGiftMessages.primary,
+                        secondary_message: giftRequest.secondary_message || defaultGiftMessages.secondary,
+                        logo_message: giftRequest.logo_message || defaultGiftMessages.logo,
                         created_at: new Date(),
                         updated_at: new Date(),
                     }
