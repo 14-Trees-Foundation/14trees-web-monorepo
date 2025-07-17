@@ -48,6 +48,7 @@ import campaignRoutes from "./routes/campaignRoutes";
 import referralRoutes from "./routes/referralRoutes";
 import autoPrsReqRoutes from "./routes/autoPrsReqRoutes"
 import swaggerJSDoc from "swagger-jsdoc";
+import { requestLogger } from "./middleware/requestLogging";
 
 interface ResponseError extends Error {
   status?: number;
@@ -95,6 +96,9 @@ const initExpressApp = (app: express.Application) => {
     // Pass to next layer of middleware
     next();
   });
+
+  // Apply request logging middleware to all API routes
+  app.use("/api", requestLogger);
 
   // app.use("/api/templates", templateRoutes);
   app.use("/api/appv2", appV2Routes);
