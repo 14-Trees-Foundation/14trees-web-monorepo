@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "Gift Card Templates Controller",
+    "description": "API endpoints for Gift Card Templates management (template generation and downloads)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Gift Cards",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"users\": [\n    {\n      \"gifted_to_name\": \"John Doe\",\n      \"gifted_to_email\": \"john.doe@example.com\",\n      \"gifted_to_phone\": \"9876543210\",\n      \"gifted_to_dob\": \"1990-01-01\",\n      \"assigned_to_name\": \"Jane Smith\",\n      \"assigned_to_email\": \"jane.smith@example.com\",\n      \"assigned_to_phone\": \"9876543211\",\n      \"assigned_to_dob\": \"1991-02-02\",\n      \"relation\": \"Friend\",\n      \"image_name\": \"profile.jpg\",\n      \"count\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards"]
+        },
+        "description": "Creates gift cards for users associated with a gift card request"
+      }
+    },
+    {
+      "name": "Generate Gift Card Templates",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/generate/:gift_card_request_id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "generate", ":gift_card_request_id"],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Generates gift card templates for a specific gift card request"
+      }
+    },
+    {
+      "name": "Update Gift Card Images",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/update-card-images/:gift_card_request_id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "update-card-images", ":gift_card_request_id"],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Updates gift card images for a specific gift card request"
+      }
+    },
+    {
+      "name": "Download Gift Card Templates - PDF",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/download/:gift_card_request_id?downloadType=pdf",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "download", ":gift_card_request_id"],
+          "query": [
+            {
+              "key": "downloadType",
+              "value": "pdf"
+            }
+          ],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Downloads gift card templates as PDF"
+      }
+    },
+    {
+      "name": "Download Gift Card Templates - ZIP",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/download/:gift_card_request_id?downloadType=zip",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "download", ":gift_card_request_id"],
+          "query": [
+            {
+              "key": "downloadType",
+              "value": "zip"
+            }
+          ],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Downloads gift card templates as ZIP archive"
+      }
+    },
+    {
+      "name": "Download Gift Card Templates - PowerPoint",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/download/:gift_card_request_id?downloadType=ppt",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "download", ":gift_card_request_id"],
+          "query": [
+            {
+              "key": "downloadType",
+              "value": "ppt"
+            }
+          ],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Downloads gift card templates as PowerPoint presentation"
+      }
+    },
+    {
+      "name": "Generate Gift Card Slide",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sapling_id\": \"TR001\",\n  \"plant_type\": \"Neem\",\n  \"user_name\": \"John Doe\",\n  \"primary_message\": \"Happy Birthday!\",\n  \"secondary_message\": \"May this tree grow as strong as our friendship\",\n  \"logo\": \"https://example.com/logo.jpg\",\n  \"logo_message\": \"14Trees Foundation\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/generate-template",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "generate-template"]
+        },
+        "description": "Generates a slide template for a gift card"
+      }
+    },
+    {
+      "name": "Update Gift Card Template",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_name\": \"John Doe Updated\",\n  \"sapling_id\": \"TR001\",\n  \"slide_id\": \"slide123456\",\n  \"primary_message\": \"Updated Birthday Message!\",\n  \"secondary_message\": \"Updated wishes with love\",\n  \"logo\": \"https://example.com/updated_logo.jpg\",\n  \"logo_message\": \"14Trees Foundation - Updated\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/update-template",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "update-template"]
+        },
+        "description": "Updates an existing gift card template slide"
+      }
+    },
+    {
+      "name": "Generate Adhoc Tree Cards",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tree_ids\": [1001, 1002, 1003],\n  \"template_config\": {\n    \"primary_message\": \"Thank you for supporting nature\",\n    \"secondary_message\": \"Your contribution makes a difference\",\n    \"logo\": \"https://example.com/logo.jpg\",\n    \"logo_message\": \"14Trees Foundation\"\n  },\n  \"user_details\": {\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/adhoc-tree-cards",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "adhoc-tree-cards"]
+        },
+        "description": "Generates adhoc tree cards for specific tree IDs"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

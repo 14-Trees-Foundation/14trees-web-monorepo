@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Gift Card Redemption Controller",
+    "description": "API endpoints for Gift Card Redemption management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Redeem Single Gift Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_id\": 1,\n  \"event_type\": \"Birthday\",\n  \"event_name\": \"John's Birthday Celebration\",\n  \"gifted_on\": \"2024-01-15T10:30:00Z\",\n  \"gifted_by\": \"Jane Doe\",\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\"\n  },\n  \"tree_id\": 1001,\n  \"profile_image_url\": \"https://example.com/profiles/john_doe.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/card/redeem",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "card", "redeem"]
+        },
+        "description": "Redeems a single gift card and assigns it to a user"
+      }
+    },
+    {
+      "name": "Redeem Multiple Gift Cards",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_cards\": [\n    {\n      \"gift_card_id\": 1,\n      \"event_type\": \"Birthday\",\n      \"event_name\": \"John's Birthday\",\n      \"gifted_on\": \"2024-01-15T10:30:00Z\",\n      \"gifted_by\": \"Jane Doe\",\n      \"user\": {\n        \"id\": 1,\n        \"name\": \"John Doe\",\n        \"email\": \"john.doe@example.com\"\n      },\n      \"tree_id\": 1001,\n      \"profile_image_url\": \"https://example.com/profiles/john_doe.jpg\"\n    },\n    {\n      \"gift_card_id\": 2,\n      \"event_type\": \"Anniversary\",\n      \"event_name\": \"Wedding Anniversary\",\n      \"gifted_on\": \"2024-01-16T14:00:00Z\",\n      \"gifted_by\": \"Alice Smith\",\n      \"user\": {\n        \"id\": 2,\n        \"name\": \"Bob Wilson\",\n        \"email\": \"bob.wilson@example.com\"\n      },\n      \"tree_id\": 1002,\n      \"profile_image_url\": \"https://example.com/profiles/bob_wilson.jpg\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/card/redeem-multi",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "card", "redeem-multi"]
+        },
+        "description": "Redeems multiple gift cards in a single request"
+      }
+    },
+    {
+      "name": "Bulk Redeem Gift Cards",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"redemption_data\": {\n    \"event_type\": \"Corporate Event\",\n    \"event_name\": \"Annual Team Building\",\n    \"gifted_on\": \"2024-01-20T09:00:00Z\",\n    \"gifted_by\": \"HR Department\"\n  },\n  \"bulk_assign\": true,\n  \"auto_create_users\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/card/bulk-redeem",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "card", "bulk-redeem"]
+        },
+        "description": "Bulk redeems all gift cards associated with a gift card request"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

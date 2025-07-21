@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Gift Card Payment Controller",
+    "description": "API endpoints for Gift Card Payment processing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Payment Success for Gift Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"payment_id\": \"pay_123456789\",\n  \"order_id\": \"order_987654321\",\n  \"signature\": \"payment_signature_hash\",\n  \"amount\": 5000,\n  \"currency\": \"INR\",\n  \"status\": \"captured\",\n  \"method\": \"card\",\n  \"razorpay_payment_id\": \"pay_razorpay_123\",\n  \"razorpay_order_id\": \"order_razorpay_456\",\n  \"razorpay_signature\": \"razorpay_signature_hash\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/payment-success",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "payment-success"]
+        },
+        "description": "Processes successful payment for a gift card request"
+      }
+    },
+    {
+      "name": "Payment Success with Auto Processing",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"payment_id\": \"pay_123456789\",\n  \"order_id\": \"order_987654321\",\n  \"signature\": \"payment_signature_hash\",\n  \"amount\": 5000,\n  \"currency\": \"INR\",\n  \"status\": \"captured\",\n  \"method\": \"upi\",\n  \"razorpay_payment_id\": \"pay_razorpay_123\",\n  \"razorpay_order_id\": \"order_razorpay_456\",\n  \"razorpay_signature\": \"razorpay_signature_hash\",\n  \"auto_process\": true,\n  \"send_confirmation_email\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/payment-success",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "payment-success"]
+        },
+        "description": "Processes payment success with automatic gift card processing"
+      }
+    },
+    {
+      "name": "Payment Failure Handling",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"payment_id\": \"pay_failed_123\",\n  \"order_id\": \"order_987654321\",\n  \"status\": \"failed\",\n  \"error_code\": \"PAYMENT_DECLINED\",\n  \"error_description\": \"Card payment was declined by the bank\",\n  \"razorpay_payment_id\": \"pay_razorpay_failed_123\",\n  \"razorpay_order_id\": \"order_razorpay_456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/payment-failure",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "payment-failure"]
+        },
+        "description": "Handles payment failure scenarios (Note: This endpoint might need to be added to routes)"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

@@ -109,5 +109,31 @@ class GiftRequestUser extends Model<GiftRequestUserAttributes, GiftRequestUserCr
     updated_at!: Date;
 }
 
+// Input type for upsertGiftRequestUsers API
+interface GiftRequestUserInput {
+    id?: number; // Optional for updates
+    recipient_name: string;
+    recipient_phone: string;
+    recipient_email: string;
+    recipient_communication_email: string;
+    assignee_name: string;
+    assignee_phone: string;
+    assignee_email: string;
+    assignee_communication_email: string;
+    gifted_trees: string; // Comes as string from frontend
+    tree_id?: string; // Optional tree assignment
+    recipient?: number; // Optional existing user ID
+    assignee?: number; // Optional existing user ID
+    relation?: string; // Optional relationship between recipient and assignee
+    image_url?: string; // Optional profile image
+    gifted_by?: string; // Optional gifted by information
+    gifted_on?: Date; // Optional gift date
+    event_name?: string; // Optional event name
+    mail_sent?: boolean; // Optional mail status
+    mail_error?: string; // Optional mail error
+    mail_sent_assignee?: boolean; // Optional assignee mail status
+    mail_error_assignee?: string; // Optional assignee mail error
+}
+
 export { GiftRequestUser }
-export type { GiftRequestUserAttributes, GiftRequestUserCreationAttributes }
+export type { GiftRequestUserAttributes, GiftRequestUserCreationAttributes, GiftRequestUserInput }

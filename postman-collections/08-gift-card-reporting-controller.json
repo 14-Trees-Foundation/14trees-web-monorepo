@@ -1,0 +1,224 @@
+{
+  "info": {
+    "name": "Gift Card Reporting Controller",
+    "description": "API endpoints for Gift Card Reporting and analytics",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Update Gift Card Request Album",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"album_id\": 101\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/update-album",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "update-album"]
+        },
+        "description": "Updates the album associated with a gift card request"
+      }
+    },
+    {
+      "name": "Generate Fund Request",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/fund-request/:gift_card_request_id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "fund-request", ":gift_card_request_id"],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Generates a fund request PDF for a specific gift card request"
+      }
+    },
+    {
+      "name": "Send Fund Request Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"additional_cc\": [\n    \"finance@example.com\",\n    \"admin@example.com\"\n  ],\n  \"custom_message\": \"Please find attached the fund request for the gift card initiative.\",\n  \"priority\": \"high\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/send-fund-request/:gift_card_request_id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "send-fund-request", ":gift_card_request_id"],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Generates a fund request PDF and sends it to the corporate billing email"
+      }
+    },
+    {
+      "name": "Get Gift Card Analytics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/analytics?start_date=2024-01-01&end_date=2024-12-31&group_by=month",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "analytics"],
+          "query": [
+            {
+              "key": "start_date",
+              "value": "2024-01-01"
+            },
+            {
+              "key": "end_date",
+              "value": "2024-12-31"
+            },
+            {
+              "key": "group_by",
+              "value": "month"
+            }
+          ]
+        },
+        "description": "Gets analytics data for gift card requests (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Get Gift Card Summary Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filters\": {\n    \"date_range\": {\n      \"start\": \"2024-01-01\",\n      \"end\": \"2024-12-31\"\n    },\n    \"status\": [\"COMPLETED\", \"PROCESSED\"],\n    \"event_types\": [\"Birthday\", \"Anniversary\", \"Corporate\"]\n  },\n  \"group_by\": [\"event_type\", \"month\"],\n  \"metrics\": [\"total_cards\", \"total_amount\", \"trees_assigned\"],\n  \"export_format\": \"json\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/reports/summary",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "reports", "summary"]
+        },
+        "description": "Generates a comprehensive summary report of gift card activities (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Export Gift Card Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filters\": {\n    \"date_range\": {\n      \"start\": \"2024-01-01\",\n      \"end\": \"2024-12-31\"\n    },\n    \"status\": [\"COMPLETED\"]\n  },\n  \"export_format\": \"csv\",\n  \"include_fields\": [\n    \"request_id\",\n    \"created_date\",\n    \"event_type\",\n    \"no_of_cards\",\n    \"total_amount\",\n    \"sponsor_details\",\n    \"completion_date\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/reports/export",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "reports", "export"]
+        },
+        "description": "Exports gift card data in various formats (CSV, Excel, JSON) (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Get Monthly Revenue Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/reports/revenue?year=2024&breakdown=monthly",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "reports", "revenue"],
+          "query": [
+            {
+              "key": "year",
+              "value": "2024"
+            },
+            {
+              "key": "breakdown",
+              "value": "monthly"
+            }
+          ]
+        },
+        "description": "Gets monthly revenue breakdown from gift card sales (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Get Top Sponsors Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/reports/top-sponsors?limit=10&period=annual",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "reports", "top-sponsors"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "period",
+              "value": "annual"
+            }
+          ]
+        },
+        "description": "Gets list of top sponsors by contribution amount (Note: This endpoint might need route implementation)"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

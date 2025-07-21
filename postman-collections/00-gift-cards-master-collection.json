@@ -1,0 +1,443 @@
+{
+  "info": {
+    "name": "14Trees Gift Cards API - Master Collection",
+    "description": "Complete API collection for 14Trees Gift Card system with all endpoints organized by functionality",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🎁 Gift Request Management",
+      "description": "Core gift request operations",
+      "item": [
+        {
+          "name": "Get Gift Request Tags",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/tags",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Get Gift Card Requests",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"filters\": [{\"key\": \"status\", \"operator\": \"eq\", \"value\": \"PENDING\"}], \"order_by\": [{\"key\": \"created_at\", \"order\": \"desc\"}]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/get?offset=0&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Gift Card Request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "user_id", "value": "1", "type": "text"},
+                {"key": "no_of_cards", "value": "5", "type": "text"},
+                {"key": "primary_message", "value": "Happy Birthday!", "type": "text"},
+                {"key": "secondary_message", "value": "Best wishes", "type": "text"},
+                {"key": "event_name", "value": "Birthday Party", "type": "text"},
+                {"key": "event_type", "value": "Birthday", "type": "text"},
+                {"key": "logo", "type": "file", "src": []}
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests"]
+            }
+          }
+        },
+        {
+          "name": "Update Gift Card Request",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "primary_message", "value": "Updated Birthday Message!", "type": "text"}
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/:id",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", ":id"],
+              "variable": [{"key": "id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Process Gift Card Request",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"userId\": 45}"},
+            "url": {
+              "raw": "{{base_url}}/gift-cards/:id/process",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", ":id", "process"],
+              "variable": [{"key": "id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Clone Gift Card Request",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"gift_card_request_id\": 1, \"request_id\": \"REQ_2024_001\", \"created_by\": 1}"},
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/clone",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", "clone"]
+            }
+          }
+        },
+        {
+          "name": "Delete Gift Card Request",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/:id",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", ":id"],
+              "variable": [{"key": "id", "value": "1"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 User Management",
+      "description": "Gift card user operations",
+      "item": [
+        {
+          "name": "Get Gift Request Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/users/:gift_card_request_id",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "users", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Upsert Gift Request Users",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_request_id\": 1, \"users\": [{\"gifted_to_name\": \"John Doe\", \"gifted_to_email\": \"john.doe@example.com\", \"gifted_to_phone\": \"9876543210\", \"assigned_to_name\": \"Jane Smith\", \"relation\": \"Friend\", \"count\": 1}]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/users",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "users"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌳 Tree Management",
+      "description": "Tree booking and assignment",
+      "item": [
+        {
+          "name": "Book Trees for Gift Request",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_request_id\": 1, \"gift_card_trees\": [{\"tree_id\": 1001}, {\"tree_id\": 1002}], \"diversify\": true, \"book_non_giftable\": false}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/book",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "book"]
+            }
+          }
+        },
+        {
+          "name": "Get Booked Trees",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/trees/:gift_card_request_id?offset=0&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "trees", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Unbook Trees",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"gift_card_request_id\": 1, \"tree_ids\": [1001, 1002], \"unmap_all\": false}"},
+            "url": {
+              "raw": "{{base_url}}/gift-cards/unbook",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "unbook"]
+            }
+          }
+        },
+        {
+          "name": "Create Gift Card Plots",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"gift_card_request_id\": 1, \"plot_ids\": [101, 102, 103]}"},
+            "url": {
+              "raw": "{{base_url}}/gift-cards/plots",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "plots"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎨 Template Management",
+      "description": "Gift card template generation and downloads",
+      "item": [
+        {
+          "name": "Create Gift Cards",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_request_id\": 1, \"users\": [{\"gifted_to_name\": \"John Doe\", \"gifted_to_email\": \"john.doe@example.com\", \"count\": 1}]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards"]
+            }
+          }
+        },
+        {
+          "name": "Generate Gift Card Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/generate/:gift_card_request_id",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "generate", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Download Templates - PDF",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/download/:gift_card_request_id?downloadType=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "download", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Download Templates - ZIP",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/download/:gift_card_request_id?downloadType=zip",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "download", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎯 Redemption",
+      "description": "Gift card redemption operations",
+      "item": [
+        {
+          "name": "Redeem Single Gift Card",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_id\": 1, \"event_type\": \"Birthday\", \"event_name\": \"John's Birthday\", \"gifted_on\": \"2024-01-15T10:30:00Z\", \"user\": {\"id\": 1, \"name\": \"John Doe\", \"email\": \"john.doe@example.com\"}, \"tree_id\": 1001}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/card/redeem",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "card", "redeem"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Redeem Gift Cards",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_request_id\": 1, \"redemption_data\": {\"event_type\": \"Corporate Event\", \"gifted_on\": \"2024-01-20T09:00:00Z\"}, \"bulk_assign\": true}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/card/bulk-redeem",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "card", "bulk-redeem"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Payment Processing",
+      "description": "Payment related operations",
+      "item": [
+        {
+          "name": "Payment Success",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_request_id\": 1, \"payment_id\": \"pay_123456789\", \"amount\": 5000, \"currency\": \"INR\", \"status\": \"captured\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/payment-success",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", "payment-success"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📧 Email Notifications",
+      "description": "Email communication operations",
+      "item": [
+        {
+          "name": "Send Email for Gift Card Request",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"gift_card_request_id\": 1, \"attach_card\": true, \"event_type\": \"Birthday\", \"email_sponsor\": true, \"email_receiver\": true, \"email_assignee\": true}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/email",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "email"]
+            }
+          }
+        },
+        {
+          "name": "Send Custom Email",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sponsor_email\": \"sponsor@example.com\", \"subject\": \"Custom Notification\", \"message\": \"Thank you for your support\", \"gift_card_request_id\": 1}"
+            },
+            "url": {
+              "raw": "{{base_url}}/gift-cards/custom-mails",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "custom-mails"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Reporting & Analytics",
+      "description": "Reporting and fund request operations",
+      "item": [
+        {
+          "name": "Generate Fund Request",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/fund-request/:gift_card_request_id",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", "fund-request", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Send Fund Request Email",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{}"},
+            "url": {
+              "raw": "{{base_url}}/gift-cards/requests/send-fund-request/:gift_card_request_id",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "requests", "send-fund-request", ":gift_card_request_id"],
+              "variable": [{"key": "gift_card_request_id", "value": "1"}]
+            }
+          }
+        },
+        {
+          "name": "Update Album",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"gift_card_request_id\": 1, \"album_id\": 101}"},
+            "url": {
+              "raw": "{{base_url}}/gift-cards/update-album",
+              "host": ["{{base_url}}"],
+              "path": ["gift-cards", "update-album"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "description": "Authentication token (if required)"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  }
+}

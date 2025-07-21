@@ -1,0 +1,42 @@
+└── ⚛️  apps/frontend/src/pages/admin/gift/GiftTreesRefactored.tsx [ 311 lines] ⚠️
+    ├── ⚛️  pages/admin/gift/Components/GiftCardForm.tsx [ 407 lines] ⚠️ 📁
+    ├── ⚛️  pages/admin/gift/Components/GiftTreesChart.tsx [  41 lines] 📁
+    ├── ⚛️  pages/admin/gift/Components/TableSummary.tsx [  37 lines] 📁
+    ├── ⚛️  pages/admin/gift/Components/GiftCardModals.tsx [ 335 lines] ⚠️ 📁
+    ├── 📘 pages/admin/gift/hooks/useGiftCardState.ts [ 105 lines] 📁
+    ├── 📘 pages/admin/gift/hooks/useGiftCardData.ts [ 169 lines] ⚡ 📁
+    ├── 📘 pages/admin/gift/hooks/useGiftCardHandlers.ts [ 577 lines] ⚠️ 📁
+    ├── 📘 pages/admin/gift/hooks/useTableLogic.ts [  57 lines] 📁
+    ├── 📘 pages/admin/gift/services/giftCardService.ts [ 226 lines] ⚡ 📁
+    ├── ⚛️  components/GenTable.tsx [ 236 lines] ⚡ 📁
+    ├── ⚛️  components/AutoPrsPlots/AutoPrsPlots.tsx [ 315 lines] ⚠️ 📁
+    ├── ⚛️  pages/admin/auth/auth.jsx [  50 lines] 📁
+    ├── ⚛️  pages/admin/Login/LoginComponent.tsx [ 227 lines] ⚡ 📁
+    ├── 📘 types/user.ts [  20 lines] 📁
+    └── 📘 types/Group.ts [  29 lines] 📁
+
+============================================================
+COMPONENT ANALYSIS SUMMARY
+============================================================
+Root Component: apps/frontend/src/pages/admin/gift/GiftTreesRefactored.tsx
+Analysis Depth: 1 level
+Root Component Lines: 311
+Direct Dependencies: 15
+Total Files Analyzed: 16
+Total Lines: 3142
+
+Large Files (>300 lines):
+   1. pages/admin/gift/hooks/useGiftCardHandlers.ts [577 lines] ⚠️
+   2. pages/admin/gift/Components/GiftCardForm.tsx [407 lines] ⚠️
+   3. pages/admin/gift/Components/GiftCardModals.tsx [335 lines] ⚠️
+   4. components/AutoPrsPlots/AutoPrsPlots.tsx [315 lines] ⚠️
+   5. apps/frontend/src/pages/admin/gift/GiftTreesRefactored.tsx [311 lines] ⚠️
+
+Medium Files (150-300 lines):
+   1. components/GenTable.tsx [236 lines] ⚡
+   2. pages/admin/Login/LoginComponent.tsx [227 lines] ⚡
+   3. pages/admin/gift/services/giftCardService.ts [226 lines] ⚡
+   4. pages/admin/gift/hooks/useGiftCardData.ts [169 lines] ⚡
+
+💡 Use --depth 2 or higher to see deeper dependencies
+============================================================

@@ -671,6 +671,143 @@ export const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[
     await runWithConcurrency(tasks, 2);
 }
 
+export const sendMailsToAssigneeReceivers = async (giftCardRequest: any, giftCards: any[], eventType: string, attachCard: boolean, ccMails?: string[], testMails?: string[]) => {
+    let count = 5;
+    const userEmailDataMap: Record<number, any> = {};
+    for (const giftCard of giftCards) {
+        if (!giftCard.assigned_to_email || (giftCard.assigned_to_email as string).trim().endsWith('@14trees')) continue;
+        if (giftCard.event_type === '2') continue;  // memorial
+
+        if ((giftCard.assignee === giftCard.recipient && giftCard.mail_sent) || giftCard.mail_sent_assignee ) continue;
+
+        const key = giftCard.assignee;
+        const treeData = {
+            sapling_id: giftCard.sapling_id,
+            dashboard_link: 'https://dashboard.14trees.org/profile/' + giftCard.sapling_id,
+            planted_via: giftCard.planted_via,
+            plant_type: giftCard.plant_type,
+            scientific_name: giftCard.scientific_name,
+            card_image_url: giftCard.card_image_url,
+            event_name: giftCard.event_name,
+            assigned_to_name: giftCard.assigned_to_name,
+        };
+
+        if (userEmailDataMap[key]) {
+            userEmailDataMap[key].trees.push(treeData);
+            userEmailDataMap[key].count++;
+        } else {
+            userEmailDataMap[key] = {
+                trees: [treeData],
+                assigned_to_name: giftCard.assigned_to_name,
+                user_email: giftCard.assigned_to_email,
+                user_name: giftCard.assigned_to_name,
+                event_name: giftCard.event_name,
+                group_name: giftCardRequest.group_name,
+                company_logo_url: giftCardRequest.logo_url,
+                assigned_to: giftCard.assignee,
+                gifted_to: giftCard.recipient,
+                self: true,
+                is_gift: giftCardRequest.request_type === 'Gift Cards',
+                count: 1
+            }
+        }
+    }
+
+    const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+    const isTestMail = (testMails && testMails.length !== 0) ? true : false
+
+    for (const emailData of Object.values(userEmailDataMap)) {
+        const mailIds: string[] = isTestMail ? (testMails || []) : [emailData.user_email];
+        let attachments: { filename: string; path: string }[] | undefined = undefined;
+        if (attachCard) {
+            const files: { filename: string; path: string }[] = []
+            for (const tree of emailData.trees) {
+                if (tree.card_image_url) {
+                    files.push({
+                        filename: tree.assigned_to_name + "_" + tree.card_image_url.split("/").slice(-1)[0],
+                        path: tree.card_image_url
+                    })
+                }
+            }
+
+            if (files.length > 0) attachments = files;
+        }
+
+        const templatesMap: Record<string, string> = {}
+        const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+        if (!templatesMap[templateType]) {
+            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+            if (templates.length === 0) {
+                console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+                continue;
+            }
+            templatesMap[templateType] = templates[0].template_name
+        }
+
+        let subject: string | undefined = undefined;
+        if (eventType === 'birthday') {
+            subject = `Birthday wishes from ${giftCardRequest.planted_by ? giftCardRequest.planted_by : giftCardRequest.group_name ? giftCardRequest.group_name : giftCardRequest.user_name.split(" ")[0]} and 14 Trees`;
+        }
+
+        // Send email with status tracking
+        let mailSent = false;
+        let mailError = null;
+        let tries = 3;
+        
+        while (tries > 0) {
+            try {
+                const statusMessage = await sendDashboardMail(
+                    templatesMap[templateType],
+                    emailData,
+                    mailIds,
+                    ccMailIds,
+                    attachments,
+                    subject
+                );
+
+                // Only update status for non-test, non-self-gift assignees
+                if (!isTestMail) {
+                    mailSent = statusMessage === '';
+                    mailError = statusMessage || null;
+                }
+                break;
+            } catch (error) {
+                tries--;
+                if (tries === 0) {
+                    console.error('[ERROR] Assignee email failed:', error);
+                    if (!isTestMail) {
+                        mailSent = false;
+                        mailError = error instanceof Error ? error.message.substring(0, 255) : 'Unknown error';
+                    }
+                }
+                await new Promise(resolve => setTimeout(resolve, 2000 * (3 - tries)));
+            }
+        }
+
+        // Update database status
+        if (!isTestMail) {
+            try {
+                await GiftCardsRepository.updateGiftRequestUsers(
+                    {
+                        mail_sent_assignee: mailSent,
+                        mail_error_assignee: mailError,
+                        updated_at: new Date()
+                    },
+                    {
+                        gift_request_id: giftCardRequest.id,
+                        assignee: emailData.assigned_to
+                    }
+                );
+            } catch (updateError) {
+                console.error('[ERROR] Failed to update assignee status:', updateError);
+            }
+        }
+
+        count = count - 1;
+        if (isTestMail && count === 0) break;
+    }
+}
+
 export async function processGiftRequest(payload: GiftRequestPayload, giftCardsCallBack: (cardImages: string[], requestId: number) => void) {
 
     const plotIds: number[] = [2124];

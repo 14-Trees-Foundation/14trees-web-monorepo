@@ -1,0 +1,173 @@
+{
+  "info": {
+    "name": "Gift Card Email Controller",
+    "description": "API endpoints for Gift Card Email notifications and communications",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Send Email for Gift Card Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"test_mails\": [\n    \"test1@example.com\",\n    \"test2@example.com\"\n  ],\n  \"receiver_cc_mails\": [\n    \"cc_receiver@example.com\"\n  ],\n  \"sponsor_cc_mails\": [\n    \"cc_sponsor@example.com\"\n  ],\n  \"attach_card\": true,\n  \"event_type\": \"Birthday\",\n  \"email_sponsor\": true,\n  \"email_receiver\": true,\n  \"email_assignee\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/email",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "email"]
+        },
+        "description": "Sends emails related to a gift card request to sponsors, receivers, and assignees"
+      }
+    },
+    {
+      "name": "Send Custom Email to Sponsor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sponsor_email\": \"sponsor@example.com\",\n  \"subject\": \"Custom Gift Card Notification\",\n  \"message\": \"Dear Sponsor, your gift card request has been processed successfully. Thank you for supporting our environment initiative.\",\n  \"gift_card_request_id\": 1,\n  \"include_gift_cards\": true,\n  \"cc_emails\": [\n    \"admin@example.com\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/custom-mails",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "custom-mails"]
+        },
+        "description": "Sends custom email to sponsor with personalized message"
+      }
+    },
+    {
+      "name": "Send Sponsor Emails Only",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"sponsor_cc_mails\": [\n    \"cc_sponsor1@example.com\",\n    \"cc_sponsor2@example.com\"\n  ],\n  \"attach_card\": true,\n  \"custom_message\": \"Thank you for your generous support towards environmental conservation.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/email/sponsor",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "email", "sponsor"]
+        },
+        "description": "Sends emails only to sponsors (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Send Receiver Emails Only",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"receiver_cc_mails\": [\n    \"cc_receiver1@example.com\",\n    \"cc_receiver2@example.com\"\n  ],\n  \"attach_card\": true,\n  \"custom_message\": \"Congratulations! You have received a gift tree. Please find your gift card attached.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/email/receiver",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "email", "receiver"]
+        },
+        "description": "Sends emails only to gift card receivers (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Send Assignee Emails Only",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"assignee_cc_mails\": [\n    \"cc_assignee1@example.com\",\n    \"cc_assignee2@example.com\"\n  ],\n  \"attach_card\": false,\n  \"custom_message\": \"You have been assigned as a caretaker for a tree. Please check your dashboard for details.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/email/assignee",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "email", "assignee"]
+        },
+        "description": "Sends emails only to assignees (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Get Email Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/email/status/:gift_card_request_id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "email", "status", ":gift_card_request_id"],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Gets email sending status for a gift card request (Note: This endpoint might need route implementation)"
+      }
+    },
+    {
+      "name": "Resend Failed Emails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"email_types\": [\"sponsor\", \"receiver\", \"assignee\"],\n  \"retry_failed_only\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/email/resend",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "email", "resend"]
+        },
+        "description": "Resends failed emails for a gift card request (Note: This endpoint might need route implementation)"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

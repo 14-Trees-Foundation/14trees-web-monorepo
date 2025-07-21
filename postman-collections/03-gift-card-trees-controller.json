@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "Gift Card Trees Controller",
+    "description": "API endpoints for Gift Card Trees management (tree booking and assignment)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Gift Card Plots",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"plot_ids\": [101, 102, 103, 104, 105]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/plots",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "plots"]
+        },
+        "description": "Associates plot IDs with a gift card request"
+      }
+    },
+    {
+      "name": "Book Trees for Gift Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"gift_card_trees\": [\n    {\n      \"tree_id\": 1001\n    },\n    {\n      \"tree_id\": 1002\n    },\n    {\n      \"tree_id\": 1003\n    }\n  ],\n  \"diversify\": true,\n  \"book_non_giftable\": false,\n  \"book_all_habits\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/book",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "book"]
+        },
+        "description": "Books trees for a gift card request with diversification options"
+      }
+    },
+    {
+      "name": "Auto Process Gift Card Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"auto_assign\": true,\n  \"diversify\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/auto-process",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "auto-process"]
+        },
+        "description": "Automatically processes a gift card request by booking trees"
+      }
+    },
+    {
+      "name": "Get Booked Trees",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/trees/:gift_card_request_id?offset=0&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "trees", ":gift_card_request_id"],
+          "query": [
+            {
+              "key": "offset",
+              "value": "0"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Fetches trees booked for a gift card request with pagination"
+      }
+    },
+    {
+      "name": "Unbook Trees",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"tree_ids\": [1001, 1002, 1003],\n  \"unmap_all\": false\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/unbook",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "unbook"]
+        },
+        "description": "Unbooks specific trees or all trees associated with a gift card request"
+      }
+    },
+    {
+      "name": "Unbook All Trees",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"unmap_all\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/unbook",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "unbook"]
+        },
+        "description": "Unbooks all trees associated with a gift card request"
+      }
+    },
+    {
+      "name": "Get Trees Count for Auto Reserve",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"plot_ids\": [101, 102, 103]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/plot-trees-cnt/get",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "plot-trees-cnt", "get"]
+        },
+        "description": "Gets available trees count for auto-reservation from specified plots"
+      }
+    },
+    {
+      "name": "Assign Gift Request Trees",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"user_assignments\": [\n    {\n      \"user_id\": 1,\n      \"tree_ids\": [1001, 1002]\n    },\n    {\n      \"user_id\": 2,\n      \"tree_ids\": [1003, 1004]\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/assign",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "assign"]
+        },
+        "description": "Assigns specific trees to users in a gift card request"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

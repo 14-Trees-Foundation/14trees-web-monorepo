@@ -1,0 +1,272 @@
+{
+  "info": {
+    "name": "Gift Request Controller",
+    "description": "API endpoints for Gift Request management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Gift Request Tags",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/tags",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "tags"]
+        },
+        "description": "Fetches a list of gift request tags"
+      }
+    },
+    {
+      "name": "Get Gift Card Requests",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filters\": [\n    {\n      \"key\": \"status\",\n      \"operator\": \"eq\",\n      \"value\": \"PENDING\"\n    }\n  ],\n  \"order_by\": [\n    {\n      \"key\": \"created_at\",\n      \"order\": \"desc\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/get?offset=0&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "get"],
+          "query": [
+            {
+              "key": "offset",
+              "value": "0"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "Fetches gift card requests with optional filters and sorting"
+      }
+    },
+    {
+      "name": "Create Gift Card Request",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "user_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "no_of_cards",
+              "value": "5",
+              "type": "text"
+            },
+            {
+              "key": "primary_message",
+              "value": "Happy Birthday!",
+              "type": "text"
+            },
+            {
+              "key": "secondary_message",
+              "value": "Best wishes from our team",
+              "type": "text"
+            },
+            {
+              "key": "event_name",
+              "value": "John's Birthday",
+              "type": "text"
+            },
+            {
+              "key": "event_type",
+              "value": "Birthday",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Foundation",
+              "type": "text"
+            },
+            {
+              "key": "grove",
+              "value": "Miyawaki Grove",
+              "type": "text"
+            },
+            {
+              "key": "planted_by",
+              "value": "14Trees Foundation",
+              "type": "text"
+            },
+            {
+              "key": "request_type",
+              "value": "Normal Assignment",
+              "type": "text"
+            },
+            {
+              "key": "logo",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests"]
+        },
+        "description": "Creates a new gift card request"
+      }
+    },
+    {
+      "name": "Clone Gift Card Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"request_id\": \"REQ_2024_001\",\n  \"created_by\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/clone",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "clone"]
+        },
+        "description": "Clones an existing gift card request"
+      }
+    },
+    {
+      "name": "Update Gift Card Request",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "primary_message",
+              "value": "Updated Birthday Message!",
+              "type": "text"
+            },
+            {
+              "key": "secondary_message",
+              "value": "Updated wishes from our team",
+              "type": "text"
+            },
+            {
+              "key": "event_name",
+              "value": "Updated Event Name",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/:id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Updates an existing gift card request"
+      }
+    },
+    {
+      "name": "Process Gift Card Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 45\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/:id/process",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", ":id", "process"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Marks gift card request as processed by a backoffice user"
+      }
+    },
+    {
+      "name": "Patch Gift Card Request",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 1,\n  \"status\": \"PROCESSED\",\n  \"notes\": \"Updated notes\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/update",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", "update"]
+        },
+        "description": "Partially updates a gift card request"
+      }
+    },
+    {
+      "name": "Delete Gift Card Request",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/requests/:id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "requests", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "1",
+              "description": "Gift card request ID to delete"
+            }
+          ]
+        },
+        "description": "Deletes an existing gift card request"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}

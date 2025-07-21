@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "Gift Request Users Controller",
+    "description": "API endpoints for Gift Request Users management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Gift Request Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/gift-cards/users/:gift_card_request_id",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "users", ":gift_card_request_id"],
+          "variable": [
+            {
+              "key": "gift_card_request_id",
+              "value": "1",
+              "description": "Gift card request ID"
+            }
+          ]
+        },
+        "description": "Fetches users associated with a gift card request"
+      }
+    },
+    {
+      "name": "Upsert Gift Request Users",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gift_card_request_id\": 1,\n  \"users\": [\n    {\n      \"gifted_to_name\": \"John Doe\",\n      \"gifted_to_email\": \"john.doe@example.com\",\n      \"gifted_to_phone\": \"9876543210\",\n      \"gifted_to_dob\": \"1990-01-01\",\n      \"assigned_to_name\": \"Jane Smith\",\n      \"assigned_to_email\": \"jane.smith@example.com\",\n      \"assigned_to_phone\": \"9876543211\",\n      \"assigned_to_dob\": \"1991-02-02\",\n      \"relation\": \"Friend\",\n      \"profile_image_url\": \"https://example.com/profile.jpg\",\n      \"count\": 1\n    },\n    {\n      \"gifted_to_name\": \"Alice Johnson\",\n      \"gifted_to_email\": \"alice.johnson@example.com\",\n      \"gifted_to_phone\": \"9876543212\",\n      \"gifted_to_dob\": \"1992-03-03\",\n      \"assigned_to_name\": \"Bob Wilson\",\n      \"assigned_to_email\": \"bob.wilson@example.com\",\n      \"assigned_to_phone\": \"9876543213\",\n      \"assigned_to_dob\": \"1993-04-04\",\n      \"relation\": \"Colleague\",\n      \"profile_image_url\": \"https://example.com/alice_profile.jpg\",\n      \"count\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/users",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "users"]
+        },
+        "description": "Adds or updates users associated with a gift card request"
+      }
+    },
+    {
+      "name": "Update Gift Card User Details",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"users\": [\n    {\n      \"id\": 1,\n      \"recipient_name\": \"John Doe Updated\",\n      \"recipient_email\": \"john.doe.updated@example.com\",\n      \"recipient_phone\": \"9876543210\",\n      \"assignee_name\": \"Jane Smith Updated\",\n      \"assignee_email\": \"jane.smith.updated@example.com\",\n      \"assignee_phone\": \"9876543211\",\n      \"relation\": \"Best Friend\",\n      \"profile_image_url\": \"https://example.com/updated_profile.jpg\",\n      \"gift_request_id\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/gift-cards/update-users",
+          "host": ["{{base_url}}"],
+          "path": ["gift-cards", "update-users"]
+        },
+        "description": "Updates the details of users associated with a gift card request"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    }
+  ]
+}
