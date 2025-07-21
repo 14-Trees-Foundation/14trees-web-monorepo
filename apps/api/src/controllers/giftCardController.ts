@@ -2634,9 +2634,39 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         tags,
     } = req.body;
 
-    if (!group_id || !sponsor_name || !sponsor_email || !no_of_cards || isNaN(parseInt(no_of_cards))) {
+    // Validate required fields
+    const validationErrors = [];
+    
+    if (!group_id) {
+        validationErrors.push('group_id is required');
+    }
+    
+    if (!sponsor_name || sponsor_name.trim() === '') {
+        validationErrors.push('sponsor_name is required');
+    }
+    
+    if (!sponsor_email || sponsor_email.trim() === '') {
+        validationErrors.push('sponsor_email is required');
+    } else {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(sponsor_email.trim())) {
+            validationErrors.push('sponsor_email must be a valid email address');
+        }
+    }
+    
+    if (!no_of_cards) {
+        validationErrors.push('no_of_cards is required');
+    } else if (isNaN(parseInt(no_of_cards))) {
+        validationErrors.push('no_of_cards must be a valid number');
+    } else if (parseInt(no_of_cards) <= 0) {
+        validationErrors.push('no_of_cards must be greater than 0');
+    }
+    
+    if (validationErrors.length > 0) {
         return res.status(status.bad).json({
-            message: 'Please provide valid input details!'
+            message: 'Validation failed',
+            errors: validationErrors
         });
     }
 

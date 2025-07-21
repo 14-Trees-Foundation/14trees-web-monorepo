@@ -935,7 +935,8 @@ class TreeRepository {
       whereCondition = `WHERE t.mapped_to_user = ${userId}`;
     }
 
-    const query = `
+    // Query to get trees that have been allocated (have gift cards)
+    const allocatedTreesQuery = `
       SELECT count(t.id) as total_trees, count(t.assigned_to) as gifted_trees
       FROM "${getSchema()}".trees t
       JOIN "${getSchema()}".gift_cards gc on gc.tree_id = t.id
@@ -943,11 +944,62 @@ class TreeRepository {
       ${whereCondition}
     `;
 
-    const data: any[] = await sequelize.query(query, {
-      type: QueryTypes.SELECT,
-    })
+    // Build the complete WHERE condition for requests
+    let requestConditions = [];
+    if (groupId) {
+      requestConditions.push(`gcr.group_id = ${groupId}`);
+    } else if (userId) {
+      requestConditions.push(`gcr.user_id = ${userId}`);
+    }
+    requestConditions.push(`gcr.status IN ('pending_plot_selection', 'pending_assignment', 'pending_gift_cards')`);
+    requestConditions.push(`gcr.tags @> ARRAY['PaymentCompleted']::varchar[]`);
+    
+    const requestWhereClause = requestConditions.length > 0 ? `WHERE ${requestConditions.join(' AND ')}` : '';
 
-    return data[0];
+    // Query to get total trees requested (separate from allocated to avoid JOIN multiplication)
+    // Only consider requests with PaymentCompleted tag
+    const requestedTreesQuery = `
+      SELECT COALESCE(SUM(gcr.no_of_cards), 0) as total_requested_trees
+      FROM "${getSchema()}".gift_card_requests gcr
+      ${requestWhereClause}
+    `;
+
+    // Query to get total allocated trees (from gift_cards linked to this group's requests)
+    // Only consider requests with PaymentCompleted tag
+    const allocatedTreesFromRequestsQuery = `
+      SELECT COALESCE(COUNT(gc.id), 0) as total_allocated_trees
+      FROM "${getSchema()}".gift_cards gc
+      JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+      ${requestWhereClause}
+    `;
+
+
+
+    const allocatedData: any[] = await sequelize.query(allocatedTreesQuery, {
+      type: QueryTypes.SELECT,
+    });
+
+    const requestedData: any[] = await sequelize.query(requestedTreesQuery, {
+      type: QueryTypes.SELECT,
+    });
+
+    const allocatedFromRequestsData: any[] = await sequelize.query(allocatedTreesFromRequestsQuery, {
+      type: QueryTypes.SELECT,
+    });
+
+
+
+    const result = {
+      total_trees: allocatedData[0]?.total_trees || '0',
+      gifted_trees: allocatedData[0]?.gifted_trees || '0',
+      total_requested_trees: requestedData[0]?.total_requested_trees || '0',
+      total_allocated_trees: allocatedFromRequestsData[0]?.total_allocated_trees || '0',
+      trees_yet_to_allocate: (parseInt(requestedData[0]?.total_requested_trees || '0') - parseInt(allocatedFromRequestsData[0]?.total_allocated_trees || '0')).toString()
+    };
+
+
+
+    return result;
   }
 
   public static async getMappedDonationTreesAnalytics(groupId: number | null, userId: number | null): Promise<{ total_trees: number; donated_trees: number; remaining_trees: number; }> {

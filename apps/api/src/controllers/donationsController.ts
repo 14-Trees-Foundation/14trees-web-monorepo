@@ -229,53 +229,61 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
         }
 
         const updatedDonation = await DonationRepository.getDonation(donation_id);
+        
+        // Send response first, then handle background operations
         res.status(status.success).send(updatedDonation);
 
-        if (is_corporate) {
-            await DonationService.reserveTreesForDonation(donation).catch(error => {
-                console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
-            });
-            await DonationService.autoAssignTrees(donation.id).catch(error => {
-                console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
-            });
-        }
-
-        try {
-            await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
-        } catch (error) {
-            console.error("[ERROR] DonationsController::paymentSuccessForDonation:sendAcknowledgement", error);
-        }
-
-        if (paymentId) {
-            const sheetName = "WebsiteTxns"
-            const spreadsheetId = process.env.DONATION_SPREADSHEET;
-            if (!spreadsheetId) {
-                console.log("[WARN]", "DonationsController::paymentSuccessForDonation", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
-                return;
-            }
-
-            const date = new Date();
-            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-            const receiptId = FY + "/" + donation.id.toString();
-
-            const googleSheet = new GoogleSpreadsheet();
-            await googleSheet.updateRowCellsByColumnValue(spreadsheetId, sheetName, "Rec", receiptId, {
-                "Mode": paymentId
-            }).catch(error => {
-                console.error("[ERROR] Failed to update Google Sheet with payment ID:", {
-                    error,
-                    stack: error instanceof Error ? error.stack : undefined
+        // Handle background operations after response is sent
+        // These operations should not affect the response to the client
+        setImmediate(async () => {
+            if (is_corporate) {
+                await DonationService.reserveTreesForDonation(donation).catch(error => {
+                    console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
                 });
-            })
-        }
-
-        if (donation.rfr_id) {
-            try {
-                await DonationService.sendReferralDonationNotification(donation);
-            } catch (referralError) {
-                console.error("[ERROR] Failed to send referral notification:", referralError);
+                await DonationService.autoAssignTrees(donation.id).catch(error => {
+                    console.error("[ERROR] DonationsController::paymentSuccessForDonation", error);
+                });
             }
-        }
+
+            try {
+                await DonationService.sendDonationAcknowledgement(donation, sponsorUser);
+            } catch (error) {
+                console.error("[ERROR] DonationsController::paymentSuccessForDonation:sendAcknowledgement", error);
+            }
+
+            if (paymentId) {
+                const sheetName = "WebsiteTxns"
+                const spreadsheetId = process.env.DONATION_SPREADSHEET;
+                if (!spreadsheetId) {
+                    console.log("[WARN]", "DonationsController::paymentSuccessForDonation", "spreadsheet id (DONATION_SPREADSHEET) is not present in env");
+                    return;
+                }
+
+                const date = new Date();
+                const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+                const receiptId = FY + "/" + donation.id.toString();
+
+                try {
+                    const googleSheet = new GoogleSpreadsheet();
+                    await googleSheet.updateRowCellsByColumnValue(spreadsheetId, sheetName, "Rec", receiptId, {
+                        "Mode": paymentId
+                    });
+                } catch (error) {
+                    console.error("[ERROR] Failed to update Google Sheet with payment ID:", {
+                        error,
+                        stack: error instanceof Error ? error.stack : undefined
+                    });
+                }
+            }
+
+            if (donation.rfr_id) {
+                try {
+                    await DonationService.sendReferralDonationNotification(donation);
+                } catch (referralError) {
+                    console.error("[ERROR] Failed to send referral notification:", referralError);
+                }
+            }
+        });
 
     } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:sendAcknowledgement", error);

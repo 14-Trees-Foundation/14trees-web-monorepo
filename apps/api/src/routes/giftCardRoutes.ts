@@ -227,19 +227,74 @@ routes.post('/requests', uploadFiles.fields([{ name: 'logo', maxCount: 1 }, { na
  *     description: Creates a new gift card request.
  *     tags:
  *       - Gift Cards
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         required: true
+ *         schema:
+ *           type: object
+ *           required:
+ *             - group_id
+ *             - sponsor_name
+ *             - sponsor_email
+ *             - no_of_cards
+ *           properties:
+ *             group_id:
+ *               type: integer
+ *               description: Group ID for the gift card request
+ *             sponsor_name:
+ *               type: string
+ *               description: Name of the sponsor
+ *             sponsor_email:
+ *               type: string
+ *               format: email
+ *               description: Email address of the sponsor
+ *             no_of_cards:
+ *               type: integer
+ *               minimum: 1
+ *               description: Number of gift cards to create
+ *             event_type:
+ *               type: string
+ *               description: Type of event
+ *             event_name:
+ *               type: string
+ *               description: Name of the event
+ *             gifted_by:
+ *               type: string
+ *               description: Name of the gift giver
+ *             logo_message:
+ *               type: string
+ *               description: Logo message for the gift card
+ *             primary_message:
+ *               type: string
+ *               description: Primary message for the gift card
+ *             created_by:
+ *               type: integer
+ *               description: ID of the user creating the request
+ *             users:
+ *               type: array
+ *               description: Array of users
+ *             tags:
+ *               type: array
+ *               description: Array of tags
  *     responses:
  *       200:
  *         description: Gift card request created successfully
  *         schema:
  *           $ref: '#/definitions/GiftTreesRequest'
  *       400:
- *         description: Bad request
+ *         description: Validation failed
  *         schema:
  *           type: object
  *           properties:
  *             message:
  *               type: string
- *               example: "Please provide valid input details!"
+ *               example: "Validation failed"
+ *             errors:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["sponsor_email is required", "no_of_cards must be greater than 0"]
  *       500:
  *         description: Internal server error
  *         schema:

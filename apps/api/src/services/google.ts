@@ -97,11 +97,25 @@ export async function downloadFile(fileId: string): Promise<Readable> {
 }
 
 export class GoogleSpreadsheet {
-    private sheets: sheets_v4.Sheets;
+    private sheets: sheets_v4.Sheets | null = null;
+    private isDevelopment: boolean;
 
     constructor() {
+        // Check if we're in development mode
+        this.isDevelopment = process.env.NODE_ENV !== 'production';
+        
         // Load service account credentials
         const credentialsPath = path.resolve(process.env.GOOGLE_APP_CREDENTIALS || '');
+        
+        if (!credentialsPath || !fs.existsSync(credentialsPath)) {
+            if (this.isDevelopment) {
+                console.log(`[WARN] Google credentials file not found at: ${credentialsPath}. Running in development mode - Google Sheets operations will be skipped.`);
+                return; // Skip initialization in development
+            } else {
+                throw new Error(`Google credentials file not found at: ${credentialsPath}. Please check GOOGLE_APP_CREDENTIALS environment variable.`);
+            }
+        }
+        
         const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
 
         const auth = new google.auth.JWT({
@@ -116,8 +130,13 @@ export class GoogleSpreadsheet {
 
 
     public async getSpreadsheetData(spreadsheetId: string, sheetName: string) {
+        if (this.isDevelopment && !this.sheets) {
+            console.log(`[DEV] Skipping getSpreadsheetData for ${spreadsheetId}/${sheetName} - running in development mode`);
+            return null;
+        }
+        
         // Read existing sheet data
-        return await this.sheets.spreadsheets.values.get({
+        return await this.sheets!.spreadsheets.values.get({
             spreadsheetId,
             range: sheetName,
         }).catch(error => {
@@ -130,8 +149,14 @@ export class GoogleSpreadsheet {
     }
 
     public async insertRowData(spreadsheetId: string, sheetName: string, rowData: string[]) {
+        if (this.isDevelopment && !this.sheets) {
+            console.log(`[DEV] Skipping insertRowData for ${spreadsheetId}/${sheetName} - running in development mode`);
+            console.log(`[DEV] Would insert row:`, rowData);
+            return;
+        }
+        
         try {
-            await this.sheets.spreadsheets.values.append({
+            await this.sheets!.spreadsheets.values.append({
                 spreadsheetId,
                 range: sheetName,
                 valueInputOption: 'RAW',
@@ -151,8 +176,14 @@ export class GoogleSpreadsheet {
     }
 
     public async insertRowsData(spreadsheetId: string, sheetName: string, rowData: string[][]) {
+        if (this.isDevelopment && !this.sheets) {
+            console.log(`[DEV] Skipping insertRowsData for ${spreadsheetId}/${sheetName} - running in development mode`);
+            console.log(`[DEV] Would insert rows:`, rowData);
+            return;
+        }
+        
         try {
-            await this.sheets.spreadsheets.values.append({
+            await this.sheets!.spreadsheets.values.append({
                 spreadsheetId,
                 range: sheetName,
                 valueInputOption: 'RAW',
@@ -171,7 +202,13 @@ export class GoogleSpreadsheet {
     }
 
     public async updateRowDataInSheet(spreadsheetId: string, sheetName: string, updatedValues: string[][]) {
-        await this.sheets.spreadsheets.values.update({
+        if (this.isDevelopment && !this.sheets) {
+            console.log(`[DEV] Skipping updateRowDataInSheet for ${spreadsheetId}/${sheetName} - running in development mode`);
+            console.log(`[DEV] Would update with values:`, updatedValues);
+            return;
+        }
+        
+        await this.sheets!.spreadsheets.values.update({
             spreadsheetId,
             range: `${sheetName}`,
             valueInputOption: 'RAW',
@@ -195,9 +232,15 @@ export class GoogleSpreadsheet {
         columnName: string, 
         valueToMatch: string
     ): Promise<{ rowData: string[], rowIndex: number } | null> {
+        if (this.isDevelopment && !this.sheets) {
+            console.log(`[DEV] Skipping getRowByColumnValue for ${spreadsheetId}/${sheetName} - running in development mode`);
+            console.log(`[DEV] Would search for ${columnName}=${valueToMatch}`);
+            return null;
+        }
+        
         try {
             // Get all data from the sheet
-            const response = await this.sheets.spreadsheets.values.get({
+            const response = await this.sheets!.spreadsheets.values.get({
                 spreadsheetId,
                 range: sheetName,
             });
@@ -255,9 +298,15 @@ export class GoogleSpreadsheet {
         identifyValue: string,
         updateValues: Record<string, string>
     ): Promise<boolean> {
+        if (this.isDevelopment && !this.sheets) {
+            console.log(`[DEV] Skipping updateRowCellsByColumnValue for ${spreadsheetId}/${sheetName} - running in development mode`);
+            console.log(`[DEV] Would update row where ${identifyColumnName}=${identifyValue} with:`, updateValues);
+            return true; // Return success in development mode
+        }
+        
         try {
             // First, get all data from the sheet to find the row and headers
-            const response = await this.sheets.spreadsheets.values.get({
+            const response = await this.sheets!.spreadsheets.values.get({
                 spreadsheetId,
                 range: sheetName,
             });
@@ -368,11 +417,25 @@ export class GoogleSpreadsheet {
 }
 
 export class GoogleDoc {
-    private docs: docs_v1.Docs;
+    private docs: docs_v1.Docs | null = null;
+    private isDevelopment: boolean;
 
     constructor() {
+        // Check if we're in development mode
+        this.isDevelopment = process.env.NODE_ENV !== 'production';
+        
         // Load service account credentials
         const credentialsPath = path.resolve(process.env.GOOGLE_APP_CREDENTIALS || '');
+        
+        if (!credentialsPath || !fs.existsSync(credentialsPath)) {
+            if (this.isDevelopment) {
+                console.log(`[WARN] Google credentials file not found at: ${credentialsPath}. Running in development mode - Google Docs operations will be skipped.`);
+                return; // Skip initialization in development
+            } else {
+                throw new Error(`Google credentials file not found at: ${credentialsPath}. Please check GOOGLE_APP_CREDENTIALS environment variable.`);
+            }
+        }
+        
         const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
 
         const auth = new google.auth.JWT({
@@ -388,6 +451,11 @@ export class GoogleDoc {
     }
 
     public async get80GRecieptFileId(data: any, fileName: string) {
+        if (this.isDevelopment && !this.docs) {
+            console.log(`[DEV] Skipping get80GRecieptFileId for ${fileName} - running in development mode`);
+            console.log(`[DEV] Would create document with data:`, data);
+            return 'dev-mock-file-id';
+        }
 
         const copiedDocId = await copyFile("1s9xCuSDICsrmX73lKar59CCIGcPob4v-Yaty4bT8OCk", fileName);
 
@@ -401,7 +469,7 @@ export class GoogleDoc {
             },
         }));
 
-        await this.docs.documents.batchUpdate({
+        await this.docs!.documents.batchUpdate({
             documentId: copiedDocId,
             requestBody: { requests },
         });
@@ -410,6 +478,18 @@ export class GoogleDoc {
     }
 
     public async download(fileId: string) {
+        if (this.isDevelopment && !this.docs) {
+            console.log(`[DEV] Skipping download for ${fileId} - running in development mode`);
+            // Return a mock readable stream for development
+            const { Readable } = require('stream');
+            return new Readable({
+                read() {
+                    this.push('Mock PDF content for development');
+                    this.push(null);
+                }
+            });
+        }
+        
         const response = await drive.files.export(
             {
                 fileId,
