@@ -35,17 +35,22 @@ export async function updateInventoryStates() {
         console.log("[ERROR]", "AutoProcessInventory::updateInventoryStates", "Spreadsheet id not found in env file");
         return;
     }
-    const spreadsheet = new GoogleSpreadsheet();
-    const date = new Date().toISOString().split('T')[0];
+    
+    try {
+        const spreadsheet = new GoogleSpreadsheet();
+        const date = new Date().toISOString().split('T')[0];
 
-    const donationSheetName = 'Donations';
-    let donationRows = await getDonationInventoryStates();
-    donationRows = donationRows.map(row => [...row, date]);
-    await spreadsheet.insertRowsData(spreadsheetId, donationSheetName, donationRows);
+        const donationSheetName = 'Donations';
+        let donationRows = await getDonationInventoryStates();
+        donationRows = donationRows.map(row => [...row, date]);
+        await spreadsheet.insertRowsData(spreadsheetId, donationSheetName, donationRows);
 
-    const giftSheetName = 'Gift Requests';
-    let giftRows = await getGiftInventoryStates();
-    giftRows = giftRows.map(row => [...row, date]);
-    await spreadsheet.insertRowsData(spreadsheetId, giftSheetName, giftRows);
-
+        const giftSheetName = 'Gift Requests';
+        let giftRows = await getGiftInventoryStates();
+        giftRows = giftRows.map(row => [...row, date]);
+        await spreadsheet.insertRowsData(spreadsheetId, giftSheetName, giftRows);
+    } catch (error) {
+        console.log("[ERROR]", "AutoProcessInventory::updateInventoryStates", "Google credentials not configured for local development:", error.message);
+        return;
+    }
 }
