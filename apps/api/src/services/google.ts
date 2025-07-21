@@ -375,6 +375,10 @@ export class GoogleSpreadsheet {
             }
 
             // Update the specific row
+            if (!this.sheets) {
+                throw new Error('Google Sheets service not initialized');
+            }
+            
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${sheetName}!A${rowIndex}:${this.columnToLetter(headers.length)}${rowIndex}`,

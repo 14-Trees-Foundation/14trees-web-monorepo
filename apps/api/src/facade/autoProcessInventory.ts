@@ -50,7 +50,8 @@ export async function updateInventoryStates() {
         giftRows = giftRows.map(row => [...row, date]);
         await spreadsheet.insertRowsData(spreadsheetId, giftSheetName, giftRows);
     } catch (error) {
-        console.log("[ERROR]", "AutoProcessInventory::updateInventoryStates", "Google credentials not configured for local development:", error.message);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log("[ERROR]", "AutoProcessInventory::updateInventoryStates", "Google credentials not configured for local development:", errorMessage);
         return;
     }
 }
