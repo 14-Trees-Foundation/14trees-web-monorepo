@@ -1,11 +1,11 @@
 {
   "extends": "tsconfig/base.json",
-  "exclude": ["./dist/**/*", "./node_modules/**/*"],
+  "exclude": ["./dist/**/*", "./node_modules/**/*", "./src/swagger_output.json", "./test_data/**/*", "./tests/**/*"],
   "include": ["src/**/*.js", "src/**/*.ts"],
   "compilerOptions": {
     "outDir": "./dist",
-    "target": "ES2020",
-    "sourceMap": true,
+    "target": "ES2022",
+    "sourceMap": false,
     "moduleResolution": "node",
     "allowJs": true,
     "module": "commonjs",
@@ -14,6 +14,12 @@
     "emitDecoratorMetadata": true,
     "incremental": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "declarationMap": false,
+    "removeComments": true,
+    "noEmitOnError": false,
+    "preserveConstEnums": false,
+    "importsNotUsedAsValues": "remove"
   }
 }
