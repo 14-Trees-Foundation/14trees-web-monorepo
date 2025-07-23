@@ -154,7 +154,7 @@ export const updatePaymentHistory = async (req: Request, res: Response) => {
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
         const razorpay = new RazorpayService();
-        if (razorpay.verifySignature(req.body.order_id, req.body.razorpay_payment_id, req.body.razorpay_signature)) {
+        if (!razorpay.verifySignature(req.body.order_id, req.body.razorpay_payment_id, req.body.razorpay_signature)) {
             res.status(status.bad).json({ message: 'Transaction not legit!' });
             return;
         }
