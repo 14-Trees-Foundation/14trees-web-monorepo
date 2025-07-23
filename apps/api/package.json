@@ -27,7 +27,7 @@
     "async": "^3.2.6",
     "aws-sdk": "^2.988.0",
     "axios": "^1.8.4",
-    "cheerio": "^1.0.0",
+    "cheerio": "1.0.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "csv-parser": "^3.0.0",

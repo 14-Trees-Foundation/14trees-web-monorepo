@@ -19,7 +19,7 @@
   },
   "packageManager": "yarn@1.22.19",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.18.1"
   },
   "workspaces": [
     "apps/*",
@@ -27,5 +27,8 @@
   ],
   "dependencies": {
     "@notionhq/client": "^2.2.15"
+  },
+  "resolutions": {
+    "**/cheerio": "1.0.0"
   }
 }
