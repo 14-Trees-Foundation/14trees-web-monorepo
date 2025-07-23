@@ -1,5 +1,6 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
-import * as creds from '../../auth/sheet-node-test.json';
+const creds = require('../../auth/sheet-node-test.json');
+import moment from "moment";
 
 export const UpdateTreeTypeCsv = async (data:any) => {
 
@@ -215,5 +216,29 @@ export const updateStaffCsv = async (data: any) => {
         });
     } catch (error) {
         return error
+    }
+}
+
+export const createWorkOrderInCSV = async (data: any) => {
+    const doc = new GoogleSpreadsheet('1p42VeMOnomXHD86gmkYRSN5Wifr9ojqjY9qmmU75F5I');
+    await doc.useServiceAccountAuth(creds);
+    await doc.loadInfo();
+    
+    console.log(doc)
+    const sheet = doc.sheetsByTitle['Form Responses 1'];
+    try {
+        await sheet.addRow({
+            'Timestamp': moment(new Date()).format('M/D/YYYY HH:mm:ss'),
+            'Request date': moment(new Date()).format('M/D/YYYY'),
+            'Work order for': '[Onsite] - Trees to be planted (झाड लावणे आहेत)',
+            'Tree/Grove type (झाड/वन प्रकार)': data.associated_tag,
+            'Number of trees (किती झाडे?)': data.pledged - data.assigned_trees,
+            'Form filled by (फॉर्म भरणारा)': 'Vivek Jain',
+        });
+
+        return true;
+    } catch (error: any) {
+        console.log("[ERROR]", "createWorkOrder", error.message)
+        return false;
     }
 }

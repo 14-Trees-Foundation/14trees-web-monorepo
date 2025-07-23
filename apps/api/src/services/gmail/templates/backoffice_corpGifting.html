@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Corporate Gifting Request Received</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #2e7d32;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #2e7d32;
+            color: #ffffff;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>New Corporate Gifting Request Received</h2>
+        <p>Dear Back Office Team,</p>
+        <p>A new corporate gifting request has been submitted by {{sponsorName}} with the following details:</p>
+        
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Gifting ID</td>
+                <td>{{giftCardRequestId}}</td>
+            </tr>
+            <tr>
+                <td>Request Date</td>
+                <td>{{giftCardDate}}</td>
+            </tr>
+            <tr>
+                <td>Corporate/Organization Name</td>
+                <td>{{corporateName}}</td>
+            </tr>
+            <tr>
+                <td>Requested By (Name)</td>
+                <td>{{sponsorName}}</td>
+            </tr>
+            <tr>
+                <td>Requester Email</td>
+                <td>{{sponsorEmail}}</td>
+            </tr>
+            <tr>
+                <td>Requester Phone</td>
+                <td>{{sponsorPhone}}</td>
+            </tr>
+            <tr>
+                <td>Donation Amount</td>
+                <td>{{giftCardAmount}}</td>
+            </tr>
+            <tr>
+                <td>Total Trees</td>
+                <td>{{totalTrees}}</td>
+            </tr>
+            {{#if eventName}}
+            <tr>
+                <td>Event Name</td>
+                <td>{{eventName}}</td>
+            </tr>
+            {{/if}}
+            {{#if tags}}
+            <tr>
+                <td>Tags:</td>
+                <td>{{tags}}</td>
+            </tr>
+            {{/if}}
+        </table>
+        
+        {{#if recipients}}
+        <h3>Gift Recipient Details</h3>
+        <table>
+            <tr>
+                <th>Recipient Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Trees Gifted</th>
+            </tr>
+            {{#each recipients}}
+            <tr>
+                <td>{{this.name}}</td>
+                <td>{{this.email}}</td>
+                <td>{{this.phone}}</td>
+                <td>{{this.trees}}</td>
+            </tr>
+            {{/each}}
+        </table>
+        {{/if}}
+        
+        <p>Please process this corporate gift request and confirm receipt to {{sponsorName}} at {{sponsorEmail}}.</p>
+        
+        <div class="footer">
+            <p>Best regards,<br>
+            <strong>14 Trees Foundation</strong></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -190,6 +190,27 @@ function GiftTrees() {
     });
     setHasDuplicateNames(duplicateFound);
   }, [dedicatedNames]);
+  
+
+  const handleRecipientOptionChange = (option: 'manual' | 'csv') => {
+    setRecipientOption(option);
+
+    if (option === 'manual') {
+
+      const manualData = [{
+        recipient_name: "",
+        recipient_email: "",
+        assignee_name: "",
+        assignee_email: "",
+        relation: "",
+        trees_count: 1
+      }];
+      setDedicatedNames(manualData);
+    } else {
+      setDedicatedNames([]);
+    }
+  };
+
 
 
   const handleRecipientOptionChange = (option: 'manual' | 'csv') => {

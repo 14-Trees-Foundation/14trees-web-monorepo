@@ -1,9 +1,9 @@
-import { TeamRow } from "~/data/content/Team";
-// import TeamContent from "~/data/content/Team/Team.json";
+import type { TeamRow } from "~/data/content/Team";
+import TeamContent from "~/data/content/Team/Team.json";
 import Person from "components/Person";
 
 // @ts-ignore
-const TeamList = [] as TeamRow[];
+const TeamList = TeamContent as TeamRow[];
 
 const Team = () => {
   const team_members = TeamList.map((v) => ({
@@ -13,6 +13,7 @@ const Team = () => {
     link: v.publicUrlLinkedinEtc,
     picture: v.picture[0]?.id ? `/content/${v.picture[0]?.id}` : null,
   }));
+  console.log(team_members);
 
   function SectionComponent({ title, names }) {
     const members = team_members.filter((v) => names.includes(v.name));
@@ -42,11 +43,7 @@ const Team = () => {
 
   const founders = ["Pravin Bhagwat"];
   const board_members = ["Pravin Bhagwat", "Kiran Deshpande"];
-  const advisory_members = [
-    "Girish Sohani",
-    "Shirish Deodhar",
-    "Ajay Phatak",
-  ];
+  const advisory_members = ["Girish Sohani", "Shirish Deodhar", "Ajay Phatak"];
   const backoffice_members = [
     "Sanjeev Jagtap",
     "Shivangi Datar",

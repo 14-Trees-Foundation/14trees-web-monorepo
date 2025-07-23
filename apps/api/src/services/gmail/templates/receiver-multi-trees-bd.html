@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Planting Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: linear-gradient(#aedee8, #dff3dd);
+    }
+
+    .header {
+      text-align: center;
+      background-color: #11989e;
+      color: white;
+      padding: 10px 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header h2 {
+      margin: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .info-table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 5px;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table th,
+    .info-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      background-color: #43acaf70;
+    }
+
+    .info-table th {
+      background-color: #11989e;
+      color: white;
+    }
+
+    /* Optional: Enhance table layout for smaller screens */
+    @media screen and (max-width: 600px) {
+
+      .info-table th,
+      .info-table td {
+        padding: 6px;
+        font-size: 14px;
+      }
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding: 10px;
+      background-color: #43acaf70;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .footer-content {
+      text-align: left;
+      line-height: 0.5;
+    }
+
+    .footer-logo {
+      height: 80px;
+      margin-left: 10px;
+    }
+
+    .footer-logo-container {
+      display: flex;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
+    </div>
+    <div>
+      <img
+        src="https://14treesplants.s3.ap-south-1.amazonaws.com/cards/v22zkqxiclirztoul6pqeq/Transparent-Birthday-Decorations-PNG-TOP.png"
+        alt="Email Image" class="newsletter-image not-resized" height="auto" width="600" data-resize-width="0"
+        data-resize-height="0"
+        align="bottom"
+        style="box-sizing: border-box; display: inline-block; border-width: 0px; border-color: rgb(0, 0, 0); border-radius: 0px; border-style: unset;">
+    </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        Hope this mail finds you in good health. It gives us great pleasure to inform you that {{count}} trees have been
+        planted in
+        {{#if relational}}
+          your {{relation}} {{assigned_to_name}}'s name
+        {{else}}
+          {{#if self}}
+            your name
+          {{else}}
+            {{assigned_to_name}}'s name
+          {{/if}}
+        {{/if}}
+        on the occasion of 
+          {{#if self}} 
+            your 
+          {{else}} 
+            his/her 
+          {{/if}} 
+          {{#if trees.[0].planted_via}}
+            birthday by {{trees.[0].planted_via}}.
+          {{else}}
+            birthday.
+          {{/if}}
+      </p>
+      <h3>Tagging Information about the Trees:</h3>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Tree ID</th>
+            <th>Tree Name</th>
+            <th>Scientific Name</th>
+            <th>Name</th>
+            {{#if event_name}}<th>Event</th>{{/if}}
+            <th>Dashboard Link</th>
+          </tr>
+          {{#each trees}}
+          <tr>
+            <td>{{sapling_id}}</td>
+            <td>{{plant_type}}</td>
+            <td>{{scientific_name}}</td>
+            <td>{{assigned_to_name}}</td>
+            {{#if event_name}}<td>{{event_name}}</td>{{/if}}
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      <p>
+        For their many living years, these trees will support local biodiversity, rejuvenate the local ecosystem and
+        also offset the devastating effects of carbon consumption and climate change.
+      </p>
+      <p>
+        You can follow our shared journey and find more ways of continuing to be involved at <a
+          href="https://14trees.org">14 Trees</a>.
+      </p>
+      <p>
+        We are looking forward to your visit to 14 Trees Foundation in the near future.
+      </p>
+      <p>
+        For any feedback or changes related to your dashboard, please reply to this mail.
+      </p>
+    </div>
+    <div class="footer">
+      <div class="footer-content">
+        <p>Warm Regards,</p>
+        {{#if group_name}}
+        <p>{{group_name}}</p>
+        <p>In Association with 14 Trees Foundation</p>
+        {{else}}
+        <p>14 Trees Foundation</p>
+        {{/if}}
+        <a href="https://14trees.org">https://14trees.org</a>
+      </div>
+      <div class="footer-logo-container">
+        {{#if company_logo_url}}
+        <img class="footer-logo" src="{{company_logo_url}}" alt="14 Trees" />
+        {{/if}}
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" />
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

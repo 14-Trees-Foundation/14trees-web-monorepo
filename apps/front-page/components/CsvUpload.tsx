@@ -118,10 +118,20 @@ Jane Smith,jane@example.com,,5`;
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    const blob = new Blob([sampleCsvData], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'recipients_sample.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const validateHeaders = (headers: string[] | undefined): boolean => {
     if (!headers) return false;
+    const requiredHeaders = ['Recipient Name', 'Number of Trees'];
     const requiredHeaders = ['Recipient Name', 'Number of Trees'];
     return requiredHeaders.every(header => headers.includes(header));
   };
@@ -186,6 +196,21 @@ Jane Smith,jane@example.com,,5`;
             rowErrors: [],
             hasErrors: true
           });
+        const headerValid = validateHeaders(results.meta.fields);
+
+        if (!headerValid) {
+          const headerError = 'CSV must contain headers: Recipient Name and Number of Trees';
+          setErrors([headerError]);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+
+          onDataParsed({
+            validData: [],
+            invalidData: [],
+            totalTrees: 0,
+            headerErrors: [headerError],
+            rowErrors: [],
+            hasErrors: true
+          });
           return;
         }
 
@@ -225,6 +250,18 @@ Jane Smith,jane@example.com,,5`;
           rowErrors: [parseError],
           hasErrors: true
         });
+        const parseError = `CSV Error: ${error.message}`;
+        setErrors([parseError]);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+
+        onDataParsed({
+          validData: [],
+          invalidData: [],
+          totalTrees: 0,
+          headerErrors: [],
+          rowErrors: [parseError],
+          hasErrors: true
+        });
       }
     });
   };
@@ -241,8 +278,15 @@ Jane Smith,jane@example.com,,5`;
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-white">
+    <div className="space-y-4 p-4 border rounded-lg bg-white">
       <div className="space-y-2">
         <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
+        <p className="text-sm text-gray-500">
+          You can upload Recipient details via CSV.{" "}
+          <button onClick={downloadSampleCsv} className="text-blue-600 hover:underline">
+            Click here to download sample CSV file
+          </button>
+        </p>
         <p className="text-sm text-gray-500">
           You can upload Recipient details via CSV.{" "}
           <button onClick={downloadSampleCsv} className="text-blue-600 hover:underline">
@@ -253,6 +297,7 @@ Jane Smith,jane@example.com,,5`;
 
       <input
         ref={fileInputRef}
+        ref={fileInputRef}
         type="file"
         accept=".csv"
         onChange={handleFileUpload}
@@ -261,6 +306,8 @@ Jane Smith,jane@example.com,,5`;
 
       {errors.length > 0 && (
         <div className="mt-2 text-sm text-red-600">
+          <h4 className="font-medium">Validation Errors:</h4>
+          <p className="text-xs text-gray-500 mb-1">Hover over ✕ icon to see errors</p>
           <h4 className="font-medium">Validation Errors:</h4>
           <p className="text-xs text-gray-500 mb-1">Hover over ✕ icon to see errors</p>
           <ul className="list-disc pl-5">
