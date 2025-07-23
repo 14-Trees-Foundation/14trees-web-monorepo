@@ -641,6 +641,21 @@ function Donation() {
           alert(`Payment failed: ${response.error.description}`);
         });
         rzp.open();
+      } else {
+        // For bank transfers (isAboveLimit), show success dialog immediately
+        setShowSuccessDialog(true);
+        
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              donation_id: donId
+            })
+          });
+        } catch (err) {
+          // Silent fail for payment success notification
+        }
       }
 
     } catch (err: any) {
