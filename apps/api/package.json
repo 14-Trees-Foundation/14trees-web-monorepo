@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "rimraf ./dist && node --max-old-space-size=4096 --max-semi-space-size=1024 ./node_modules/.bin/tsc",
+    "build": "rimraf ./dist && NODE_OPTIONS=\"--max-old-space-size=4096\" tsc",
     "build:fast": "rimraf ./dist && node --max-old-space-size=6144 --max-semi-space-size=1024 ./node_modules/.bin/tsc --transpileOnly",
     "build:memory": "rimraf ./dist && node --max-old-space-size=8192 --max-semi-space-size=2048 --optimize-for-size ./node_modules/.bin/tsc",
     "clean": "rm -rf dist",

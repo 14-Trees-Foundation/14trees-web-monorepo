@@ -4,7 +4,7 @@
   "include": ["src/**/*.js", "src/**/*.ts"],
   "compilerOptions": {
     "outDir": "./dist",
-    "target": "ES2022",
+    "target": "ES2020",
     "sourceMap": false,
     "moduleResolution": "node",
     "allowJs": true,
@@ -19,7 +19,6 @@
     "declarationMap": false,
     "removeComments": true,
     "noEmitOnError": false,
-    "preserveConstEnums": false,
     "importsNotUsedAsValues": "remove"
   }
 }
