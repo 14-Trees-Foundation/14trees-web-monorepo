@@ -16,7 +16,8 @@ const config = {
 };
 
 if (!config.token) {
-  throw new Error("No NOTION_API_KEY provided");
+  console.warn("No NOTION_API_KEY provided, skipping content fetch");
+  process.exit(0);
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
