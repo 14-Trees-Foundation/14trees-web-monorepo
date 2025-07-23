@@ -140,7 +140,7 @@ export default function CorporateLogin() {
           </Backdrop>
 
           <Grid container justifyContent="center" alignItems="center" style={{ minHeight: "100vh" }}>
-            <Grid item>
+            <Grid>
               <Paper
                 elevation={10}
                 sx={{

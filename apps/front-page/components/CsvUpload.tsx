@@ -118,20 +118,10 @@ Jane Smith,jane@example.com,,5`;
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    const blob = new Blob([sampleCsvData], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'recipients_sample.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const validateHeaders = (headers: string[] | undefined): boolean => {
     if (!headers) return false;
-    const requiredHeaders = ['Recipient Name', 'Number of Trees'];
     const requiredHeaders = ['Recipient Name', 'Number of Trees'];
     return requiredHeaders.every(header => headers.includes(header));
   };
@@ -196,21 +186,6 @@ Jane Smith,jane@example.com,,5`;
             rowErrors: [],
             hasErrors: true
           });
-        const headerValid = validateHeaders(results.meta.fields);
-
-        if (!headerValid) {
-          const headerError = 'CSV must contain headers: Recipient Name and Number of Trees';
-          setErrors([headerError]);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-
-          onDataParsed({
-            validData: [],
-            invalidData: [],
-            totalTrees: 0,
-            headerErrors: [headerError],
-            rowErrors: [],
-            hasErrors: true
-          });
           return;
         }
 
@@ -250,18 +225,6 @@ Jane Smith,jane@example.com,,5`;
           rowErrors: [parseError],
           hasErrors: true
         });
-        const parseError = `CSV Error: ${error.message}`;
-        setErrors([parseError]);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-
-        onDataParsed({
-          validData: [],
-          invalidData: [],
-          totalTrees: 0,
-          headerErrors: [],
-          rowErrors: [parseError],
-          hasErrors: true
-        });
       }
     });
   };
@@ -277,7 +240,6 @@ Jane Smith,jane@example.com,,5`;
   };
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-white">
     <div className="space-y-4 p-4 border rounded-lg bg-white">
       <div className="space-y-2">
         <h3 className="font-medium">Bulk Upload Recipients via CSV</h3>
