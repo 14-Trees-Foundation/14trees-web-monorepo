@@ -1,18 +1,49 @@
-import mongoose from "mongoose";
-import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
+import { Optional } from 'sequelize';
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-const Schema = mongoose.Schema;
+interface AlbumAttributes {
+	id: number;
+	album_name: string;
+	user_id: number;
+  images: string[];
+  status: 'active' | 'unused';
+  created_at?: Date;
+  updated_at?: Date;
+}
 
-const albumsSchema = new Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-  album_name: { type: String },
-  images: [{ type: String }],
-  date_added: { type: Date },
-  status: { type: String, default: "active" },
-});
+interface AlbumCreationAttributes
+	extends Optional<AlbumAttributes, 'id'> {}
 
-const AlbumModel = mongoose.model("albums", albumsSchema);
+@Table({ tableName: 'albums' })
+class Album extends Model<AlbumAttributes, AlbumCreationAttributes>
+implements AlbumAttributes {
 
-AlbumModel.createIndexes({maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT}); //create index
+  @Column({
+    type: DataType.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+    unique: true
+  })
+  id!: number;
 
-export default AlbumModel;
+  @Column({ type: DataType.STRING, allowNull: false })
+  album_name!: string;
+
+  @Column({ type: DataType.INTEGER, allowNull: false })
+  user_id!: number;
+
+  @Column(DataType.STRING)
+  status!: 'active' | 'unused';
+
+  @Column(DataType.ARRAY(DataType.STRING))
+  images!: string[];
+
+  @Column(DataType.DATE)
+  created_at?: Date;
+
+  @Column(DataType.DATE)
+  updated_at?: Date;
+}
+
+export { Album }
+export type { AlbumAttributes, AlbumCreationAttributes }

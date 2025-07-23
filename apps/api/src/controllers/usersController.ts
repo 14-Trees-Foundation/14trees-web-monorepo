@@ -1,40 +1,100 @@
 import { Request, Response } from "express";
-import { constants } from "../constants";
-import { errorMessage, successMessage, status } from "../helpers/status";
-import UserModel from "../models/user";
-import UserTreeModel from "../models/userprofile";
-import * as userHelper from "./helper/users";
+import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
+import { User } from "../models/user";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { UserRepository, getUserDocumentFromRequestBody } from "../repo/userRepo";
 import csvParser from 'csv-parser';
 import { createObjectCsvWriter } from 'csv-writer';
-import { getQueryExpression } from "./helper/filters";
 import fs from 'fs';
-import TreeModel from "../models/tree";
+import { constants } from "../constants";
+import { FilterItem } from "../models/pagination";
+import TreeRepository from "../repo/treeRepo";
+import { UserGroupRepository } from "../repo/userGroupRepo";
+import { GiftCardsRepository } from "../repo/giftCardsRepo";
+import { UserRelationRepository } from "../repo/userRelationsRepo";
+import { VisitRepository } from "../repo/visitsRepo";
+import { VisitUsers } from "../models/visit_users";
+import { VisitUsersRepository } from "../repo/visitUsersRepo";
+import { AlbumRepository } from "../repo/albumRepo";
+import EventRepository from "../repo/eventsRepo";
+import { GroupRepository } from "../repo/groupRepo";
+import { DonationRepository } from "../repo/donationsRepo";
+import { DonationUserRepository } from "../repo/donationUsersRepo";
 
 /*
     Model - User
     CRUD Operations for users collection
 */
 
+export const getUser = async (req: Request, res: Response) => {
+  try {
+    if (!req.query.email || !req.query.name) {
+      throw new Error("User name and email are required");
+    }
+
+    let user = await UserRepository.getUser(req.query.name.toString(), req.query.email.toString());
+    if (user === null) {
+      res.status(status.notfound).send();
+    } else {
+      res.status(status.success).json(user);
+    }
+  } catch (error: any) {
+    await Logger.logError('usersController', 'getUser', error, req);
+    res.status(status.error).send({ error: error });
+  }
+};
+
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+
+    let users = await UserRepository.getUsers(offset, limit, filters);
+    res.status(status.success).json(users);
+  } catch (error: any) {
+    await Logger.logError('usersController', 'getUsers', error, req);
+    res.status(status.error).send({ error: error });
+  }
+};
+
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    if (!req.params.search || req.params.search.length < 3) {
+      res.status(status.bad).send({ error: "Please provide at least 3 char to search" });
+      return;
+    }
+
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const users = await UserRepository.searchUsers(req.params.search, offset, limit);
+    res.status(status.success).send(users);
+  } catch (error: any) {
+    await Logger.logError('usersController', 'searchUsers', error, req);
+    res.status(status.error).send({ error: error });
+  }
+};
+
 export const addUser = async (req: Request, res: Response) => {
   try {
+
+    // validation logic
     if (!req.body.name) {
       throw new Error("User name is required");
     }
-  } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
-  }
+    if (!req.body.email) {
+      throw new Error("User email is required");
+    }
 
-  try {
-    let user = userHelper.getUserDocumentFromRequestBody(req.body);
-    let result = await user.save();
-    res.status(status.created).json(result);
+    let userExists = await UserRepository.getUsers(0, 1, [{ columnField: 'email', operatorValue: 'equals', value: req.body.email }]);
+    if (userExists.results.length !== 0) {
+      throw new Error("User already exists");
+    }
+
+    let user = await UserRepository.addUser(req.body);
+    res.status(status.created).json(user);
   } catch (error: any) {
-    res.status(status.duplicate).json({
-      status: status.duplicate,
-      message: error.message,
-    });
+    await Logger.logError('usersController', 'addUser', error, req);
+    res.status(status.error).send({ error: error });
   }
 };
 
@@ -62,12 +122,18 @@ export const addUsersBulk = async (req: Request, res: Response) => {
           let batchRows = [];
           for (const row of csvData) {
             batchRows.push(row);
-            let user = userHelper.getUserDocumentFromRequestBody(row);
+            const data = {
+              name: row['Name'],
+              email: row['Email ID'],
+              phone: row['Phone'],
+              birth_date: row['Date of Birth (optional)']
+            }
+            let user = getUserDocumentFromRequestBody(data);
             users.push(user);
             if (users.length === constants.ADD_DB_BATCH_SIZE) {
               try {
-                await UserModel.bulkSave(users);
-              } catch (error:any) {
+                await UserRepository.bulkAddUsers(users);
+              } catch (error: any) {
                 failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
               }
               batchRows = [];
@@ -77,8 +143,8 @@ export const addUsersBulk = async (req: Request, res: Response) => {
 
           if (users.length !== 0) {
             try {
-              await UserModel.bulkSave(users);
-            } catch (error:any) {
+              await UserRepository.bulkAddUsers(users);
+            } catch (error: any) {
               failedRows.push(...batchRows.map(row => ({ ...row, success: false, error: error.message })));
             }
           }
@@ -106,107 +172,47 @@ export const addUsersBulk = async (req: Request, res: Response) => {
         }
       });
 
-  } catch (error:any) {
+  } catch (error: any) {
     console.error('Error processing CSV:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-export const getUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response) => {
   try {
-    if (req.query.email && req.query.name) {
-      let userid = userHelper.getUserId((req.query.name as string), (req.query.email as string))
-
-      let result = await UserModel.findOne({ userid: userid });
-      if (result === null) {
-        res.status(status.notfound).send();
-      } else {
-        let lastProfile = await UserTreeModel.find(
-          { user: result._id },
-          { _id: 0 },
-        )
-          .populate({
-            path: "tree",
-            select: "sapling_id date_added -_id",
-            populate: { path: "tree_id", select: "name -_id" },
-          })
-          .select("tree");
-        res.status(status.success).json({
-          user: result,
-          tree: lastProfile,
-        });
-      }
-    } else {
-      const { offset, limit } = getOffsetAndLimitFromRequest(req);
-      let result = await UserModel.find().skip(offset).limit(limit);
-      let resultCount = await UserModel.find().estimatedDocumentCount();
-      res.status(status.success).send({
-        result: result,
-        total: resultCount
-      });
-    }
-
+    const updatedUser = await UserRepository.updateUser(req.body)
+    res.status(status.success).json(updatedUser);
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
-    return;
   }
 };
 
-export const getUsersByFilters = async (req: Request, res: Response) => {
-  const { offset, limit } = getOffsetAndLimitFromRequest(req);
-  let filterReq = req.body.filters;
-  let filters = {};
-  if (filterReq && filterReq.length != 0) {
-    filterReq.forEach((filter: any) => {
-      filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
-    });
-  }
-  try {
-    const users = await UserModel.find(filters).skip(offset).limit(limit);
-    const userCount = await UserModel.find(filters).count();
-    res.status(status.success).send({
-      result: users,
-      total: userCount
-    });
-  } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
+export const deleteUser = async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.id)
+  if (isNaN(userId)) {
+    res.status(status.bad).send({ message: "User id is required" });
     return;
   }
-};
-
-export const searchUsers = async (req: Request, res: Response) => {
   try {
-    if (!req.params.search || req.params.search.length < 3) {
-      res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-      return;
+    const mapped = await TreeRepository.countUserMappedTrees(userId);
+    if (mapped > 0) {
+      throw new Error("User has mapped trees!");
     }
 
-    const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const regex = new RegExp(req.params.search, 'i');
-    const users = await UserModel.find({
-      $or: [
-        {email: { $regex: regex }},
-        {name: { $regex: regex }},
-      ]
-    }).skip(offset).limit(limit);
-    res.status(status.success).send(users);
-    return;
-  } catch (error:any) {
-    res.status(status.bad).send({ error: error.message });
-    return;
-  }
-};
+    const assigned = await TreeRepository.countUserAssignedTrees(userId);
+    if (assigned > 0) {
+      throw new Error("User has assigned trees!");
+    }
 
-export const getUsers = async (req: Request, res: Response) => {
-  const { offset, limit } = getOffsetAndLimitFromRequest(req);
-  try {
-    let result = await UserModel.find().skip(offset).limit(limit);
-    let resultCount = await UserModel.find().estimatedDocumentCount();
-    res.status(status.success).send({
-      result: result,
-      total: resultCount
-    });
-  } catch (error:any) {
+    const userGroups = await UserGroupRepository.countUserGroups(userId);
+    if (userGroups > 0) {
+      throw new Error("User is part of groups!");
+    }
+
+    let resp = await UserRepository.deleteUser(parseInt(req.params.id));
+    console.log(`Deleted User with id: ${req.params.id}`, resp);
+    res.status(status.success).json("User deleted successfully");
+  } catch (error: any) {
     res.status(status.error).json({
       status: status.error,
       message: error.message,
@@ -214,70 +220,191 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
-
+export const checkGroupBirthdays = async (req: Request, res: Response) => {
   try {
-    let user = await UserModel.findById(req.params.id);
-    if (!user) {
-      res.status(status.notfound).json({
-        status: status.notfound,
-        message: "User not found with given id"
-      })
-      return;
+    const { group_id } = req.query;
+
+    if (!group_id) {
+      return res.status(status.bad).json({ error: "group_id is required" });
     }
 
-    if (req.body.name) user.name = req.body.name;
-    if (req.body.email) user.email = req.body.email;
-    if (req.body.dob) user.dob = req.body.dob;
-    if (req.body.phone) user.phone = req.body.phone;
+    const { results: trees } = await TreeRepository.getMappedGiftTrees(
+      0, -1, null, Number(group_id), []
+    );
 
-    user.userid = userHelper.getUserId(user.name, user.email? user.email: '');
+    const assignedUserIds = trees
+      .filter(tree => tree.assigned_to !== null && tree.assigned_to !== undefined)
+      .map(tree => tree.assigned_to);
 
-    let result = await user.save();
-    res.status(status.success).json(result);
-  } catch (error: any) {
-    let errorMsg = error.message;
-    if (error.name === 'MongoServerError' && error.code === 11000) {
-      errorMsg = "User with same name and email already exists";
+    const uniqueUserIds = [...new Set(assignedUserIds)];
+
+    if (uniqueUserIds.length === 0) {
+      return res.status(status.success).json({
+        hasBirthday: false,
+        count: 0,
+        upcomingBirthdays: []
+      });
     }
-    res.status(status.error).json({
-      status: status.error,
-      message: errorMsg,
+
+    const validUserIds = uniqueUserIds.filter((id): id is number => id !== null);
+    if (validUserIds.length === 0) {
+      return res.status(status.success).json({
+        hasBirthday: false,
+        count: 0,
+        upcomingBirthdays: [],
+        checkedDates: [],
+        checkedUserCount: 0
+      });
+    }
+
+    const { results: users } = await UserRepository.getUsers(
+      0,
+      -1,
+      [{
+        columnField: "id",
+        operatorValue: "isAnyOf",
+        value: validUserIds
+      }]
+    );
+
+    const today = new Date();
+    const upcomingDates = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      return {
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        dateString: date.toISOString().split('T')[0]
+      };
     });
+
+    const usersWithUpcomingBirthdays = users
+      .filter(user => {
+        if (!user.birth_date) return false;
+        const birthDate = new Date(user.birth_date);
+        if (isNaN(birthDate.getTime())) return false;
+        return upcomingDates.some(d =>
+          birthDate.getMonth() + 1 === d.month &&
+          birthDate.getDate() === d.day
+        );
+      })
+      .map(user => {
+        const birthDate = new Date(user.birth_date!);
+        const match = upcomingDates.find(d =>
+          d.month === birthDate.getMonth() + 1 &&
+          d.day === birthDate.getDate()
+        );
+        return {
+          id: user.id,
+          name: user.name,
+          birth_date: user.birth_date,
+          upcoming_date: match?.dateString
+        };
+      });
+
+    res.status(status.success).json({
+      hasBirthday: usersWithUpcomingBirthdays.length > 0,
+      count: usersWithUpcomingBirthdays.length,
+      upcomingBirthdays: usersWithUpcomingBirthdays,
+      checkedDates: upcomingDates.map(d => d.dateString),
+      checkedUserCount: users.length
+    });
+
+  } catch (error: any) {
+    res.status(status.error).json({ error: error.message });
   }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
-    try {
+export const combineUsers = async (req: Request, res: Response) => {
 
-      // check for assigned trees
-      let assignedCount = await UserTreeModel.count({ user: req.params.id });
-      if (assignedCount > 0) {
-        res.status(status.error).json({
-          status: status.error,
-          message: "Cannot delete user with assigned trees",
-        });
-        return;
-      }
-      
-      // check for mapped trees
-      let mappedCount = await TreeModel.count({ mapped_to: req.params.id });
-      if (mappedCount > 0) {
-        res.status(status.error).json({
-          status: status.error,
-          message: "Cannot delete user with mapped trees",
-        });
-        return;
-      }
+  const { primary_user, secondary_user, delete_secondary } = req.body;
+  try {
 
+    // Update trees
+    const mappedTrees = { mapped_to_user: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(mappedTrees, { mapped_to_user: secondary_user });
 
-      let resp = await UserModel.findByIdAndDelete(req.params.id).exec();
-      console.log(`Deleted User with id: ${req.params.id}`, resp);
-      res.status(status.success).json(resp);
-    } catch (error : any) {
-      res.status(status.error).json({
-        status: status.error,
-        message: error.message,
-      });
+    const sponsoredTrees = { sponsored_by_user: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(sponsoredTrees, { sponsored_by_user: secondary_user });
+
+    const assignedTrees = { assigned_to: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(assignedTrees, { assigned_to: secondary_user });
+
+    const giftedBy = { gifted_by: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(giftedBy, { gifted_by: secondary_user });
+
+    const giftedTo = { gifted_to: primary_user, updated_at: new Date() };
+    await TreeRepository.updateTrees(giftedTo, { gifted_to: secondary_user });
+
+    // gift requests
+    const giftRequests = { user_id: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequests, { user_id: secondary_user });
+
+    const giftRequestSponsor = { sponsor_id: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequestSponsor, { sponsor_id: secondary_user });
+
+    const giftRequestCreatedBy = { created_by: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequestCreatedBy, { created_by: secondary_user });
+
+    const giftRequestProcessedBy = { processed_by: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCardRequests(giftRequestProcessedBy, { processed_by: secondary_user });
+
+    const giftCardsGiftedTo = { gifted_to: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCards(giftCardsGiftedTo, { gifted_to: secondary_user });
+
+    const giftCardsAssignedTo = { assigned_to: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftCards(giftCardsAssignedTo, { assigned_to: secondary_user });
+
+    const giftRequesRecipients = { recipient: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftRequestUsers(giftRequesRecipients, { recipient: secondary_user });
+
+    const giftRequestsAssignee = { assignee: primary_user, updated_at: new Date() };
+    await GiftCardsRepository.updateGiftRequestUsers(giftRequestsAssignee, { assignee: secondary_user });
+
+    // donations
+    const donation = { user_id: primary_user, updated_at: new Date() };
+    await DonationRepository.updateDonations(donation, { user_id: secondary_user });
+
+    const donationProcessedBy = { processed_by: primary_user, updated_at: new Date() };
+    await DonationRepository.updateDonations(donationProcessedBy, { processed_by: secondary_user });
+
+    const donationCreatedBy = { created_by: primary_user, updated_at: new Date() };
+    await DonationRepository.updateDonations(donationCreatedBy, { created_by: secondary_user });
+    
+    const donationAssignedTo = { assignee: primary_user, updated_at: new Date() };
+    await DonationUserRepository.updateDonationUsers(donationAssignedTo, { assignee: secondary_user });
+
+    const donationRecipient = { recipient: primary_user, updated_at: new Date() };
+    await DonationUserRepository.updateDonationUsers(donationRecipient, { recipient: secondary_user });
+
+    // group users
+    await UserGroupRepository.changeUser(primary_user, secondary_user);
+
+    // user relations
+    const secondary = { secondary_user: primary_user, updated_at: new Date() };
+    await UserRelationRepository.updateUserRelations(secondary, { secondary_user: secondary_user });
+
+    const primary = { primary_user: primary_user, updated_at: new Date() };
+    await UserRelationRepository.updateUserRelations(primary, { primary_user: secondary_user });
+
+    // visit users
+    await VisitUsersRepository.changeUser(primary_user, secondary_user);
+
+    // albums
+    const album = { user_id: primary_user, updated_at: new Date() };
+    await AlbumRepository.updateAlbums(album, { user_id: secondary_user });
+
+    // events
+    const event = { assigned_by: primary_user, updated_at: new Date() };
+    await EventRepository.updateEvents(event, { assigned_by: secondary_user });
+
+    if (delete_secondary) {
+      await UserRepository.deleteUser(secondary_user);
     }
-  };
+
+    res.status(status.success).json();
+  } catch (error: any) {
+    console.log("[ERROR]", "usersController.combineUsers", error);
+    res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
+  }
+};

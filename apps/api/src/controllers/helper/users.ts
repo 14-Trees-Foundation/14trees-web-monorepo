@@ -1,10 +1,10 @@
-import UserModel from "../../models/user";
+const User = require("../../models/user");
 
 export const getUserDocumentFromRequestBody = (reqBody:any) => {
     // @ts-ignore: Object is possibly 'null'.
     let userId = this.getUserId(reqBody.name, reqBody.email)
 
-    return new UserModel({
+    return new User({
         name: reqBody.name,
         phone: reqBody.contact !== "undefined" ? reqBody.contact : reqBody.phone !== "undefined" ? reqBody.phone : 0,
         email: reqBody.email,

@@ -1,61 +1,39 @@
-
-// const csvhelper = require("./helper/uploadtocsv");
-
-import PlotModel from "../models/plot";
-import { errorMessage, successMessage, status } from "../helpers/status";
-import { UpdatePlotCsv } from "./helper/uploadtocsv"; // Assuming UpdatePlotCsv function exists
+import { PlotRepository } from "../repo/plotRepo";
+import { status } from "../helpers/status";
+import { Logger } from "../helpers/logger";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { Request, Response } from "express";
-import { getQueryExpression } from "./helper/filters";
+import { FilterItem } from "../models/pagination";
+import { Op } from "sequelize";
+import { constants } from "../constants";
+import { getPlotNameAndCoordinatesFromKml } from "./helper/parsekml";
+import { UploadFileToS3 } from "./helper/uploadtos3";
+import { SiteRepository } from "../repo/sitesRepo";
+import { TagRepository } from "../repo/tagRepo";
+import { SortOrder } from "../models/common";
 
 /*
     Model - Plot
     CRUD Operations for plots collection
 */
 
-export const updatePlotCoordinates = async (req: Request,res: Response) => {
-    // Check if plot type exists
-    // let plotExists = await PlotModel.findOne({ plot_id: req.body.shortname });
-    // // If plot exists, return error
-    // if (!plotExists) {
-    //     res.status(status.bad).send({ error: "Plot doesn't exist" });
-    //     return;
-    // }
-    // console.log(plotExists)
+export const updatePlot = async (req: Request, res: Response) => {
     try {
-        let result = await PlotModel.findOneAndUpdate(
-            {
-                query: { plot_id: req.body.shortname },
-                update: { "$set": { "boundaries.coordinates.0": req.body.boundaries } },
-                upsert: false
-            }
-        )
-        res.status(status.created).json({
-            plot: result,
-        });
-    } catch (error) {
-        console.log(error)
-        res.status(status.error).json({ error: error });
-    }
-}
+        const updatedPlot = await PlotRepository.updatePlot(req.body)
 
-export const updatePlot = async (req: Request,res: Response) => {
-    try {
-        let plot = await PlotModel.findById(req.params.id);
-        if (plot) {
-            const resp = await plot.updateOne(req.body);
+        const tags = req.body.tags;
+        if (tags && tags.length > 0) {
+            await TagRepository.createTags(tags.map((tag: string) => ({ tag, type: 'USER_DEFINED' })))
         }
-        res.status(status.success).json({
-            plot: req.body,
-        });
+        
+        res.status(status.success).json(updatedPlot);
     } catch (error) {
-        console.log(error)
-        res.status(status.error).json({ error: error });
+        await Logger.logError('plotController', 'updatePlot', error, req);
+        res.status(status.error).send({ error: error });
     }
 }
 
-
-export const addPlot = async (req: Request,res: Response) => {
+export const addPlot = async (req: Request, res: Response) => {
 
     try {
         if (!req.body.plot_name) {
@@ -65,79 +43,73 @@ export const addPlot = async (req: Request,res: Response) => {
                 req.body["plot_name"] = req.body.name;
             }
         }
-        if (!req.body.plot_code) {
-            if (!req.body.plot_id) {
-                throw new Error("Short plot code is required");
-            } else {
-                req.body["plot_code"] = req.body.plot_id;
-            }
-        }
-        if (!req.body.boundaries) {
-            throw new Error("Boundaries Lat Lng required");
-        }
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
         return;
     }
 
-    // Check if plot type exists
-    let plotExists = await PlotModel.findOne({ plot_id: req.body.plot_code });
-
-    // If plot exists, return error
-    if (plotExists) {
-        res.status(status.bad).send({ error: "Plot already exist" });
-        return;
-    }
-
-    // Tree type object to be saved
-    let obj = {
-        name: req.body.plot_name,
-        plot_id: req.body.plot_code,
-        boundaries: req.body.boundaries,
-        center: req.body.center,
-        date_added: new Date().toISOString()
-    };
-    const plot = new PlotModel(obj);
-
-    let plotres;
     try {
-        plotres = await plot.save();
-        res.status(status.created).json({
-            plot: plotres,
-        });
-    } catch (error) {
-        res.status(status.error).json({ error });
-    }
+        const plot = await PlotRepository.addPlot(req.body);
 
-    // Use this too save info in sheet
-    // Save the info into the sheet
-    // try {
-    //     csvhelper.UpdatePlotCsv(obj);
-    //     res.status(status.created).json({
-    //         plot: plotres,
-    //         csvupload: "Success"
-    //     });
-    // } catch (error) {
-    //     res.status(status.error).json({
-    //         treetype: treeTypeRes,
-    //         csvupload: "Failure"
-    //     });
-    // }
+        const tags = req.body.tags;
+        if (tags && tags.length > 0) {
+            await TagRepository.createTags(tags.map((tag: string) => ({ tag, type: 'USER_DEFINED' })))
+        }
+        res.status(status.created).json(plot);
+    } catch (error: any) {
+        await Logger.logError('plotController', 'addPlot', error, req);
+        res.status(status.error).send({ error: error });
+    }
 }
 
-export const getPlots = async (req: Request,res: Response) => {
-    const {offset, limit } = getOffsetAndLimitFromRequest(req);
-    let filters: Record<string,any> = {}
-    if (req.query?.name) {
-        filters["name"] = new RegExp(req.query?.name as string, "i")
-    }
+export const getPlots = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
     try {
-        let result = await getPlotsWithTreesCount(offset, limit, filters);
-        let resultCount = await PlotModel.find(filters).count();
-        res.status(status.success).send({
-            result: result,
-            total: resultCount
-        });
+        let result = await PlotRepository.getPlots(offset, limit, filters, orderBy);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
+                available: parseInt(item.available),
+                card_available: parseInt(item.card_available),
+                unbooked_assigned: parseInt(item.unbooked_assigned),
+                void_available: parseInt(item.void_available),
+                void_assigned: parseInt(item.void_assigned),
+                void_booked: parseInt(item.void_booked),
+                void_total: parseInt(item.void_total),
+                tree_count: parseInt(item.tree_count),
+                shrub_count: parseInt(item.shrub_count),
+                herb_count: parseInt(item.herb_count),
+                climber_count: parseInt(item.climber_count),
+                booked_trees: parseInt(item.booked_trees),
+                assigned_trees: parseInt(item.assigned_trees),
+                unbooked_assigned_trees: parseInt(item.unbooked_assigned_trees),
+                available_trees: parseInt(item.available_trees),
+                card_available_trees: parseInt(item.card_available_trees),
+                booked_shrubs: parseInt(item.booked_shrubs),
+                assigned_shrubs: parseInt(item.assigned_shrubs),
+                unbooked_assigned_shrubs: parseInt(item.unbooked_assigned_shrubs),
+                available_shrubs: parseInt(item.available_shrubs),
+                card_available_shrubs: parseInt(item.card_available_shrubs),
+                booked_herbs: parseInt(item.booked_herbs),
+                assigned_herbs: parseInt(item.assigned_herbs),
+                unbooked_assigned_herbs: parseInt(item.unbooked_assigned_herbs),
+                available_herbs: parseInt(item.available_herbs),
+                card_available_herbs: parseInt(item.card_available_herbs),
+                booked_climber: parseInt(item.booked_climber),
+                assigned_climber: parseInt(item.assigned_climber),
+                unbooked_assigned_climber: parseInt(item.unbooked_assigned_climber),
+                available_climber: parseInt(item.available_climber),
+                card_available_climber: parseInt(item.card_available_climber),
+                distinct_plants: item.distinct_plants ? item.distinct_plants.filter((item: any) => item !== null) : [],
+            }
+        })
+        res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
             status: status.error,
@@ -146,119 +118,159 @@ export const getPlots = async (req: Request,res: Response) => {
     }
 }
 
-export const getPlotsByFilters = async (req: Request,res: Response) => {
-    const {offset, limit } = getOffsetAndLimitFromRequest(req);
-    let filterReq = req.body.filters;
-    let filters = {};
-    if (filterReq && filterReq.length != 0) {
-      filterReq.forEach((filter: any) => {
-        filters = { ...filters, ...getQueryExpression(filter.columnField, filter.operatorValue, filter.value)}
-      });
-    }
+export const deletePlot = async (req: Request, res: Response) => {
     try {
-        let result = await getPlotsWithTreesCount(offset, limit, filters);
-        let resultCount = await PlotModel.find(filters).count();
-        res.status(status.success).send({
-            result: result,
-            total: resultCount
-        });
-    } catch (error: any) {
-        res.status(status.error).json({
-            status: status.error,
-            message: error.message,
-        });
-    }
-}
-
-const getPlotsWithTreesCount = async (offset: number, limit: number, filters: any) => {
-    return await PlotModel.aggregate([
-        { $match: filters },
-        {
-            $lookup: {
-                from: "trees",
-                localField: "_id",
-                foreignField: "plot_id",
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: "user_tree_regs",
-                            localField: "_id",
-                            foreignField: "tree",
-                            as: "assigned"
-                        }
-                    }
-                ],
-                as: "trees"
-            }
-        },
-        {
-            $addFields: {
-                trees_count: { $size: "$trees" },
-                mapped_trees_count: {
-                    $size: {
-                        $filter: {
-                            input: "$trees",
-                            as: "tree",
-                            cond: { $ifNull: ["$$tree.mapped_to", null] }
-                        }
-                    }
-                },
-                assigned_trees_count: { 
-                    $size: {
-                        $filter: {
-                            input: "$trees",
-                            as: "tree", 
-                            cond: { $gt: [ { $size: "$$tree.assigned" } , 0] }
-                        }
-                    }
-                },
-                available_trees_count: { 
-                    $size: {
-                        $filter: {
-                            input: "$trees",
-                            as: "tree",
-                            cond: { $and: [ { $eq: [ { $size: "$$tree.assigned" } , 0] }, { $eq: [ { $ifNull: ["$$tree.mapped_to", null] }, null]} ] }
-                        }
-                    }
-                }
-            }
-        },
-        {
-            $project: {
-                trees: 0,
-            }
-        },
-        { $skip: offset },
-        { $limit: limit },
-    ])
-}
-
-export const deletePlot = async (req: Request,res: Response) => {
-    try {
-        let resp = await PlotModel.findByIdAndDelete(req.params.id).exec();
-        console.log("Delete Plot Response for id: %s", req.params.id, resp)
+        let resp = await PlotRepository.deletePlot(req.params.id);
+        console.log("Delete Plots Response for id: %s", req.params.id, resp);
         res.status(status.success).json({
-          message: "Plot deleted successfully",
+            message: "Plot deleted successfully",
         });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
     }
 };
 
-export const searchPlots = async (req: Request, res: Response) => {
+export const assignPlotsToSite = async (req: Request, res: Response) => {
+    const { plot_ids, site_id } = req.body;
     try {
-      if (!req.params.search || req.params.search.length < 3) {
-        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
-        return;
-      }
-  
-      const { offset, limit } = getOffsetAndLimitFromRequest(req);
-      const regex = new RegExp(req.params.search, 'i');
-      const plots = await PlotModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
-      res.status(status.success).send(plots);
-      return;
+        const updateFields = { site_id: site_id };
+        const whereClause = {
+            id: { [Op.in]: plot_ids }
+        };
+
+        await PlotRepository.updatePlots(updateFields, whereClause);
+        res.status(status.success).send();
     } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-      return;
+        console.log('[ERROR]', 'PlotsController::assignPlotsToSite', error)
+        res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
     }
-};
+}
+
+export const updateCoordinatesUsingKml = async (req: Request, res: Response) => {
+    try {
+        const { site_id } = req.body
+        if (!site_id) {
+            throw new Error('Site id is required');
+        }
+        if (!req.file) {
+            throw new Error('No file uploaded. this operation requires kml file');
+        }
+
+        // upload kml file
+        const file = req.file
+        if(file){
+            const url = await UploadFileToS3(file.filename, "sites");
+            if (url) {
+                await SiteRepository.updateSites({ kml_file_link: url, updated_at: new Date() }, { id: site_id });
+            }
+        }
+
+        const filePath = constants.DEST_FOLDER + req.file.filename
+        const coordinatesMap = await getPlotNameAndCoordinatesFromKml(filePath);
+
+        for (const [plotLabel, {coordinates, acresArea}] of coordinatesMap) {
+            const whereClause = { label: plotLabel, site_id: site_id};
+            const location = {
+                type: 'Polygon',
+                coordinates: [coordinates.map(coord => [coord.latitude, coord.longitude])]
+            }
+            const updateFields = {
+                boundaries: location,
+                acres_area: acresArea,
+                updated_at: new Date(),
+            }
+            await PlotRepository.updatePlots(updateFields, whereClause);
+        }
+
+        res.status(status.success).send();
+    } catch (error: any) {
+        console.log('[ERROR]', 'PlotsController::updateCoordinatesUsingKml', error)
+        res.status(status.error).send({ error: 'Something went wrong. Please try again after some time.' });
+    }
+}
+
+export const treesCountForCategory = async (req: Request, res: Response) => {
+
+    try {
+        let result = await PlotRepository.treesCountForCategory();
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::treesCountForCategory", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
+
+export const getPlotAggregations = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: { column: string, order: "ASC" | "DESC" }[] = req.body?.order_by;
+
+    try {
+        let result = await PlotRepository.getPlotAggregations(offset, limit, filters, orderBy);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
+                available: parseInt(item.available),
+                unbooked_assigned: parseInt(item.unbooked_assigned),
+            }
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::getPlotAggregations", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
+
+export const getPlotStatesForCorporate = async (req: Request, res: Response) => {
+    const { offset, limit } = getOffsetAndLimitFromRequest(req);
+    const filters: FilterItem[] = req.body?.filters;
+    const orderBy: SortOrder[] = req.body?.order_by;
+    const groupId: number = req.body?.group_id;
+
+    try {
+        let result = await PlotRepository.getPlotStatesForCorporate(offset, limit, groupId, filters, orderBy);
+        result.results = result.results.map((item: any) => {
+            return {
+                ...item,
+                total: parseInt(item.total),
+                booked: parseInt(item.booked),
+                assigned: parseInt(item.assigned),
+                available: parseInt(item.available),
+                card_available: parseInt(item.card_available),
+            }
+        })
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::getPlotStatesForCorporate", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}
+
+export const getCSRTreesAnalysis = async (req: Request, res: Response) => {
+    const groupId: string = req.query.group_id as string;
+    let grId: number | undefined = undefined;
+    if (!isNaN(parseInt(groupId))) grId = parseInt(groupId);
+
+    try {
+        let result = await PlotRepository.getCSRTreesAnalysis(grId);
+        res.status(status.success).send(result);
+    } catch (error: any) {
+        console.log("[ERROR]", "PlotsController::getCSRTreesAnalysis", error);
+        res.status(status.error).json({
+            status: status.error,
+            message: "Something went wrong. Please try again after some time.",
+        });
+    }
+}

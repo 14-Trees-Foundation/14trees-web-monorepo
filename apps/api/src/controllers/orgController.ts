@@ -1,12 +1,8 @@
-import {
-    errorMessage,
-    successMessage,
-    status,
-  } from "../helpers/status";
-  import OrgModel  from "../models/org";
-  import *  as csvhelper from "./helper/uploadtocsv"; // Assuming UpdateOrg function exists
-  import { getOffsetAndLimitFromRequest } from "./helper/request";
-  import { Request, Response } from "express";
+import { status } from "../helpers/status";
+import { Org } from "../models/org";
+import { OrgRepository } from "../repo/orgRepo";
+import { getOffsetAndLimitFromRequest } from "./helper/request";
+import { Request, Response } from "express";
   
 
 /*
@@ -16,20 +12,9 @@ import {
 
 export const getOrgs = async (req: Request, res: Response) => {
     const {offset, limit } = getOffsetAndLimitFromRequest(req);
-    let filters: Record<string,any> = {}
-    if (req.query?.name) {
-        filters["name"] = new RegExp(req.query?.name as string, "i")
-    }
-    if (req.query?.type) {
-        filters["type"] = new RegExp(req.query?.type as string, "i")
-    }
     try {
-        let result = await OrgModel.find(filters).skip(offset).limit(limit);
-        let resultCount = await OrgModel.find(filters).estimatedDocumentCount();
-        res.status(status.success).send({
-            result: result,
-            total: resultCount
-          });
+        let result = await OrgRepository.getOrgs(req.query, offset, limit);
+        res.status(status.success).send(result);
     } catch (error: any) {
         res.status(status.error).json({
             status: status.error,
@@ -44,76 +29,35 @@ export const addOrg = async (req: Request, res: Response) => {
         res.status(status.bad).send({ error: "Organization name is required" });
         return;
     }
-
-    let obj = {
-        name: req.body.name,
-        date_added: new Date().toISOString(),
-        desc: req.body.desc ? req.body.desc : "",
-        type: req.body.type ? req.body.type : "",
-    }
-    let org = new OrgModel(obj)
-
-    let orgRes;
     try {
-        orgRes = await org.save();
+        const org = await OrgRepository.addOrg(req.body);
+        res.status(status.created).send(org);
     } catch (error) {
         res.status(status.bad).json({
             error: error,
-        });
-    }
-
-    // Save the info into the sheet
-    try {
-        csvhelper.UpdateOrg(obj);
-        res.status(status.created).json({
-            org: orgRes,
-            csvupload: "Success"
-        });
-    } catch (error) {
-        res.status(status.error).json({
-            org: orgRes,
-            csvupload: "Failure"
         });
     }
 }
 
 
 export const updateOrg = async (req: Request, res: Response) => {
-
     try {
-        let org = await OrgModel.findById(req.params.id);
-        if (!org) {
-            throw new Error("Organization not found for given id");
-        }
-
-        if (req.body.name) {
-            org.name = req.body.name;
-        }
-        if (req.body.desc) {
-            org.desc = req.body.desc;
-        }
-        if (req.body.type) {
-            org.type = req.body.type;
-        }
-
-        const updatedOrg = await org.save();
-        res.status(status.success).send(updatedOrg);
-
-    } catch (error: any) {
-        res.status(status.bad).send({ error: error.message });
+        let result = await OrgRepository.updateOrg(req.body)
+        res.status(status.created).json(result);
+    } catch (error) {
+        console.log(error)
+        res.status(status.error).json({ error: error });
     }
 }
 
 
 export const deleteOrg = async (req: Request, res: Response) => {
-
     try {
-        let response = await OrgModel.findByIdAndDelete(req.params.id).exec();
-        console.log("Delete Org Response for orgId: %s", req.params.id, response)
-
-        res.status(status.success).send({
-            message: "Organization deleted successfully",
-          })
+        let resp = await OrgRepository.deleteOrg(req.params.id);
+        console.log("Delete organizations Response for id: %s", req.params.id, resp);
+        res.status(status.success).json({
+          message: "Organization deleted successfully",
+        });
     } catch (error: any) {
         res.status(status.bad).send({ error: error.message });
     }
@@ -121,18 +65,17 @@ export const deleteOrg = async (req: Request, res: Response) => {
 
 export const searchOrgs = async (req: Request, res: Response) => {
     try {
-      if (!req.params.search || req.params.search.length < 3) {
-        res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+        if (!req.params.search || req.params.search.length < 3) {
+            res.status(status.bad).send({ error: "Please provide at least 3 char to search"});
+            return;
+        }
+
+        const { offset, limit } = getOffsetAndLimitFromRequest(req);
+        const orgs = await OrgRepository.getOrgs( {name: req.params.search}, offset, limit);
+        res.status(status.success).send(orgs);
         return;
-      }
-  
-      const { offset, limit } = getOffsetAndLimitFromRequest(req);
-      const regex = new RegExp(req.params.search, 'i');
-      const orgs = await OrgModel.find({name: { $regex: regex }}).skip(offset).limit(limit);
-      res.status(status.success).send(orgs);
-      return;
     } catch (error: any) {
-      res.status(status.bad).send({ error: error.message });
-      return;
+        res.status(status.bad).send({ error: error.message });
+        return;
     }
 };
