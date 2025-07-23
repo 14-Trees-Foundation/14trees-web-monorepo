@@ -19,6 +19,11 @@
     "declarationMap": false,
     "removeComments": true,
     "noEmitOnError": false,
-    "importsNotUsedAsValues": "remove"
+    "importsNotUsedAsValues": "remove",
+    "baseUrl": ".",
+    "paths": {
+      "schema": ["../../packages/schema/src"],
+      "schema/*": ["../../packages/schema/src/*"]
+    }
   }
 }
