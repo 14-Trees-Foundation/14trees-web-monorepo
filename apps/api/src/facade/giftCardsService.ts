@@ -1072,6 +1072,8 @@ class GiftCardsService {
             occasion_type: eventType,
             gifted_by: giftedBy,
             gifted_on: giftedOn,
+            gift_source_type: 'pre_purchased', // Using pre-purchased inventory
+            source_request_id: giftCards[0]?.gift_card_request_id || null, // Reference to the source request
             primary_message: primaryMessage,
             secondary_message: "",
             logo_message: logoMessage,
@@ -1196,6 +1198,8 @@ class GiftCardsService {
                         occasion_type: giftRequest.event_type,
                         gifted_by: recipient?.gifted_by || giftRequest.planted_by,
                         gifted_on: recipient?.gifted_on || giftRequest.gifted_on,
+                        gift_source_type: 'fresh_request', // This is a fresh request fulfillment
+                        source_request_id: giftRequest.id, // Reference to the original gift request
                         primary_message: giftRequest.primary_message || defaultGiftMessages.primary,
                         secondary_message: giftRequest.secondary_message || defaultGiftMessages.secondary,
                         logo_message: giftRequest.logo_message || defaultGiftMessages.logo,
