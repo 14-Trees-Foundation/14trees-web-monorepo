@@ -43,3 +43,5 @@ db/mongodb
 
 content/**/*
 !content/*.d.ts
+
+apps/frontend
