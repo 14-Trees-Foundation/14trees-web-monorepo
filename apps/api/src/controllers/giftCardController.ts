@@ -1878,6 +1878,8 @@ export const redeemMultipleGiftCard = async (req: Request, res: Response) => {
             occasion_type: eventType,
             gifted_by: giftedBy,
             gifted_on: giftedOn,
+            gift_source_type: 'pre_purchased', // Using pre-purchased inventory
+            source_request_id: giftRequests.results[0]?.id || null, // Reference to the source request
             primary_message: primaryMessage || defaultGiftMessages.primary,
             secondary_message: secondaryMessage || defaultGiftMessages.secondary,
             logo_message: logoMessage || defaultGiftMessages.logo,
@@ -1991,6 +1993,8 @@ export const bulkRedeemGiftCard = async (req: Request, res: Response) => {
                 occasion_type: eventType,
                 gifted_by: giftedBy,
                 gifted_on: giftedOn,
+                gift_source_type: 'pre_purchased', // Using pre-purchased inventory
+                source_request_id: giftRequests.results[0]?.id || null, // Reference to the source request
                 primary_message: primaryMessage || defaultGiftMessages.primary,
                 secondary_message: secondaryMessage || defaultGiftMessages.secondary,
                 logo_message: logoMessage || defaultGiftMessages.logo,
@@ -2081,6 +2085,8 @@ export const redeemGiftCard = async (req: Request, res: Response) => {
             occasion_type: eventType,
             gifted_by: giftedBy,
             gifted_on: giftedOn,
+            gift_source_type: 'pre_purchased', // Using pre-purchased inventory
+            source_request_id: giftCard.gift_card_request_id, // Reference to the source request
             primary_message: primaryMessage || defaultGiftMessages.primary,
             secondary_message: secondaryMessage || defaultGiftMessages.secondary,
             logo_message: logoMessage || defaultGiftMessages.logo,

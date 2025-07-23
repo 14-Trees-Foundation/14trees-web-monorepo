@@ -30,10 +30,29 @@ export class GRTransactionsRepository {
                 ru.email AS recipient_email,
                 ru.communication_email AS recipient_communication_email,
                 gca.gc_count AS trees_count,
-                COALESCE(tree_details.tree_info, '[]'::jsonb) AS tree_details
+                COALESCE(tree_details.tree_info, '[]'::jsonb) AS tree_details,
+                
+                -- Source request details
+                gcr.id AS source_request_identifier,
+                gcr.event_name AS source_event_name,
+                gcr.created_at AS source_request_date,
+                
+                -- UI-friendly labels
+                CASE grt.gift_source_type
+                    WHEN 'fresh_request' THEN 'Direct Request Method'
+                    WHEN 'pre_purchased' THEN 'Via Prepurchase Method'
+                END AS gift_type_display,
+                
+                -- Additional context
+                CASE grt.gift_source_type
+                    WHEN 'fresh_request' THEN CONCAT('New request: ', gcr.request_id)
+                    WHEN 'pre_purchased' THEN CONCAT('From inventory: ', gcr.request_id)
+                END AS source_description
+                
             FROM "${getSchema()}".gift_redeem_transactions grt
             JOIN "${getSchema()}".users cu ON cu.id = grt.created_by
             JOIN "${getSchema()}".users ru ON ru.id = grt.recipient
+            LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = grt.source_request_id
 
             -- Subquery to count gift_cards per grt
             JOIN (
@@ -67,7 +86,8 @@ export class GRTransactionsRepository {
                 ) AS limited_tree_data
             ) AS tree_details ON true
             WHERE ${type === 'group' ? 'grt.group_id = :id' : 'grt.user_id = :id'} ${search ? 'AND ru.name ILIKE :search' : ''}
-            GROUP BY grt.id, cu.id, ru.id, gca.gc_count, tree_details.tree_info
+            GROUP BY grt.id, cu.id, ru.id, gca.gc_count, tree_details.tree_info, 
+                     gcr.id, gcr.event_name, gcr.created_at, grt.gift_source_type
             ORDER BY grt.id DESC
             ${limit > 0 ? 'OFFSET :offset LIMIT :limit;' : ';'}
         `

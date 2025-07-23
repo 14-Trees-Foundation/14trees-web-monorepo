@@ -987,14 +987,47 @@ class TreeRepository {
       type: QueryTypes.SELECT,
     });
 
+    // Query to get transaction source type statistics
+    let transactionWhereCondition = "";
+    if (groupId) {
+      transactionWhereCondition = `WHERE grt.group_id = ${groupId}`;
+    } else if (userId) {
+      transactionWhereCondition = `WHERE grt.user_id = ${userId}`;
+    }
 
+    const sourceTypeStatsQuery = `
+      SELECT 
+        COUNT(CASE WHEN grt.gift_source_type = 'fresh_request' THEN 1 END) as fresh_request_count,
+        COUNT(CASE WHEN grt.gift_source_type = 'pre_purchased' THEN 1 END) as pre_purchased_count,
+        COUNT(*) as total_transactions,
+        COALESCE(SUM(CASE WHEN grt.gift_source_type = 'fresh_request' THEN grt_counts.tree_count ELSE 0 END), 0) as fresh_request_trees,
+        COALESCE(SUM(CASE WHEN grt.gift_source_type = 'pre_purchased' THEN grt_counts.tree_count ELSE 0 END), 0) as pre_purchased_trees
+      FROM "${getSchema()}".gift_redeem_transactions grt
+      LEFT JOIN (
+        SELECT grt_id, COUNT(gc_id) as tree_count
+        FROM "${getSchema()}".gift_redeem_transaction_cards
+        GROUP BY grt_id
+      ) grt_counts ON grt_counts.grt_id = grt.id
+      ${transactionWhereCondition}
+    `;
+
+    const sourceTypeData: any[] = await sequelize.query(sourceTypeStatsQuery, {
+      type: QueryTypes.SELECT,
+    });
 
     const result = {
       total_trees: allocatedData[0]?.total_trees || '0',
       gifted_trees: allocatedData[0]?.gifted_trees || '0',
       total_requested_trees: requestedData[0]?.total_requested_trees || '0',
       total_allocated_trees: allocatedFromRequestsData[0]?.total_allocated_trees || '0',
-      trees_yet_to_allocate: (parseInt(requestedData[0]?.total_requested_trees || '0') - parseInt(allocatedFromRequestsData[0]?.total_allocated_trees || '0')).toString()
+      trees_yet_to_allocate: (parseInt(requestedData[0]?.total_requested_trees || '0') - parseInt(allocatedFromRequestsData[0]?.total_allocated_trees || '0')).toString(),
+      
+      // Enhanced source type analytics
+      fresh_request_transactions: sourceTypeData[0]?.fresh_request_count || '0',
+      pre_purchased_transactions: sourceTypeData[0]?.pre_purchased_count || '0',
+      total_transactions: sourceTypeData[0]?.total_transactions || '0',
+      fresh_request_trees: sourceTypeData[0]?.fresh_request_trees || '0',
+      pre_purchased_trees: sourceTypeData[0]?.pre_purchased_trees || '0'
     };
 
 
