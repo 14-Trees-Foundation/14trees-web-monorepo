@@ -2,13 +2,19 @@ import Razorpay from "razorpay";
 import { Orders } from "razorpay/dist/types/orders";
 import { Payments } from "razorpay/dist/types/payments";
 import { validatePaymentVerification } from "razorpay/dist/utils/razorpay-utils";
+import { getRazorpayConfig } from "../../helpers/utils";
 
 class RazorpayService {
     razorpay: Razorpay
-    constructor() {
+    private keySecret: string
+    
+    constructor(userEmail?: string) {
+        const config = getRazorpayConfig(userEmail || '');
+        this.keySecret = config.key_secret;
+        
         this.razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID || '',
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
+            key_id: config.key_id,
+            key_secret: config.key_secret,
         });
     }
 
@@ -16,7 +22,7 @@ class RazorpayService {
         return validatePaymentVerification({
             "order_id": orderId,
             "payment_id": paymentId,
-        }, signature, process.env.RAZORPAY_KEY_SECRET || '');
+        }, signature, this.keySecret);
     }
 
     async createOrder(amount: number, notes?: Record<string, string | number>) {

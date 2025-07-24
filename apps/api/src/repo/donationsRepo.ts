@@ -56,6 +56,7 @@ export class DonationRepository {
                     u.email AS user_email,
                     u.phone AS user_phone,
                     pu.name AS processed_by_name,
+                    p.order_id AS order_id,
                     COALESCE(dus.mailed_count, 0) AS mailed_count,
                     COALESCE(dus.users_count, 0) AS users_count,
                     COALESCE(tc.booked, 0) AS booked,
@@ -63,6 +64,7 @@ export class DonationRepository {
                 FROM "${getSchema()}".donations d
                 LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
                 LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
+                LEFT JOIN "${getSchema()}".payments p ON p.id = d.payment_id
                 LEFT JOIN donation_user_stats dus ON dus.donation_id = d.id
                 LEFT JOIN tree_counts tc ON tc.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
@@ -74,6 +76,7 @@ export class DonationRepository {
                 FROM "${getSchema()}".donations d
                 LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
                 LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
+                LEFT JOIN "${getSchema()}".payments p ON p.id = d.payment_id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
     
