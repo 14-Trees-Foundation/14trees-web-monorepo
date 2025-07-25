@@ -66,9 +66,10 @@ interface DonationAttributes {
   amount_received: number | null;
   donation_receipt_number: string | null;
   sponsorship_type: DonationSponsorshipType;
+  notes: string | null;
 }
 
-interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id' | 'group_id' | 'donation_date' | 'amount_received' | 'donation_receipt_number' | 'sponsorship_type' | 'prs_status'> { }
+interface DonationCreationAttributes extends Optional<DonationAttributes, 'id' | 'payment_id' | 'grove_type_other' | 'names_for_plantation' | 'comments' | 'created_at' | 'updated_at' | 'tags' | 'amount_donated' | 'visit_date' | 'donation_method' | 'status' | 'mail_error' | 'mail_status' | 'processed_by' | 'rfr_id' | 'group_id' | 'donation_date' | 'amount_received' | 'donation_receipt_number' | 'sponsorship_type' | 'prs_status' | 'notes'> { }
 
 @Table({
   tableName: 'donations',
@@ -264,6 +265,13 @@ class Donation extends Model<DonationAttributes, DonationCreationAttributes>
     comment: 'Amount received for this donation'
   })
   amount_received!: number | null;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    comment: 'Internal notes for backoffice team to track order fulfillment and communication'
+  })
+  notes!: string | null;
 }
 
 export { Donation }

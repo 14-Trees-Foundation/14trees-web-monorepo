@@ -22,6 +22,37 @@ export class DonationRepository {
                         columnField = "u.name"; // This is for the donor's name
                     } else if (filter.columnField === "processed_by_name") {
                         columnField = "pu.name"; // This is for the processor's name
+                    } else if (filter.columnField === "id") {
+                        // Handle id field - convert to text for string operations
+                        columnField = "d.id::text";
+                    } else if (filter.columnField === "email_status") {
+                        // Handle email status filter with custom logic
+                        let emailConditions: string[] = [];
+                        const values = Array.isArray(filter.value) ? filter.value : [filter.value];
+                        
+                        values.forEach((value, index) => {
+                            const placeholder = `email_status_${index}`;
+                            if (value === "Mail sent to Sponsor") {
+                                emailConditions.push(`(d.mail_status IS NOT NULL AND d.mail_status @> ARRAY[:${placeholder}]::varchar[])`);
+                                replacements[placeholder] = 'DashboardsSent';
+                            } else if (value === "Mail sent to Recipient") {
+                                emailConditions.push(`(dus.mailed_count > 0 AND dus.mailed_count = dus.users_count)`);
+                            } else if (value === "Mail sent to Sponsor, Mail sent to Recipient") {
+                                emailConditions.push(`(d.mail_status IS NOT NULL AND d.mail_status @> ARRAY[:${placeholder}_sponsor]::varchar[] AND dus.mailed_count > 0 AND dus.mailed_count = dus.users_count)`);
+                                replacements[`${placeholder}_sponsor`] = 'DashboardsSent';
+                            } else if (value === "-") {
+                                emailConditions.push(`((d.mail_status IS NULL OR NOT (d.mail_status @> ARRAY[:${placeholder}_sponsor]::varchar[])) AND (dus.mailed_count IS NULL OR dus.mailed_count = 0 OR dus.mailed_count < dus.users_count))`);
+                                replacements[`${placeholder}_sponsor`] = 'DashboardsSent';
+                            }
+                        });
+                        
+                        if (emailConditions.length > 0) {
+                            const emailCondition = filter.operatorValue === 'isAnyOf' ? 
+                                `(${emailConditions.join(' OR ')})` : 
+                                emailConditions.join(' AND ');
+                            whereConditions = whereConditions + " " + emailCondition + " AND";
+                        }
+                        return; // Skip the normal processing for email_status
                     }
                     const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                     whereConditions = whereConditions + " " + condition + " AND";
@@ -72,11 +103,20 @@ export class DonationRepository {
             `;
     
             const countQuery = `
+                WITH donation_user_stats AS (
+                    SELECT 
+                        donation_id,
+                        COUNT(DISTINCT id) AS users_count,
+                        SUM(CASE WHEN mail_sent THEN 1 ELSE 0 END) AS mailed_count
+                    FROM "${getSchema()}".donation_users
+                    GROUP BY donation_id
+                )
                 SELECT COUNT(*) 
                 FROM "${getSchema()}".donations d
                 LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
                 LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
                 LEFT JOIN "${getSchema()}".payments p ON p.id = d.payment_id
+                LEFT JOIN donation_user_stats dus ON dus.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
             `;
     

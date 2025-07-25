@@ -211,4 +211,63 @@ routes.delete('/removePlots', verifyToken, autoPrsReq.removePlot);
  */
 routes.delete('/removeAllPlots', verifyToken, autoPrsReq.removeAllPlots);
 
+/**
+ * @swagger
+ * /auto-process/updateSequences:
+ *   put:
+ *     summary: Update sequence order of plots for auto-processing
+ *     description: Updates the sequence order of plots configured for auto-processing of the specified type.
+ *     tags:
+ *       - Auto-Processing Configuration
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - plot_sequences
+ *               - type
+ *             properties:
+ *               plot_sequences:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     sequence:
+ *                       type: integer
+ *                       example: 1
+ *                 example: [{"id": 1, "sequence": 1}, {"id": 2, "sequence": 2}]
+ *               type:
+ *                 type: string
+ *                 enum: [donation, gift]
+ *                 example: "gift"
+ *     responses:
+ *       200:
+ *         description: Plot sequences updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully updated sequences for 3 plot(s)"
+ *                 updatedCount:
+ *                   type: integer
+ *                   example: 3
+ *       400:
+ *         description: Bad request (validation errors)
+ *       404:
+ *         description: No plots found to update
+ *       500:
+ *         description: Internal server error
+ */
+routes.put('/updateSequences', verifyToken, autoPrsReq.updatePlotSequences);
+
 export default routes;
