@@ -1,4 +1,9 @@
 {
     "typescript.tsdk": "node_modules/typescript/lib",
-    "zencoder.enableRepoIndexing": true
+    "cSpell.words": [
+        "Razorpay"
+    ],
+    "zencoder.enableRepoIndexing": true,
+    "search.useGlobalIgnoreFiles": true,
+    "search.useParentIgnoreFiles": true
 }
