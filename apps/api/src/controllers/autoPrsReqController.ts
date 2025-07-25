@@ -73,7 +73,7 @@ export const getPlotData = async (req: Request, res: Response) => {
                 return plotsData.results.find((plot: any) => plot.id === id);
             }).filter(plot => plot !== undefined);
 
-            orderedPlots = orderedPlots.reverse()
+            // No need to reverse since we're now ordering by sequence in the repository
             return res.status(200).json({
                 results: orderedPlots,
                 total: orderedPlots.length,
@@ -154,6 +154,50 @@ export const removeAllPlots = async (req: Request, res: Response) => {
         console.error('Error removing all plots:', error);
         return res.status(500).json({
             error: error instanceof Error ? error.message : 'Failed to remove all plots'
+        });
+    }
+};
+
+export const updatePlotSequences = async (req: Request, res: Response) => {
+    try {
+        const { plot_sequences, type } = req.body;
+
+        if (!plot_sequences || !Array.isArray(plot_sequences) || plot_sequences.length === 0 || !type) {
+            return res.status(400).json({ error: 'plot_sequences array and type are required' });
+        }
+
+        if (type !== 'donation' && type !== 'gift') {
+            return res.status(400).json({ error: 'type must be either "donation" or "gift"' });
+        }
+
+        // Validate plot_sequences structure
+        for (const item of plot_sequences) {
+            if (!item.id || !item.sequence || typeof item.id !== 'number' || typeof item.sequence !== 'number') {
+                return res.status(400).json({ 
+                    error: 'Each plot_sequence item must have valid id and sequence numbers' 
+                });
+            }
+        }
+
+        // Update plot sequences
+        const updatedCount = await AutoPrsReqPlotsRepository.updatePlotSequences({
+            plot_sequences,
+            type
+        });
+
+        if (updatedCount === 0) {
+            return res.status(404).json({ message: 'No plots found to update for the specified criteria' });
+        }
+
+        return res.status(200).json({ 
+            message: `Successfully updated sequences for ${updatedCount} plot(s)`,
+            updatedCount 
+        });
+
+    } catch (error) {
+        console.error('Error updating plot sequences:', error);
+        return res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to update plot sequences'
         });
     }
 };
