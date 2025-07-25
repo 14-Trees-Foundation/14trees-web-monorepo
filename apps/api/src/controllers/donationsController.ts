@@ -98,38 +98,45 @@ export const createDonation = async (req: Request, res: Response) => {
         });
 
 
-    const donation = await DonationService.createDonation({
-        sponsor_name,
-        sponsor_email,
-        sponsor_phone,
-        trees_count,
-        pledged_area_acres,
-        payment_id,
-        category,
-        grove,
-        contribution_options: contribution_options || [],
-        comments,
-        donation_type,
-        donation_method,
-        visit_date,
-        amount_donated,
-        tags,
-        rfr,
-        c_key,
-    }).catch((error) => {
+    let donation;
+    try {
+        donation = await DonationService.createDonation({
+            sponsor_name,
+            sponsor_email,
+            sponsor_phone,
+            trees_count,
+            pledged_area_acres,
+            payment_id,
+            category,
+            grove,
+            contribution_options: contribution_options || [],
+            comments,
+            donation_type,
+            donation_method,
+            visit_date,
+            amount_donated,
+            tags,
+            rfr,
+            c_key,
+        });
+    } catch (error) {
         console.error("[ERROR] DonationsController::createDonation:", error);
-        res.status(status.error).json({
+        return res.status(status.error).json({
             message: 'Failed to create donation'
         });
-    })
-
-    if (!donation) return;
+    }
 
     if (donation.payment_id) {
-        const payment = await PaymentRepository.getPayment(donation.payment_id);
-        if (payment && payment.order_id) {
-            const razorpayService = new RazorpayService();
-            await razorpayService.updateOrder(payment.order_id, { "Donation Id": donation.id.toString() })
+        try {
+            const payment = await PaymentRepository.getPayment(donation.payment_id);
+            if (payment && payment.order_id) {
+                // Pass the sponsor email to ensure we use the correct Razorpay environment (test vs production)
+                const razorpayService = new RazorpayService(sponsor_email);
+                await razorpayService.updateOrder(payment.order_id, { "Donation Id": donation.id.toString() });
+            }
+        } catch (error) {
+            console.error("[ERROR] DonationsController::createDonation - Razorpay order update failed:", error);
+            // Don't return error here, continue with donation creation
         }
     }
 
@@ -144,16 +151,19 @@ export const createDonation = async (req: Request, res: Response) => {
         })
     }
 
-    try {
-        DonationService.insertDonationIntoGoogleSheet(
-            donation,
-            sponsor_name,
-            sponsor_email,
-            amount_donated
-        );
-    } catch (error) {
-        console.error("[ERROR] DonationsController::insertDonationIntoGoogleSheet:", error);
-    }
+    // Handle Google Sheets insertion asynchronously without blocking response
+    setImmediate(async () => {
+        try {
+            await DonationService.insertDonationIntoGoogleSheet(
+                donation,
+                sponsor_name,
+                sponsor_email,
+                amount_donated
+            );
+        } catch (error) {
+            console.error("[ERROR] DonationsController::insertDonationIntoGoogleSheet:", error);
+        }
+    });
 
     if (!usersCreated)
         return res.status(status.error).send({
@@ -195,7 +205,8 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
             }
 
             if (payment?.order_id) {
-                const razorpayService = new RazorpayService();
+                // Use sponsor email to connect to the correct Razorpay environment
+                const razorpayService = new RazorpayService(sponsorUser.email);
                 const payments = await razorpayService.getPayments(payment.order_id);
                 payments?.forEach(item => {
                     const amount = Number(item.amount) / 100;
@@ -1141,7 +1152,8 @@ export const createDonationV2 = async (req: Request, res: Response) => {
         if (donation.payment_id) {
             const paymentRecord = await PaymentRepository.getPayment(donation.payment_id);
             if (paymentRecord && paymentRecord.order_id) {
-                const razorpayService = new RazorpayService();
+                // Use sponsor email to ensure we use the correct Razorpay environment
+                const razorpayService = new RazorpayService(sponsor_email);
                 await razorpayService.updateOrder(paymentRecord.order_id, { "Donation Id": donation.id.toString() });
             }
         }
