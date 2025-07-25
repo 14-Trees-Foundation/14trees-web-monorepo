@@ -669,7 +669,7 @@ function Donation() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                donation_id: donId
+                donation_id: donId.toString()
               })
             });
           } catch (err) {
