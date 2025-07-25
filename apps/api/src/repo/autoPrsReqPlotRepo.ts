@@ -8,7 +8,7 @@ export class AutoPrsReqPlotsRepository {
     public static async getPlots(type: 'donation' | 'gift'): Promise<AutoPrsReqPlot[]> {
         return AutoPrsReqPlot.findAll({
             where: { type: type },
-            order: [['id', 'ASC']]
+            order: [['sequence', 'ASC'], ['id', 'ASC']]
         })
     }
 
@@ -63,5 +63,30 @@ export class AutoPrsReqPlotsRepository {
         });
 
         return deletedCount;
+    }
+
+    public static async updatePlotSequences(
+        plotData: {
+            plot_sequences: { id: number; sequence: number }[];
+            type: 'donation' | 'gift';
+        }
+    ): Promise<number> {
+        let updatedCount = 0;
+
+        // Update each plot sequence individually
+        for (const { id, sequence } of plotData.plot_sequences) {
+            const [affectedRows] = await AutoPrsReqPlot.update(
+                { sequence: sequence },
+                {
+                    where: {
+                        plot_id: id,
+                        type: plotData.type
+                    }
+                }
+            );
+            updatedCount += affectedRows;
+        }
+
+        return updatedCount;
     }
 }

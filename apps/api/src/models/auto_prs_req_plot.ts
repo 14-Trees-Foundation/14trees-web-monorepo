@@ -6,13 +6,14 @@ interface AutoPrsReqPlotAttributes {
     id: number;
     plot_id: number;
     type: 'donation' | 'gift';
+    sequence?: number;
     created_at: Date;
     updated_at: Date;
 }
 
 
 interface AutoPrsReqPlotCreationAttributes
-    extends Optional<AutoPrsReqPlotAttributes, 'id' | 'created_at' | 'updated_at'> { }
+    extends Optional<AutoPrsReqPlotAttributes, 'id' | 'sequence' | 'created_at' | 'updated_at'> { }
 
 @Table({ tableName: 'auto_prs_req_plots' })
 class AutoPrsReqPlot
@@ -30,6 +31,9 @@ class AutoPrsReqPlot
 
     @Column({ type: DataType.INTEGER })
     plot_id!: number;
+
+    @Column({ type: DataType.INTEGER, allowNull: true })
+    sequence?: number;
 
     @Column({ type: DataType.DATE })
     created_at!: Date;
