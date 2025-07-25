@@ -358,7 +358,7 @@ export const updateDonation = async (req: Request, res: Response) => {
 
         // Get full donation details with joins
         const result = await DonationRepository.getDonations(0, 1, [
-            { columnField: 'id', operatorValue: 'equals', value: updatedDonation.id }
+            { columnField: 'id', operatorValue: 'equals', value: updatedDonation.id.toString() }
         ]);
 
         res.status(status.success).json(
