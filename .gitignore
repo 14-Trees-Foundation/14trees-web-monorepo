@@ -19,9 +19,6 @@ build
 .DS_Store
 *.pem
 
-# credentials
-credentials/
-
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -42,10 +39,11 @@ dist/
 
 # DB Volume
 db/data
+db/mongodb
 
 content/**/*
 !content/*.d.ts
 
-# External repositories
 apps/frontend
-apps/mobile-app
+credentials/14trees-gmail/credentials.json
+credentials/14trees-gmail/token.json

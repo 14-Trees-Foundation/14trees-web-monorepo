@@ -178,7 +178,7 @@ export class GoogleSpreadsheet {
     public async insertRowsData(spreadsheetId: string, sheetName: string, rowData: string[][]) {
         if (this.isDevelopment && !this.sheets) {
             console.log(`[DEV] Skipping insertRowsData for ${spreadsheetId}/${sheetName} - running in development mode`);
-            console.log(`[DEV] Would insert rows:`, rowData);
+            // console.log(`[DEV] Would insert rows:`, rowData);
             return;
         }
         
