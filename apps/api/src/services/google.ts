@@ -17,16 +17,24 @@ const auth = new google.auth.GoogleAuth({
 const drive = google.drive({ version: 'v3', auth });
 
 export async function copyFile(fileId: string, fileName: string): Promise<string> {
-    const response = await drive.files.copy({
-        fileId: fileId,
-        requestBody: {
-            name: fileName,
-            parents: ['1T_mBriFGk7hD7fxLqVeX22I8IGCiHYtC']
-        },
-    });
+    let response;
+    try {
+        response = await drive.files.copy({
+            fileId: fileId,
+            requestBody: {
+                name: fileName,
+                parents: ['1T_mBriFGk7hD7fxLqVeX22I8IGCiHYtC']
+            },
+        });
 
-    if (!response.data.id) {
-        throw new Error('Failed to create a file copy!')
+        if (!response.data.id) {
+            throw new Error('Failed to create a file copy!')
+        }
+    } catch (error: any) {
+        if (error.status === 404) {
+            throw new Error(`Google Drive template file not found (ID: ${fileId}). Please check the RECEIPT_80G_TEMPLATE_ID configuration.`);
+        }
+        throw error;
     }
 
     const newFileId = response.data.id;

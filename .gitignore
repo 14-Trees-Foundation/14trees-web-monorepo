@@ -47,3 +47,4 @@ content/**/*
 apps/frontend
 credentials/14trees-gmail/credentials.json
 credentials/14trees-gmail/token.json
+credentials/14trees-google/credentials.json
