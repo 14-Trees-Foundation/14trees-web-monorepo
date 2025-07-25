@@ -177,7 +177,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
     const { donation_id, is_corporate } = req.body;
 
     try {
-        const donation = await DonationRepository.getDonation(donation_id);
+        const donation = await DonationRepository.getDonation(donation_id.toString());
 
         const usersResp = await UserRepository.getUsers(0, 1, [
             { columnField: 'id', operatorValue: 'equals', value: donation.user_id }

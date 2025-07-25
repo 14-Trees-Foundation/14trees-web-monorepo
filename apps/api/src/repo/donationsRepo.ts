@@ -25,6 +25,8 @@ export class DonationRepository {
                     } else if (filter.columnField === "id") {
                         // Handle id field - convert to text for string operations
                         columnField = "d.id::text";
+                        // Convert id value to string for consistent comparison
+                        filter.value = String(filter.value);
                     } else if (filter.columnField === "email_status") {
                         // Handle email status filter with custom logic
                         let emailConditions: string[] = [];
@@ -143,7 +145,7 @@ export class DonationRepository {
     }
 
     public static async getDonation(donationId: number): Promise<Donation> {
-        const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId }])
+        const donationsResp = await this.getDonations(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: donationId.toString() }])
         if (donationsResp.results.length !== 1)
             throw new Error("Donation request for given id not found.")
 
