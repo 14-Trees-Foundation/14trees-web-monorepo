@@ -623,6 +623,15 @@ function Donation() {
 
       const razorpayConfig = getRazorpayConfig(formData.email);
       
+      // Debug logging for Razorpay configuration
+      console.log('Razorpay Debug Info:', {
+        userEmail: formData.email,
+        isInternalTestUser: isInternalTestUser(formData.email),
+        razorpayKeyId: razorpayConfig.key_id,
+        orderId: orderId,
+        amount: amount
+      });
+      
       const options = {
         key: razorpayConfig.key_id,
         amount: amount * 100,
@@ -676,10 +685,27 @@ function Donation() {
       };
 
       if (!isAboveLimit) {
+        // Debug logging before opening Razorpay
+        console.log('Opening Razorpay with:', {
+          key: options.key,
+          order_id: options.order_id,
+          amount: options.amount,
+          currency: options.currency,
+          userEmail: formData.email,
+          isInternalTestUser: isInternalTestUser(formData.email)
+        });
+        
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', (response: any) => {
+          console.error('Razorpay payment failed:', response);
           alert(`Payment failed: ${response.error.description}`);
         });
+        
+        // Add error handler for checkout errors
+        rzp.on('checkout.error', (response: any) => {
+          console.error('Razorpay checkout error:', response);
+        });
+        
         rzp.open();
       } else {
         // For bank transfers (isAboveLimit), show success dialog immediately
@@ -794,7 +820,10 @@ function Donation() {
           throw new Error(errorData.error || "Payment failed");
         }
 
-        const { order_id, id } = await paymentResponse.json();
+        const paymentData = await paymentResponse.json();
+        console.log('Payment creation response:', paymentData);
+        
+        const { order_id, id } = paymentData;
         setRazorpayPaymentId(id);
         setRazorpayOrderId(order_id);
         orderId = order_id;

@@ -94,11 +94,16 @@ export class DonationService {
 
         let rfr_id: number | null = null;
         if (data.rfr || data.c_key) {
-            const references = await ReferralsRepository.getReferrals({
-                rfr: data.rfr ? data.rfr : { [Op.is]: null },
-                c_key: data.c_key ? data.c_key : { [Op.is]: null }
-            });
-            if (references.length === 1) rfr_id = references[0].id;
+            try {
+                const references = await ReferralsRepository.getReferrals({
+                    rfr: data.rfr ? data.rfr : { [Op.is]: null },
+                    c_key: data.c_key ? data.c_key : { [Op.is]: null }
+                });
+                if (references.length === 1) rfr_id = references[0].id;
+            } catch (error) {
+                console.error("DonationService::createDonation - Failed to fetch referrals:", error);
+                // Continue without referral ID rather than failing the entire donation
+            }
         }
 
         const request: DonationCreationAttributes = {
@@ -133,7 +138,12 @@ export class DonationService {
         const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
         const receiptId = FY + "/" + donation.id;
 
-        await DonationRepository.updateDonation(donation.id, { donation_receipt_number: receiptId })
+        try {
+            await DonationRepository.updateDonation(donation.id, { donation_receipt_number: receiptId });
+        } catch (error) {
+            console.error("DonationService::createDonation - Failed to update receipt number:", error);
+            // Don't fail the entire donation creation for receipt number update failure
+        }
 
         return donation;
     }
@@ -173,7 +183,8 @@ export class DonationService {
                 if (payment?.payment_history && payment.payment_history.length > 0) {
                     paymentProof = payment.payment_history[0].payment_proof || "";
                 } else if (payment?.order_id) {
-                    const razorpayService = new RazorpayService();
+                    // Use sponsor email to ensure we connect to the correct Razorpay environment
+                    const razorpayService = new RazorpayService(sponsor_email);
                     const payments = await razorpayService.getPayments(payment.order_id);
                     if (payments && payments.length > 0) {
                         const data: any = payments[0].acquirer_data;
