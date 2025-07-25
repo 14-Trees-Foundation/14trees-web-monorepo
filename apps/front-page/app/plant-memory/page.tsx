@@ -134,6 +134,8 @@ function GiftTrees() {
     title: string;
     message: React.ReactNode;
   }>({ title: "", message: "" });
+  const [requestInProgress, setRequestInProgress] = useState(false);
+  const [processedRequestId, setProcessedRequestId] = useState<string | null>(null);
 
   const scrollToRecipients = () => {
     const recipientsSection = document.getElementById('gift-recipients');
@@ -358,6 +360,10 @@ function GiftTrees() {
 
   // Existing form submission (unchanged)
   const handleSubmit = async () => {
+    // Prevent multiple submissions
+    if (isLoading || isProcessing || requestInProgress) {
+      return;
+    }
 
     if (!formData.fullName || !formData.email || !formData.phone || !formData.panNumber || !formData.numberOfTrees) {
       alert("Please fill in all required fields before payment");
@@ -395,8 +401,17 @@ function GiftTrees() {
 
     setIsLoading(true);
     setIsProcessing(true);
+    setRequestInProgress(true);
 
     const uniqueRequestId = getUniqueRequestId();
+
+    // Additional check to prevent duplicate requests with same ID
+    if (processedRequestId === uniqueRequestId) {
+      setIsLoading(false);
+      setIsProcessing(false);
+      setRequestInProgress(false);
+      return;
+    }
 
     const amount = calculateGiftingAmount() * Number(formData.numberOfTrees);
     let paymentId: number | null = razorpayPaymentId || null;
@@ -519,6 +534,9 @@ function GiftTrees() {
 
       const responseData = await response.json();
       const giftRequestId = responseData.id;
+      
+      // Mark this request as processed to prevent duplicates
+      setProcessedRequestId(uniqueRequestId);
 
       if (users.length > 0) {
         try {
@@ -613,6 +631,23 @@ function GiftTrees() {
           alert(`Payment failed: ${response.error.description}`);
         });
         rzp.open();
+      } else if (isAboveLimit) {
+        // For bank transfers, show success dialog immediately after request creation
+        setShowSuccessDialog(true);
+        
+        // Also call the payment success endpoint for bank transfers
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests/payment-success`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gift_request_id: responseData.id,
+              remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
+            })
+          });
+        } catch (err) {
+          console.error("Failed to mark payment success for bank transfer:", err);
+        }
       }
 
     } catch (err: any) {
@@ -621,6 +656,7 @@ function GiftTrees() {
     } finally {
       setIsLoading(false);
       setIsProcessing(false);
+      setRequestInProgress(false);
     }
   };
 
@@ -906,6 +942,7 @@ function GiftTrees() {
       setPrimaryMessage("");
       setSecondaryMessage("");
       setShowSuccessDialog(false);
+      setProcessedRequestId(null);
     }
 
     const handleUpdate = async () => {
@@ -1568,7 +1605,7 @@ function GiftTrees() {
                     rpPaymentSuccess={rpPaymentSuccess}
                     paymentProof={paymentProof}
                     setPaymentProof={setPaymentProof}
-                    isProcessing={isProcessing}
+                    isProcessing={isProcessing || requestInProgress}
                     isLoading={isLoading}
                     setCurrentStep={setCurrentStep}
                     handleSubmit={handleSubmit}
