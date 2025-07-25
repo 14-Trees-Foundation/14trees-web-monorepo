@@ -8,15 +8,23 @@ export const getUniqueRequestId = () => {
 
 // Internal test user functionality
 const INTERNAL_TEST_EMAILS = [
-  "test@14trees.org",
-  "internal@14trees.org", 
-  "dev@14trees.org",
-  "vivayush@gmail.com"
-  // Add more internal test emails as needed
+  'vivayush@gmail.com'
+];
+
+const INTERNAL_TEST_DOMAINS = [
+  '@14trees.org'
 ];
 
 export const isInternalTestUser = (email: string): boolean => {
-  return INTERNAL_TEST_EMAILS.includes(email?.toLowerCase()) || email?.toLowerCase().includes("test@14trees");
+  if (!email) return false;
+  
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  if (INTERNAL_TEST_EMAILS.includes(normalizedEmail)) {
+    return true;
+  }
+  
+  return INTERNAL_TEST_DOMAINS.some(domain => normalizedEmail.endsWith(domain.toLowerCase()));
 };
 
 export const getRazorpayConfig = (email: string) => {

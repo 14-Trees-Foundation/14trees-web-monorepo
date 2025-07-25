@@ -582,7 +582,7 @@ function GiftTrees() {
                 })
               });
               if (!verificationResponse.ok) throw new Error("Verification failed");
-              alert("Payment successful!");
+              // alert("Payment successful!");
             } catch (err) {
               console.error("Verification error:", err);
             }
@@ -786,7 +786,7 @@ function GiftTrees() {
               })
             });
             if (!verificationResponse.ok) throw new Error("Verification failed");
-            alert("Payment successful!");
+            // alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
           }

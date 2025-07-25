@@ -648,7 +648,7 @@ function Donation() {
           }
           try {
             await verifyRazorpayPayment(response);
-            alert("Payment successful!");
+            // alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
           }
@@ -874,7 +874,7 @@ function Donation() {
           }
           try {
             await verifyRazorpayPayment(response);
-            alert("Payment successful!");
+            // alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
           }
