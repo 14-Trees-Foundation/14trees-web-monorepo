@@ -38,7 +38,7 @@ export const createPayment = async (req: Request, res: Response) => {
     try {
 
         let orderId: string | null = null;
-        const razorpayService = new RazorpayService();
+        const razorpayService = new RazorpayService(data.user_email);
         if (data.amount <= 500000) {
             const order = await razorpayService.createOrder(data.amount, data.notes);
             if (!order) {
@@ -153,8 +153,8 @@ export const updatePaymentHistory = async (req: Request, res: Response) => {
 
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
-        const razorpay = new RazorpayService();
-        if (razorpay.verifySignature(req.body.order_id, req.body.razorpay_payment_id, req.body.razorpay_signature)) {
+        const razorpay = new RazorpayService(req.body.user_email);
+        if (!razorpay.verifySignature(req.body.order_id, req.body.razorpay_payment_id, req.body.razorpay_signature)) {
             res.status(status.bad).json({ message: 'Transaction not legit!' });
             return;
         }
