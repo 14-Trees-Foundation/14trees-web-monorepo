@@ -7,7 +7,15 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import Papa from 'papaparse';
 import { apiClient } from "~/api/apiClient";
 import { UploadIcon } from "lucide-react";
-import { getUniqueRequestId } from "~/utils";
+import { 
+  getUniqueRequestId, 
+  isInternalTestUser, 
+  getRazorpayConfig,
+  getInternalTestMetadata,
+  addInternalTestTags,
+  addInternalTestPrefix,
+  addInternalTestComments
+} from "~/utils";
 import { UserDetailsForm } from 'components/donate/UserDetailsForm';
 import { SummaryPaymentPage } from './donationSummary';
 import { useSearchParams } from "next/navigation";
@@ -19,6 +27,17 @@ declare global {
     Razorpay: any;
   }
 }
+
+// Internal Test Banner Component
+const InternalTestBanner = ({ userEmail }: { userEmail: string }) => {
+  if (!isInternalTestUser(userEmail)) return null;
+  
+  return (
+    <div className="bg-orange-500 text-white p-3 text-center font-bold text-sm md:text-base fixed top-16 left-0 right-0 z-50 shadow-lg">
+      🔧 Internal Testing Mode - Using Test Razorpay Account
+    </div>
+  );
+};
 
 interface DedicatedName {
   recipient_name: string;
@@ -89,6 +108,23 @@ function Donation() {
     comments: ""
   });
   const [paymentOption, setPaymentOption] = useState<"razorpay" | "bank-transfer">("razorpay");
+
+  // Helper function to verify Razorpay payment
+  const verifyRazorpayPayment = async (response: any) => {
+    const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'verify',
+        razorpay_payment_id: response.razorpay_payment_id,
+        order_id: response.razorpay_order_id,
+        razorpay_signature: response.razorpay_signature,
+        user_email: formData.email
+      })
+    });
+    if (!verificationResponse.ok) throw new Error("Verification failed");
+    return verificationResponse;
+  };
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [isAboveLimit, setIsAboveLimit] = useState(false);
   const [nameEntryMethod, setNameEntryMethod] = useState<"manual" | "csv">("manual");
@@ -128,16 +164,19 @@ function Donation() {
   const hasTableErrors = csvPreview.some(row => Array.isArray(row._errors) && row._errors.length > 0);
 
   useEffect(() => {
-    let amount = 0;
+    let originalAmount = 0;
     if (treeLocation === "adopt") {
-      amount = 3000 * (adoptedTreeCount || 0);
+      originalAmount = 3000 * (adoptedTreeCount || 0);
     } else if (treeLocation === "donate") {
-      amount = donationMethod === "trees"
+      originalAmount = donationMethod === "trees"
         ? 1500 * (donationTreeCount || 0)
         : donationAmount;
     }
-    setIsAboveLimit(amount > 500000);
-  }, [treeLocation, adoptedTreeCount, donationMethod, donationTreeCount, donationAmount]);
+    
+    // No amount reduction - same pricing for all users
+    const finalAmount = originalAmount;
+    setIsAboveLimit(originalAmount > 500000);
+  }, [treeLocation, adoptedTreeCount, donationMethod, donationTreeCount, donationAmount, formData.email]);
 
   useEffect(() => {
     if (nameEntryMethod === "csv" && csvPreview.length > 0 && csvErrors.length === 0) {
@@ -484,11 +523,15 @@ function Donation() {
     setIsProcessing(true);
     setIsSubmitting(true);
 
-    const amount = treeLocation === "adopt"
+    // Calculate original amount first
+    const originalAmount = treeLocation === "adopt"
       ? 3000 * (adoptedTreeCount || 0)
       : donationMethod === "trees"
         ? 1500 * (donationTreeCount || 0)
         : donationAmount;
+    
+    // No amount reduction - same pricing for all users
+    const amount = originalAmount;
 
     const uniqueRequestId = getUniqueRequestId();
 
@@ -504,7 +547,8 @@ function Donation() {
           amount,
           "Indian Citizen",
           formData.panNumber,
-          true
+          true,
+          formData.email
         );
         paymentId = response.id;
         orderId = response.order_id;
@@ -529,7 +573,7 @@ function Donation() {
     try {
 
       const donationRequest = {
-        sponsor_name: formData.fullName,
+        sponsor_name: addInternalTestPrefix(formData.fullName, formData.email),
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
         category: treeLocation === "adopt" ? "Foundation" : "Public",
@@ -537,25 +581,23 @@ function Donation() {
         donation_method: treeLocation === "donate" ? donationMethod : undefined,
         payment_id: paymentId,
         contribution_options: [],
-        comments: formData.comments,
-        // Always include the calculated amount
-        amount_donated: treeLocation === "adopt"
-          ? 3000 * (adoptedTreeCount || 0)
-          : donationMethod === "trees"
-            ? 1500 * (donationTreeCount || 0)
-            : donationAmount,
+        comments: addInternalTestComments(formData.comments, formData.email),
+        // Use the calculated amount (with internal test reduction if applicable)
+        amount_donated: amount,
         ...(treeLocation === "adopt" && {
           visit_date: visitDate, // Required for adoptions
           trees_count: adoptedTreeCount,
         }),
         ...(treeLocation === "donate" && {
           ...(donationMethod === "trees" && { trees_count: donationTreeCount }),
-          ...(donationMethod === "amount" && { amount_donated: donationAmount }),
+          ...(donationMethod === "amount" && { amount_donated: amount }),
         }),
         users: users,
-        tags: ["WebSite"],
+        tags: addInternalTestTags(["WebSite"], formData.email),
         rfr: rfr,
         c_key: c_key,
+        // Add internal test metadata if applicable
+        ...getInternalTestMetadata(formData.email, originalAmount),
       };
 
       let donId = donationId;
@@ -579,8 +621,10 @@ function Donation() {
       }
 
 
+      const razorpayConfig = getRazorpayConfig(formData.email);
+      
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: razorpayConfig.key_id,
         amount: amount * 100,
         currency: 'INR',
         name: "14 Trees Foundation",
@@ -590,6 +634,12 @@ function Donation() {
         order_id: orderId,
         notes: {
           "Donation Id": donId,
+          ...(isInternalTestUser(formData.email) && {
+            "Internal Test": "true",
+            "Test User Email": formData.email,
+            "Razorpay Account": "test",
+            "Test Timestamp": new Date().toISOString()
+          })
         },
         handler: async (response: any) => {
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
@@ -597,17 +647,7 @@ function Donation() {
             return;
           }
           try {
-            const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'verify',
-                razorpay_payment_id: response.razorpay_payment_id,
-                order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              })
-            });
-            if (!verificationResponse.ok) throw new Error("Verification failed");
+            await verifyRazorpayPayment(response);
             alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
@@ -724,11 +764,15 @@ function Donation() {
 
     setIsProcessing(true);
     try {
-      const amount = treeLocation === "adopt"
+      // Calculate original amount first
+      const originalAmount = treeLocation === "adopt"
         ? 3000 * (adoptedTreeCount || 0)
         : donationMethod === "trees"
           ? 1500 * (donationTreeCount || 0)
           : donationAmount;
+      
+      // No amount reduction - same pricing for all users
+      const amount = originalAmount;
       if (amount <= 0) throw new Error("Invalid amount");
 
       let orderId = razorpayOrderId;
@@ -759,7 +803,7 @@ function Donation() {
 
       // First create the donation entry
       const donationRequest = {
-        sponsor_name: formData.fullName,
+        sponsor_name: addInternalTestPrefix(formData.fullName, formData.email),
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
         category: treeLocation === "adopt" ? "Foundation" : "Public",
@@ -767,7 +811,7 @@ function Donation() {
         donation_method: treeLocation === "donate" ? donationMethod : undefined,
         payment_id: paymentId,
         contribution_options: [],
-        comments: formData.comments,
+        comments: addInternalTestComments(formData.comments, formData.email),
         amount_donated: amount,
         ...(treeLocation === "adopt" && {
           visit_date: visitDate,
@@ -775,14 +819,16 @@ function Donation() {
         }),
         ...(treeLocation === "donate" && {
           ...(donationMethod === "trees" && { trees_count: donationTreeCount }),
-          ...(donationMethod === "amount" && { amount_donated: donationAmount }),
+          ...(donationMethod === "amount" && { amount_donated: amount }),
         }),
         users: dedicatedNames.map(user => ({
           ...user,
           recipient_email: user.recipient_email || user.recipient_name.trim().toLowerCase().replace(/\s+/g, '.') + ".donor@14trees",
           assignee_email: user.assignee_email || user.assignee_name.trim().toLowerCase().replace(/\s+/g, '.') + ".donor@14trees"
         })),
-        tags: ["WebSite"],
+        tags: addInternalTestTags(["WebSite"], formData.email),
+        // Add internal test metadata if applicable
+        ...getInternalTestMetadata(formData.email, originalAmount),
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests`, {
@@ -801,8 +847,10 @@ function Donation() {
       const responseData = await response.json();
       setDonationId(responseData.id);
 
+      const razorpayConfig = getRazorpayConfig(formData.email);
+      
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: razorpayConfig.key_id,
         amount: amount * 100,
         currency: 'INR',
         name: "14 Trees Foundation",
@@ -810,23 +858,22 @@ function Donation() {
           ? `Adoption of ${adoptedTreeCount} trees`
           : `Donation for ${donationTreeCount} trees`,
         order_id: orderId,
+        notes: {
+          "Donation Id": responseData.id,
+          ...(isInternalTestUser(formData.email) && {
+            "Internal Test": "true",
+            "Test User Email": formData.email,
+            "Razorpay Account": "test",
+            "Test Timestamp": new Date().toISOString()
+          })
+        },
         handler: async (response: any) => {
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
             return;
           }
           try {
-            const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'verify',
-                razorpay_payment_id: response.razorpay_payment_id,
-                order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              })
-            });
-            if (!verificationResponse.ok) throw new Error("Verification failed");
+            await verifyRazorpayPayment(response);
             alert("Payment successful!");
           } catch (err) {
             console.error("Verification error:", err);
@@ -889,7 +936,8 @@ function Donation() {
           amount,
           "Indian Citizen",
           formData.panNumber,
-          true
+          true,
+          formData.email
         );
         paymentId = response.id;
         setRazorpayPaymentId(response.id);
@@ -1099,6 +1147,14 @@ function Donation() {
               <strong>Donation ID:</strong> {donationId}
             </p>
           )}
+          {isInternalTestUser(formData.email) && (
+            <div className="mb-4 p-3 bg-orange-100 border border-orange-300 rounded">
+              <p className="text-sm text-orange-800">
+                <strong>🔧 Internal Test Transaction</strong><br/>
+                This was processed with dummy razorpay account for testing purposes.
+              </p>
+            </div>
+          )}
           <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (sometimes the email lands up in the spam/junk folder, please ensure to check it.)
           </p>
           <p className="mb-5">In case of any issue, please call +91 98458 05881 or write to us at contact@14trees.org
@@ -1200,7 +1256,8 @@ function Donation() {
 
   return (
     <div className="overflow-hidden bg-white">
-      <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
+      <InternalTestBanner userEmail={formData.email} />
+      <div className={`relative min-h-[45vh] w-full md:min-h-[60vh] ${isInternalTestUser(formData.email) ? 'pt-12' : ''}`}>
         <MotionDiv
           className="container z-0 mx-auto my-5 overflow-hidden text-gray-800"
           initial="hidden"

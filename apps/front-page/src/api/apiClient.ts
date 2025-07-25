@@ -26,10 +26,11 @@ class ApiClient {
    * @param donor_type - The tax status of the donor
    * @param pan_number - The PAN number of the donor
    * @param consent - The consent of the donor
+   * @param user_email - The email of the user (for Razorpay account selection)
    * @returns Processed payment response
    */
-  async createPayment(amount: number, donor_type: string | null, pan_number: string | null, consent: boolean): Promise<any> {
-    const response = await this.api.post('/payments', { amount, donor_type, pan_number, consent });
+  async createPayment(amount: number, donor_type: string | null, pan_number: string | null, consent: boolean, user_email?: string): Promise<any> {
+    const response = await this.api.post('/payments', { amount, donor_type, pan_number, consent, user_email });
     return response.data;
   }
 

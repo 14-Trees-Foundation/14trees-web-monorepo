@@ -5,7 +5,15 @@ import MotionDiv from "components/animation/MotionDiv";
 import { ScrollReveal } from "components/Partials/HomePage";
 import { useState, useEffect, Suspense } from "react";
 import { apiClient } from "~/api/apiClient";
-import { getUniqueRequestId } from "~/utils";
+import { 
+  getUniqueRequestId, 
+  isInternalTestUser, 
+  getRazorpayConfig,
+  getInternalTestMetadata,
+  addInternalTestTags,
+  addInternalTestPrefix,
+  addInternalTestComments
+} from "~/utils";
 import { SummaryPaymentPage } from "./giftingSummary";
 import Recipients from "components/Recipients";
 import CsvUpload from "components/CsvUpload";
@@ -54,6 +62,17 @@ const ValidationAlert = ({ show, onClose, title, message }: ValidationAlertProps
         {message}
       </div>
     </Modal>
+  );
+};
+
+// Internal Test Banner Component
+const InternalTestBanner = ({ userEmail }: { userEmail: string }) => {
+  if (!isInternalTestUser(userEmail)) return null;
+  
+  return (
+    <div className="bg-orange-500 text-white p-3 text-center font-bold text-sm md:text-base fixed top-16 left-0 right-0 z-50 shadow-lg">
+      🔧 Internal Testing Mode - Using Test Razorpay Account
+    </div>
   );
 };
 
@@ -387,7 +406,7 @@ function GiftTrees() {
       setRazorpayPaymentId(paymentId);
     } else if (!paymentId && !isAboveLimit) {
       try {
-        const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false);
+        const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false, formData.email);
         paymentId = response.id;
         orderId = response.order_id;
         setRazorpayPaymentId(paymentId);
@@ -461,7 +480,7 @@ function GiftTrees() {
         request_id: uniqueRequestId,
         user_id: userId,
         sponsor_id: userId,
-        sponsor_name: formData.fullName,
+        sponsor_name: addInternalTestPrefix(formData.fullName, formData.email),
         sponsor_email: formData.email,
         sponsor_phone: formData.phone,
         category: "Public",
@@ -469,11 +488,11 @@ function GiftTrees() {
         no_of_cards: parseInt(formData.numberOfTrees),
         payment_id: paymentId,
         contribution_options: [],
-        comments: formData.comments,
+        comments: addInternalTestComments(formData.comments, formData.email),
         primary_message: primaryMessage,
         secondary_message: secondaryMessage,
         request_type: 'Gift Cards',
-        tags: ["WebSite"],
+        tags: addInternalTestTags(["WebSite"], formData.email),
         event_name: eventName,
         event_type: eventType,
         planted_by: plantedBy,
@@ -481,6 +500,8 @@ function GiftTrees() {
         rfr: rfr,
         c_key: c_key,
         remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
+        // Add internal test metadata if applicable
+        ...getInternalTestMetadata(formData.email, totalAmount),
       };
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests`, {
@@ -529,8 +550,10 @@ function GiftTrees() {
 
       // handle razorpay payment
       if (orderId) {
+        const razorpayConfig = getRazorpayConfig(formData.email);
+        
         const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          key: razorpayConfig.key_id,
           amount: amount * 100,
           currency: 'INR',
           name: "14 Trees Foundation",
@@ -554,7 +577,8 @@ function GiftTrees() {
                   action: 'verify',
                   razorpay_payment_id: response.razorpay_payment_id,
                   order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature
+                  razorpay_signature: response.razorpay_signature,
+                  user_email: formData.email
                 })
               });
               if (!verificationResponse.ok) throw new Error("Verification failed");
@@ -734,8 +758,10 @@ function GiftTrees() {
         orderId = order_id;
       }
 
+      const razorpayConfig = getRazorpayConfig(formData.email);
+      
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: razorpayConfig.key_id,
         amount: amount * 100,
         currency: 'INR',
         name: "14 Trees Foundation",
@@ -755,7 +781,8 @@ function GiftTrees() {
                 action: 'verify',
                 payment_id: response.razorpay_payment_id,
                 order_id: response.razorpay_order_id,
-                signature: response.razorpay_signature
+                signature: response.razorpay_signature,
+                user_email: formData.email
               })
             });
             if (!verificationResponse.ok) throw new Error("Verification failed");
@@ -796,7 +823,7 @@ function GiftTrees() {
       if (amount <= 0) throw new Error("Invalid amount");
 
       if (!paymentId) {
-        const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false);
+        const response = await apiClient.createPayment(amount, "Indian Citizen", formData.panNumber, false, formData.email);
         paymentId = response.id;
       }
 
@@ -1055,6 +1082,7 @@ function GiftTrees() {
 
   return (
     <div className="overflow-hidden bg-white">
+      <InternalTestBanner userEmail={formData.email} />
       <div className="relative w-full">
         <MotionDiv
           className="container z-0 mx-auto my-5 overflow-hidden text-gray-800"
@@ -1077,7 +1105,7 @@ function GiftTrees() {
       </div>
 
       {/* Form Section */}
-      <div className="text-gray-700 relative min-h-[45vh] w-full md:min-h-[60vh] container mx-auto">
+      <div className={`text-gray-700 relative min-h-[45vh] w-full md:min-h-[60vh] container mx-auto ${isInternalTestUser(formData.email) ? 'pt-12' : ''}`}>
         <div className="md:mx-28 container z-0 overflow-hidden pb-20">
           <div className="w-full md:w-2/3">
             <ScrollReveal>
