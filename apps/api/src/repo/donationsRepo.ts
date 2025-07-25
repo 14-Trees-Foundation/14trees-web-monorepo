@@ -25,6 +25,8 @@ export class DonationRepository {
                     } else if (filter.columnField === "id") {
                         // Handle id field - convert to text for string operations
                         columnField = "d.id::text";
+                        // Convert id value to string for consistent comparison
+                        filter.value = String(filter.value);
                     } else if (filter.columnField === "email_status") {
                         // Handle email status filter with custom logic
                         let emailConditions: string[] = [];
