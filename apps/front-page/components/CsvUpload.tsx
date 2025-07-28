@@ -249,16 +249,9 @@ Jane Smith,jane@example.com,,5`;
             Click here to download sample CSV file
           </button>
         </p>
-        <p className="text-sm text-gray-500">
-          You can upload Recipient details via CSV.{" "}
-          <button onClick={downloadSampleCsv} className="text-blue-600 hover:underline">
-            Click here to download sample CSV file
-          </button>
-        </p>
       </div>
 
       <input
-        ref={fileInputRef}
         ref={fileInputRef}
         type="file"
         accept=".csv"

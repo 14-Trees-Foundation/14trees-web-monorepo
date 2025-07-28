@@ -1,6 +1,6 @@
 // components/donate/UserDetailsForm.tsx
 import React, { useState } from 'react';
-import { UserFormField } from 'components/donate/UserFormField';
+import { UserFormField } from './UserFormField';
 
 export interface UserDetailsData {
   recipient_name: string;

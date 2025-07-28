@@ -99,6 +99,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
     const {
         user_id: userId,
         sponsor_id: sponsorId,
+        sponsor_email: sponsorEmail,
         group_id: groupId,
         no_of_cards: noOfCards,
         primary_message: primaryMessage,
@@ -159,7 +160,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         }
 
         if (payment?.order_id) {
-            const razorpayService = new RazorpayService();
+            const razorpayService = new RazorpayService(sponsorEmail);
             const payments = await razorpayService.getPayments(payment.order_id);
             payments?.forEach(item => {
                 amountReceived += Number(item.amount) / 100;
@@ -243,7 +244,7 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
         if (giftCard.payment_id) {
             const payment = await PaymentRepository.getPayment(giftCard.payment_id);
             if (payment && payment.order_id) {
-                const razorpayService = new RazorpayService();
+                const razorpayService = new RazorpayService(sponsorEmail);
                 await razorpayService.updateOrder(payment.order_id, { "Gift Request Id": giftCard.id.toString() })
             }
         }
