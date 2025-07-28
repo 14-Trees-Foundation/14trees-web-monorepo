@@ -436,7 +436,6 @@ function Donation() {
     </div>
   );
 }
-
 export default function DonatePage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
