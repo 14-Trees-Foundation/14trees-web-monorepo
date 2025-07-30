@@ -1378,10 +1378,12 @@ export class DonationService {
                 })) : null,
             };
 
-            // Determine recipient emails - use testMails if provided, otherwise default to hardcoded email
+            // Determine recipient emails - use testMails if provided, otherwise get from environment
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['dashboard@14trees.org'];
+                (process.env.DONATION_BACKOFFICE_EMAIL ? 
+                    process.env.DONATION_BACKOFFICE_EMAIL.split(',').map(email => email.trim()) : 
+                    ['dashboard@14trees.org']);
 
             // Set the email template to be used
             const templateName = 'backoffice_donation.html';
@@ -1450,7 +1452,9 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['accounts@14trees.org', 'accounts2@14trees.org'];
+                (process.env.DONATION_ACCOUNTS_EMAIL ? 
+                    process.env.DONATION_ACCOUNTS_EMAIL.split(',').map(email => email.trim()) : 
+                    ['accounts@14trees.org', 'accounts2@14trees.org']);
 
             // Set the email template to be used
             const templateName = 'donation-accounts.html';
@@ -1511,7 +1515,9 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['volunteer@14trees.org'];
+                (process.env.DONATION_VOLUNTEER_EMAIL ? 
+                    process.env.DONATION_VOLUNTEER_EMAIL.split(',').map(email => email.trim()) : 
+                    ['volunteer@14trees.org']);
 
             // Set the email template to be used
             const templateName = 'donation-volunteer.html';
@@ -1522,7 +1528,7 @@ export class DonationService {
                 mailIds,
                 undefined, // no CC
                 [], // no attachments
-                'New Donation Received - Notification'
+                'New Volunteer Interest'
             );
 
             if (statusMessage) {
@@ -1571,7 +1577,9 @@ export class DonationService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
                 testMails :
-                ['csr@14trees.org'];
+                (process.env.DONATION_CSR_EMAIL ? 
+                    process.env.DONATION_CSR_EMAIL.split(',').map(email => email.trim()) : 
+                    ['csr@14trees.org']);
 
             // Set the email template to be used
             const templateName = 'donation-csr.html';
@@ -1582,7 +1590,7 @@ export class DonationService {
                 mailIds,
                 undefined, // no CC
                 [], // no attachments
-                'New Donation Received - Notification'
+                'New Corporate CSR Interest'
             );
 
             if (statusMessage) {

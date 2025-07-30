@@ -325,19 +325,193 @@ export const getTreesCountForUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const mappedTrees: WhereOptions<Tree> = { mapped_to_user: userId }
-    const mappedTreesCount = await TreeRepository.treesCount(mappedTrees);
+    // Import required repositories at the top of function to avoid circular imports
+    const { GiftCardsRepository } = await import("../repo/giftCardsRepo");
+    const { DonationRepository } = await import("../repo/donationsRepo");
+    const { DonationUserRepository } = await import("../repo/donationUsersRepo");
+    const { UserGroupRepository } = await import("../repo/userGroupRepo");
+    const { UserRelationRepository } = await import("../repo/userRelationsRepo");
+    const { VisitUsersRepository } = await import("../repo/visitUsersRepo");
+    const { AlbumRepository } = await import("../repo/albumRepo");
+    const EventRepository = (await import("../repo/eventsRepo")).default;
 
-    const assignedTrees: WhereOptions<Tree> = { assigned_to: userId }
-    const assignedTreesCount = await TreeRepository.treesCount(assignedTrees);
+    // Trees counts (TreeRepository)
+    const mappedTreesCount = await TreeRepository.treesCount({ mapped_to_user: userId });
+    const sponsoredTreesCount = await TreeRepository.treesCount({ sponsored_by_user: userId });
+    const assignedTreesCount = await TreeRepository.treesCount({ assigned_to: userId });
+    const giftedByTreesCount = await TreeRepository.treesCount({ gifted_by: userId });
+    const giftedToTreesCount = await TreeRepository.treesCount({ gifted_to: userId });
 
-    const giftedTrees: WhereOptions<Tree> = { gifted_to: userId }
-    const giftedTreesCount = await TreeRepository.treesCount(giftedTrees);
+    // Gift Card Requests counts
+    const giftRequestsAsUserCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_card_requests WHERE user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const giftRequestsAsSponsorCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_card_requests WHERE sponsor_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const giftRequestsAsCreatorCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_card_requests WHERE created_by = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const giftRequestsAsProcessorCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_card_requests WHERE processed_by = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Gift Cards counts
+    const giftCardsGiftedToCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_cards WHERE gifted_to = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const giftCardsAssignedToCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_cards WHERE assigned_to = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Gift Request Users counts
+    const giftRequestUsersAsRecipientCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_request_users WHERE recipient = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const giftRequestUsersAsAssigneeCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_request_users WHERE assignee = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Donations counts
+    const donationsAsUserCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donations WHERE user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const donationsAsProcessorCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donations WHERE processed_by = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const donationsAsCreatorCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donations WHERE created_by = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Donation Users counts
+    const donationUsersAsAssigneeCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donation_users WHERE assignee = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const donationUsersAsRecipientCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donation_users WHERE recipient = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // User Groups count
+    const userGroupsCount = await UserGroupRepository.countUserGroups(userId);
+
+    // User Relations counts
+    const userRelationsAsSecondaryCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".user_relations WHERE secondary_user = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const userRelationsAsPrimaryCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".user_relations WHERE primary_user = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Visit Users count
+    const visitUsersCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".visit_users WHERE user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Albums count
+    const albumsCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".albums WHERE user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Events count
+    const eventsCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".events WHERE assigned_by = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Gift Redeem Transactions counts
+    const giftRedeemTransactionsAsRecipientCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_redeem_transactions WHERE recipient = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+    const giftRedeemTransactionsAsCreatorCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_redeem_transactions WHERE created_by = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
+    // Helper function to extract count from query result
+    const getCount = (result: any[]) => parseInt(result[0]?.count || 0);
 
     res.status(status.success).send({
-      mapped_trees: mappedTreesCount,
-      assigned_trees: assignedTreesCount,
-      gifted_trees: giftedTreesCount
+      // Tree relationships
+      trees: {
+        mapped_trees: mappedTreesCount,
+        sponsored_trees: sponsoredTreesCount,
+        assigned_trees: assignedTreesCount,
+        gifted_trees: giftedByTreesCount,
+        received_gift_trees: giftedToTreesCount
+      },
+      // Gift card requests
+      gift_card_requests: {
+        as_user: getCount(giftRequestsAsUserCount),
+        as_sponsor: getCount(giftRequestsAsSponsorCount),
+        as_creator: getCount(giftRequestsAsCreatorCount),
+        as_processor: getCount(giftRequestsAsProcessorCount)
+      },
+      // Gift cards
+      gift_cards: {
+        gifted_to: getCount(giftCardsGiftedToCount),
+        assigned_to: getCount(giftCardsAssignedToCount)
+      },
+      // Gift request users
+      gift_request_users: {
+        as_recipient: getCount(giftRequestUsersAsRecipientCount),
+        as_assignee: getCount(giftRequestUsersAsAssigneeCount)
+      },
+      // Gift redeem transactions
+      gift_redeem_transactions: {
+        as_recipient: getCount(giftRedeemTransactionsAsRecipientCount),
+        as_creator: getCount(giftRedeemTransactionsAsCreatorCount)
+      },
+      // Donations
+      donations: {
+        as_donor: getCount(donationsAsUserCount),
+        as_processor: getCount(donationsAsProcessorCount),
+        as_creator: getCount(donationsAsCreatorCount)
+      },
+      // Donation users
+      donation_users: {
+        as_assignee: getCount(donationUsersAsAssigneeCount),
+        as_recipient: getCount(donationUsersAsRecipientCount)
+      },
+      // Other relationships
+      user_groups: userGroupsCount,
+      user_relations: {
+        as_secondary: getCount(userRelationsAsSecondaryCount),
+        as_primary: getCount(userRelationsAsPrimaryCount)
+      },
+      visit_users: getCount(visitUsersCount),
+      albums: getCount(albumsCount),
+      events_assigned_by: getCount(eventsCount),
+      
+      // Summary totals
+      total_relationships: 
+        mappedTreesCount + sponsoredTreesCount + assignedTreesCount + giftedByTreesCount + giftedToTreesCount +
+        getCount(giftRequestsAsUserCount) + getCount(giftRequestsAsSponsorCount) + getCount(giftRequestsAsCreatorCount) + getCount(giftRequestsAsProcessorCount) +
+        getCount(giftCardsGiftedToCount) + getCount(giftCardsAssignedToCount) +
+        getCount(giftRequestUsersAsRecipientCount) + getCount(giftRequestUsersAsAssigneeCount) +
+        getCount(donationsAsUserCount) + getCount(donationsAsProcessorCount) + getCount(donationsAsCreatorCount) +
+        getCount(donationUsersAsAssigneeCount) + getCount(donationUsersAsRecipientCount) +
+        userGroupsCount +
+        getCount(userRelationsAsSecondaryCount) + getCount(userRelationsAsPrimaryCount) +
+        getCount(visitUsersCount) + getCount(albumsCount) + getCount(eventsCount) +
+        getCount(giftRedeemTransactionsAsRecipientCount) + getCount(giftRedeemTransactionsAsCreatorCount)
     });
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getTreesCountForUser", error);

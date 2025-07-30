@@ -544,7 +544,9 @@ class GiftCardsService {
     
             const mailIds = (testMails && testMails.length !== 0)
                 ? testMails
-                : ['dashboard@14trees.org'];
+                : (process.env.GIFT_CARD_BACKOFFICE_EMAIL ? 
+                    process.env.GIFT_CARD_BACKOFFICE_EMAIL.split(',').map(email => email.trim()) : 
+                    ['dashboard@14trees.org']);
     
             const templateName = isCorporate ? 'backoffice_corpGifting.html' : 'backoffice_gifting.html';
     
@@ -634,7 +636,9 @@ class GiftCardsService {
     
             const mailIds = (testMails && testMails.length !== 0) ?
             testMails :
-            ['accounts@14trees.org', 'accounts2@14trees.org'];
+            (process.env.GIFT_CARD_ACCOUNTS_EMAIL ? 
+                process.env.GIFT_CARD_ACCOUNTS_EMAIL.split(',').map(email => email.trim()) : 
+                ['accounts@14trees.org', 'accounts2@14trees.org']);
             const templateName = isCorporate ? 'gifting-corpAccounts.html' : 'gifting-accounts.html';
     
             const statusMessage = await sendDashboardMail(
@@ -712,7 +716,9 @@ class GiftCardsService {
 
             const mailIds = (testMails && testMails.length !== 0) ?
             testMails :
-            ['volunteer@14trees.org'];
+            (process.env.GIFT_CARD_VOLUNTEER_EMAIL ? 
+                process.env.GIFT_CARD_VOLUNTEER_EMAIL.split(',').map(email => email.trim()) : 
+                ['volunteer@14trees.org']);
             const templateName = isCorporate ? 'gifting-corpVolunteer.html' : 'gifting-volunteer.html';
 
             const statusMessage = await sendDashboardMail(
@@ -790,7 +796,9 @@ class GiftCardsService {
     
             const mailIds = (testMails && testMails.length !== 0) ?
             testMails :
-            ['csr@14trees.org'];
+            (process.env.GIFT_CARD_CSR_EMAIL ? 
+                process.env.GIFT_CARD_CSR_EMAIL.split(',').map(email => email.trim()) : 
+                ['csr@14trees.org']);
             const templateName = isCorporate ? 'gifting-corpCSR.html' : 'gifting-csr.html';
     
             const statusMessage = await sendDashboardMail(

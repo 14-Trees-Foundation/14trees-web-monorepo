@@ -84,7 +84,14 @@ export class DonationRepository {
                 )
 
                 SELECT 
-                    d.*,
+                    d.id, d.user_id, d.payment_id, d.category, d.grove, d.grove_type_other, 
+                    d.trees_count, d.pledged_area_acres, d.contribution_options, d.names_for_plantation, 
+                    d.comments, d.created_by, d.rfr_id, d.tags, d.donation_type, d.donation_method, 
+                    d.amount_donated, d.visit_date, d.status, d.prs_status, d.mail_status, d.mail_error, 
+                    d.processed_by, d.group_id, d.donation_date, d.donation_receipt_number, 
+                    d.sponsorship_type, d.amount_received, d.notes,
+                    d.created_at AT TIME ZONE 'UTC' AS created_at,
+                    d.updated_at AT TIME ZONE 'UTC' AS updated_at,
                     u.name AS user_name,
                     u.email AS user_email,
                     u.phone AS user_phone,
