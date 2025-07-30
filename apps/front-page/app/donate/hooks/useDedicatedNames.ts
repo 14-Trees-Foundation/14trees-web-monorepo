@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { DedicatedName } from '../types';
 import { ValidationService } from '../services/validationService';
 import { VALIDATION_PATTERNS } from '../utils/validation';
+import { validatePhone } from '../../../components/Common/Utils/validation';
 
 interface UseDedicatedNamesProps {
   initialNames?: DedicatedName[];
@@ -88,8 +89,8 @@ export const useDedicatedNames = ({
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedEmail-${index}`]: error }));
     } else if (field === "recipient_phone" && value) {
-      const error = !VALIDATION_PATTERNS.phone.test(value.toString())
-        ? "Please enter a valid phone number"
+      const error = !validatePhone(value.toString())
+        ? "Please enter a valid 10-digit Indian mobile number (can start with +91, 91, or 0)"
         : "";
       setErrors(prev => ({ ...prev, [`dedicatedPhone-${index}`]: error }));
     }

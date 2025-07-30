@@ -5,6 +5,7 @@ import {
   ValidationResult,
   VALIDATION_PATTERNS
 } from '../utils/validation';
+import { validatePhone } from '../../../components/Common/Utils/validation';
 
 export interface DedicatedNamesValidationResult extends ValidationResult {
   hasDuplicates: boolean;
@@ -35,8 +36,8 @@ export class ValidationService {
         }
         break;
       case "phone":
-        if (!VALIDATION_PATTERNS.phone.test(value)) {
-          error = "Please enter a valid phone number (10-15 digits)";
+        if (!validatePhone(value)) {
+          error = "Please enter a valid 10-digit Indian mobile number (can start with +91, 91, or 0)";
         }
         break;
       case "panNumber":

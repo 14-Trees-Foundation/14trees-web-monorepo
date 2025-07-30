@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { DedicatedName } from '../types';
 import { VALIDATION_PATTERNS } from '../utils/validation';
+import { validatePhone } from '../../../components/Common/Utils/validation';
 
 export interface CSVUploadResult {
   data: DedicatedName[];
@@ -70,12 +71,12 @@ export class CSVService {
       rowErrors.push("Invalid Assignee Email format");
     }
 
-    if (row.recipient_phone && !VALIDATION_PATTERNS.phone.test(String(row.recipient_phone))) {
-      rowErrors.push("Invalid Recipient Phone number (10-15 digits required)");
+    if (row.recipient_phone && !validatePhone(String(row.recipient_phone))) {
+      rowErrors.push("Invalid Recipient Phone number (10-digit Indian mobile number, can start with +91, 91, or 0)");
     }
 
-    if (row.assignee_phone && !VALIDATION_PATTERNS.phone.test(String(row.assignee_phone))) {
-      rowErrors.push("Invalid Assignee Phone number (10-15 digits required)");
+    if (row.assignee_phone && !validatePhone(String(row.assignee_phone))) {
+      rowErrors.push("Invalid Assignee Phone number (10-digit Indian mobile number, can start with +91, 91, or 0)");
     }
 
     return rowErrors;
