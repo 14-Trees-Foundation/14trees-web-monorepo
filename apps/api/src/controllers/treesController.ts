@@ -445,6 +445,12 @@ export const getTreesCountForUser = async (req: Request, res: Response) => {
       { replacements: { userId }, type: QueryTypes.SELECT }
     );
 
+    // View Permissions count
+    const viewPermissionsCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".view_permissions WHERE user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
+
     // Helper function to extract count from query result
     const getCount = (result: any[]) => parseInt(result[0]?.count || 0);
 
@@ -499,6 +505,7 @@ export const getTreesCountForUser = async (req: Request, res: Response) => {
       visit_users: getCount(visitUsersCount),
       albums: getCount(albumsCount),
       events_assigned_by: getCount(eventsCount),
+      view_permissions: getCount(viewPermissionsCount),
       
       // Summary totals
       total_relationships: 
@@ -511,7 +518,8 @@ export const getTreesCountForUser = async (req: Request, res: Response) => {
         userGroupsCount +
         getCount(userRelationsAsSecondaryCount) + getCount(userRelationsAsPrimaryCount) +
         getCount(visitUsersCount) + getCount(albumsCount) + getCount(eventsCount) +
-        getCount(giftRedeemTransactionsAsRecipientCount) + getCount(giftRedeemTransactionsAsCreatorCount)
+        getCount(giftRedeemTransactionsAsRecipientCount) + getCount(giftRedeemTransactionsAsCreatorCount) +
+        getCount(viewPermissionsCount)
     });
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getTreesCountForUser", error);
