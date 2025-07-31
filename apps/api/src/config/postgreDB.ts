@@ -82,8 +82,7 @@ class Database {
         min: 2,       // Minimum number of connections in pool
         acquire: 30000, // Maximum time, in milliseconds, that pool will try to get connection before throwing error
         idle: 10000,    // Maximum time, in milliseconds, that a connection can be idle before being released
-        evict: 1000,    // The time interval, in milliseconds, after which sequelize-pool will remove idle connections
-        handleDisconnects: true
+        evict: 1000     // The time interval, in milliseconds, after which sequelize-pool will remove idle connections
       },
       define: {
         timestamps: false,
@@ -160,7 +159,7 @@ class Database {
     // Log connection pool status periodically in development
     if (process.env.NODE_ENV === 'development') {
       setInterval(async () => {
-        const pool = this.sequelize.connectionManager.pool;
+        const pool = (this.sequelize.connectionManager as any).pool;
         if (pool) {
           // Try to access the correct properties based on sequelize-pool structure
           const used = pool._inUseObjects?.length || 0;
@@ -190,7 +189,7 @@ class Database {
               console.log(`✅ Pool is working - Test query executed in ${queryTime}ms`);
               console.log(`📋 Pool Config - Max: ${maxConnections}, Min: ${this.sequelize.options.pool?.min || 2}`);
             } catch (error) {
-              console.log(`❌ Pool test query failed:`, error.message);
+              console.log(`❌ Pool test query failed:`, error instanceof Error ? error.message : String(error));
             }
           }
         } else {
