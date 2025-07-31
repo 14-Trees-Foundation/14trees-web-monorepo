@@ -755,9 +755,16 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
         const cardsResp = await GiftCardsRepository.getBookedTrees(0, -1, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: giftCardRequestId }]);
 
         const treeIds: number[] = [];
+        const giftCardIds: number[] = [];
         cardsResp.results.forEach(card => {
+            giftCardIds.push(card.id);
             if (card.tree_id) treeIds.push(card.tree_id);
         })
+
+        // Delete from gift_redeem_transaction_cards first to avoid foreign key constraint violation
+        if (giftCardIds.length > 0) {
+            await GRTransactionsRepository.deleteCardsFromTransaction(giftCardIds);
+        }
 
         if (treeIds.length > 0) {
             const updateConfig = {
@@ -784,6 +791,9 @@ export const deleteGiftCardRequest = async (req: Request, res: Response) => {
             await TreeRepository.updateTrees(updateConfig, { id: { [Op.in]: treeIds } });
             await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId, tree_id: { [Op.in]: treeIds } });
         }
+
+        // Delete any remaining gift cards for this request (those without tree_id)
+        await GiftCardsRepository.deleteGiftCards({ gift_card_request_id: giftCardRequestId });
 
         // delete gift request plots
         await GiftCardsRepository.deleteGiftCardRequestPlots({ gift_card_request_id: giftCardRequestId })

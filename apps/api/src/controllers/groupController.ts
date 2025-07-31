@@ -12,6 +12,9 @@ import { VisitRepository } from "../repo/visitsRepo";
 import { OrderRepository } from "../repo/ordersRepo";
 import { SortOrder } from "../models/common";
 import GroupService from "../facade/groupService";
+import { sequelize } from "../config/postgreDB";
+import { QueryTypes } from "sequelize";
+import { getSchema } from "../helpers/utils";
 
 
 /*
@@ -119,6 +122,9 @@ export const mergeGroups = async (req: Request, res: Response) => {
 
     const { primary_group, secondary_group, delete_secondary } = req.body;
     try {
+        // Import required repositories at the top of function to avoid circular imports
+        const { DonationRepository } = await import("../repo/donationsRepo");
+        const { GRTransactionsRepository } = await import("../repo/giftRedeemTransactionsRepo");
 
         // Update trees
         const mappedTrees = { mapped_to_group: primary_group, updated_at: new Date() };
@@ -127,16 +133,26 @@ export const mergeGroups = async (req: Request, res: Response) => {
         const sponsoredTrees = { sponsored_by_group: primary_group, updated_at: new Date() };
         await TreeRepository.updateTrees(sponsoredTrees, { sponsored_by_group: secondary_group });
 
-        // gift requests
+        // gift card requests
         const giftRequests = { group_id: primary_group, updated_at: new Date() };
         await GiftCardsRepository.updateGiftCardRequests(giftRequests, { group_id: secondary_group });
 
-        // user groups
+        // donations
+        const donations = { group_id: primary_group, updated_at: new Date() };
+        await DonationRepository.updateDonations(donations, { group_id: secondary_group });
+
+        // gift redeem transactions
+        const giftRedeemTransactions = { group_id: primary_group, updated_at: new Date() };
+        await GRTransactionsRepository.updateTransactions(giftRedeemTransactions, { group_id: secondary_group });
+
+        // user groups (group members)
         await UserGroupRepository.changeGroup(primary_group, secondary_group);
 
-        // visit
+        // visits
         const visits = { group_id: primary_group, updated_at: new Date() };
         await VisitRepository.updateVisits(visits, { group_id: secondary_group });
+
+
 
         if (delete_secondary) {
             await GroupRepository.deleteGroup(secondary_group);
@@ -168,4 +184,94 @@ export const registerGroup = async (req: Request, res: Response) => {
         res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
     }
 
+}
+
+export const getGroupsCountForGroup = async (req: Request, res: Response) => {
+  const { group_id } = req.params;
+  const groupId = parseInt(group_id);
+
+  if (isNaN(groupId)) {
+    res.status(status.bad).json({
+      status: status.bad,
+      message: "Invalid Group!",
+    })
+    return;
+  }
+
+  try {
+    // Import required repositories at the top of function to avoid circular imports
+    const { DonationRepository } = await import("../repo/donationsRepo");
+
+    // Trees counts (TreeRepository)
+    const mappedTreesCount = await TreeRepository.treesCount({ mapped_to_group: groupId });
+    const sponsoredTreesCount = await TreeRepository.treesCount({ sponsored_by_group: groupId });
+
+    // Gift Card Requests counts
+    const giftRequestsForGroupCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_card_requests WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // Donations counts
+    const donationsForGroupCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donations WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // Gift Redeem Transactions counts
+    const giftRedeemTransactionsForGroupCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_redeem_transactions WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // User Groups count (members of this group)
+    const userGroupsCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".user_groups WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // Visits count
+    const visitsCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".visits WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+
+
+    // Helper function to extract count from query result
+    const getCount = (result: any[]) => parseInt(result[0]?.count || 0);
+
+    res.status(status.success).send({
+      // Tree relationships
+      trees: {
+        mapped_trees: mappedTreesCount,
+        sponsored_trees: sponsoredTreesCount
+      },
+      // Gift card requests
+      gift_card_requests: getCount(giftRequestsForGroupCount),
+      // Donations
+      donations: getCount(donationsForGroupCount),
+      // Gift redeem transactions
+      gift_redeem_transactions: getCount(giftRedeemTransactionsForGroupCount),
+      // Group members
+      group_members: getCount(userGroupsCount),
+      // Visits
+      visits: getCount(visitsCount),
+      
+      // Summary totals
+      total_relationships: 
+        mappedTreesCount + sponsoredTreesCount +
+        getCount(giftRequestsForGroupCount) +
+        getCount(donationsForGroupCount) +
+        getCount(giftRedeemTransactionsForGroupCount) +
+        getCount(userGroupsCount) +
+        getCount(visitsCount)
+    });
+  } catch (error: any) {
+    console.log("[ERROR]", "GroupController::getGroupsCountForGroup", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: 'Something went wrong. Please try again after some time.',
+    });
+  }
 }

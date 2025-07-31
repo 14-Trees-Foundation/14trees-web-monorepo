@@ -157,11 +157,11 @@ export class GoogleSpreadsheet {
     }
 
     public async insertRowData(spreadsheetId: string, sheetName: string, rowData: string[]) {
-        if (this.isDevelopment && !this.sheets) {
-            console.log(`[DEV] Skipping insertRowData for ${spreadsheetId}/${sheetName} - running in development mode`);
-            console.log(`[DEV] Would insert row:`, rowData);
-            return;
-        }
+        // if (this.isDevelopment && !this.sheets) {
+        //     console.log(`[DEV] Skipping insertRowData for ${spreadsheetId}/${sheetName} - running in development mode`);
+        //     console.log(`[DEV] Would insert row:`, rowData);
+        //     return;
+        // }
         
         try {
             await this.sheets!.spreadsheets.values.append({
@@ -175,20 +175,21 @@ export class GoogleSpreadsheet {
             });
             console.log("Row inserted successfully.");
         } catch (error: any) {
+            console.log("GoogleSpreadsheet:insertRowData error: ", spreadsheetId, sheetName, rowData)
             if (error?.response?.data) {
-                console.log("Insert error:", JSON.stringify(error.response.data));
+                console.log("GoogleSpreadsheet:insertRowData error string:", JSON.stringify(error.response.data));
             } else {
-                console.log("Insert error:", error);
+                console.log("GoogleSpreadsheet:insertRowData error:", error);
             }
         }
     }
 
     public async insertRowsData(spreadsheetId: string, sheetName: string, rowData: string[][]) {
-        if (this.isDevelopment && !this.sheets) {
-            console.log(`[DEV] Skipping insertRowsData for ${spreadsheetId}/${sheetName} - running in development mode`);
-            // console.log(`[DEV] Would insert rows:`, rowData);
-            return;
-        }
+        // if (this.isDevelopment && !this.sheets) {
+        //     console.log(`[DEV] Skipping insertRowsData for ${spreadsheetId}/${sheetName} - running in development mode`);
+        //     // console.log(`[DEV] Would insert rows:`, rowData);
+        //     return;
+        // }
         
         try {
             await this.sheets!.spreadsheets.values.append({
@@ -201,10 +202,11 @@ export class GoogleSpreadsheet {
                 },
             });
         } catch (error: any) {
+            console.log("GoogleSpreadsheet:insertRowsData error: ", spreadsheetId, sheetName, rowData)
             if (error?.response?.data) {
-                console.log("Insert error:", JSON.stringify(error.response.data));
+                console.log("GoogleSpreadsheet:insertRowsData error string:", JSON.stringify(error.response.data));
             } else {
-                console.log("Insert error:", error);
+                console.log("GoogleSpreadsheet:insertRowsData error:", error);
             }
         }
     }

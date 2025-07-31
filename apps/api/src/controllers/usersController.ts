@@ -23,6 +23,9 @@ import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
 import { AuthTokenRepository } from "../repo/authTokenRepo";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
+import { sequelize } from "../config/postgreDB";
+import { QueryTypes } from "sequelize";
+import { getSchema } from "../helpers/utils";
 
 /*
     Model - User
@@ -412,6 +415,12 @@ export const combineUsers = async (req: Request, res: Response) => {
 
     const giftRedeemRecipient = { recipient: primary_user, updated_at: new Date() };
     await GRTransactionsRepository.updateTransactions(giftRedeemRecipient, { recipient: secondary_user });
+
+    // view permissions (Self-Serve Dashboard access)
+    await sequelize.query(
+      `UPDATE "${getSchema()}".view_permissions SET user_id = :primaryUser, updated_at = NOW() WHERE user_id = :secondaryUser`,
+      { replacements: { primaryUser: primary_user, secondaryUser: secondary_user }, type: QueryTypes.UPDATE }
+    );
 
     if (delete_secondary) {
       // Delete all auth tokens for the secondary user before deleting the user
