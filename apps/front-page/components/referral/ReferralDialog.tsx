@@ -64,6 +64,14 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
     const [selectedCampaign, setSelectedCampaign] = useState<string>('');
     const [showCampaignSelection, setShowCampaignSelection] = useState(false);
     const [referralData, setReferralData] = useState<{ rfr: string, c_key: string } | null>(null);
+    const [showNameField, setShowNameField] = useState(false);
+    const [name, setName] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('userName') || '';
+        }
+        return '';
+    });
+    const [nameError, setNameError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCampaigns = async () => {
@@ -116,8 +124,25 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
         return true;
     };
 
+    const validateName = (name: string): boolean => {
+        if (!name.trim()) {
+            setNameError('Name is required');
+            return false;
+        }
+        if (name.trim().length < 2) {
+            setNameError('Name must be at least 2 characters long');
+            return false;
+        }
+        setNameError(null);
+        return true;
+    };
+
     const handleGenerateLink = async () => {
         if (!validateEmail(email)) {
+            return;
+        }
+
+        if (showNameField && !validateName(name)) {
             return;
         }
 
@@ -130,11 +155,33 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                 campaignKey = selectedCampaignObj?.c_key;
             }
 
+            // If we need to register the user first
+            if (showNameField) {
+                try {
+                    await apiClient.createUser(name.trim(), email);
+                    console.log('User registered successfully');
+                } catch (userCreationError: any) {
+                    console.error('Failed to register user:', userCreationError);
+                    // If user already exists, that's fine, continue with referral generation
+                    if (!userCreationError.message?.includes('already exists')) {
+                        throw userCreationError;
+                    }
+                }
+            }
+
             const resp = await apiClient.getReferral(email, campaignKey);
             setReferralData(resp);
-        } catch (err) {
+            setShowNameField(false); // Hide name field on success
+        } catch (err: any) {
             console.error('Failed to generate referral link:', err);
-            setError('Failed to generate referral link. Please try again.');
+            
+            // Check if the error is about user not being registered
+            if (err.message?.includes('User not registered in the system!') || err.message?.includes('User not registered in the system!')) {
+                setShowNameField(true);
+                setError('Since you are not registered in our system, please provide your name below to continue.');
+            } else {
+                setError('Failed to generate referral link. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -147,6 +194,23 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
             localStorage.setItem('userEmail', newEmail);
         }
         validateEmail(newEmail);
+        // Reset referral link and data when email changes
+        setReferralLink('');
+        setReferralData(null);
+        // Reset name field when email changes
+        if (showNameField) {
+            setShowNameField(false);
+            setError(null);
+        }
+    };
+
+    const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newName = event.target.value;
+        setName(newName);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('userName', newName);
+        }
+        validateName(newName);
     };
 
     const handleCampaignChange = (event: any) => {
@@ -167,11 +231,19 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
     const shareTitle = '14 Trees Initiative';
     const shareMessage = 'Join me in supporting 14 Trees Initiative!';
 
+    const handleClose = () => {
+        // Reset name field state when dialog closes
+        setShowNameField(false);
+        setNameError(null);
+        setError(null);
+        onClose();
+    };
+
     return (
         <>
             <Dialog 
                 open={open} 
-                onClose={onClose} 
+                onClose={handleClose} 
                 maxWidth="sm" 
                 fullWidth
                 PaperProps={{
@@ -215,6 +287,34 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                                 },
                             }}
                         />
+                        {showNameField && (
+                            <TextField
+                                fullWidth
+                                label="Your Name"
+                                type="text"
+                                value={name}
+                                onChange={handleNameChange}
+                                error={!!nameError}
+                                helperText={nameError}
+                                sx={{ mb: 2 }}
+                                InputProps={{
+                                    sx: {
+                                        backgroundColor: '#f5f5f5',
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': {
+                                                borderColor: nameError ? '#d32f2f' : '#e0e0e0',
+                                            },
+                                            '&:hover fieldset': {
+                                                borderColor: nameError ? '#d32f2f' : '#bdbdbd',
+                                            },
+                                            '&.Mui-focused fieldset': {
+                                                borderColor: nameError ? '#d32f2f' : '#4caf50',
+                                            },
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
                         {!c_key && (
                             <FormControlLabel
                                 control={
@@ -338,7 +438,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                                 <Button
                                     variant="contained"
                                     onClick={handleGenerateLink}
-                                    disabled={isLoading || !email || !!emailError || (showCampaignSelection && !selectedCampaign)}
+                                    disabled={isLoading || !email || !!emailError || (showCampaignSelection && !selectedCampaign) || (showNameField && (!name || !!nameError))}
                                     sx={{ 
                                         backgroundColor: '#4caf50',
                                         minHeight: { xs: '48px', sm: '100%' },
@@ -403,7 +503,7 @@ export const ReferralDialog = ({ linkType, open, onClose, c_key }: ReferralDialo
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose}>Close</Button>
+                    <Button onClick={handleClose}>Close</Button>
                 </DialogActions>
             </Dialog>
 

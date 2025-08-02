@@ -16,8 +16,8 @@ export const ImpactInformationSection: React.FC<ImpactInformationSectionProps> =
   return (
     <div className="text-center space-y-4">
       {referralDetails && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-center gap-2 mb-2">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-left">
+          <div className="flex items-center gap-2 mb-2">
             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7" />
             </svg>
