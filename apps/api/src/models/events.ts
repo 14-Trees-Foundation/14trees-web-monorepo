@@ -7,7 +7,7 @@ type EventLocation = 'onsite' | 'offsite'
 interface EventAttributes {
 	id: number;
   assigned_by: number;
-  site_id: number;
+  site_id: number | null;
   name: string;
 	type: number;
   description?: string;
@@ -17,12 +17,13 @@ interface EventAttributes {
   images: string[] | null;
   message: string | null;
   event_location: EventLocation;
+  link: string;
   created_at: Date;
   updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'link' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -41,8 +42,11 @@ implements EventAttributes {
   @Column(DataType.NUMBER)
   assigned_by!: number;
 
-  @Column(DataType.NUMBER)
-  site_id!: number;
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: true
+  })
+  site_id!: number | null;
 
   @Column(DataType.NUMBER)
   type!: number;
@@ -73,6 +77,9 @@ implements EventAttributes {
 
   @Column(DataType.DATE)
   event_date!: Date;
+
+  @Column(DataType.STRING)
+  link!: string;
 
   @Column(DataType.DATE)
   created_at!: Date;
