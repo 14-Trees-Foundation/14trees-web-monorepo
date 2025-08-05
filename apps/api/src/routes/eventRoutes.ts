@@ -22,4 +22,23 @@ routes.get("/corp/", events.getCorpEvent);
 routes.put('/corp/:id', events.updateCorpEvent);
 routes.delete('/corp/:id', events.deleteCorpEvent);
 
+// ===== NEW EVENT ASSOCIATION ROUTES =====
+
+// Tree Association Routes
+routes.get('/:id/trees', events.getEventTrees);
+routes.post('/:id/trees', events.associateTreesToEvent);
+routes.delete('/:id/trees', events.dissociateTreesFromEvent);
+
+// Image Association Routes
+routes.get('/:id/images', events.getEventImages);
+routes.post('/:id/images', uploadFiles.array('images', 10), events.uploadEventImages);
+routes.delete('/:id/images', events.removeEventImages);
+routes.put('/:id/images/reorder', events.reorderEventImages);
+
+// Enhanced Message Routes
+routes.post('/:id/messages', events.createEventMessage);
+routes.put('/messages/:messageId', events.updateEventMessage);
+routes.delete('/messages/:messageId', events.deleteEventMessage);
+routes.put('/:id/messages/reorder', events.reorderEventMessages);
+
 export default routes;
