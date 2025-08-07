@@ -68,13 +68,13 @@ export class EventRepository {
     };
   }
 
-  public static async updateEvent(eventData: EventAttributes): Promise<Event> {
+  public static async updateEvent(eventData: Partial<EventAttributes> & { id: number }): Promise<Event> {
     const event = await Event.findByPk(eventData.id);
     if (!event) {
       throw new Error('Event not found for given id');
     }
 
-    const updatedEvent = event.update(eventData);
+    const updatedEvent = await event.update(eventData);
     return updatedEvent;
   }
 

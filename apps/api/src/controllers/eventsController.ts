@@ -7,7 +7,7 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 
-import { EventCreationAttributes } from "../models/events";
+import { EventCreationAttributes, EventAttributes } from "../models/events";
 
 // export const getOverallOrgDashboard = async (req: Request, res: Response) => {
 //   try {
@@ -414,7 +414,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       }
     }
 
-    const eventData = {
+    const eventData: Partial<EventAttributes> & { id: number } = {
       id: eventId,
       name: fields.name,
       type: fields.type ? parseInt(fields.type) : undefined,
@@ -431,8 +431,8 @@ export const updateEvent = async (req: Request, res: Response) => {
 
     // Remove undefined values
     Object.keys(eventData).forEach(key => {
-      if (eventData[key] === undefined) {
-        delete eventData[key];
+      if (eventData[key as keyof typeof eventData] === undefined) {
+        delete eventData[key as keyof typeof eventData];
       }
     });
 
