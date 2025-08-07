@@ -7,6 +7,7 @@ import { EventMessage, EventMessageCreationAttributes } from '../models/event_me
 import { sequelize } from '../config/postgreDB';
 import { getSchema } from '../helpers/utils';
 import { Tree } from '../models/tree';
+import { User } from '../models/user';
 
 
 export class EventRepository {
@@ -89,10 +90,27 @@ export class EventRepository {
   public static async getEventMessages(eventId: number): Promise<EventMessage[]> {
     const messages = await EventMessage.findAll({
       where: { event_id: eventId },
+      include: [
+        {
+          model: User,
+          attributes: ['name'],
+          required: false // LEFT JOIN to handle messages without users
+        }
+      ],
       order: [['sequence', 'ASC'], ['created_at', 'ASC']]
     });
 
-    return messages;
+    // Map the results to include user_name from the joined User model
+    return messages.map(message => {
+      const messageData = message.toJSON() as any;
+      if (messageData.User && messageData.User.name) {
+        messageData.user_name = messageData.User.name;
+      } else {
+        messageData.user_name = 'System';
+      }
+      delete messageData.User; // Remove the nested User object
+      return messageData;
+    });
   }
 
   public static async createEventMessage(eventId: number, message: string, userId: number): Promise<EventMessage> {
@@ -106,11 +124,15 @@ export class EventRepository {
 
       const nextSequence = maxSequenceResult ? maxSequenceResult.sequence + 1 : 0;
 
+      // Get the user name
+      const user = await User.findByPk(userId, { attributes: ['name'] });
+      const userName = user ? user.name : 'System';
+
       const messageData: EventMessageCreationAttributes = {
         event_id: eventId,
         message: message,
         user_id: userId,
-        user_name: null, // Will be populated by join or separate query if needed
+        user_name: userName,
         sequence: nextSequence
       };
 

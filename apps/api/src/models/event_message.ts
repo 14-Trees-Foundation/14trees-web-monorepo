@@ -1,4 +1,4 @@
-import { Table, Column, Model, ForeignKey, DataType } from 'sequelize-typescript';
+import { Table, Column, Model, ForeignKey, DataType, BelongsTo } from 'sequelize-typescript';
 import { User } from './user';
 import { Optional } from 'sequelize';
 
@@ -27,11 +27,15 @@ export class EventMessage extends Model<EventMessageAttributes, EventMessageCrea
     })
     id!: number;
 
+    @ForeignKey(() => User)
     @Column({
         type: DataType.INTEGER,
         allowNull: true,
     })
     user_id!: number | null;
+
+    @BelongsTo(() => User)
+    User!: User;
 
     @Column({
         type: DataType.STRING,

@@ -296,28 +296,50 @@ import { EventCreationAttributes } from "../models/events";
 export const addEvent = async (req: Request, res: Response) => {
   const fields = req.body;
   try {
-    // Convert tags from string to array if it's a string
+    // Handle tags - convert from string to array if needed
     let tags = fields.tags;
     if (tags && typeof tags === 'string') {
-      tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      // Handle JSON string from multipart form data
+      try {
+        tags = JSON.parse(tags);
+      } catch {
+        // If not JSON, split by comma
+        tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      }
+    }
+
+    // Handle images from multipart form data
+    let images: string[] | null = null;
+    const files = req.files as Express.Multer.File[];
+    if (files && files.length > 0) {
+      // Extract image URLs/paths from uploaded files
+      images = files.map(file => file.path || file.filename);
+      console.log(`Processing ${files.length} uploaded images for event creation`);
     }
 
     const data: EventCreationAttributes = {
       name: fields.name,
-      type: fields.type,
-      assigned_by: fields.assigned_by,
-      site_id: fields.site_id,
+      type: parseInt(fields.type), // Ensure type is number
+      assigned_by: parseInt(fields.assigned_by), // Ensure assigned_by is number
+      site_id: fields.site_id ? parseInt(fields.site_id) : null, // Handle site_id conversion
       description: fields.description,
       tags: tags,
-      event_date: fields.event_date ?? new Date(),
+      event_date: fields.event_date ? new Date(fields.event_date) : new Date(),
       event_location: fields.event_location ?? 'onsite',
       message: fields.message,
       link: fields.link,
+      images: images, // Store image URLs directly in the event
     }
+
+    console.log('Creating event with data:', {
+      ...data,
+      images: images ? `${images.length} images` : 'no images'
+    });
+
     const result = await EventRepository.addEvent(data);
     res.status(status.created).send(result);
   } catch (error: any) {
-    console.error(JSON.stringify(error));
+    console.error("[ERROR] EventsController::addEvent", JSON.stringify(error));
     res.status(status.error).send({ message: error.message });
   }
 }
@@ -351,23 +373,82 @@ export const deleteEvent = async (req: Request, res: Response) => {
 
 export const updateEvent = async (req: Request, res: Response) => {
   try {
+    const fields = req.body;
+    const eventId = parseInt(req.params.id);
+
+    // Handle tags - convert from string to array if needed
+    let tags = fields.tags;
+    if (tags && typeof tags === 'string') {
+      // Handle JSON string from multipart form data
+      try {
+        tags = JSON.parse(tags);
+      } catch {
+        // If not JSON, split by comma
+        tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      }
+    }
+
+    // Handle images - this could be a mix of existing URLs and new File uploads
+    let finalImages: string[] | null = null;
+    const files = req.files as Express.Multer.File[];
+    
+    // Parse existing images from form data (sent as JSON string)
+    let existingImages: string[] = [];
+    if (fields.existingImages) {
+      try {
+        existingImages = JSON.parse(fields.existingImages);
+      } catch (error) {
+        console.warn('Failed to parse existing images:', error);
+      }
+    }
+
+    // Combine existing images with new uploads
+    if (existingImages.length > 0 || (files && files.length > 0)) {
+      finalImages = [...existingImages];
+      
+      // Add new uploaded images
+      if (files && files.length > 0) {
+        const newImageUrls = files.map(file => file.path || file.filename);
+        finalImages.push(...newImageUrls);
+        console.log(`Adding ${files.length} new images to existing ${existingImages.length} images`);
+      }
+    }
+
     const eventData = {
-      ...req.body,
-      id: parseInt(req.params.id)
+      id: eventId,
+      name: fields.name,
+      type: fields.type ? parseInt(fields.type) : undefined,
+      assigned_by: fields.assigned_by ? parseInt(fields.assigned_by) : undefined,
+      site_id: fields.site_id ? parseInt(fields.site_id) : null,
+      description: fields.description,
+      tags: tags,
+      event_date: fields.event_date ? new Date(fields.event_date) : undefined,
+      event_location: fields.event_location,
+      message: fields.message,
+      link: fields.link,
+      images: finalImages,
     };
 
-    // Convert tags from string to array if it's a string
-    if (eventData.tags && typeof eventData.tags === 'string') {
-      eventData.tags = eventData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
-    }
+    // Remove undefined values
+    Object.keys(eventData).forEach(key => {
+      if (eventData[key] === undefined) {
+        delete eventData[key];
+      }
+    });
+
+    console.log('Updating event with data:', {
+      ...eventData,
+      images: finalImages ? `${finalImages.length} images` : 'no images'
+    });
 
     await EventRepository.updateEvent(eventData);
     res.status(status.success).json({
       message: "Event updated successfully"
-    })
+    });
 
   } catch (error: any) {
-    res.status(status.bad).send({ error: error.message });
+    console.error("[ERROR] EventsController::updateEvent", JSON.stringify(error));
+    res.status(status.error).send({ message: error.message });
   }
 }
 
