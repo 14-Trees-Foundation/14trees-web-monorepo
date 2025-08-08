@@ -69,7 +69,24 @@ export const updateSite = async (req: Request, res: Response) => {
         req.body.maintenance_type =  req.body.maintenance_type.toUpperCase();
     }
 
-    req.body.tags = req.body.tags?JSON.parse(req.body.tags):[];
+    // Handle tags - convert from string to array if needed
+    if (req.body.tags && typeof req.body.tags === 'string') {
+        try {
+            const parsed = JSON.parse(req.body.tags);
+            // Ensure the parsed result is an array
+            if (Array.isArray(parsed)) {
+                req.body.tags = parsed;
+            } else {
+                // If it's not an array (like {}), convert to empty array
+                req.body.tags = [];
+            }
+        } catch {
+            // If parsing fails, default to empty array
+            req.body.tags = [];
+        }
+    } else if (!req.body.tags) {
+        req.body.tags = [];
+    }
 
     // upload kml file
     const file = req.file

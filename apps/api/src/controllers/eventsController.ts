@@ -298,14 +298,32 @@ export const addEvent = async (req: Request, res: Response) => {
   try {
     // Handle tags - convert from string to array if needed
     let tags = fields.tags;
-    if (tags && typeof tags === 'string') {
-      // Handle JSON string from multipart form data
-      try {
-        tags = JSON.parse(tags);
-      } catch {
-        // If not JSON, split by comma
-        tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+    if (typeof tags === 'string') {
+      if (tags.trim() === '') {
+        // Empty string should become empty array
+        tags = [];
+      } else {
+        // Handle JSON string from multipart form data
+        try {
+          const parsed = JSON.parse(tags);
+          // Ensure the parsed result is an array
+          if (Array.isArray(parsed)) {
+            tags = parsed;
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            // If it's an object (like {}), convert to empty array
+            tags = [];
+          } else {
+            // If it's some other type, convert to empty array
+            tags = [];
+          }
+        } catch {
+          // If not JSON, split by comma
+          tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+        }
       }
+    } else if (!tags) {
+      // Handle null, undefined, or other falsy values
+      tags = [];
     }
 
     // Handle images from multipart form data
@@ -378,14 +396,32 @@ export const updateEvent = async (req: Request, res: Response) => {
 
     // Handle tags - convert from string to array if needed
     let tags = fields.tags;
-    if (tags && typeof tags === 'string') {
-      // Handle JSON string from multipart form data
-      try {
-        tags = JSON.parse(tags);
-      } catch {
-        // If not JSON, split by comma
-        tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+    if (typeof tags === 'string') {
+      if (tags.trim() === '') {
+        // Empty string should become empty array
+        tags = [];
+      } else {
+        // Handle JSON string from multipart form data
+        try {
+          const parsed = JSON.parse(tags);
+          // Ensure the parsed result is an array
+          if (Array.isArray(parsed)) {
+            tags = parsed;
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            // If it's an object (like {}), convert to empty array
+            tags = [];
+          } else {
+            // If it's some other type, convert to empty array
+            tags = [];
+          }
+        } catch {
+          // If not JSON, split by comma
+          tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+        }
       }
+    } else if (!tags) {
+      // Handle null, undefined, or other falsy values
+      tags = [];
     }
 
     // Handle images - this could be a mix of existing URLs and new File uploads
