@@ -25,6 +25,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_event_images_updated_at ON event_images;
 CREATE TRIGGER update_event_images_updated_at
     BEFORE UPDATE ON event_images
     FOR EACH ROW

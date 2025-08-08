@@ -18,12 +18,13 @@ interface EventAttributes {
   message: string | null;
   event_location: EventLocation;
   link: string;
+  default_tree_view_mode?: 'illustrations' | 'profile';
   created_at: Date;
   updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'link' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'link' | 'default_tree_view_mode' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -80,6 +81,13 @@ implements EventAttributes {
 
   @Column(DataType.STRING)
   link!: string;
+
+  @Column({
+    type: DataType.ENUM('illustrations', 'profile'),
+    allowNull: true,
+    defaultValue: 'profile'
+  })
+  default_tree_view_mode?: 'illustrations' | 'profile';
 
   @Column(DataType.DATE)
   created_at!: Date;

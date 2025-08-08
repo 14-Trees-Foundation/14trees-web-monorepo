@@ -347,6 +347,7 @@ export const addEvent = async (req: Request, res: Response) => {
       message: fields.message,
       link: fields.link,
       images: images, // Store image URLs directly in the event
+      default_tree_view_mode: fields.default_tree_view_mode || 'profile', // Default to profile images
     }
 
     console.log('Creating event with data:', {
@@ -463,6 +464,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       message: fields.message,
       link: fields.link,
       images: finalImages,
+      default_tree_view_mode: fields.default_tree_view_mode,
     };
 
     // Remove undefined values
