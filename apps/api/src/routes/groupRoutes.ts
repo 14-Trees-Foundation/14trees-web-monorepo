@@ -360,4 +360,90 @@ routes.post('/merge', group.mergeGroups);
 routes.post('/register', group.registerGroup);
 
 
+/**
+ * @swagger
+ * /groups/count/{group_id}:
+ *   get:
+ *     summary: Get comprehensive count of all relationships for a group
+ *     description: Returns detailed counts of all relationships a group has across the system including trees, donations, gift cards, members, visits, and orders.
+ *     tags:
+ *       - Groups
+ *     parameters:
+ *       - name: group_id
+ *         in: path
+ *         description: ID of the group to get relationship counts for
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Group relationship counts retrieved successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             trees:
+ *               type: object
+ *               properties:
+ *                 mapped_trees:
+ *                   type: integer
+ *                   description: Number of trees mapped to this group
+ *                   example: 25
+ *                 sponsored_trees:
+ *                   type: integer
+ *                   description: Number of trees sponsored by this group
+ *                   example: 12
+ *             gift_card_requests:
+ *               type: integer
+ *               description: Number of gift card requests associated with this group
+ *               example: 5
+ *             donations:
+ *               type: integer
+ *               description: Number of donations associated with this group
+ *               example: 15
+ *             gift_redeem_transactions:
+ *               type: integer
+ *               description: Number of gift redeem transactions for this group
+ *               example: 3
+ *             group_members:
+ *               type: integer
+ *               description: Number of users who are members of this group
+ *               example: 8
+ *             visits:
+ *               type: integer
+ *               description: Number of visits associated with this group
+ *               example: 4
+ *             orders:
+ *               type: integer
+ *               description: Number of orders placed by this group
+ *               example: 2
+ *             total_relationships:
+ *               type: integer
+ *               description: Sum of all relationships across the system
+ *               example: 74
+ *       400:
+ *         description: Bad request - Invalid group ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "bad"
+ *             message:
+ *               type: string
+ *               example: "Invalid Group!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
+ */
+routes.get('/count/:group_id', group.getGroupsCountForGroup);
+
+
 export default routes;

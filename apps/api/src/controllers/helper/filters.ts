@@ -35,7 +35,7 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
         throw new Error("Value is required");
     }
 
-    if (fieldName.endsWith('.tags')) {
+    if (fieldName.endsWith('.tags') || fieldName.endsWith('.roles')) {
         let condition = "";
         if (operatorValue === 'isAnyOf') condition = `${fieldName} && ARRAY[:${valuePlaceHolder}]::varchar[]`;
         else if (operatorValue === 'contains') condition = `${fieldName} @> ARRAY[:${valuePlaceHolder}]::varchar[]`;

@@ -1,5 +1,122 @@
 import React, { useEffect, useRef, useState } from "react";
 
+// AutoComplete Textarea Component
+interface AutoCompleteTextareaProps {
+  value: string;
+  onChange: (value: string) => void;
+  suggestions: string[];
+  placeholder?: string;
+  className?: string;
+  rows?: number;
+  maxLength?: number;
+  style?: React.CSSProperties;
+}
+
+const AutoCompleteTextarea: React.FC<AutoCompleteTextareaProps> = ({
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+  className,
+  rows,
+  maxLength,
+  style
+}) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (value.length > 10) { // Show suggestions for longer text
+      const filtered = suggestions.filter(suggestion => {
+        const lowerValue = value.toLowerCase();
+        const lowerSuggestion = suggestion.toLowerCase();
+        return (
+          lowerSuggestion.includes(lowerValue.substring(0, 50)) ||
+          lowerValue.includes(lowerSuggestion.substring(0, 50))
+        ) && lowerSuggestion !== lowerValue; // Don't show exact matches
+      }).slice(0, 3);
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setShowSuggestions(false);
+      setFilteredSuggestions([]);
+    }
+  }, [value, suggestions]);
+
+  const handleSuggestionClick = (suggestion: string) => {
+    onChange(suggestion);
+    setShowSuggestions(false);
+    setFilteredSuggestions([]);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      // Auto-resize after setting value
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+      }, 0);
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+    // Auto-resize
+    e.target.style.height = "auto";
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
+  const handleBlur = () => {
+    // Delay hiding suggestions to allow clicking
+    setTimeout(() => {
+      setShowSuggestions(false);
+      setFilteredSuggestions([]);
+    }, 200);
+  };
+
+  const handleFocus = () => {
+    if (value.length > 10 && filteredSuggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={handleTextareaChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        className={className}
+        rows={rows}
+        maxLength={maxLength}
+        style={style}
+      />
+      
+      {showSuggestions && filteredSuggestions.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+          <div className="p-2 text-xs text-gray-600 border-b">Suggested messages:</div>
+          {filteredSuggestions.map((suggestion, index) => (
+            <div
+              key={index}
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
+              <div className="truncate">
+                {suggestion.length > 100 ? `${suggestion.substring(0, 100)}...` : suggestion}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const prefix = "Dear {recipient}," + "\n\n"
 const secondaryMessage = "\n\n" + 'We invite you to visit 14 Trees and firsthand experience the growth and contribution of your tree towards a greener future.'
 
@@ -27,6 +144,8 @@ interface GiftCardPreviewProps {
     setPresentationId: (id: string | null) => void;
     slideId: string | null;
     setSlideId: (id: string | null) => void;
+    primaryMessageSuggestions?: string[];
+    onPrimaryMessageChange?: (message: string) => void;
 }
 
 const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
@@ -42,6 +161,8 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
     setPresentationId,
     slideId,
     setSlideId,
+    primaryMessageSuggestions = [],
+    onPrimaryMessageChange,
 }) => {
 
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
@@ -172,68 +293,34 @@ const GiftCardPreview: React.FC<GiftCardPreviewProps> = ({
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium mb-1">Your message</label>
-                    <textarea
-                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
-                        rows={windowWidth > 640 ? 5 : 3}
+                    <AutoCompleteTextarea
                         value={primaryMessage}
-                        onChange={(e) => {
-                            setPrimaryMessage(e.target.value);
-                            e.target.style.height = "auto";
-                            e.target.style.height = `${e.target.scrollHeight}px`;
-                        }}
-                        ref={(textarea) => {
-                            if (textarea) {
-                                textarea.style.height = "auto";
-                                textarea.style.height = `${textarea.scrollHeight}px`;
+                        onChange={(value) => {
+                            setPrimaryMessage(value);
+                            if (onPrimaryMessageChange) {
+                                onPrimaryMessageChange(value);
                             }
                         }}
+                        suggestions={primaryMessageSuggestions}
+                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-gray-700"
+                        rows={windowWidth > 640 ? 5 : 3}
                         maxLength={430}
                         placeholder="A tree has been planted in your name at our conservation site..."
-                        style={{ overflow: "hidden" }} // Prevent scrollbar from appearing
+                        style={{ overflow: "hidden" }}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                         {430 - primaryMessage.length} characters remaining
                     </p>
                 </div>
 
-                {!primaryMessage.includes("{recipient}") && (
-                    <div className="pt-6 flex justify-center">
-                        <p className="text-red-600">
-                            Missing {`"{recipient}"`} placeholder in your tree card message. Recipient&apos;s name will not be visible in the generate tree card.
-                        </p>
-                    </div>
-                )}
-                {eventType != '2' && !primaryMessage.includes("{giftedBy}") && (
-                    <div className="pt-6 flex justify-center">
-                        <p className="text-red-600">
-                            Missing {`"{giftedBy}"`} placeholder in your tree card message. Gifted By will not be visible in the generate tree card.
-                        </p>
-                    </div>
-                )}
-
-                <div className="flex flex-wrap gap-3">
+                <div className="flex gap-2 flex-wrap">
                     <button
                         type="button"
-                        className="px-4 py-2 border border-gray-300 rounded-md"
-                        onClick={() => {
-                            setPrimaryMessage(
-                                eventType === "1"
-                                    ? defaultMessages.birthday
-                                    : eventType === "2"
-                                        ? defaultMessages.memorial
-                                        : defaultMessages.primary
-                            );
-                        }}
-                    >
-                        Reset to Default
-                    </button>
-                    <button
-                        type="button"
-                        className="px-4 py-2 bg-green-600 text-white rounded-md"
                         onClick={handleGeneratePreview}
                         disabled={isGeneratingPreview}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isGeneratingPreview ? "Generating..." : "Preview"}
+                        {isGeneratingPreview ? "Generating..." : "Generate Preview"}
                     </button>
                 </div>
             </div>

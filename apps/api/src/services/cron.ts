@@ -210,7 +210,7 @@ export function sendDonationMails() {
             const donationsResp = await DonationRepository.getDonations(0, -1, filters)
             donations = donationsResp.results;
         } catch (error: any) {
-            console.log("[ERROR]", 'CRON::sendDonationMails', error);
+            console.error("[ERROR]", 'CRON::sendDonationMails', error);
             return;
         }
 

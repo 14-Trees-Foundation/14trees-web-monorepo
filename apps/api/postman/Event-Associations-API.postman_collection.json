@@ -1,0 +1,445 @@
+{
+	"info": {
+		"_postman_id": "event-associations-api-collection",
+		"name": "14Trees Event Associations API",
+		"description": "Comprehensive API collection for Event Associations including Tree, Image, and Message management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Events - Core Operations",
+			"item": [
+				{
+					"name": "Get All Events",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"offset\": 0,\n  \"limit\": 10,\n  \"filters\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/get",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "get"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Event\",\n  \"description\": \"Test event description\",\n  \"event_date\": \"2024-12-31\",\n  \"event_location\": \"onsite\",\n  \"type\": 3,\n  \"assigned_by\": 10367,\n  \"site_id\": null,\n  \"message\": \"Test event message\",\n  \"link\": \"https://example.com/test-event-{{$timestamp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", ""]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the request was successful",
+									"pm.test(\"Event created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Extract the event ID from the response and set it as a collection variable",
+									"if (pm.response.code === 201) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson && responseJson.id) {",
+									"        pm.collectionVariables.set(\"eventId\", responseJson.id);",
+									"        console.log(\"Event ID set to: \" + responseJson.id);",
+									"    } else if (responseJson && responseJson.event && responseJson.event.id) {",
+									"        pm.collectionVariables.set(\"eventId\", responseJson.event.id);",
+									"        console.log(\"Event ID set to: \" + responseJson.event.id);",
+									"    } else if (responseJson && responseJson.data && responseJson.data.id) {",
+									"        pm.collectionVariables.set(\"eventId\", responseJson.data.id);",
+									"        console.log(\"Event ID set to: \" + responseJson.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Event",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Test Event\",\n  \"description\": \"Updated test event description\",\n  \"event_date\": \"2024-12-31\",\n  \"event_location\": \"onsite\",\n  \"type\": 3,\n  \"assigned_by\": 10367,\n  \"site_id\": null,\n  \"message\": \"Updated test event message\",\n  \"link\": \"https://example.com/updated-test-event-{{$timestamp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Event-Tree Associations",
+			"item": [
+				{
+					"name": "Get Event Trees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/trees",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "trees"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Associate Trees to Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"treeIds\": [1, 2, 3, 4, 5]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/trees",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "trees"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dissociate Trees from Event",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"treeIds\": [1, 2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/trees",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "trees"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Event-Image Associations",
+			"item": [
+				{
+					"name": "Get Event Images",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/images",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "images"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Event Images",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/images",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "images"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Event Images",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"imageIds\": [1, 2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/images",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "images"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reorder Event Images",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"imageSequences\": [\n    {\"id\": 1, \"sequence\": 0},\n    {\"id\": 2, \"sequence\": 1},\n    {\"id\": 3, \"sequence\": 2}\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/images/reorder",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "images", "reorder"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Event-Message Associations",
+			"item": [
+				{
+					"name": "Get Event Messages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/events/messages/{{eventId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "messages", "{{eventId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Event Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"This is a test message for the event\",\n  \"userId\": 10367,\n  \"sequence\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/messages",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "messages"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the request was successful",
+									"pm.test(\"Event message created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Extract the message ID from the response and set it as a collection variable",
+									"if (pm.response.code === 201) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson && responseJson.id) {",
+									"        pm.collectionVariables.set(\"messageId\", responseJson.id);",
+									"        console.log(\"Message ID set to: \" + responseJson.id);",
+									"    } else if (responseJson && responseJson.message && responseJson.message.id) {",
+									"        pm.collectionVariables.set(\"messageId\", responseJson.message.id);",
+									"        console.log(\"Message ID set to: \" + responseJson.message.id);",
+									"    } else if (responseJson && responseJson.data && responseJson.data.id) {",
+									"        pm.collectionVariables.set(\"messageId\", responseJson.data.id);",
+									"        console.log(\"Message ID set to: \" + responseJson.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Event Message",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"This is an updated test message for the event\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/messages/{{messageId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "messages", "{{messageId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Event Message",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/events/messages/{{messageId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "messages", "{{messageId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reorder Event Messages",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messageSequences\": [\n    {\"id\": 1, \"sequence\": 0},\n    {\"id\": 2, \"sequence\": 1},\n    {\"id\": 3, \"sequence\": 2}\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}/messages/reorder",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}", "messages", "reorder"]
+						}
+					},
+					"response": []
+				}
+			]
+
+		},
+		{
+			"name": "Cleanup Operations",
+			"item": [
+				{
+					"name": "Delete Event",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "events", "{{eventId}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8088",
+			"type": "string"
+		},
+		{
+			"key": "eventId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "messageId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "corpEventId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

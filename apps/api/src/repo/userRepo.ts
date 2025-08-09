@@ -25,7 +25,9 @@ export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttrib
         updated_at: new Date(),
         communication_email: reqBody.communication_email?.trim() && !reqBody.communication_email.trim().endsWith("@14trees")
             ? reqBody.communication_email.trim().toLowerCase()
-            : null
+            : null,
+        pin: reqBody.pin ? reqBody.pin.trim() : null,
+        roles: reqBody.roles && Array.isArray(reqBody.roles) && reqBody.roles.length > 0 ? reqBody.roles : null
     } as UserCreationAttributes;
 }
 

@@ -21,6 +21,11 @@ import EventRepository from "../repo/eventsRepo";
 import { GroupRepository } from "../repo/groupRepo";
 import { DonationRepository } from "../repo/donationsRepo";
 import { DonationUserRepository } from "../repo/donationUsersRepo";
+import { AuthTokenRepository } from "../repo/authTokenRepo";
+import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
+import { sequelize } from "../config/postgreDB";
+import { QueryTypes } from "sequelize";
+import { getSchema } from "../helpers/utils";
 
 /*
     Model - User
@@ -209,6 +214,9 @@ export const deleteUser = async (req: Request, res: Response) => {
       throw new Error("User is part of groups!");
     }
 
+    // Delete all auth tokens for the user before deleting the user
+    // to avoid foreign key constraint violations
+    await AuthTokenRepository.deleteAllUserTokens(userId);
     let resp = await UserRepository.deleteUser(parseInt(req.params.id));
     console.log(`Deleted User with id: ${req.params.id}`, resp);
     res.status(status.success).json("User deleted successfully");
@@ -398,7 +406,26 @@ export const combineUsers = async (req: Request, res: Response) => {
     const event = { assigned_by: primary_user, updated_at: new Date() };
     await EventRepository.updateEvents(event, { assigned_by: secondary_user });
 
+    // gift redeem transactions
+    const giftRedeemCreatedBy = { created_by: primary_user, updated_at: new Date() };
+    await GRTransactionsRepository.updateTransactions(giftRedeemCreatedBy, { created_by: secondary_user });
+
+    const giftRedeemModifiedBy = { modified_by: primary_user, updated_at: new Date() };
+    await GRTransactionsRepository.updateTransactions(giftRedeemModifiedBy, { modified_by: secondary_user });
+
+    const giftRedeemRecipient = { recipient: primary_user, updated_at: new Date() };
+    await GRTransactionsRepository.updateTransactions(giftRedeemRecipient, { recipient: secondary_user });
+
+    // view permissions (Self-Serve Dashboard access)
+    await sequelize.query(
+      `UPDATE "${getSchema()}".view_permissions SET user_id = :primaryUser, updated_at = NOW() WHERE user_id = :secondaryUser`,
+      { replacements: { primaryUser: primary_user, secondaryUser: secondary_user }, type: QueryTypes.UPDATE }
+    );
+
     if (delete_secondary) {
+      // Delete all auth tokens for the secondary user before deleting the user
+      // to avoid foreign key constraint violations
+      await AuthTokenRepository.deleteAllUserTokens(secondary_user);
       await UserRepository.deleteUser(secondary_user);
     }
 

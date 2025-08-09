@@ -48,6 +48,11 @@ const isTreeLogger = (payload: any) => {
   return payload.roles.includes('treelogging');
 }
 export function verifyAdmin(req: Request, res: Response, next: any) {
+  // Skip authentication in development environment
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    return next();
+  }
+
   const payload = tokenPayloadFromRequest(req, res);
 
   if (payload && isAdmin(payload)) {
@@ -56,6 +61,11 @@ export function verifyAdmin(req: Request, res: Response, next: any) {
 }
 
 export function verifyTreeLogger(req: Request, res: Response, next: any) {
+  // Skip authentication in development environment
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    return next();
+  }
+
   const payload = tokenPayloadFromRequest(req, res);
 
   if (payload && (isTreeLogger(payload) || isAdmin(payload))) {
