@@ -27,7 +27,7 @@ function validateXHubSignature(requestBody: any, signature: string) {
 }
 
 
-export const whatsAppBotWebHook = async (req: Request, res: Response) => {
+export const whatsAppWebHookController = async (req: Request, res: Response) => {
 
     // Calculate x-hub signature value to check with value in request header
     // if (!validateXHubSignature(req.body, req.headers['x-hub-signature-256'] as string)) {
@@ -38,9 +38,10 @@ export const whatsAppBotWebHook = async (req: Request, res: Response) => {
     //     return;
     // }
 
-    console.log("request header X-Hub-Signature validated");
+    // console.log("request header X-Hub-Signature validated");
 
     const body = req.body.entry[0].changes[0];
+    console.log("Input Body: ", JSON.stringify(body, null, 2))
 
     // Verify this is from the messages webhook, not other updates
     if (body.field !== 'messages') {

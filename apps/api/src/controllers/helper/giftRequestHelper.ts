@@ -299,12 +299,12 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
 
     let time = new Date().getTime();
     const presentationIds = await runWithConcurrency(copyTasks, 10);
-    console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate presentations: ${new Date().getTime() - time}ms`);
+    console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate presentations: ${presentationIds} : ${new Date().getTime() - time}ms`);
 
     for (let batch = 0; batch < presentationIds.length; batch++) {
 
-        console.log("[INFO]", `Batch: ${batch + 1} --------------------------- START`)
         const presentationId = presentationIds[batch];
+        console.log("[INFO]", `Batch: ${batch + 1}  Presentation Id: ${presentationId} --------------------------- START`)
         let time = new Date().getTime();
 
         const records: any[] = [];
@@ -336,18 +336,18 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
                 records.push(record);
             }
         }
-        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate gift cards: ${new Date().getTime() - time}ms`);
+        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to generate gift cards: ${presentationId} : ${new Date().getTime() - time}ms`);
 
         time = new Date().getTime();
         await bulkUpdateSlides(presentationId, records);
-        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to update slides: ${new Date().getTime() - time}ms`);
+        console.log('[INFO]', 'GiftCardController::getGiftCardTemplatesForGiftCardRequest', `Time taken to update slides: ${presentationId} : ${new Date().getTime() - time}ms`);
         await deleteUnwantedSlides(presentationId, slideIds);
         await reorderSlides(presentationId, slideIds);
 
         console.log(presentationId);
 
         await generateTreeCardImages(giftCardRequest.request_id, presentationId, slideIds, batchGiftCards)
-        console.log("[INFO]", `Batch: ${batch + 1} --------------------------- END`)
+        console.log("[INFO]", `Batch: ${batch + 1} Presentation id: ${presentationId} --------------------------- END`)
     }
 
 
@@ -673,7 +673,7 @@ export const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[
 
 export async function processGiftRequest(payload: GiftRequestPayload, giftCardsCallBack: (cardImages: string[], requestId: number) => void) {
 
-    const plotIds: number[] = [2124];
+    const plotIds: number[] = [2142];
 
     // create gift request
     const giftRequest = await createGiftRrequest(payload);

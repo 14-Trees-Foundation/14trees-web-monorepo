@@ -142,12 +142,15 @@ const createGiftTreesRequestTool = new DynamicStructuredTool({
             return JSON.stringify({
                 status: 'Success',
                 output: `Successfully created gift request. Request Id is ${requestId}.`,
+                // next_step: {
+                //     note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
+                //     payment_request: {
+                //         rq_code_image_url: qrCode.image_url,
+                //         image_caption: `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${trees * 1}/-*.`
+                //     }
+                // }
                 next_step: {
-                    note: 'This must be sent as seperate media image to user using tool and not as hyper link!',
-                    payment_request: {
-                        rq_code_image_url: qrCode.image_url,
-                        image_caption: `You have requested *${trees === 1 ? '1 tree' : `${trees} trees`}* for gifting. Considering *per tree cost of INR 1/-*, your total cost is *INR ${trees * 1}/-*.`
-                    }
+                    note: 'We should send tree card images hyperlinks to the user. This must be sent as seperate media images to user using tool. Make sure to provide the links beautifully',
                 }
             });
         } catch (error: any) {

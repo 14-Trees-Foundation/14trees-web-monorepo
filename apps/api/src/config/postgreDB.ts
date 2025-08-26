@@ -169,7 +169,7 @@ class Database {
           const pending = pool._pendingAcquires?.length || 0;
           const total = pool._count || 0;
           
-          console.log(`🔍 Pool Status - Used: ${used}, Available: ${available}, Pending: ${pending}, Total: ${total}`);
+          // console.log(`🔍 Pool Status - Used: ${used}, Available: ${available}, Pending: ${pending}, Total: ${total}`);
           
           // Additional pool health information
           if (used + available !== total && total > 0) {
@@ -179,7 +179,7 @@ class Database {
           // Log pool utilization percentage
           const maxConnections = this.sequelize.options.pool?.max || 5;
           const utilization = total > 0 ? Math.round((used / maxConnections) * 100) : 0;
-          console.log(`📊 Pool Utilization: ${utilization}% (${used}/${maxConnections} max connections)`);
+          // console.log(`📊 Pool Utilization: ${utilization}% (${used}/${maxConnections} max connections)`);
           
           // If the above doesn't work, try alternative approach
           if (used === 0 && available === 0 && pending === 0 && total === 0) {
