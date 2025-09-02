@@ -15,7 +15,17 @@ import verifyToolInputs from "./verifyToolInputs";
 
 // Function to get tools
 export function getGiftingTools(): StructuredToolInterface[] {
-    return [verifyToolInputs, createGiftTreesRequestTool, getTreeCards, sendRecipientsEmail, listGiftTreesRequests, listGiftRequestRecipients, updateGiftRequest, updateGiftRequestRecipients, generateSampleCardMessages, contactUsInfo];
+    return [verifyToolInputs, 
+        createGiftTreesRequestTool, 
+        getTreeCards, 
+        // sendRecipientsEmail, 
+        // listGiftTreesRequests, 
+        // listGiftRequestRecipients, 
+        // updateGiftRequest, 
+        // updateGiftRequestRecipients, 
+        // generateSampleCardMessages, 
+        // contactUsInfo
+        ];
 }
 
 

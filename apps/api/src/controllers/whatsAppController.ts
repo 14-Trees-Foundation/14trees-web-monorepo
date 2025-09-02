@@ -16,6 +16,7 @@ const verificationToken = process.env.WA_WEBHOOK_VERIFICATION_TOKEN;
 const appSecret = process.env.WA_APP_SECRET;
 const pemFile = process.env.WA_PRIVATE_PEM || '';
 const passprase = process.env.WA_PEM_PASSPHRASE || '';
+import { GoogleSpreadsheet } from "../services/google";
 
 function validateXHubSignature(requestBody: any, signature: string) {
     const calcXHubSignature = "sha256=" + crypto
@@ -93,7 +94,8 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
     const privateKey = fs.readFileSync(pemFile, 'utf8');
     const { decryptedBody, aesKeyBuffer, initialVectorBuffer } = decryptRequest(body, privateKey, passprase);
 
-    console.log(decryptedBody);
+    // console.log(decryptedBody);
+    console.log("Input Body for whatsapp flow webhook: ", JSON.stringify(decryptedBody, null, 2))
 
     let response = null;
     if (decryptedBody && decryptedBody.action === 'ping') {
@@ -218,7 +220,39 @@ async function handleDataExchange(decryptedBody: any) {
 
         payload.screen = "CARD_PREVIEW";
         payload.data = { card_image: base64 };
-    }
+    } else if (decryptedBody.screen === 'EXPENSE_FORM') {
+        // Forward expense form to summary screen
+        payload.screen = "SUMMARY";
+        payload.data = decryptedBody.data;
+    } else if (decryptedBody.screen === 'SUMMARY') {
+
+        // Add expense in the system
+        let expense_data= decryptedBody.data;
+        console.log("Expense to be added in the system: ", expense_data);
+        const spreadsheetId = process.env.EXPENSE_SPREADSHEET;
+                if (!spreadsheetId) {
+                    console.log("[WARN]", "WhatsappController::handleDataExchange", "spreadsheet id (EXPENSE_SPREADSHEET) is not present in env");
+                    return;
+                }
+        
+        try {
+            const googleSheet = new GoogleSpreadsheet();
+            await googleSheet.insertRowData(spreadsheetId, "expenses", [
+                new Date().toISOString().split("T")[0],
+                expense_data.amount, 
+                expense_data.who_paid, 
+                expense_data.paid_to, 
+                expense_data.reason]);
+        } catch (error) {
+            console.error("[ERROR] Failed to update Google Sheet with new expense:", {
+                error,
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        }
+
+        payload.screen = "EXPENSE_SUBMITTED";
+        payload.data = {"response": "Thank you for submitting the expense!"};
+    } 
 
     return payload
 }
