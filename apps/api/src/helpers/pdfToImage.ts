@@ -32,7 +32,7 @@ export const convertPdfToImage = async (pdfData: Buffer, s3Keys: string[]) => {
     const options = {
         quality: 100,
         density: 200,
-        savePath: "/home/onrush-dev/Downloads",
+        savePath: process.env.DEST_IMG_FOLDER || "/tmp",
         format: "png",
         width: 1600,
         height: 1200

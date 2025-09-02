@@ -64,7 +64,8 @@ const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
 export const waInteractionsWithGiftingAgent = async (query: string, history: BaseMessage[], customerPhoneNumber: string) => {
 
-    const newTools = [...tools, ...getWhatsAppTools(customerPhoneNumber)]
+    // const newTools = [...tools, ...getWhatsAppTools(customerPhoneNumber)]
+    const newTools = [...tools]
     const agent = await createOpenAIToolsAgent({ llm, tools: newTools, prompt });
     const agentExecutor = new AgentExecutor({
         agent,

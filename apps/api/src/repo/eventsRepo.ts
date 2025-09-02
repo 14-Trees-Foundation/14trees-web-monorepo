@@ -3,9 +3,11 @@ import { Event, EventAttributes, EventCreationAttributes } from '../models/event
 import { WhereOptions } from 'sequelize';
 import { FilterItem, PaginatedResponse } from '../models/pagination';
 import { getSqlQueryExpression } from '../controllers/helper/filters';
-import { EventMessage } from '../models/event_message';
+import { EventMessage, EventMessageCreationAttributes } from '../models/event_message';
 import { sequelize } from '../config/postgreDB';
 import { getSchema } from '../helpers/utils';
+import { Tree } from '../models/tree';
+import { User } from '../models/user';
 
 
 export class EventRepository {
@@ -66,13 +68,13 @@ export class EventRepository {
     };
   }
 
-  public static async updateEvent(eventData: EventAttributes): Promise<Event> {
+  public static async updateEvent(eventData: Partial<EventAttributes> & { id: number }): Promise<Event> {
     const event = await Event.findByPk(eventData.id);
     if (!event) {
       throw new Error('Event not found for given id');
     }
 
-    const updatedEvent = event.update(eventData);
+    const updatedEvent = await event.update(eventData);
     return updatedEvent;
   }
 
@@ -86,12 +88,162 @@ export class EventRepository {
   }
 
   public static async getEventMessages(eventId: number): Promise<EventMessage[]> {
-
     const messages = await EventMessage.findAll({
-      where: { event_id: eventId }
+      where: { event_id: eventId },
+      include: [
+        {
+          model: User,
+          attributes: ['name'],
+          required: false // LEFT JOIN to handle messages without users
+        }
+      ],
+      order: [['sequence', 'ASC'], ['created_at', 'ASC']]
     });
 
-    return messages;
+    // Map the results to include user_name from the joined User model
+    return messages.map(message => {
+      const messageData = message.toJSON() as any;
+      if (messageData.User && messageData.User.name) {
+        messageData.user_name = messageData.User.name;
+      } else {
+        messageData.user_name = 'System';
+      }
+      delete messageData.User; // Remove the nested User object
+      return messageData;
+    });
+  }
+
+  public static async createEventMessage(eventId: number, message: string, userId: number): Promise<EventMessage> {
+    try {
+      // Get the current max sequence for this event
+      const maxSequenceResult = await EventMessage.findOne({
+        where: { event_id: eventId },
+        order: [['sequence', 'DESC']],
+        attributes: ['sequence']
+      });
+
+      const nextSequence = maxSequenceResult ? maxSequenceResult.sequence + 1 : 0;
+
+      // Get the user name
+      const user = await User.findByPk(userId, { attributes: ['name'] });
+      const userName = user ? user.name : 'System';
+
+      const messageData: EventMessageCreationAttributes = {
+        event_id: eventId,
+        message: message,
+        user_id: userId,
+        user_name: userName,
+        sequence: nextSequence
+      };
+
+      const createdMessage = await EventMessage.create(messageData);
+      return createdMessage;
+    } catch (error) {
+      console.error('[ERROR] EventRepository::createEventMessage', error);
+      throw error;
+    }
+  }
+
+  public static async updateEventMessage(messageId: number, message: string): Promise<EventMessage> {
+    try {
+      const eventMessage = await EventMessage.findByPk(messageId);
+      if (!eventMessage) {
+        throw new Error('Event message not found');
+      }
+
+      eventMessage.message = message;
+      await eventMessage.save();
+      return eventMessage;
+    } catch (error) {
+      console.error('[ERROR] EventRepository::updateEventMessage', error);
+      throw error;
+    }
+  }
+
+  public static async deleteEventMessage(messageId: number): Promise<void> {
+    try {
+      const result = await EventMessage.destroy({
+        where: { id: messageId }
+      });
+      
+      if (result === 0) {
+        throw new Error('Event message not found');
+      }
+    } catch (error) {
+      console.error('[ERROR] EventRepository::deleteEventMessage', error);
+      throw error;
+    }
+  }
+
+  public static async reorderEventMessages(eventId: number, messageSequences: {id: number, sequence: number}[]): Promise<void> {
+    try {
+      // Update each message's sequence
+      for (const item of messageSequences) {
+        await EventMessage.update(
+          { sequence: item.sequence },
+          { 
+            where: { 
+              id: item.id,
+              event_id: eventId // Ensure we only update messages for this event
+            }
+          }
+        );
+      }
+    } catch (error) {
+      console.error('[ERROR] EventRepository::reorderEventMessages', error);
+      throw error;
+    }
+  }
+
+  // Tree Association Methods
+  public static async getEventTrees(eventId: number): Promise<Tree[]> {
+    try {
+      const trees = await Tree.findAll({
+        where: { event_id: eventId },
+        order: [['id', 'ASC']]
+      });
+      return trees;
+    } catch (error) {
+      console.error('[ERROR] EventRepository::getEventTrees', error);
+      throw error;
+    }
+  }
+
+  public static async associateTreesToEvent(eventId: number, treeIds: number[]): Promise<void> {
+    try {
+      await Tree.update(
+        { event_id: eventId },
+        { 
+          where: { 
+            id: {
+              [Op.in]: treeIds
+            }
+          }
+        }
+      );
+    } catch (error) {
+      console.error('[ERROR] EventRepository::associateTreesToEvent', error);
+      throw error;
+    }
+  }
+
+  public static async dissociateTreesFromEvent(eventId: number, treeIds: number[]): Promise<void> {
+    try {
+      await Tree.update(
+        { event_id: null },
+        { 
+          where: { 
+            id: {
+              [Op.in]: treeIds
+            },
+            event_id: eventId // Ensure we only update trees currently associated with this event
+          }
+        }
+      );
+    } catch (error) {
+      console.error('[ERROR] EventRepository::dissociateTreesFromEvent', error);
+      throw error;
+    }
   }
 }
 

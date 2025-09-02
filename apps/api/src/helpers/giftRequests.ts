@@ -295,7 +295,7 @@ class GiftRequestHelper {
     
             const time = new Date().getTime();
             const results = await convertPdfToImage(data, s3Keys);
-            console.log(new Date().getTime() - time);
+            console.log("Time to convert pdf into images: ", new Date().getTime() - time);
     
             const tasks: Task<void>[] = [];
             for (let i = 0; i < slideIds.length; i++) {
@@ -383,7 +383,7 @@ class GiftRequestHelper {
     
         let time = new Date().getTime();
         const presentationIds = await runWithConcurrency(copyTasks, 10);
-        console.log('[INFO]', 'GenerateTreeCards::', `Time taken to generate presentations: ${new Date().getTime() - time}ms`);
+        console.log('[INFO]', 'GenerateTreeCards::', `Time taken to generate presentations: ${presentationIds} : ${new Date().getTime() - time}ms`);
     
         for (let batch = 0; batch < presentationIds.length; batch++) {
     

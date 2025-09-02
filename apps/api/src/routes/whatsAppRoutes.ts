@@ -3,7 +3,7 @@ import * as wa from '../controllers/whatsAppController'
 
 const routes = Router();
 
-routes.post('/incoming', wa.whatsAppBotWebHook);
+routes.post('/incoming', wa.whatsAppWebHookController);
 routes.get('/incoming', wa.verifyWebHookConnection);
 routes.post('/incoming-flow', wa.whatsAppFlowWebHook);
 
