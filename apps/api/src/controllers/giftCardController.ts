@@ -2274,7 +2274,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
     for (const emailData of Object.values(userEmailDataMap)) {
         const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
         if (!templatesMap[templateType]) {
-            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: giftCardRequest.request_type === 'Visit'? 'visit': eventType, template_type: templateType })
             if (templates.length === 0) {
                 console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
                 return;
@@ -2282,7 +2282,7 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
             templatesMap[templateType] = templates[0].template_name
         }
 
-        tasks.push(() => emailReceiver(giftCardRequest, emailData, eventType, templatesMap[templateType], attachCard, ccMailIds, testMails));
+        tasks.push(() => emailReceiver(giftCardRequest, emailData, giftCardRequest.request_type === 'Visit'? "visit": eventType, templatesMap[templateType], attachCard, ccMailIds, testMails));
 
         count = count - 1;
         if (isTestMail && count === 0) break;
