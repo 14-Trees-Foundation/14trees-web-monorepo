@@ -6,205 +6,111 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>14 Trees Plantation</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f9f9f9;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
-
-    .header {
-      text-align: center;
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 0;
-      border-radius: 8px 8px 0 0;
-    }
-
-    .header h2 {
-      margin: 10px;
-    }
-
-    .content {
-      padding: 20px;
-    }
-
-    .info-table-container {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .info-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    .info-table th,
-    .info-table td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-
-    .info-table th {
-      background-color: #f2f2f2;
-    }
-
-    /* Optional: Enhance table layout for smaller screens */
-    @media screen and (max-width: 600px) {
-
-      .info-table th,
-      .info-table td {
-        padding: 6px;
-        font-size: 14px;
-      }
-    }
-
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 30px;
-      padding: 10px;
-      background-color: #f2f2f2;
-      border-radius: 0 0 8px 8px;
-    }
-
-    .footer-content {
-      text-align: left;
-      /* line-height: 0.5; */
-    }
-
-    .footer-logo {
-      height: 80px;
-      margin-left: 10px;
-    }
-
-    .footer-logo-container {
-      display: flex;
-      flex-wrap: wrap;
-    }
-
-    .dashboard-link {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 10px 10px;
-      color: white;
-      background-color: #4CAF50;
-      text-decoration: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+    /* All styles are now inline */
   </style>
 </head>
 
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
+<body style="font-family: Arial, sans-serif; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px;">
+    
+    <!-- Header -->
+    <div style="text-align: center; background-color: #4CAF50; color: white; padding: 10px 0; border-radius: 8px 8px 0 0;">
+      <h2 style="margin: 10px;">Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
     </div>
-    <div class="content">
+
+    <!-- Content -->
+    <div style="padding: 20px;">
       <p>Dear {{user_name}},</p>
       <p>
         {{#if memorial}}
           Hope this mail finds you in good health. A tree has been planted in loving memory of {{#if trees.[0].planted_via}} {{assigned_to_name}} by {{trees.[0].planted_via}}. {{else}} {{assigned_to_name}}. {{/if}} May this living tribute honor {{assigned_to_name}}'s cherished presence and stand as a lasting symbol of love, remembrance, and life.
         {{else}}
-
           It was a pleasure hosting you at 14 Trees. We hope you found the experience of connecting with nature and contributing to a sustainable future fulfilling.
-
           Here are the details of the tree you planted during your visit:        
-
         {{/if}}
       </p>
-      <!-- <h3>Tagging Information about the Tree:</h3> -->
-      <div class="info-table-container">
-        <table class="info-table">
+
+      <!-- Info Table -->
+      <div style="width: 100%; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
           <tr>
-            <th>Name</th>
-            <td>{{assigned_to_name}}</td>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Name</th>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">{{assigned_to_name}}</td>
           </tr>
           {{#if trees.[0].planted_via}}
           <tr>
             {{#if is_gift}}
-            <th>Gifted By</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Gifted By</th>
             {{else}}
-            <th>Planted By</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Planted By</th>
             {{/if}}
-            <td>{{trees.[0].planted_via}}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">{{trees.[0].planted_via}}</td>
           </tr>
           {{/if}}
           <tr>
-            <th>Tree Name</th>
-            <td>{{trees.[0].plant_type}}</td>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Tree Name</th>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">{{trees.[0].plant_type}}</td>
           </tr>
           <tr>
-            <th>Scientific Name</th>
-            <td>{{trees.[0].scientific_name}}</td>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Scientific Name</th>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">{{trees.[0].scientific_name}}</td>
           </tr>
           <tr>
-            <th>Tree ID</th>
-            <td>{{trees.[0].sapling_id}}</td>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">Tree ID</th>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: left;">{{trees.[0].sapling_id}}</td>
           </tr>
-          <!-- {{#if trees.[0].event_name}}
-          <tr>
-            <th>Event</th>
-            <td>{{trees.[0].event_name}}</td>
-          </tr>
-          {{/if}} -->
-          <!-- <tr>
-            <th>Planted on</th>
-            <td>{{trees.[0].event_name}}</td>
-          </tr> -->
         </table>
       </div>
 
+      <p>For many years to come, this tree will support local biodiversity, rejuvenate the ecosystem, and help offset the effects of carbon consumption and climate change.</p>
+
       <p>
-        For many years to come, this tree will support local biodiversity, rejuvenate the ecosystem, and help offset the effects of carbon consumption and climate change.
+        You can follow the growth journey of your tree, and view all trees you've planted or gifted at 14 Trees, through your personal 
+        <a href="{{trees.[0].dashboard_link}}">Dashboard</a> link. Please save this link for future reference.
       </p>
-      <p>
-        You can follow the growth journey of your tree, and view all trees you've planted or gifted at 14 Trees, through your personal <a href="{{trees.[0].dashboard_link}}" >Dashboard</a> link. Please save this link for future reference.
-      </p>
+
       <p>
         14 Trees is a crowd-funded reforestation project. To expand our efforts, we are seeking collaborations with nature enthusiasts, philanthropists, and Corporate CSR partners. If you know anyone who might be interested, please connect them with us by emailing csr@14trees.org or calling (+91) 9096531278.
       </p>
+
       <p>
-        We also invite you to watch a short video about our work: <a href="https://youtu.be/tqIqfn2asis" >How we are recreating the forest we've lost #14Trees</a> 
+        We also invite you to watch a short video about our work: 
+        <a href="https://youtu.be/tqIqfn2asis">How we are recreating the forest we've lost #14Trees</a> 
       </p>
+
       <p>
-        Finally, while your recent site visit is fresh in your mind, we would appreciate it if you could take one minute to complete our <a href="https://docs.google.com/forms/d/1exQpOSobZOfuO2-htNSFzPaOk-X_BJzKQ6mR1_PQDbw/edit" >feedback form</a>. Your input will help us improve our site experience.
+        Finally, while your recent site visit is fresh in your mind, we would appreciate it if you could take one minute to complete our 
+        <a href="https://docs.google.com/forms/d/1exQpOSobZOfuO2-htNSFzPaOk-X_BJzKQ6mR1_PQDbw/edit">feedback form</a>. 
+        Your input will help us improve our site experience.
       </p>
+
       <p>
-        You can follow our shared journey and discover more ways to get involved with <a href="https://14trees.org" >14 Trees</a> . Please feel free to reach out to us at  contact@14trees.org if you have any questions.
+        You can follow our shared journey and discover more ways to get involved with 
+        <a href="https://14trees.org">14 Trees</a>. Please feel free to reach out to us at contact@14trees.org if you have any questions.
       </p>
     </div>
-    <div class="footer">
-      <div class="footer-content">
+
+    <!-- Footer -->
+    <div style="display: flex; justify-content: space-between; margin-top: 30px; padding: 10px; background-color: #f2f2f2; border-radius: 0 0 8px 8px;">
+      <div style="text-align: left;">
         <p style="margin:0;">Warm Regards,</p>
         {{#if group_name}}
-        <p>{{group_name}}</p>
-        <p>In Association with 14 Trees Foundation</p>
+        <p style="margin:0;">{{group_name}}</p>
+        <p style="margin:0;">In Association with 14 Trees Foundation</p>
         {{else}}
         <p style="margin:0;">14 Trees Foundation</p>
         {{/if}}
         <a href="https://14trees.org">https://14trees.org</a>
       </div>
-      <div class="footer-logo-container">
+      <div style="display: flex; flex-wrap: wrap;">
         {{#if company_logo_url}}
-        <img class="footer-logo" src="{{company_logo_url}}" alt="14 Trees" />
+        <img src="{{company_logo_url}}" alt="14 Trees" style="height: 80px; margin-left: 10px;" />
         {{/if}}
-        <img class="footer-logo"
-          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
-          alt="14 Trees" />
+        <img src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" style="height: 80px; margin-left: 10px;" />
       </div>
     </div>
+
   </div>
 </body>
 
