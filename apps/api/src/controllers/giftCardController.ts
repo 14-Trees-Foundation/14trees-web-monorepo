@@ -30,7 +30,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors, generate80GReceiptAndUpload } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
@@ -395,6 +395,88 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
     }
 }
 
+
+export const generate80GForGiftRequest = async (req: Request, res: Response) => {
+    try {
+        const idParam = (req.params as any)?.id || req.body?.gift_request_id || req.query?.id;
+        const giftRequestId = Number(idParam);
+        if (!giftRequestId || Number.isNaN(giftRequestId)) {
+            res.status(status.bad).json({ message: 'Please provide a valid gift_request_id' });
+            return;
+        }
+
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
+        if (!giftRequest) {
+            res.status(status.notfound).json({ message: 'Gift request not found' });
+            return;
+        }
+
+        const sponsorUser = {
+            id: giftRequest.user_id,
+            name: (giftRequest as any).user_name,
+            email: (giftRequest as any).user_email,
+            phone: (giftRequest as any).user_phone,
+        };
+
+        const receipt = await generate80GReceiptAndUpload(giftRequest, sponsorUser);
+
+        res.status(status.success).json({
+            message: '80G receipt generated and uploaded',
+            gift_request_id: giftRequestId,
+            receipt,
+        });
+    } catch (error: any) {
+        console.error('[ERROR] generate80GForGiftRequest', {
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        res.status(status.error).json({ message: 'Failed to generate 80G receipt', error: error?.message || String(error) });
+    }
+};
+
+export const sendAcknowledgementForGiftRequest = async (req: Request, res: Response) => {
+    try {
+        const idParam = (req.params as any)?.id || req.body?.gift_request_id || req.query?.id;
+        const giftRequestId = Number(idParam);
+        if (!giftRequestId || Number.isNaN(giftRequestId)) {
+            res.status(status.bad).json({ message: 'Please provide a valid gift_request_id' });
+            return;
+        }
+
+        const remainingTrees = Number(req.body?.remaining_trees || req.query?.remaining_trees || 0);
+        const testMails: string[] | undefined = req.body?.test_mails;
+        const ccMails: string[] | undefined = req.body?.cc_mails;
+
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
+        if (!giftRequest) {
+            res.status(status.notfound).json({ message: 'Gift request not found' });
+            return;
+        }
+
+        const sponsorUser = {
+            id: giftRequest.user_id,
+            name: (giftRequest as any).user_name,
+            email: (giftRequest as any).user_email,
+            phone: (giftRequest as any).user_phone,
+        };
+
+        await sendGiftRequestAcknowledgement(
+            giftRequest,
+            sponsorUser,
+            remainingTrees || 0,
+            testMails,
+            ccMails
+        );
+
+        res.status(status.success).json({ message: 'Acknowledgement email triggered', gift_request_id: giftRequestId });
+    } catch (error: any) {
+        console.error('[ERROR] sendAcknowledgementForGiftRequest', {
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        res.status(status.error).json({ message: 'Failed to trigger acknowledgement', error: error?.message || String(error) });
+    }
+};
 
 export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
