@@ -311,7 +311,7 @@ export const generate80GForDonation = async (req: Request, res: Response) => {
             return;
         }
 
-        const donation = await DonationRepository.getDonation(donationId.toString());
+        const donation = await DonationRepository.getDonation(donationId);
         if (!donation) {
             res.status(status.notfound).json({ message: 'Donation not found' });
             return;
@@ -354,7 +354,7 @@ export const sendAcknowledgementForDonation = async (req: Request, res: Response
         const testMails: string[] | undefined = req.body?.test_mails;
         const ccMails: string[] | undefined = req.body?.cc_mails;
 
-        const donation = await DonationRepository.getDonation(donationId.toString());
+        const donation = await DonationRepository.getDonation(donationId);
         if (!donation) {
             res.status(status.notfound).json({ message: 'Donation not found' });
             return;
