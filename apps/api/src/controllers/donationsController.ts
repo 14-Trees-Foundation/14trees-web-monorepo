@@ -302,6 +302,85 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
     }
 }
 
+export const generate80GForDonation = async (req: Request, res: Response) => {
+    try {
+        const idParam = (req.params as any)?.id || req.body?.donation_id || req.query?.id;
+        const donationId = Number(idParam);
+        if (!donationId || Number.isNaN(donationId)) {
+            res.status(status.bad).json({ message: 'Please provide a valid donation_id' });
+            return;
+        }
+
+        const donation = await DonationRepository.getDonation(donationId.toString());
+        if (!donation) {
+            res.status(status.notfound).json({ message: 'Donation not found' });
+            return;
+        }
+
+        const usersResp = await UserRepository.getUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
+        ]);
+        const sponsorUser = usersResp.results[0];
+        if (!sponsorUser) {
+            res.status(status.notfound).json({ message: 'Sponsor user not found' });
+            return;
+        }
+
+        const receipt = await DonationService.generate80GReceiptAndUploadForDonation(donation as any, sponsorUser as any);
+
+        res.status(status.success).json({
+            message: '80G receipt generated and uploaded',
+            donation_id: donationId,
+            receipt,
+        });
+    } catch (error: any) {
+        console.error('[ERROR] generate80GForDonation', {
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        res.status(status.error).json({ message: 'Failed to generate 80G receipt', error: error?.message || String(error) });
+    }
+};
+
+export const sendAcknowledgementForDonation = async (req: Request, res: Response) => {
+    try {
+        const idParam = (req.params as any)?.id || req.body?.donation_id || req.query?.id;
+        const donationId = Number(idParam);
+        if (!donationId || Number.isNaN(donationId)) {
+            res.status(status.bad).json({ message: 'Please provide a valid donation_id' });
+            return;
+        }
+
+        const testMails: string[] | undefined = req.body?.test_mails;
+        const ccMails: string[] | undefined = req.body?.cc_mails;
+
+        const donation = await DonationRepository.getDonation(donationId.toString());
+        if (!donation) {
+            res.status(status.notfound).json({ message: 'Donation not found' });
+            return;
+        }
+
+        const usersResp = await UserRepository.getUsers(0, 1, [
+            { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
+        ]);
+        const sponsorUser = usersResp.results[0];
+        if (!sponsorUser) {
+            res.status(status.notfound).json({ message: 'Sponsor user not found' });
+            return;
+        }
+
+        await DonationService.sendDonationAcknowledgement(donation as any, sponsorUser as any, testMails, ccMails);
+
+        res.status(status.success).json({ message: 'Acknowledgement email triggered', donation_id: donationId });
+    } catch (error: any) {
+        console.error('[ERROR] sendAcknowledgementForDonation', {
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        res.status(status.error).json({ message: 'Failed to trigger acknowledgement', error: error?.message || String(error) });
+    }
+};
+
 export const deleteDonation = async (req: Request, res: Response) => {
     try {
         const donationId = parseInt(req.params.id);
