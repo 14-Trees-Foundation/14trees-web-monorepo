@@ -769,12 +769,13 @@ export class DonationService {
             })
         }
 
+        const profileImageUrl = user.profile_image_url ?? user.image_url ?? null;
         let donationUserId: number = user.id;
         if (donationUserId) {
             await DonationUserRepository.updateDonationUsers({
                 recipient: recipient.id,
                 assignee: assignee.id,
-                profile_image_url: user.profile_image_url,
+                profile_image_url: profileImageUrl,
                 trees_count: user.trees_count,
                 updated_at: new Date(),
             }, {
@@ -786,11 +787,34 @@ export class DonationService {
                 recipient: recipient.id,
                 assignee: assignee.id,
                 donation_id: donationId,
-                profile_image_url: user.profile_image_url,
+                profile_image_url: profileImageUrl,
                 trees_count: user.trees_count,
             }], true)
 
             if (createdUsers.length === 1) donationUserId = createdUsers[0].id;
+        }
+
+        // Refresh user_tree_image on already-assigned trees for this donation user
+        try {
+            const assignedTrees = await TreeRepository.getTrees(0, -1, [
+                { columnField: 'donation_id', operatorValue: 'equals', value: donationId },
+                // { columnField: 'gifted_to', operatorValue: 'equals', value: recipient.id },
+                { columnField: 'assigned_to', operatorValue: 'equals', value: assignee.id },
+            ]);
+
+            const treeIds = assignedTrees.results.map((t: any) => t.id);
+            if (treeIds.length > 0) {
+                await TreeRepository.updateTrees(
+                    {
+                        user_tree_image: user.profile_image_url || null,
+                        updated_at: new Date(),
+                    },
+                    { id: { [Op.in]: treeIds } }
+                );
+            }
+        } catch (error) {
+            console.error("[ERROR]", "DonationService::upsertDonationUser - Failed to refresh user image on trees", error);
+            // Do not fail the main operation due to image sync failure
         }
 
         const donationUsersResp = await DonationUserRepository.getDonationUsers(0, 1, [
