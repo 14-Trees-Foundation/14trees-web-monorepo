@@ -433,6 +433,14 @@ export const updateDonation = async (req: Request, res: Response) => {
     });
 
     try {
+        // Align with gift request: if event_name is provided, update all trees' description for this donation
+        if (Array.isArray(updateFields) && updateFields.includes('event_name') && typeof updateData?.event_name === 'string') {
+            const eventName = (updateData.event_name as string).trim();
+            await TreeRepository.updateTrees({ description: eventName !== '' ? eventName : null }, { donation_id: donationId });
+            // Do not persist event_name on donations table (column doesn't exist)
+            delete updateObject['event_name'];
+        }
+
         const updatedDonation = await DonationRepository.updateDonation(donationId, updateObject);
 
         // Get full donation details with joins
