@@ -160,49 +160,49 @@ type BuildCreationPayloadInput = {
     preferredImageUrl?: string | null;
 };
 
-function buildCreationPayloadFromVisitorImages(input: BuildCreationPayloadInput) {
-    const {
-        saplingId,
-        visitId,
-        visitorId,
-        description,
-        captureTimestamp,
-        plantedBy,
-        assignedTo,
-        visitorImages,
-        preferredImageType,
-        preferredImageUrl,
-    } = input;
+// function buildCreationPayloadFromVisitorImages(input: BuildCreationPayloadInput) {
+//     const {
+//         saplingId,
+//         visitId,
+//         visitorId,
+//         description,
+//         captureTimestamp,
+//         plantedBy,
+//         assignedTo,
+//         visitorImages,
+//         preferredImageType,
+//         preferredImageUrl,
+//     } = input;
 
-    const latestImages = getLatestVisitorImages(visitorImages);
+//     const latestImages = getLatestVisitorImages(visitorImages);
 
-    if (!latestImages.user_tree_image && !latestImages.user_card_image && !preferredImageUrl) {
-        return null;
-    }
+//     if (!latestImages.user_tree_image && !latestImages.user_card_image && !preferredImageUrl) {
+//         return null;
+//     }
 
-    const payload: Partial<Tree> = {
-        sapling_id: saplingId,
-        visit_id: visitId ?? null,
-        assigned_to: assignedTo ?? visitorId ?? null,
-        assigned_at: captureTimestamp ?? new Date(),
-        description: description ?? null,
-        planted_by: plantedBy ?? null,
-        user_tree_image: latestImages.user_tree_image?.image_url ?? null,
-        user_card_image: latestImages.user_card_image?.image_url ?? null,
-        created_at: new Date(),
-        updated_at: new Date(),
-    };
+//     const payload: Partial<Tree> = {
+//         sapling_id: saplingId,
+//         visit_id: visitId ?? null,
+//         assigned_to: assignedTo ?? visitorId ?? null,
+//         assigned_at: captureTimestamp ?? new Date(),
+//         description: description ?? null,
+//         planted_by: plantedBy ?? null,
+//         user_tree_image: latestImages.user_tree_image?.image_url ?? null,
+//         user_card_image: latestImages.user_card_image?.image_url ?? null,
+//         created_at: new Date(),
+//         updated_at: new Date(),
+//     };
 
-    if (preferredImageType === "user_tree_image" && preferredImageUrl) {
-        payload.user_tree_image = preferredImageUrl;
-    }
+//     if (preferredImageType === "user_tree_image" && preferredImageUrl) {
+//         payload.user_tree_image = preferredImageUrl;
+//     }
 
-    if (preferredImageType === "user_card_image" && preferredImageUrl) {
-        payload.user_card_image = preferredImageUrl;
-    }
+//     if (preferredImageType === "user_card_image" && preferredImageUrl) {
+//         payload.user_card_image = preferredImageUrl;
+//     }
 
-    return payload as any;
-}
+//     return payload as any;
+// }
 
 function getLatestVisitorImages(visitorImages: VisitorImage[]) {
     const latest: {

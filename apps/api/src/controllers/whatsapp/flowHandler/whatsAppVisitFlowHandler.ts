@@ -34,7 +34,8 @@ export async function handleVisitFlowExchange(payload: WhatsAppFlowPayload, decr
             const upcoming_visits = visits.results.map(v => ({
                 id: String(v.id),         // ensure it's string
                 title: v.visit_name,
-                description: `On ${v.visit_date} at site: ${v.site_name}`
+                // description: `On ${v.visit_date} at site: ${v.site_name}`
+                description: `On ${v.visit_date}`
             }));
 
             payload.data.upcoming_visits = upcoming_visits;
@@ -43,10 +44,10 @@ export async function handleVisitFlowExchange(payload: WhatsAppFlowPayload, decr
 
         case WHATSAPP_SCREENS.VISIT_FLOW.SITE_VISIT_SELECT: {
             payload.screen = WHATSAPP_SCREENS.VISIT_FLOW.SITE_VISIT_REGISTRANT_DETAILS;
-            const selected_visit_id = decryptedBody.data.selected_visit_id;
+            const selected_visit_id = decryptedBody.data?.selected_visit_id;
             const visit_response = await VisitRepository.getVisit(parseInt(selected_visit_id));
             const site_response = await SiteRepository.getSites(0, 10, [
-                        { "id": { [Op.eq]: visit_response.site_id }},
+                        { "id": { [Op.eq]: visit_response?.site_id }},
                     ])
 
             const selected_visit = {
