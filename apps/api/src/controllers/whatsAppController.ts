@@ -1,22 +1,31 @@
 import * as crypto from 'crypto'
 import * as fs from 'fs'
 import axios from 'axios'
-
 import { Request, Response } from "express";
+
+//services
 import { messageStatuses } from '../services/whatsapp/messageStatuses';
 import { sendWhatsAppMessage } from '../services/whatsapp/messageHelper';
 import processIncomingWAMessage, { processIncomingWAMessageUsingGenAi } from '../services/whatsapp/incomingWebhook';
 import { decryptRequest, encryptResponse } from '../services/whatsapp/incomingFlowWebhook';
+import generateGiftMessages from '../services/genai/agents/gifting_agents/giftMessageAgent';
+import { interactiveMenuFormResponse } from '../services/whatsapp/messages';
+import { logResponseError } from '../services/whatsapp/logResponseError';
+import { GoogleSpreadsheet } from "../services/google";
+
+//helper
 import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
 import { getSlideThumbnail, updateSlide } from './helper/slides';
-import { GiftCardsRepository } from '../repo/giftCardsRepo';
-import generateGiftMessages from '../services/genai/agents/gifting_agents/giftMessageAgent';
 
+//repo
+import { GiftCardsRepository } from '../repo/giftCardsRepo';
+
+//env
 const verificationToken = process.env.WA_WEBHOOK_VERIFICATION_TOKEN;
 const appSecret = process.env.WA_APP_SECRET;
 const pemFile = process.env.WA_PRIVATE_PEM || '';
 const passprase = process.env.WA_PEM_PASSPHRASE || '';
-import { GoogleSpreadsheet } from "../services/google";
+
 
 function validateXHubSignature(requestBody: any, signature: string) {
     const calcXHubSignature = "sha256=" + crypto
@@ -252,7 +261,29 @@ async function handleDataExchange(decryptedBody: any) {
 
         payload.screen = "EXPENSE_SUBMITTED";
         payload.data = {"response": "Thank you for submitting the expense!"};
-    } 
+    } else if (decryptedBody.screen === 'MENU_FLOW'){
+        switch (decryptedBody.data.user_action_selection){
+            case 'Add_Expense':
+                delete (payload as { screen?: string }).screen;
+                try {
+                    let replyMessage = { ...interactiveMenuFormResponse };
+                    replyMessage.to = "917829723729";
+                    await sendWhatsAppMessage(replyMessage);
+                } catch (error) {
+                    logResponseError(error);
+                }
+                break;
+            case 'Register_for_Site_Visit':
+                // TODO: CHANGE
+                payload.screen = "SUMMARY";
+                break;
+            case 'Site_Visit_Feedback':
+                // TODO: CHANGE
+                payload.screen = "SUMMARY";
+                break;
+        }
+
+    }
 
     return payload
 }

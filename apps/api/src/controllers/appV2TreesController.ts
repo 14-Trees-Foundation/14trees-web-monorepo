@@ -17,16 +17,30 @@ import { ShiftRepository } from "../repo/shiftRepo";
 import { Shift, ShiftCreationAttributes } from "../models/shift";
 import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
 import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
-import { Tree, TreeCreationAttributes } from "../models/tree";
+import { Tree, TreeAttributes, TreeCreationAttributes } from "../models/tree";
 import { isValidDateString } from "../helpers/utils";
 import { SiteRepository } from "../repo/sitesRepo";
 import { Op, WhereOptions } from "sequelize";
 import { VisitRepository } from "../repo/visitsRepo";
 import { VisitImagesRepository } from "../repo/visitImagesRepo";
+import { VisitorImagesRepository } from "../repo/visitorImagesRepo";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 import { Visit } from "../models/visits";
 import { SyncRepo } from "../repo/syncRepo";
+import { syncTreeFromVisitorImages } from "./helper/treeSync";
+
+// Parse a string/number/Date into a valid Date or return null
+function parseOptionalDate(value: any): Date | null {
+    if (!value) return null;
+    try {
+        if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? null : d;
+    } catch {
+        return null;
+    }
+}
 
 export const healthCheck = async (req: Request, res: Response) => {
     return res.status(status.success).send('reachable');
@@ -67,8 +81,8 @@ export const uploadTrees = async (req: Request, res: Response) => {
 
     // user-id header
     const userId = req.headers['user-id'] as string;
-    console.log("synced by: ", userId);
-    console.log("trees: ", trees);
+    // console.log("synced by: ", userId);
+    // console.log("trees: ", trees);
     const treeUploadStatuses = {} as any;
     for (let tree of trees) {
         const saplingID = tree.sapling_id;
@@ -91,10 +105,19 @@ export const uploadTrees = async (req: Request, res: Response) => {
             plotId = Number(tree.plot_id);
         }
 
-        let existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
+        const existingMatch = await TreeRepository.getTreeBySaplingId(saplingID)
         if (existingMatch) {
             treeUploadStatuses[saplingID].dataUploaded = true;
             treeUploadStatuses[saplingID].treeId = existingMatch.id;
+
+            const assignedAtFromPayload = parseOptionalDate(tree.assigned_at);
+            const visitorSyncResult = await syncTreeFromVisitorImages({
+                saplingId: saplingID,
+                visitId: tree.visit_id,
+                visitorId: tree.assigned_to,
+                captureTimestamp: assignedAtFromPayload,
+            });
+            treeUploadStatuses[saplingID].visitorSync = visitorSyncResult;
 
             if (existingMatch.plot_id != plotId) {
                 treeUploadStatuses[saplingID].existing = true;
@@ -145,6 +168,15 @@ export const uploadTrees = async (req: Request, res: Response) => {
             const tree = await TreeRepository.addTreeObject(treeObj);
             treeUploadStatuses[saplingID].dataUploaded = true;
             treeUploadStatuses[saplingID].tree = tree;
+
+            const assignedAtFromPayload = parseOptionalDate(tree.assigned_at ?? treeObj.assigned_at);
+            const visitorSyncResult = await syncTreeFromVisitorImages({
+                saplingId: saplingID,
+                visitId: treeObj.visit_id,
+                visitorId: treeObj.assigned_to ?? undefined,
+                captureTimestamp: assignedAtFromPayload ?? undefined,
+            });
+            treeUploadStatuses[saplingID].visitorSync = visitorSyncResult;
         }
         catch (err) {
             console.log(err)
@@ -152,7 +184,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
             treeUploadStatuses[saplingID].dataSaveError = err;
         }
     }
-    console.log('uploadstatuses: ', treeUploadStatuses);
+    // console.log('uploadstatuses: ', treeUploadStatuses);
     return res.status(status.success).send(treeUploadStatuses);
 }
 
@@ -867,4 +899,123 @@ export const treesCount = async (req: Request, res: Response) => {
 export const testUpload = async (req: Request, res: Response) => {
     console.log('[INFO]', 'appV2Controller::testUpload', 'received dummy file.')
     res.status(status.success).send();
+}
+
+export const uploadVisitorImages = async (req: Request, res: Response) => {
+    const { sapling_id, images, visitor_id, visit_id } = req.body;
+
+    // Validation
+    if (!sapling_id || sapling_id === '') {
+        console.log("[INFO] appV2::uploadVisitorImages:", "sapling_id is required");
+        return res.status(status.bad).send({ error: "sapling_id is required" });
+    }
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+        console.log("[INFO] appV2::uploadVisitorImages:", "images array is required");
+        return res.status(status.bad).send({ error: "images array is required" });
+    }
+
+    const uploaded = [] as any[];
+    const failed = [] as any[];
+    const counts = { user_tree_image: 0, user_card_image: 0 };
+
+    try {
+        const relatedTree = await TreeRepository.getTreeBySaplingId(sapling_id);
+        const visitorImagesData = [] as any[];
+        const visitorSyncResults = [] as any[];
+
+        for (const image of images) {
+            if (!image.name || !image.data || !image.type) {
+                failed.push({
+                    name: image.name || 'unknown',
+                    error: 'Missing required fields: name, data, type'
+                });
+                continue;
+            }
+
+            if (!['user_tree_image', 'user_card_image'].includes(image.type)) {
+                failed.push({
+                    name: image.name,
+                    error: 'Invalid type. Must be user_tree_image or user_card_image'
+                });
+                continue;
+            }
+
+            // Upload to S3
+            const metadata = image.meta ? {
+                capturetimestamp: image.meta.capturetimestamp,
+                uploadtimestamp: (new Date()).toISOString(),
+                remark: image.meta.remark,
+            } : null;
+
+            const imageUploadResponse = await uploadBase64DataToS3(image.name, 'visitor-images', image.data, metadata);
+
+            if (imageUploadResponse.success) {
+                const captureTimestamp = parseOptionalDate(image.meta?.capturetimestamp);
+
+                visitorImagesData.push({
+                    sapling_id: sapling_id,
+                    visitor_id: visitor_id || null,
+                    visit_id: visit_id || null,
+                    type: image.type,
+                    image_url: imageUploadResponse.location,
+                    original_name: image.name,
+                    mime: image.mime || null,
+                    size: image.size || null,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                });
+
+                uploaded.push({
+                    id: null, // Will be set after DB insert
+                    type: image.type,
+                    name: image.name
+                });
+
+                visitorSyncResults.push(await syncTreeFromVisitorImages({
+                    saplingId: sapling_id,
+                    visitId: visit_id,
+                    visitorId: visitor_id,
+                    imageType: image.type,
+                    imageUrl: imageUploadResponse.location,
+                    captureTimestamp: captureTimestamp,
+                }));
+
+                counts[image.type as keyof typeof counts]++;
+            } else {
+                failed.push({
+                    name: image.name,
+                    error: imageUploadResponse.error
+                });
+            }
+        }
+
+        // Save to database
+        if (visitorImagesData.length > 0) {
+            const savedImages = await VisitorImagesRepository.addVisitorImages(visitorImagesData);
+            // Update IDs in uploaded array
+            uploaded.forEach((item, index) => {
+                if (savedImages[index]) {
+                    item.id = savedImages[index].id;
+                }
+            });
+        }
+
+        const response: any = {
+            success: failed.length === 0,
+            uploaded: uploaded,
+            counts: counts,
+            visitorSyncResults,
+        };
+
+        if (failed.length > 0) {
+            response.failed = failed;
+        }
+
+        res.status(status.success).json(response);
+
+    } catch (err: any) {
+        console.log("[ERROR] appV2::uploadVisitorImages:", err);
+        res.status(status.error).send({ error: "Something went wrong!" });
+    }
 }

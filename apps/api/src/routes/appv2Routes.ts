@@ -23,6 +23,7 @@ import {
     getDeltaSyncHistories,
     getDeltaPlantTypes,
     treesCount,
+    uploadVisitorImages,
 } from "../controllers/appV2TreesController";
 import {
     addSyncHistory
@@ -39,6 +40,7 @@ routes.post("/uploadShifts", uploadShifts);
 routes.post("/uploadLogs", uploadLogs);
 routes.post("/uploadTrees", uploadTrees);
 routes.post("/uploadNewImages", uploadNewImages);
+routes.post("/upload-visitor-images", uploadVisitorImages);
 routes.post("/treesUpdatePlot", treesUpdatePlot);
 routes.post("/getSapling", verifyAdmin, getTreeBySaplingId);
 routes.post("/updateSapling", updateSaplingByAdmin);

@@ -2362,6 +2362,8 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
                 return;
             }
             templatesMap[templateType] = templates[0].template_name
+            // add logic to override templateName in case there is need of customized email
+            if (giftCardRequest.notes == 'custom_email') templatesMap[templateType] = 'receiver-single-tree-hsbc.html'
         }
 
         tasks.push(() => emailReceiver(giftCardRequest, emailData, giftCardRequest.request_type === 'Visit'? "visit": eventType, templatesMap[templateType], attachCard, ccMailIds, testMails));

@@ -24,6 +24,7 @@ import { TreesSnapshot } from "../models/trees_snapshots";
 import { Visit } from "../models/visits";
 import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
+import { VisitorImage } from "../models/visitor_images"
 import { SyncHistory } from "../models/sync_history";
 import { GiftCardRequest } from "../models/gift_card_request";
 import { GiftCard } from "../models/gift_card";
@@ -115,6 +116,7 @@ class Database {
         TreesSnapshot,
         Visit,
         VisitImage,
+        VisitorImage,
         VisitUsers,
         SyncHistory,
         GiftCard,

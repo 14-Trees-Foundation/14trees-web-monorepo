@@ -127,6 +127,8 @@ function getBucketFromTypeAndFolderName(type: string, folder_name: string) {
         bucket = process.env.BUCKET_CARDS;
     } else if (type === 'logos') {
         bucket = process.env.S3_BUCKET + "/logos";
+    } else if (type === 'visitor-images'){
+        bucket = process.env.BUCKET_TREES;
     }
     return bucket as string;
 }

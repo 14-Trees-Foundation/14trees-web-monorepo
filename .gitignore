@@ -48,3 +48,7 @@ apps/frontend
 credentials/14trees-gmail/credentials.json
 credentials/14trees-gmail/token.json
 credentials/14trees-google/credentials.json
+apps/scripts/webscraping/venv
+apps/scripts/s3-to-gdrive/credentials.json
+apps/scripts/s3-to-gdrive/token.json
+apps/scripts/webscraping
