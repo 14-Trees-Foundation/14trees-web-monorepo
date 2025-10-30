@@ -180,7 +180,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
         }
         catch (err) {
             console.log(err)
-            console.log("Incoming request for tree sync: ", JSON.stringify(req.body.toString()))
+            console.log("Incoming request for tree sync: ", JSON.stringify(req.body))
             treeUploadStatuses[saplingID].dataUploaded = false;
             treeUploadStatuses[saplingID].dataSaveError = err;
         }
