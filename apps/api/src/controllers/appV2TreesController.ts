@@ -82,7 +82,7 @@ export const uploadTrees = async (req: Request, res: Response) => {
     // user-id header
     const userId = req.headers['user-id'] as string;
     // console.log("synced by: ", userId);
-    // console.log("trees: ", trees);
+    console.log("trees: ", trees);
     const treeUploadStatuses = {} as any;
     for (let tree of trees) {
         const saplingID = tree.sapling_id;
