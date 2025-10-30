@@ -102,8 +102,10 @@ export const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes
         const cards = userTreesMap[user.id];
         const treeIds = cards.map(card => card.tree_id);
 
+        let gifted_on_date = new Date(giftCardRequest.gifted_on);
+        const gifted_on_date_iso = new Date(gifted_on_date.getTime() + (5.5 * 60 * 60 * 1000));
         const updateRequest = {
-            assigned_at: normalAssignment ? new Date() : giftCardRequest.gifted_on,
+            assigned_at: normalAssignment ? new Date() : gifted_on_date_iso.toISOString(),
             assigned_to: user.assignee,
             gifted_to: normalAssignment ? null : user.recipient,
             updated_at: new Date(),

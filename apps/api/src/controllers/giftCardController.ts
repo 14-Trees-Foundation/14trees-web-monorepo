@@ -1519,8 +1519,10 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
         if (data.gift_request_user_id) {
             const user = users.find(user => user.id === tree.gift_request_user_id);
             if (user) {
+                let gifted_on_date = new Date(giftCardRequest.gifted_on);
+                const gifted_on_date_iso = new Date(gifted_on_date.getTime() + (5.5 * 60 * 60 * 1000));
                 const updateRequest = {
-                    assigned_at: normalAssignment ? new Date() : user.gifted_on || giftCardRequest.gifted_on,
+                    assigned_at: normalAssignment ? new Date() : user.gifted_on || gifted_on_date_iso.toISOString(),
                     assigned_to: user.assignee,
                     gifted_to: normalAssignment ? null : user.recipient,
                     updated_at: new Date(),
