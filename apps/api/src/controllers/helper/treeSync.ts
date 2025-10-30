@@ -51,9 +51,9 @@ export async function syncTreeFromVisitorImages(options: SyncTreeFromVisitorImag
     const resolvedDescription = await resolveDescription(visitId, description);
 
     if (!visitId || !visitor){
-        if (visitorImages){
-            visitId = visitorImages[0].visit_id;
-            visitorId = visitorImages[0].visitor_id;
+        if (visitorImages && visitorImages.length > 0){
+            visitId = visitorImages[0]?.visit_id;
+            visitorId = visitorImages[0]?.visitor_id;
             if (visitorId) visitor = await UserRepository.getUserById(visitorId);
         }
     }
