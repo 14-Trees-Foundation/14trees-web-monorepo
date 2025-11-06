@@ -1410,21 +1410,45 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 
 export const getBookedTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const { gift_card_request_id: giftCardRequestId } = req.params;
-    if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
-        res.status(status.bad).json({
-            message: 'Please provide valid input details!'
-        })
+
+    // Accept filters from body (POST) or query string (GET) or fallback to route param
+    let filters: FilterItem[] = [];
+
+    // Parse filters from query param if provided (as JSON string)
+    if (req.query && req.query.filters) {
+        try {
+            const parsed = typeof req.query.filters === 'string' ? JSON.parse(req.query.filters) : req.query.filters;
+            if (Array.isArray(parsed)) filters = filters.concat(parsed as FilterItem[]);
+        } catch (err) {
+            // ignore parse errors, will validate below
+        }
+    }
+
+    // Merge body filters (if any)
+    if (req.body && Array.isArray(req.body.filters)) {
+        filters = filters.concat(req.body.filters as FilterItem[]);
+    }
+
+    // If route param gift_card_request_id exists, ensure it's included in filters
+    const giftCardRequestIdParam = req.params?.gift_card_request_id;
+    if (giftCardRequestIdParam && !isNaN(parseInt(giftCardRequestIdParam))) {
+        const exists = filters.some(f => f.columnField === 'gift_card_request_id' || f.columnField === 'gift_card_request_id');
+        if (!exists) filters.push({ columnField: 'gift_card_request_id', operatorValue: 'equals', value: parseInt(giftCardRequestIdParam) } as FilterItem);
+    }
+
+    // Require a gift_card_request_id filter (either from params or filters)
+    const hasReq = filters.some(f => f.columnField === 'gift_card_request_id' || f.columnField === 'giftCardRequestId');
+    if (!hasReq) {
+        res.status(status.bad).json({ message: 'Please provide valid input details!' });
+        return;
     }
 
     try {
-        const resp = await GiftCardsRepository.getBookedTrees(offset, limit, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: parseInt(giftCardRequestId) }]);
+        const resp = await GiftCardsRepository.getBookedTrees(offset, limit, filters as FilterItem[]);
         res.status(status.success).json(resp);
     } catch (error: any) {
-        console.log("[ERROR]", "GiftCardController::getBookedTrees", error);
-        res.status(status.error).json({
-            message: 'Something went wrong. Please try again later.'
-        })
+        console.log('[ERROR]', 'GiftCardController::getBookedTrees', error);
+        res.status(status.error).json({ message: 'Something went wrong. Please try again later.' });
     }
 }
 
