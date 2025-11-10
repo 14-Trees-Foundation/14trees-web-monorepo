@@ -15,6 +15,7 @@ import plantTypeRoutes from "./routes/plantTypeRoutes";
 import treeRoutes from "./routes/treeRoutes";
 import profileRoute from "./routes/profileRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
+import auditReportRoutes from "./routes/auditReportRoutes";
 import plotRoutes from "./routes/plotRoutes";
 import siteRoutes from "./routes/siteRoutes";
 import giftCardRoutes from "./routes/giftCardRoutes";
@@ -116,6 +117,7 @@ const initExpressApp = (app: express.Application) => {
   app.use("/api/events", eventRoutes);
   app.use("/api/organizations", orgRoutes);
   app.use("/api/analytics", analyticsRoutes);
+  app.use("/api/audit-report", auditReportRoutes);
   // // app.use("/api/activity", activityRoutes);
   app.use("/api/search", searchRoutes);
   // app.use("/api/login", loginRoutes);
