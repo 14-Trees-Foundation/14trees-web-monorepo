@@ -5,6 +5,7 @@ import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
 import { isValidDateString } from "../helpers/utils";
+import { Logger } from "../helpers/logger";
 
 /*
     Model - Tree Snapshots
@@ -94,6 +95,33 @@ export const deleteTreeSnapshots = async (req: Request, res: Response) => {
         res.status(status.error).json({
             status: status.error,
             message: error.message,
+        });
+    }
+}
+
+export const getAuditReportPaginated = async (req: Request, res: Response) => {
+    try {
+        const body = req.body || {};
+        const offset = Number(body.offset ?? 0);
+        const limit = Number(body.limit ?? 20);
+        const filters = Array.isArray(body.filters) ? body.filters : undefined;
+        const sortBy = body.sortBy as string | undefined;
+        const sortDir = body.sortDir as 'asc' | 'desc' | undefined;
+
+        const resp = await TreesSnapshotRepository.getAuditReportPaginated({
+            offset,
+            limit,
+            filters,
+            sortBy,
+            sortDir,
+        });
+
+        res.status(status.success).send(resp);
+    } catch (error: any) {
+        await Logger.logError('treeSnapshotsController', 'getAuditReportPaginated', error, req);
+        res.status(status.error).json({
+            status: status.error,
+            message: error.message || 'Failed to fetch audit report',
         });
     }
 }
