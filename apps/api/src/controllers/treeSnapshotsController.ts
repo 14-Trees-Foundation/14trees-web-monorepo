@@ -64,7 +64,8 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
             let imageDate = new Date();
             if (!isValidDateString(image.image_date)) {
                 imageDate = new Date();
-            }
+            } else
+                imageDate = new Date(image.image_date);
             requests.push({
                 sapling_id: sapling_id,
                 user_id: userId,
