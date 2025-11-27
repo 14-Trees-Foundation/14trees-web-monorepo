@@ -8,10 +8,25 @@ const routes = Router();
 // routes.post('/addevents', uploadFiles.array('files',1), events.addEvents);
 
 routes.post('/get', events.getEvents);
-// routes.post('/', uploadFiles.array('files', 1), events.addEvents);
 routes.delete('/:id', events.deleteEvent);
-routes.post('/', uploadFiles.array('images', 10), events.addEvent);
-routes.put('/:id', uploadFiles.array('images', 10), events.updateEvent);
+
+// Add/Update event with file upload support (event_poster and images)
+routes.post('/', 
+  uploadFiles.fields([
+    { name: 'event_poster', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  events.addEvent
+);
+
+routes.put('/:id', 
+  uploadFiles.fields([
+    { name: 'event_poster', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  events.updateEvent
+);
+
 routes.get('/messages/:event_id' , events.getEventMessages);
 // routes.get("/birthday", events.getBirthdayEvent);
 // routes.get("/org", events.getOverallOrgDashboard);

@@ -3,6 +3,13 @@ import { User } from './user';
 import { Optional } from 'sequelize';
 
 type EventLocation = 'onsite' | 'offsite'
+type ThemeColor = 'yellow' | 'red' | 'green' | 'blue' | 'pink'
+
+interface LocationCoordinate {
+  lat: number;
+  lng: number;
+  address?: string;
+}
 
 interface EventAttributes {
 	id: number;
@@ -16,15 +23,17 @@ interface EventAttributes {
   memories?: string[];
   images: string[] | null;
   message: string | null;
-  event_location: EventLocation;
-  link: string;
-  default_tree_view_mode?: 'illustrations' | 'profile';
+  event_location: EventLocation;  // Keep as string: 'onsite' or 'offsite'
+  // Optional detailed single-point location
+  location?: LocationCoordinate | null;
+  theme_color?: ThemeColor;
+  event_poster?: string;
   created_at: Date;
   updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'link' | 'default_tree_view_mode' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -58,8 +67,29 @@ implements EventAttributes {
   @Column(DataType.STRING)
   description?: string;
 
-  @Column(DataType.STRING)
-  event_location!: EventLocation;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  event_location!: EventLocation;  // Stays as VARCHAR: 'onsite' or 'offsite'
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  theme_color?: ThemeColor;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  event_poster?: string;
+
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+  })
+  location?: LocationCoordinate | null;
 
   @Column(DataType.ARRAY(DataType.STRING))
   tags?: string[];
@@ -96,4 +126,4 @@ implements EventAttributes {
   updated_at!: Date;
 }
 
-export type {EventAttributes, EventCreationAttributes}
+export type {EventAttributes, EventCreationAttributes, ThemeColor, LocationCoordinate}
