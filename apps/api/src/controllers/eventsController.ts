@@ -7,7 +7,7 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 import { UploadFileToS3 } from "./helper/uploadtos3";
-import { EventCreationAttributes, LocationCoordinate } from "../models/events";
+import { EventCreationAttributes, LocationCoordinate, EventAttributes } from "../models/events";
 
 // export const getOverallOrgDashboard = async (req: Request, res: Response) => {
 //   try {
@@ -358,9 +358,9 @@ export const addEvent = async (req: Request, res: Response) => {
       site_id: fields.site_id ? parseInt(fields.site_id) : null, // Handle site_id conversion
       description: fields.description,
       tags: tags,
-      event_date: fields.event_date ?? new Date(),
+      event_date: fields.event_date ? new Date(fields.event_date) : new Date(),
       event_location: eventLocation,
-      theme_color: fields.theme_color,  // NEW: yellow/red/green/blue/pink
+      theme_color: fields.theme_color,  // NEW: yellow/red/green
       location: location,
     }
 
@@ -527,7 +527,7 @@ export const updateEvent = async (req: Request, res: Response) => {
     // Build update payload: only include keys explicitly provided (avoid overwriting existing values with undefined/empty values)
     const allowedKeys = [
       'name','type','assigned_by','site_id','description','tags','event_date','event_location',
-      'theme_color','location','event_poster','images','memories','message'
+      'theme_color','location','event_poster','images','memories','message','link','default_tree_view_mode'
     ];
     const updatePayload: any = { id: idNum };
     for (const key of allowedKeys) {
@@ -543,7 +543,7 @@ export const updateEvent = async (req: Request, res: Response) => {
 
     console.log('[DEBUG] updateEvent - updatePayload:', updatePayload);
 
-    await EventRepository.updateEvent(updatePayload);
+    await EventRepository.updateEvent(updatePayload as EventAttributes);
     res.status(status.success).json({
       message: "Event updated successfully"
     });
