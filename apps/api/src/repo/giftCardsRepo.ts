@@ -215,6 +215,42 @@ export class GiftCardsRepository {
         await giftCard.destroy();
     }
 
+
+    static async getGiftRequestAnalytics(): Promise<any> {
+        const query = `
+            SELECT 
+            COUNT(CASE 
+                WHEN gcr.group_id IS NULL THEN gcr.id 
+                ELSE NULL 
+            END) AS personal_requests,
+            COUNT(CASE 
+                WHEN gcr.group_id IS NOT NULL THEN gcr.id 
+                ELSE NULL 
+            END) AS corporate_requests,
+            SUM (
+                CASE
+                    WHEN gcr.group_id IS NULL
+                    THEN gcr.no_of_cards
+                    ELSE 0
+                END
+            ) as personal_trees,
+            SUM (
+                CASE
+                    WHEN gcr.group_id IS NOT NULL
+                    THEN gcr.no_of_cards
+                    ELSE 0
+                END
+            ) as corporate_trees
+            FROM "14trees_2".gift_card_requests gcr
+        `
+
+        const resp: any = await sequelize.query(query, {
+            type: QueryTypes.SELECT
+        })
+
+        return resp[0];
+    }
+
     static async upsertGiftCards(giftCardsRequestId: number, users: { giftedTo: number, assignedTo: number, imageName?: string, count: number }[]): Promise<void> {
         const giftRequest = await GiftCardRequest.findByPk(giftCardsRequestId);
         if (!giftRequest) {

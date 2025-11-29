@@ -611,6 +611,47 @@ routes.delete('/requests/:id', giftCards.deleteGiftCardRequest);
 
 /**
  * @swagger
+ * /gift-cards/requests/analytics:
+ *   get:
+ *     summary: Get gift request tree analytics
+ *     description: Fetches analytics data for gift request trees.
+ *     tags:
+ *       - Gift Cards
+ *     responses:
+ *       200:
+ *         description: Gift request tree analytics fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             personal_requests:
+ *               type: integer
+ *               example: 10
+ *             corporate_requests:
+ *               type: integer
+ *               example: 5
+ *             corporate_trees:
+ *               type: integer
+ *               example: 50
+ *             personal_trees:
+ *               type: integer
+ *               example: 20
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again later."
+ */
+routes.get('/requests/analytics', giftCards.getGiftRequestTreeAnalytics)
+
+
+/**
+ * @swagger
  * /gift-cards/requests/clone:
  *   post:
  *     summary: Clone gift card request
