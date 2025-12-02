@@ -18,6 +18,7 @@ interface EventAttributes {
   name: string;
 	type: number;
   description?: string;
+	link?: string;
 	tags?: string[];
   event_date: Date;
   memories?: string[];
@@ -33,7 +34,7 @@ interface EventAttributes {
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -66,6 +67,12 @@ implements EventAttributes {
 
   @Column(DataType.STRING)
   description?: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  link?: string;
 
   @Column({
     type: DataType.STRING,
@@ -108,9 +115,6 @@ implements EventAttributes {
 
   @Column(DataType.DATE)
   event_date!: Date;
-
-  @Column(DataType.STRING)
-  link!: string;
 
   @Column({
     type: DataType.ENUM('illustrations', 'profile'),

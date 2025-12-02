@@ -7,7 +7,7 @@ import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
 import { UploadFileToS3 } from "./helper/uploadtos3";
-import { EventCreationAttributes, LocationCoordinate, EventAttributes } from "../models/events";
+import { EventCreationAttributes, LocationCoordinate } from "../models/events";
 
 // export const getOverallOrgDashboard = async (req: Request, res: Response) => {
 //   try {
@@ -357,11 +357,14 @@ export const addEvent = async (req: Request, res: Response) => {
       assigned_by: parseInt(fields.assigned_by), // Ensure assigned_by is number
       site_id: fields.site_id ? parseInt(fields.site_id) : null, // Handle site_id conversion
       description: fields.description,
+      message: fields.message,
       tags: tags,
-      event_date: fields.event_date ? new Date(fields.event_date) : new Date(),
+      event_date: fields.event_date ?? new Date(),
       event_location: eventLocation,
-      theme_color: fields.theme_color,  // NEW: yellow/red/green
+      theme_color: fields.theme_color,  // NEW: yellow/red/green/blue/pink
       location: location,
+      // Generate a stable random link on create; if client provided a link, keep it
+      link: fields.link ? String(fields.link) : Math.random().toString(36).slice(2, 10),
     }
 
     // Handle event poster upload to S3 (wrap to avoid upload errors bubbling up)
@@ -527,7 +530,7 @@ export const updateEvent = async (req: Request, res: Response) => {
     // Build update payload: only include keys explicitly provided (avoid overwriting existing values with undefined/empty values)
     const allowedKeys = [
       'name','type','assigned_by','site_id','description','tags','event_date','event_location',
-      'theme_color','location','event_poster','images','memories','message','link','default_tree_view_mode'
+      'theme_color','location','event_poster','images','memories','message'
     ];
     const updatePayload: any = { id: idNum };
     for (const key of allowedKeys) {
@@ -543,14 +546,14 @@ export const updateEvent = async (req: Request, res: Response) => {
 
     console.log('[DEBUG] updateEvent - updatePayload:', updatePayload);
 
-    await EventRepository.updateEvent(updatePayload as EventAttributes);
+    await EventRepository.updateEvent(updatePayload);
     res.status(status.success).json({
       message: "Event updated successfully"
     });
 
   } catch (error: any) {
-    console.error("[ERROR] EventsController::updateEvent", error);
-    res.status(status.bad).send({ error: error.message });
+    console.error("[ERROR] EventsController::updateEvent", JSON.stringify(error));
+    res.status(status.error).send({ message: error.message });
   }
 }
 

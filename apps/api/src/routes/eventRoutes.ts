@@ -9,7 +9,6 @@ const routes = Router();
 
 routes.post('/get', events.getEvents);
 routes.delete('/:id', events.deleteEvent);
-
 // Add/Update event with file upload support (event_poster and images)
 routes.post('/', 
   uploadFiles.fields([
@@ -27,6 +26,7 @@ routes.put('/:id',
   events.updateEvent
 );
 
+// add support for file uploads (event_poster and images) and improve location and theme color attributes)
 routes.get('/messages/:event_id' , events.getEventMessages);
 // routes.get("/birthday", events.getBirthdayEvent);
 // routes.get("/org", events.getOverallOrgDashboard);

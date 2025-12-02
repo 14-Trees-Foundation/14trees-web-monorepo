@@ -38,37 +38,32 @@ function parseBucketAndPrefix(bucketEnvValue?: string, folder_name: string = "")
 }
 
 export const UploadFileToS3 = async (filename: string, type: string, folder_name: string = ""): Promise<string> => {
-    const readStream = fs.createReadStream(destImg + filename);
-    let bucket;
-
-    if (type === "plant_type") {
-        bucket = process.env.BUCKET_PLANT_TYPES
-    } else if (type === "users") {
-        bucket = process.env.BUCKET_USERS
-    } else if (type === "memories") {
-        bucket = process.env.BUCKET_MEMORIES
-    } else if (type === "activities") {
-        bucket = process.env.ACTIVITY_MEMORIES
-    } else if (type === 'trees') {
-        bucket = process.env.BUCKET_TREES
-    } else if (type === 'sites') {
-        bucket = process.env.BUCKET_TREES + "/" + folder_name
-    } else if (type === 'ponds') {
-        bucket = process.env.BUCKET_PONDS + "/" + folder_name
-    } else if (type === 'albums') {
-        bucket = process.env.BUCKET_MEMORIES + "/" + folder_name
-    } else if (type === 'gift_cards') {
-        bucket = process.env.BUCKET_GIFT_CARDS + "/" + folder_name
-    } else if (type === 'tree_update') {
-        bucket = process.env.BUCKET_TREE_UPDATE
-    } else if (type === 'logos') {
-        bucket = process.env.S3_BUCKET + "/logos"
-    } else if (type === 'events') {
-        bucket = process.env.BUCKET_EVENTS + "/" + folder_name
+    const fullPath = path.join(destImg || '', filename || '');
+    if (!fs.existsSync(fullPath)) {
+        console.error('[ERROR] UploadFileToS3: local file not found:', fullPath);
+        return "";
+    }
+    const readStream = fs.createReadStream(fullPath);
+    let bucketEnvValue: string | undefined;
+    switch (type) {
+        case 'plant_type': bucketEnvValue = process.env.BUCKET_PLANT_TYPES; break;
+        case 'users': bucketEnvValue = process.env.BUCKET_USERS; break;
+        case 'memories': bucketEnvValue = process.env.BUCKET_MEMORIES; break;
+        case 'activities': bucketEnvValue = process.env.ACTIVITY_MEMORIES; break;
+        case 'trees': bucketEnvValue = process.env.BUCKET_TREES; break;
+        case 'sites': bucketEnvValue = process.env.BUCKET_TREES; break;
+        case 'ponds': bucketEnvValue = process.env.BUCKET_PONDS; break;
+        case 'albums': bucketEnvValue = process.env.BUCKET_MEMORIES; break;
+        case 'gift_cards': bucketEnvValue = process.env.BUCKET_GIFT_CARDS; break;
+        case 'tree_update': bucketEnvValue = process.env.BUCKET_TREE_UPDATE; break;
+        case 'logos': bucketEnvValue = process.env.S3_BUCKET ? `${process.env.S3_BUCKET}/logos` : undefined; break;
+        case 'events': bucketEnvValue = process.env.BUCKET_EVENTS; break;
+        default: bucketEnvValue = undefined;
     }
 
-    if (!bucket) {
-        console.log("[ERROR] UploadFileToS3: bucket not found for type: ", type);
+    const { bucketName, prefix } = parseBucketAndPrefix(bucketEnvValue, folder_name);
+    if (!bucketName) {
+        console.log('[ERROR] UploadFileToS3: bucket not found for type:', type, 'envValue:', bucketEnvValue);
         return "";
     }
 
