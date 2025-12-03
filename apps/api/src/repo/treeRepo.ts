@@ -69,6 +69,7 @@ class TreeRepository {
       pt."name" as plant_type, 
       pt.habit as habit, 
       pt.illustration_s3_path as illustration_s3_path, 
+      pt.info_card_s3_path as info_card_s3_path, 
       p."name" as plot,
       s.name_english as site_name,
       mu."name" as mapped_user_name, 

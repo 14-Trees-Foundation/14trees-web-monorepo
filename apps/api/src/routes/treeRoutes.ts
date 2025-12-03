@@ -74,6 +74,8 @@ routes.post('/addtree', uploadFiles.array('files', 1), trees.addTree);
  */
 routes.post('/get', trees.getTrees);
 
+routes.post('/get/treetypes', trees.getTreeTypes);
+
 
 /**
  * @swagger

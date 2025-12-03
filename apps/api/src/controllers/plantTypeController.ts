@@ -47,9 +47,28 @@ export const addPlantType = async (req: Request, res: Response) => {
     return;
   }
 
-  // Save the info into the sheet
+  // Save the info into the db
   try {
-    const plantType = await PlantTypeRepository.addPlantType(req.body, Array.isArray(req.files) ? req.files : [])
+    // Normalize req.files which can be either:
+    //  - an array of files (when only files uploaded)
+    //  - an object with keys like { files: File[], info_card: File | File[] }
+    const rawFiles: any = req.files;
+    let files: Express.Multer.File[] | undefined = undefined;
+    let infoCard: Express.Multer.File | undefined = undefined;
+
+    if (Array.isArray(rawFiles)) {
+      files = rawFiles as Express.Multer.File[];
+    } else if (rawFiles && typeof rawFiles === "object") {
+      if (Array.isArray(rawFiles.files)) {
+        files = rawFiles.files as Express.Multer.File[];
+      }
+      if (rawFiles.info_card) {
+        // info_card may be provided as single file or an array; pick first if array
+        infoCard = Array.isArray(rawFiles.info_card) ? rawFiles.info_card[0] : rawFiles.info_card;
+      }
+    }
+
+    const plantType = await PlantTypeRepository.addPlantType(req.body, files, infoCard);
     res.status(status.created).json(plantType);
   } catch (error: any) {
     res.status(status.error).send({ error: error.message });
@@ -59,7 +78,26 @@ export const addPlantType = async (req: Request, res: Response) => {
 
 export const updatePlantType = async (req: Request, res: Response) => {
   try {
-    const plantType = await PlantTypeRepository.updatePlantType(req.body, Array.isArray(req.files) ? req.files : [])
+    // Normalize req.files which can be either:
+    //  - an array of files (when only files uploaded)
+    //  - an object with keys like { files: File[], info_card: File | File[] }
+    const rawFiles: any = req.files;
+    let files: Express.Multer.File[] | undefined = undefined;
+    let infoCard: Express.Multer.File | undefined = undefined;
+
+    if (Array.isArray(rawFiles)) {
+      files = rawFiles as Express.Multer.File[];
+    } else if (rawFiles && typeof rawFiles === "object") {
+      if (Array.isArray(rawFiles.files)) {
+        files = rawFiles.files as Express.Multer.File[];
+      }
+      if (rawFiles.info_card) {
+        // info_card may be provided as single file or an array; pick first if array
+        infoCard = Array.isArray(rawFiles.info_card) ? rawFiles.info_card[0] : rawFiles.info_card;
+      }
+    }
+
+    const plantType = await PlantTypeRepository.updatePlantType(req.body, files, infoCard);
     res.status(status.success).json(plantType);
   } catch (error: any) {
     res.status(status.bad).send({ error: error.message });
