@@ -296,27 +296,7 @@ import { EventCreationAttributes, LocationCoordinate } from "../models/events";
 export const addEvent = async (req: Request, res: Response) => {
   const fields = req.body;
   
-  // Debug raw req.files first
-  console.log('[DEBUG] Raw req.files:', req.files);
-  console.log('[DEBUG] Is array?', Array.isArray(req.files));
-  
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-  
-  // Debug logging
-  console.log('[DEBUG] addEvent - files received:', files ? Object.keys(files) : 'no files');
-  if (files && files['event_poster']) {
-    console.log('[DEBUG] event_poster file details:', {
-      filename: files['event_poster'][0]?.filename,
-      originalname: files['event_poster'][0]?.originalname,
-      path: files['event_poster'][0]?.path,
-      size: files['event_poster'][0]?.size
-    });
-  }
-  if (files && files['images']) {
-    console.log('[DEBUG] images files count:', files['images'].length);
-  }
-  console.log('[DEBUG] addEvent - fields:', Object.keys(fields));
-  console.log('[DEBUG] addEvent - req.files type:', typeof req.files, Array.isArray(req.files) ? 'array' : 'object');
   
   try {
     // event_location stays as simple string: 'onsite' or 'offsite' (no parsing needed)
@@ -365,6 +345,7 @@ export const addEvent = async (req: Request, res: Response) => {
       location: location,
       // Generate a stable random link on create; if client provided a link, keep it
       link: fields.link ? String(fields.link) : Math.random().toString(36).slice(2, 10),
+      default_tree_view_mode: fields.default_tree_view_mode || 'profile', // Default to profile images
     }
 
     // Handle event poster upload to S3 (wrap to avoid upload errors bubbling up)
@@ -530,7 +511,7 @@ export const updateEvent = async (req: Request, res: Response) => {
     // Build update payload: only include keys explicitly provided (avoid overwriting existing values with undefined/empty values)
     const allowedKeys = [
       'name','type','assigned_by','site_id','description','tags','event_date','event_location',
-      'theme_color','location','event_poster','images','memories','message'
+      'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode'
     ];
     const updatePayload: any = { id: idNum };
     for (const key of allowedKeys) {

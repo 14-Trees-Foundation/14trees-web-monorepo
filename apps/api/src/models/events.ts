@@ -27,6 +27,7 @@ interface EventAttributes {
   event_location: EventLocation;  // Keep as string: 'onsite' or 'offsite'
   // Optional detailed single-point location
   location?: LocationCoordinate | null;
+  default_tree_view_mode?: 'illustrations' | 'profile';
   theme_color?: ThemeColor;
   event_poster?: string;
   created_at: Date;
@@ -34,7 +35,7 @@ interface EventAttributes {
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>

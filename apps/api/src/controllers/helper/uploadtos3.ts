@@ -74,7 +74,7 @@ export const UploadFileToS3 = async (filename: string, type: string, folder_name
         Bucket: bucketName,
         Key: objectKey,
         Body: readStream,
-        ACL: 'public-read'
+        // ACL: 'public-read'
     };
 
     try {
