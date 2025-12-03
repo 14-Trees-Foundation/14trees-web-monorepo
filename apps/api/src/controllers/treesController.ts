@@ -75,6 +75,7 @@ export const getTreeTypes = async (req: Request, res: Response) => {
       plant_type: string | null,
       habit: string | null,
       illustration_s3_path: string | null,
+      info_card_s3_path: string | null,
       count: number
     }>();
 
@@ -89,6 +90,7 @@ export const getTreeTypes = async (req: Request, res: Response) => {
           plant_type: t.plant_type ?? null,
           habit: t.habit ?? null,
           illustration_s3_path: t.illustration_s3_path ?? null,
+          info_card_s3_path: t.info_card_s3_path ?? null,
           count: 1
         });
       }
