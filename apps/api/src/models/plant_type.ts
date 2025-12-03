@@ -24,6 +24,7 @@ interface PlantTypeAttributes {
   last_system_updated_at?: Date;
   illustration_link: string | null;
   illustration_s3_path: string | null;
+  info_card_s3_path?: string | null;
   combined_name: string;
   created_at?: Date;
   updated_at?: Date;
@@ -110,6 +111,9 @@ implements PlantTypeAttributes {
 
   @Column(DataType.DATE)
   last_system_updated_at!: Date;
+
+  @Column(DataType.STRING)
+  info_card_s3_path!: string | null;
 
   @Column(DataType.DATE)
   created_at!: Date;
