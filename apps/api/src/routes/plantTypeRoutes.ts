@@ -264,8 +264,12 @@ routes.get('/:plot_id', plantTypes.getPlantTypesForPlot);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.post("/", uploadFiles.array("files", 4), plantTypes.addPlantType);
-
+routes.post("/", 
+    uploadFiles.fields([
+        { name: 'files', maxCount: 4 },
+        { name: 'info_card', maxCount: 1 }
+    ]),
+    plantTypes.addPlantType);
 
 /**
  * @swagger
@@ -391,7 +395,12 @@ routes.post("/", uploadFiles.array("files", 4), plantTypes.addPlantType);
  *               type: string
  *               example: "Something went wrong. Please try again later."
  */
-routes.put('/:id', uploadFiles.array('files', 4), plantTypes.updatePlantType);
+routes.put('/:id', 
+    uploadFiles.fields([
+        { name: 'files', maxCount: 4 },
+        { name: 'info_card', maxCount: 1 }
+    ]),
+    plantTypes.updatePlantType);
 
 
 /**

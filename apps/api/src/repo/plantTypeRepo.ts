@@ -23,7 +23,7 @@ class PlantTypeRepository {
         }
     };
 
-    public static async addPlantType(data: any, files?: Express.Multer.File[]): Promise<PlantType> {
+    public static async addPlantType(data: any, files?: Express.Multer.File[], info_card_file?: Express.Multer.File): Promise<PlantType> {
 
         // Tree type object to be saved
         let plantTypeObj: PlantTypeCreationAttributes = {
@@ -51,17 +51,16 @@ class PlantTypeRepository {
         let imageUrls: string[] = [];
         if (files && files.length !== 0) {
             for (const file of files) {
-                // If the client uploaded a dedicated info-card file (fieldname 'info_card'),
-                // upload it to a separate folder and store the single URL on the object.
-                if (file.fieldname === 'info_card') {
-                    const url = await UploadFileToS3(file.filename, "plant_type_info_card");
-                    plantTypeObj.info_card_s3_path = url;
-                } else {
-                    const url = await UploadFileToS3(file.filename, "plant_type");
-                    imageUrls.push(url);
-                }
+                
+                const url = await UploadFileToS3(file.filename, "plant_type");
+                imageUrls.push(url);
+                
             }
             if (imageUrls.length > 0) plantTypeObj.images = imageUrls;
+        }
+        if(info_card_file){
+            const url = await UploadFileToS3(info_card_file.filename, "plant_type_info_card");
+            data.info_card_s3_path = url;
         }
         
         const plantType = await PlantType.create(plantTypeObj);
@@ -69,22 +68,22 @@ class PlantTypeRepository {
     };
     
     
-    public static async updatePlantType(data: PlantTypeAttributes, files?: Express.Multer.File[]): Promise<PlantType> {
+    public static async updatePlantType(data: PlantTypeAttributes, files?: Express.Multer.File[], info_card_file?: Express.Multer.File): Promise<PlantType> {
 
         // Upload images to S3
         let imageUrls: string[] = [];
         if (files && files.length !== 0) {
             // ensure uploads happen sequentially and are awaited
             for (const file of files) {
-                if (file.fieldname === 'info_card') {
-                    const url = await UploadFileToS3(file.filename, "plant_type_info_card");
-                    data.info_card_s3_path = url;
-                } else {
-                    const url = await UploadFileToS3(file.filename, "plant_type");
-                    imageUrls.push(url);
-                }
+                const url = await UploadFileToS3(file.filename, "plant_type");
+                imageUrls.push(url);
             }
             if (imageUrls.length > 0) data.images = imageUrls;
+        }
+
+        if(info_card_file){
+            const url = await UploadFileToS3(info_card_file.filename, "plant_type_info_card");
+            data.info_card_s3_path = url;
         }
     
         const plantType = await PlantType.findByPk(data.id);
