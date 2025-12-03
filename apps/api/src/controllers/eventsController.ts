@@ -714,9 +714,21 @@ export const uploadEventImages = async (req: Request, res: Response) => {
       return res.status(status.bad).send({ error: "No images uploaded" });
     }
 
-    // Extract image URLs from uploaded files
-    // Note: This assumes multer is configured to provide file paths/URLs
-    const imageUrls = files.map(file => file.path || file.filename);
+
+    // Handle multiple memory images upload to S3
+    const imageUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const imageFile of files) {
+        try {
+          const s3Url = await UploadFileToS3(imageFile.originalname, 'events', 'images');
+          if (s3Url) {
+            imageUrls.push(s3Url);
+          }
+        } catch (iErr) {
+          console.error('[WARN] EventsController::uploadEventImages image upload failed', iErr);
+        }
+      }
+    }
 
     const createdImages = await EventImageRepository.addEventImages(eventId, imageUrls);
     res.status(status.created).send(createdImages);
