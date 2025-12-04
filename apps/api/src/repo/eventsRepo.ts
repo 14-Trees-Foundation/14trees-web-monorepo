@@ -106,14 +106,14 @@ export class EventRepository {
       if (messageData.User && messageData.User.name) {
         messageData.user_name = messageData.User.name;
       } else {
-        messageData.user_name = 'System';
+        messageData.user_name = messageData.user_name ??  'System';
       }
       delete messageData.User; // Remove the nested User object
       return messageData;
     });
   }
 
-  public static async createEventMessage(eventId: number, message: string, userId: number): Promise<EventMessage> {
+  public static async createEventMessage(eventId: number, message: string, userId: number, user_name: string): Promise<EventMessage> {
     try {
       // Get the current max sequence for this event
       const maxSequenceResult = await EventMessage.findOne({
@@ -125,13 +125,17 @@ export class EventRepository {
       const nextSequence = maxSequenceResult ? maxSequenceResult.sequence + 1 : 0;
 
       // Get the user name
-      const user = await User.findByPk(userId, { attributes: ['name'] });
-      const userName = user ? user.name : 'System';
+      let userName = user_name ?? '';
+      if(userId) {
+        const user = await User.findByPk(userId, { attributes: ['name'] });
+        userName = user ? user.name : 'System';
+      }
+
 
       const messageData: EventMessageCreationAttributes = {
         event_id: eventId,
         message: message,
-        user_id: userId,
+        user_id: userId ?? null,
         user_name: userName,
         sequence: nextSequence
       };
