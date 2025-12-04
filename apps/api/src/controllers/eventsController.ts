@@ -765,17 +765,17 @@ export const reorderEventImages = async (req: Request, res: Response) => {
 export const createEventMessage = async (req: Request, res: Response) => {
   try {
     const eventId = parseInt(req.params.id);
-    const { message, userId } = req.body;
+    const { message, userId, user_name } = req.body;
 
     if (isNaN(eventId)) {
       return res.status(status.bad).send({ error: "Invalid event ID" });
     }
 
-    if (!message || !userId) {
-      return res.status(status.bad).send({ error: "Message and user ID are required" });
+    if (!message || (!userId && !user_name)) {
+      return res.status(status.bad).send({ error: "Message and user ID|user name are required" });
     }
 
-    const createdMessage = await EventRepository.createEventMessage(eventId, message, userId);
+    const createdMessage = await EventRepository.createEventMessage(eventId, message, userId, user_name);
     res.status(status.created).send(createdMessage);
   } catch (error: any) {
     console.error("[ERROR] EventsController::createEventMessage", error);
