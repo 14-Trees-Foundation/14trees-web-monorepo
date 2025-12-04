@@ -641,7 +641,10 @@ export const getDeltaTrees = async (req: Request, res: Response) => {
     if (!limit) limit = 1000;
     if (!offset) offset = 0;
 
-    if (isValidDateString(timestamp)) lowerBound = new Date(timestamp);
+    const OVERRIDE_DIFF_SYNC = (process.env.OVERRIDE_DIFF_SYNC === 'true') ? true : false;
+
+
+    if (!OVERRIDE_DIFF_SYNC && isValidDateString(timestamp)) lowerBound = new Date(timestamp);
     if (tree_ids && tree_ids.length > 0) treeIds = tree_ids;
     const filters: FilterItem[] = [
         { columnField: "updated_at", operatorValue: "greaterThan", value: lowerBound.toISOString() },
