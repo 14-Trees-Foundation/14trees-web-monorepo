@@ -28,6 +28,8 @@ routes.put('/:id',
 
 // add support for file uploads (event_poster and images) and improve location and theme color attributes)
 routes.get('/messages/:event_id' , events.getEventMessages);
+routes.post('/:event_id/messages', events.addEventMessage);
+routes.get('/:event_id/blessings', events.getEventBlessings);
 // routes.get("/birthday", events.getBirthdayEvent);
 // routes.get("/org", events.getOverallOrgDashboard);
 // routes.get("/plot", events.getOverallPlotDashboard);

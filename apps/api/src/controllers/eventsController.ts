@@ -555,6 +555,46 @@ export const getEventMessages = async (req: Request, res: Response) => {
   }
 }
 
+export const addEventMessage = async (req: Request, res: Response) => {
+  const eventId = Number(req.params.event_id);
+  if (isNaN(eventId) || eventId <= 0) {
+    return res.status(status.bad).send({ error: 'Invalid event id' });
+  }
+  
+  const { message, user_name, userId } = req.body;
+  if (!message) {
+    return res.status(status.bad).send({ error: 'Message is required' });
+  }
+
+  try {
+    const createdMessage = await EventRepository.addEventMessage(
+      eventId,
+      message,
+      user_name,
+      userId
+    );
+    return res.status(status.created).send(createdMessage);
+  } catch (error: any) {
+    console.log("[ERROR]", "EventsController::addEventMessage", error);
+    return res.status(status.error).send({ message: "Failed to create event message" });
+  }
+}
+
+export const getEventBlessings = async (req: Request, res: Response) => {
+  const eventId = Number(req.params.event_id);
+  if (isNaN(eventId) || eventId <= 0) {
+    return res.status(status.bad).send({ error: 'Invalid event id' });
+  }
+
+  try {
+    const messages = await EventRepository.getEventBlessings(eventId);
+    return res.status(status.success).send({ messages });
+  } catch (error: any) {
+    console.log("[ERROR]", "EventsController::getEventBlessings", error);
+    return res.status(status.error).send({ error: error.message });
+  }
+}
+
 export const addCorpEvent = async (req: Request, res: Response) => {
   const fields = req.body;
 

@@ -245,6 +245,36 @@ export class EventRepository {
       throw error;
     }
   }
+
+  public static async addEventMessage(eventId: number, message: string, userName?: string, userId?: number): Promise<EventMessage> {
+    return await EventMessage.create({
+      event_id: eventId,
+      message: message,
+      user_name: userName || null,
+      user_id: userId || null,
+      created_at: new Date(),
+      updated_at: new Date()
+    });
+  }
+
+  public static async getEventBlessings(eventId: number): Promise<EventMessage[]> {
+    const messages = await EventMessage.findAll({
+      where: { event_id: eventId },
+      order: [['sequence', 'ASC'], ['created_at', 'ASC']]
+    });
+
+    // Map the results to include user_name from the joined User model
+    return messages.map(message => {
+      const messageData = message.toJSON() as any;
+      if (messageData.User && messageData.User.name) {
+        messageData.user_name = messageData.User.name;
+      } else {
+        messageData.user_name = 'System';
+      }
+      delete messageData.User; // Remove the nested User object
+      return messageData;
+    });
+  }
 }
 
 export default EventRepository;
