@@ -632,6 +632,7 @@ class TreeRepository {
         au."name" AS assigned_to,
         au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at,
         t.visit_id,
+        e.link as event_link,
         array_agg(distinct(vi.image_url)) AS visit_images,
         json_agg(ts) AS tree_audits
       FROM "${getSchema()}".trees t
@@ -643,8 +644,9 @@ class TreeRepository {
       LEFT JOIN "${getSchema()}".visits v ON v.id = t.visit_id
       LEFT JOIN "${getSchema()}".visit_images vi ON v.id = vi.visit_id
       LEFT JOIN "${getSchema()}".trees_snapshots ts ON ts.sapling_id = t.sapling_id
+      LEFT JOIN "${getSchema()}".events e ON e.id = t.event_id
       WHERE t.assigned_to = '${userId}'
-      GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id;
+      GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id, e.link;
     `;
 
     const data: any[] = await sequelize.query(query, {
