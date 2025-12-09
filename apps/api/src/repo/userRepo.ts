@@ -245,10 +245,10 @@ export class UserRepository {
         });
 
         if (users.length > 0) {
-
             if (data.id)
                 return await users[0].update(obj);
 
+            // If name doesn't match and this is a real email (not @14trees), create a new user with @14trees email
             else if (users[0].name.trim().toLowerCase() !== obj.name.trim().toLowerCase() && !obj.email.endsWith("@14trees")) {
                 obj.communication_email = obj.email;
                 obj.email = obj.name.split(" ").join(".") + "@14trees";
@@ -265,6 +265,20 @@ export class UserRepository {
                 return await User.create(obj);
             }
             return users[0];
+        }
+
+        // Before creating a new user, check if there's already a user with the normalized @14trees email
+        if (obj.email.endsWith("@14trees")) {
+            const normalizedEmail = obj.name.split(" ").join(".") + "@14trees";
+            const existingUser = await User.findOne({
+                where: {
+                    email: normalizedEmail
+                }
+            });
+
+            if (existingUser) {
+                return existingUser.update(obj);
+            }
         }
 
         return await User.create(obj);
