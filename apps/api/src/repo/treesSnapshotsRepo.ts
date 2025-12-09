@@ -154,7 +154,7 @@ export class TreesSnapshotRepository {
     /**
      * Paginated + filterable audit report for frontend table (grouped by user, plot, date)
      * Supports filters array with operators: contains, equals, startsWith, endsWith, isEmpty, isNotEmpty, between, etc.
-     * Column mappings: user_name, plot_name, site_name, audit_date, user_id, plot_id, site_id, trees_audited
+     * Column mappings: user_name, plot_name, site_name, audit_date, user_id, plot_id, site_id, trees_audited, trees_added
      * Sorting (default: audit_date DESC)
      */
     public static async getAuditReportPaginated(params: {
@@ -186,6 +186,7 @@ export class TreesSnapshotRepository {
                 else if (col === 'plot_id' || col === 'plotid') columnField = 'p.id';
                 else if (col === 'site_id' || col === 'siteid') columnField = 's.id';
                 else if (col === 'trees_audited') columnField = 'COUNT(t.sapling_id)';
+                else if (col === 'trees_added') columnField = 'COALESCE(ta.trees_added, 0)';
 
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
                 whereParts.push(condition);
@@ -195,7 +196,7 @@ export class TreesSnapshotRepository {
 
         const whereClause = whereParts.length ? 'WHERE ' + whereParts.join(' AND ') : '';
 
-        const allowedSort = new Set(['audit_date','user_name','plot_name','site_name','trees_audited']);
+        const allowedSort = new Set(['audit_date','user_name','plot_name','site_name','trees_audited','trees_added']);
         const finalSortBy = allowedSort.has((sortBy||'').toLowerCase()) ? (sortBy as string) : 'audit_date';
         const finalSortDir = (sortDir && sortDir.toLowerCase() === 'asc') ? 'ASC' : 'DESC';
 
@@ -209,7 +210,8 @@ export class TreesSnapshotRepository {
                 s.id as site_id,
                 s.name_english AS site_name,
                 DATE(ts.image_date) AS audit_date,
-                COUNT(t.sapling_id) AS trees_audited
+                COUNT(t.sapling_id) AS trees_audited,
+                COUNT(CASE WHEN t.planted_by = u.name AND DATE(t.created_at) = DATE(ts.image_date) THEN 1 END) AS trees_added
             FROM "${getSchema()}".trees_snapshots ts
             JOIN "${getSchema()}".trees t ON ts.sapling_id = t.sapling_id
             JOIN "${getSchema()}".plots p ON t.plot_id = p.id
