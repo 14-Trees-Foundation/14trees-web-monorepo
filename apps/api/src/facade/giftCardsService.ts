@@ -77,6 +77,16 @@ class GiftCardsService {
                 })
             }
 
+            if (recipient.id !== assignee.id && user.relation?.trim()) {
+                await UserRelationRepository.createUserRelation({
+                    primary_user: recipient.id,
+                    secondary_user: assignee.id,
+                    relation: user.relation.trim(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+            }
+
             if (user.id) {
                 updateUsersData.push({
                     ...user,

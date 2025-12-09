@@ -13,12 +13,12 @@ export const getUserId = (name: string, email: string) => {
 }
 
 export const getUserDocumentFromRequestBody = (reqBody: any): UserCreationAttributes => {
-    let userId = getUserId(reqBody.name, reqBody.email)
+    let userId = getUserId(reqBody.name, reqBody.email || `${reqBody.name.split(" ").join(".").toLowerCase()}@14trees`)
     const birthDate = new Date(reqBody.birth_date);
     return {
         name: reqBody.name.trim(),
         phone: reqBody.phone ? reqBody.phone.trim() : null,
-        email: reqBody.email.trim().toLowerCase(),
+        email: reqBody.email ? reqBody.email.trim().toLowerCase() : `${reqBody.name.split(" ").join(".").toLowerCase()}@14trees`,
         user_id: userId,
         birth_date: isNaN(birthDate?.getDate()) ? null : birthDate,
         created_at: new Date(),
@@ -251,7 +251,7 @@ export class UserRepository {
             // If name doesn't match and this is a real email (not @14trees), create a new user with @14trees email
             else if (users[0].name.trim().toLowerCase() !== obj.name.trim().toLowerCase() && !obj.email.endsWith("@14trees")) {
                 obj.communication_email = obj.email;
-                obj.email = obj.name.split(" ").join(".") + "@14trees";
+                obj.email = obj.name.split(" ").join(".").toLowerCase() + "@14trees";
 
                 const user = await User.findOne({
                     where: {
@@ -265,20 +265,6 @@ export class UserRepository {
                 return await User.create(obj);
             }
             return users[0];
-        }
-
-        // Before creating a new user, check if there's already a user with the normalized @14trees email
-        if (obj.email.endsWith("@14trees")) {
-            const normalizedEmail = obj.name.split(" ").join(".") + "@14trees";
-            const existingUser = await User.findOne({
-                where: {
-                    email: normalizedEmail
-                }
-            });
-
-            if (existingUser) {
-                return existingUser.update(obj);
-            }
         }
 
         return await User.create(obj);
