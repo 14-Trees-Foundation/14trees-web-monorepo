@@ -4,8 +4,8 @@ import * as jwt from 'jsonwebtoken';
 require('dotenv').config();
 
 export function verifyToken(req: Request, res: Response, next: any) {
-  // Skip authentication in development environment
-  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+  // Skip authentication in development or test environment
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || !process.env.NODE_ENV) {
     return next();
   }
 

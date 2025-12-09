@@ -1,0 +1,34 @@
+{
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js"
+  ],
+  "exclude": [
+    "src/**/*.d.ts",
+    "src/swagger.ts",
+    "src/testServer.ts",
+    "test/**/*",
+    "coverage/**/*",
+    "node_modules/**/*",
+    "src/swagger_output.json"
+  ],
+  "extension": [
+    ".ts",
+    ".js"
+  ],
+  "reporter": [
+    "text-summary",
+    "html",
+    "lcov"
+  ],
+  "reports-dir": "coverage",
+  "check-coverage": false,
+  "lines": 85,
+  "statements": 85,
+  "functions": 85,
+  "branches": 75,
+  "all": true,
+  "skip-full": true,
+  "clean": true,
+  "exclude-after-remap": false
+}

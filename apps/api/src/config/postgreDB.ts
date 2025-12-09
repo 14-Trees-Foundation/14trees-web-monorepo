@@ -59,11 +59,24 @@ class Database {
   private POSTGRES_DB = process.env.POSTGRES_DB || 'defaultdb';
   private POSTGRES_HOST = process.env.POSTGRES_HOST || 'vivek-tree-vivek-tree.e.aivencloud.com';
   private POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT || '15050');
-  private POSTGRES_USER = process.env.POSTGRES_USER || 'avnadmin';
+  private POSTGRES_USER = process.env.POSTGRES_USER || (process.env.NODE_ENV === 'test' ? require('os').userInfo().username : 'avnadmin');
   private POSTGRES_PD = process.env.POSTGRES_PD;
   private POSTGRES_SCHEMA = process.env.POSTGRES_SCHEMA || '14trees_2';
 
   constructor() {
+    // Determine if we should use SSL based on environment
+    const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.TEST_MODE === 'true';
+    const isLocalhost = this.POSTGRES_HOST === 'localhost' || this.POSTGRES_HOST === '127.0.0.1';
+    
+    const dialectOptions = isTestEnvironment || isLocalhost ? 
+      {} : // No SSL for test/local environments
+      {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        },
+      };
+
     this.sequelize = new Sequelize({
       database: this.POSTGRES_DB,
       username: this.POSTGRES_USER,
@@ -73,12 +86,7 @@ class Database {
       port: this.POSTGRES_PORT,
       attributeBehavior: 'escape',
       dialect: "postgres",
-      dialectOptions: {
-        ssl: {
-          require: true, // This will help you. But you will see nwe error
-          rejectUnauthorized: false // This line will fix new error
-        },
-      },
+      dialectOptions,
       pool: {
         max: 5,      // Maximum number of connections in pool
         min: 2,       // Minimum number of connections in pool
