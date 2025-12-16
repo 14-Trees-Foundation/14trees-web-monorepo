@@ -394,6 +394,7 @@ class TreeRepository {
         mapped_to_group: { [Op.is]: undefined },
         assigned_at: { [Op.is]: undefined },
         plot_id: { [Op.in]: plotIds },
+        status: { [Op.notIn]: ['dead', 'lost'] },
       },
       limit: count
     });
@@ -450,7 +451,7 @@ class TreeRepository {
       query += `JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"\n`
     }
 
-    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND t.plot_id IN (' + plotIds.join(',') + ')\n'
+    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND (t.tree_status IS NULL OR (t.tree_status != \'dead\' AND t.tree_status != \'lost\')) AND t.plot_id IN (' + plotIds.join(',') + ')\n'
     if (!diversify) {
       query += `LIMIT ${count}`
     }
@@ -518,6 +519,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL 
         AND t.mapped_to_group IS NULL 
         AND t.assigned_to IS NULL 
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND t.plot_id = :plotId
     `;
 
@@ -542,6 +544,8 @@ class TreeRepository {
       throw new Error("Tree with given sapling id not found");
     } else if (tree.assigned_to !== null) {
       throw new Error("Tree is already assigned to someone");
+    } else if (tree.status === 'dead' || tree.status === 'lost') {
+      throw new Error("Tree is dead or lost");
     }
 
     // Get the user
@@ -776,6 +780,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
       OFFSET ${offset} LIMIT ${limit};
@@ -801,6 +806,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
     `;
 

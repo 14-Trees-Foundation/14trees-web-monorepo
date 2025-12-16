@@ -96,6 +96,8 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
                     AND ppt.sustainable = true
+                    AND t.tree_status != 'dead'
+                    AND t.tree_status != 'lost'
                 THEN 1 
                 ELSE 0 
             END) AS available,
@@ -192,6 +194,7 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL) AND pt.habit = 'Tree'
                     AND ppt.sustainable = true
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                 THEN 1 
                 ELSE 0 
             END) AS available_trees,

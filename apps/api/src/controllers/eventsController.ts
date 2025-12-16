@@ -366,6 +366,24 @@ export const addEvent = async (req: Request, res: Response) => {
       }
     }
 
+    // Handle landing image upload to S3 (optional)
+    if (files && files['landing_image'] && files['landing_image'].length > 0) {
+      const landingFile = files['landing_image'][0];
+      if (landingFile && landingFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(landingFile.originalname, 'events', 'landing_images');
+          if (s3Url) {
+            data.landing_image_s3_path = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent landing image upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent landing image upload failed', uErr);
+          // Do not fail the entire request because landing image upload failed
+        }
+      }
+    }
+
     // Handle multiple images upload to S3 (if needed)
     if (files && files['images'] && files['images'].length > 0) {
       const imageUrls: string[] = [];
@@ -484,6 +502,20 @@ export const updateEvent = async (req: Request, res: Response) => {
       }
     }
 
+    // Handle new landing image upload
+    if (files && files['landing_image'] && files['landing_image'].length > 0) {
+      const landingFile = files['landing_image'][0];
+      try {
+        const s3Url = await UploadFileToS3(landingFile.originalname, 'events', 'landing_images');
+        if (s3Url) {
+          fields.landing_image_s3_path = s3Url;
+        }
+        // Note: consider deleting old landing image from S3 if required
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent landing image upload failed', uErr);
+      }
+    }
+
     // Handle new images upload
     if (files && files['images'] && files['images'].length > 0) {
       const imageUrls: string[] = [];
@@ -513,6 +545,8 @@ export const updateEvent = async (req: Request, res: Response) => {
       'name','type','assigned_by','site_id','description','tags','event_date','event_location',
       'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode'
     ];
+    // Allow updating landing_image_s3_path via upload or direct value
+    allowedKeys.push('landing_image_s3_path');
     const updatePayload: any = { id: idNum };
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(fields, key)) {
