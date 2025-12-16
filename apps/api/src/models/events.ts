@@ -30,6 +30,7 @@ interface EventAttributes {
   default_tree_view_mode?: 'illustrations' | 'profile';
   theme_color?: ThemeColor;
   event_poster?: string;
+  landing_image_s3_path?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -92,6 +93,12 @@ implements EventAttributes {
     allowNull: true,
   })
   event_poster?: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  landing_image_s3_path?: string;
 
   @Column({
     type: DataType.JSONB,

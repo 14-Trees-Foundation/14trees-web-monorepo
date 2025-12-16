@@ -13,6 +13,7 @@ routes.delete('/:id', events.deleteEvent);
 routes.post('/', 
   uploadFiles.fields([
     { name: 'event_poster', maxCount: 1 },
+    { name: 'landing_image', maxCount: 1 },
     { name: 'images', maxCount: 10 }
   ]), 
   events.addEvent
@@ -21,6 +22,7 @@ routes.post('/',
 routes.put('/:id', 
   uploadFiles.fields([
     { name: 'event_poster', maxCount: 1 },
+    { name: 'landing_image', maxCount: 1 },
     { name: 'images', maxCount: 10 }
   ]), 
   events.updateEvent
