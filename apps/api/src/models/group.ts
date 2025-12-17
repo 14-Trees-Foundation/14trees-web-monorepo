@@ -5,7 +5,8 @@ export type GroupType = 'visitor' | 'corporate' | 'family' | 'ngo' | 'onsite_sta
 
 interface GroupAttributes {
 	id: number;
-	name: string;
+  name: string;
+  name_key?: string | null;
 	type: GroupType;
   description?: string;
   logo_url: string | null;
@@ -17,7 +18,7 @@ interface GroupAttributes {
 }
 
 interface GroupCreationAttributes
-	extends Optional<GroupAttributes, 'id' | 'logo_url' | 'billing_email'> {}
+  extends Optional<GroupAttributes, 'id' | 'logo_url' | 'billing_email' | 'name_key'> {}
 
 @Table({ tableName: 'groups' })
 class Group extends Model<GroupAttributes, GroupCreationAttributes>
@@ -31,6 +32,9 @@ implements GroupAttributes {
     unique: true
   })
   id!: number;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  name_key!: string | null;
 
   @Column({ type: DataType.STRING, allowNull: false })
   name!: string;
