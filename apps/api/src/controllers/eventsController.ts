@@ -384,6 +384,24 @@ export const addEvent = async (req: Request, res: Response) => {
       }
     }
 
+    // Handle mobile landing image upload to S3 (optional)
+    if (files && files['landing_image_mobile'] && files['landing_image_mobile'].length > 0) {
+      const landingMobileFile = files['landing_image_mobile'][0];
+      if (landingMobileFile && landingMobileFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(landingMobileFile.originalname, 'events', 'landing_images');
+          if (s3Url) {
+            data.landing_image_mobile_s3_path = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent landing mobile image upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent landing mobile image upload failed', uErr);
+          // Do not fail the entire request because mobile landing image upload failed
+        }
+      }
+    }
+
     // Handle multiple images upload to S3 (if needed)
     if (files && files['images'] && files['images'].length > 0) {
       const imageUrls: string[] = [];
@@ -516,6 +534,20 @@ export const updateEvent = async (req: Request, res: Response) => {
       }
     }
 
+    // Handle new mobile landing image upload
+    if (files && files['landing_image_mobile'] && files['landing_image_mobile'].length > 0) {
+      const landingMobileFile = files['landing_image_mobile'][0];
+      try {
+        const s3Url = await UploadFileToS3(landingMobileFile.originalname, 'events', 'landing_images');
+        if (s3Url) {
+          fields.landing_image_mobile_s3_path = s3Url;
+        }
+        // Note: consider deleting old mobile landing image from S3 if required
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent landing mobile image upload failed', uErr);
+      }
+    }
+
     // Handle new images upload
     if (files && files['images'] && files['images'].length > 0) {
       const imageUrls: string[] = [];
@@ -547,6 +579,8 @@ export const updateEvent = async (req: Request, res: Response) => {
     ];
     // Allow updating landing_image_s3_path via upload or direct value
     allowedKeys.push('landing_image_s3_path');
+    // Allow updating mobile landing image path
+    allowedKeys.push('landing_image_mobile_s3_path');
     const updatePayload: any = { id: idNum };
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(fields, key)) {

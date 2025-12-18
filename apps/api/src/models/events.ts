@@ -31,6 +31,7 @@ interface EventAttributes {
   theme_color?: ThemeColor;
   event_poster?: string;
   landing_image_s3_path?: string;
+  landing_image_mobile_s3_path?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -99,6 +100,12 @@ implements EventAttributes {
     allowNull: true,
   })
   landing_image_s3_path?: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  landing_image_mobile_s3_path?: string;
 
   @Column({
     type: DataType.JSONB,
