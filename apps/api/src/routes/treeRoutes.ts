@@ -562,6 +562,7 @@ routes.get("/mapped/group/:group_id", trees.getMappedTreesForGroup);
 
 routes.post("/get-trees-plantation-info", trees.getTreePlantationsInfo);
 routes.get("/count/user/:user_id", trees.getTreesCountForUser);
+routes.get("/count/group/:group_id", trees.getCountSummaryForGroup);
 routes.get("/corporate-stats/tree-logged", trees.treePlantedByCorporate);
 routes.post("/mapped-gift/get", trees.getMappedGiftTrees);
 routes.post("/mapped-gift/analytics", trees.getMappedGiftTreesAnalytics);
