@@ -10,6 +10,7 @@ import { Tree } from "../models/tree";
 import { SortOrder } from "../models/common";
 import { GroupRepository } from "../repo/groupRepo";
 import { getSchema } from '../helpers/utils';
+import { GoogleSpreadsheet } from "../services/google";
 
 /*
   Model - Tree
@@ -585,6 +586,226 @@ export const getTreesCountForUser = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getTreesCountForUser", error);
+    res.status(status.error).json({
+      status: status.error,
+      message: 'Something went wrong. Please try again after some time.',
+    });
+  }
+}
+
+export const getCountSummaryForGroup = async (req: Request, res: Response) => {
+  const { group_id } = req.params;
+  const groupId = parseInt(group_id);
+
+  if (isNaN(groupId)) {
+    res.status(status.bad).json({
+      status: status.bad,
+      message: "Invalid Group!",
+    })
+    return;
+  }
+
+  try {
+    // Trees counts (TreeRepository)
+    const mappedTreesCount = await TreeRepository.treesCount({ mapped_to_group: groupId });
+    const sponsoredTreesCount = await TreeRepository.treesCount({ sponsored_by_group: groupId });
+
+    // Gifted trees count: sponsored by group AND gifted to someone
+    const giftedByTreesCountResult = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".trees WHERE sponsored_by_group = :groupId AND gifted_to IS NOT NULL`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+    const giftedByTreesCount = parseInt((giftedByTreesCountResult[0] as any)?.count || 0);
+
+    // Gift Card Requests counts
+    const giftRequestsForGroupCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".gift_card_requests WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // Donations counts
+    const donationsForGroupCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".donations WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // User Groups count (members in this group)
+    const groupMembersCount = await sequelize.query(
+      `SELECT COUNT(*) as count FROM "${getSchema()}".user_groups WHERE group_id = :groupId`,
+      { replacements: { groupId }, type: QueryTypes.SELECT }
+    );
+
+    // Events count per group id (TODO: currently we dont keep which event belong to which group directly)
+    // const eventsCount = await sequelize.query(
+    //   `SELECT COUNT(*) as count FROM "${getSchema()}".events WHERE site_id IN (SELECT id FROM "${getSchema()}".sites WHERE group_id = :groupId)`,
+    //   { replacements: { groupId }, type: QueryTypes.SELECT }
+    // );
+
+    // Helper function to extract count from query result
+    const getCount = (result: any[]) => parseInt(result[0]?.count || 0);
+
+    // Fetch data from Google Spreadsheet
+    let spreadsheetData: any = null;
+    const spreadsheetId = process.env.GROUP_STATS_SPREADSHEET;
+
+    if (spreadsheetId) {
+      try {
+        const googleSheet = new GoogleSpreadsheet();
+
+        // Fetch group info from first sheet
+        const groupInfoResult = await googleSheet.getRowByColumnValue(
+          spreadsheetId,
+          'Dashboard Data',  // Main sheet with group info
+          'Group ID',
+          groupId.toString()
+        );
+
+        // Fetch visits data
+        const visitsDataResult = await googleSheet.getSpreadsheetData(
+          spreadsheetId,
+          'Visits Data'
+        );
+
+        // Fetch events data
+        const eventsDataResult = await googleSheet.getSpreadsheetData(
+          spreadsheetId,
+          'Events Data'
+        );
+
+        // Helper function to get cell value by header name
+        const getCellByHeader = (headers: string[], rowData: any[], headerName: string): string | null => {
+          const index = headers.findIndex(h => h.trim().toLowerCase() === headerName.trim().toLowerCase());
+          return index !== -1 ? (rowData[index] || null) : null;
+        };
+
+        // Parse the spreadsheet data from Dashboard Data sheet
+        if (groupInfoResult) {
+          const rowData = groupInfoResult.rowData;
+
+          // First, get all headers from the sheet
+          const sheetDataResult = await googleSheet.getSpreadsheetData(spreadsheetId, 'Dashboard Data');
+          const headers = sheetDataResult?.data?.values?.[0] || [];
+
+          const groupIdVal = getCellByHeader(headers, rowData, 'Group ID');
+          const groupNameVal = getCellByHeader(headers, rowData, 'Group Name');
+          const acresVal = getCellByHeader(headers, rowData, 'Acres of Land');
+          const yearsVal = getCellByHeader(headers, rowData, 'Years of Partnership');
+          const visitsVal = getCellByHeader(headers, rowData, 'No. of Visits');
+          const treesVal = getCellByHeader(headers, rowData, 'Trees planted');
+          const grovesVal = getCellByHeader(headers, rowData, 'Groves');
+          const eventsVal = getCellByHeader(headers, rowData, 'Events');
+          const giftCardsVal = getCellByHeader(headers, rowData, 'Gift Cards');
+
+          spreadsheetData = {
+            group_info: {
+              group_id: groupIdVal,
+              group_name: groupNameVal,
+              acres_of_land: acresVal ? parseFloat(acresVal) : null,
+              years_of_partnership: yearsVal ? parseInt(yearsVal) : null,
+              no_of_visits: visitsVal ? parseInt(visitsVal) : null,
+              trees_planted: treesVal ? parseInt(treesVal) : null,
+              groves: grovesVal,
+              events: eventsVal ? parseInt(eventsVal) : null,
+              gift_cards: giftCardsVal ? parseInt(giftCardsVal) : null,
+            }
+          };
+        }
+
+        // Parse visits data - filter by group_id
+        // Expected headers: Group ID, Visit Name, Date, Photo Album Link
+        if (visitsDataResult?.data?.values) {
+          const visitsRows = visitsDataResult.data.values;
+          if (visitsRows.length > 0) {
+            const visitsHeaders = visitsRows[0];
+            const groupIdColIndex = visitsHeaders.findIndex((h: string) =>
+              h.trim().toLowerCase() === 'group id'
+            );
+
+            if (groupIdColIndex !== -1) {
+              const groupVisits = visitsRows.slice(1).filter((row: any[]) =>
+                row[groupIdColIndex]?.toString() === groupId.toString()
+              );
+
+              spreadsheetData = {
+                ...spreadsheetData,
+                visits_data: groupVisits.map((row: any[]) => ({
+                  group_id: getCellByHeader(visitsHeaders, row, 'Group ID'),
+                  visit_name: getCellByHeader(visitsHeaders, row, 'Visit Name'),
+                  date: getCellByHeader(visitsHeaders, row, 'Date'),
+                  photo_album_link: getCellByHeader(visitsHeaders, row, 'Photo Album Link'),
+                }))
+              };
+            }
+          }
+        }
+
+        // Parse events data - filter by group_id
+        // Expected headers: Group ID, Event Name, Date, Photo Album Link
+        if (eventsDataResult?.data?.values) {
+          const eventsRows = eventsDataResult.data.values;
+          if (eventsRows.length > 0) {
+            const eventsHeaders = eventsRows[0];
+            const groupIdColIndex = eventsHeaders.findIndex((h: string) =>
+              h.trim().toLowerCase() === 'group id'
+            );
+
+            if (groupIdColIndex !== -1) {
+              const groupEvents = eventsRows.slice(1).filter((row: any[]) =>
+                row[groupIdColIndex]?.toString() === groupId.toString()
+              );
+
+              spreadsheetData = {
+                ...spreadsheetData,
+                events_data: groupEvents.map((row: any[]) => ({
+                  group_id: getCellByHeader(eventsHeaders, row, 'Group ID'),
+                  event_name: getCellByHeader(eventsHeaders, row, 'Event Name'),
+                  date: getCellByHeader(eventsHeaders, row, 'Date'),
+                  photo_album_link: getCellByHeader(eventsHeaders, row, 'Photo Album Link'),
+                }))
+              };
+            }
+          }
+        }
+      } catch (error: any) {
+        console.log("[WARN]", "TreesController::getCountSummaryForGroup::GoogleSheets", error.message);
+        // Continue without spreadsheet data
+      }
+    } else {
+      console.log("[WARN]", "TreesController::getCountSummaryForGroup", "GROUP_STATS_SPREADSHEET environment variable not set");
+    }
+
+    res.status(status.success).send({
+      // Tree relationships
+      trees: {
+        mapped_trees: mappedTreesCount,
+        sponsored_trees: sponsoredTreesCount,
+        gifted_trees: giftedByTreesCount
+      },
+      // Gift card requests
+      gift_card_requests: {
+        for_group: getCount(giftRequestsForGroupCount)
+      },
+      // Donations
+      donations: {
+        for_group: getCount(donationsForGroupCount)
+      },
+      // Other relationships
+      group_members: getCount(groupMembersCount),
+      // events: getCount(eventsCount),
+
+      // Summary totals
+      // total_relationships:
+      //   mappedTreesCount + sponsoredTreesCount + giftedByTreesCount +
+      //   getCount(giftRequestsForGroupCount) +
+      //   getCount(donationsForGroupCount) +
+      //   getCount(groupMembersCount) +
+      //   getCount(eventsCount),
+
+      // Google Spreadsheet data
+      spreadsheet_data: spreadsheetData
+    });
+  } catch (error: any) {
+    console.log("[ERROR]", "TreesController::getCountSummaryForGroup", error);
     res.status(status.error).json({
       status: status.error,
       message: 'Something went wrong. Please try again after some time.',
