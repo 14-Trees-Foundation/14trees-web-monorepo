@@ -782,13 +782,9 @@ export const getCountSummaryForGroup = async (req: Request, res: Response) => {
         gifted_trees: giftedByTreesCount
       },
       // Gift card requests
-      gift_card_requests: {
-        for_group: getCount(giftRequestsForGroupCount)
-      },
+      gift_card_requests: getCount(giftRequestsForGroupCount),
       // Donations
-      donations: {
-        for_group: getCount(donationsForGroupCount)
-      },
+      donations: getCount(donationsForGroupCount),
       // Other relationships
       group_members: getCount(groupMembersCount),
       // events: getCount(eventsCount),
