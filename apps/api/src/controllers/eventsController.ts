@@ -575,7 +575,8 @@ export const updateEvent = async (req: Request, res: Response) => {
     // Build update payload: only include keys explicitly provided (avoid overwriting existing values with undefined/empty values)
     const allowedKeys = [
       'name','type','assigned_by','site_id','description','tags','event_date','event_location',
-      'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode'
+      'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode',
+      'show_blessings'
     ];
     // Allow updating landing_image_s3_path via upload or direct value
     allowedKeys.push('landing_image_s3_path');

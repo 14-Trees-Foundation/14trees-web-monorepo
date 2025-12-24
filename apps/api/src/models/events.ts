@@ -32,12 +32,13 @@ interface EventAttributes {
   event_poster?: string;
   landing_image_s3_path?: string;
   landing_image_mobile_s3_path?: string;
+  show_blessings?: boolean;
   created_at: Date;
   updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'show_blessings' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -137,6 +138,13 @@ implements EventAttributes {
     defaultValue: 'profile'
   })
   default_tree_view_mode?: 'illustrations' | 'profile';
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: true,
+    defaultValue: true
+  })
+  show_blessings?: boolean;
 
   @Column(DataType.DATE)
   created_at!: Date;
