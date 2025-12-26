@@ -60,4 +60,7 @@ routes.put('/messages/:messageId', events.updateEventMessage);
 routes.delete('/messages/:messageId', events.deleteEventMessage);
 routes.put('/:id/messages/reorder', events.reorderEventMessages);
 
+// View Tracking Route (public endpoint for analytics)
+routes.post('/track-view/:linkId', events.trackEventView);
+
 export default routes;
