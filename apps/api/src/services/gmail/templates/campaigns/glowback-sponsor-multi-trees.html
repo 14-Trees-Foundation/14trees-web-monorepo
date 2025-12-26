@@ -1,198 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Glowback Trees are Live</title>
-    <style>
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 40px 30px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header img {
-            max-width: 180px;
-            height: auto;
-        }
-        .hero {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .hero h1 {
-            color: #2c5234;
-            font-size: 28px;
-            margin: 0 0 15px 0;
-            font-weight: 600;
-        }
-        .tree-count {
-            background-color: #4a7c59;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            display: inline-block;
-            font-size: 18px;
-            font-weight: 600;
-            margin: 10px 0 20px 0;
-        }
-        .tagline {
-            color: #666;
-            font-size: 16px;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-        .content {
-            color: #333;
-            line-height: 1.6;
-            font-size: 15px;
-            margin-bottom: 25px;
-        }
-        .tree-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 25px 0;
-        }
-        .tree-card {
-            background-color: #f5f5f5;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-        }
-        .tree-card img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-        .tree-card p {
-            margin: 5px 0;
-            font-size: 13px;
-            color: #555;
-        }
-        .tree-card strong {
-            color: #2c5234;
-            font-size: 14px;
-        }
-        .cta-button {
-            display: inline-block;
-            padding: 14px 32px;
-            background-color: #4a7c59;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
-            font-weight: 600;
-            font-size: 16px;
-        }
-        .cta-button:hover {
-            background-color: #3d6849;
-        }
-        .impact-box {
-            background-color: #e8f5e9;
-            border-left: 4px solid #4a7c59;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 4px;
-        }
-        .impact-box h3 {
-            color: #2c5234;
-            margin: 0 0 10px 0;
-            font-size: 18px;
-        }
-        .impact-box p {
-            margin: 5px 0;
-            color: #555;
-        }
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-            text-align: center;
-            color: #888;
-            font-size: 13px;
-        }
-        .footer p {
-            margin: 5px 0;
-        }
-        @media (max-width: 480px) {
-            .tree-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Planting Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+
+    .header {
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header h2 {
+      margin: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .info-table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table th,
+    .info-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .info-table th {
+      background-color: #f2f2f2;
+    }
+
+    /* Optional: Enhance table layout for smaller screens */
+    @media screen and (max-width: 600px) {
+
+      .info-table th,
+      .info-table td {
+        padding: 6px;
+        font-size: 14px;
+      }
+    }
+
+    .footer {
+      display: flex;
+      /* justify-content: space-between; */
+      align-items: center;
+      margin-top: 30px;
+      padding: 15px 20px;
+      background-color: #f2f2f2;
+      border-radius: 0 0 8px 8px;
+      /* gap: 20px; */
+    }
+
+    .footer-content {
+      max-width: 60%;
+      text-align: left;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    .footer-content p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .footer-logo {
+      height: 80px;
+      margin-left: 12px;
+      /* flex-shrink: 0; */
+    }
+
+    .footer-logo-container {
+      margin-left: auto;
+      display: flex;
+      /* flex-direction: row; */
+      align-items: center;
+      gap: 25px;
+      /* flex-shrink: 0; */
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="https://14trees-web-assets.s3.ap-south-1.amazonaws.com/logo/14treeslogo.png" alt="14 Trees Foundation">
-        </div>
-
-        <div class="hero">
-            <h1>🌱 Your Glowback Trees are Live!</h1>
-            <div class="tree-count">{{count}} Trees Planted</div>
-        </div>
-
-        {{#if campaign_tagline}}
-        <p class="tagline"><em>{{campaign_tagline}}</em></p>
-        {{/if}}
-
-        <div class="content">
-            <p>Dear {{name}},</p>
-
-            <p>Thank you for being part of Glowback! Your {{count}} trees have been planted at the 14 Trees Foundation reforestation site in Pune.</p>
-
-            <p>These trees will grow for years to come, helping rejuvenate local ecosystems, support biodiversity, and offset the harmful effects of climate change.</p>
-        </div>
-
-        <div class="impact-box">
-            <h3>Your Environmental Impact</h3>
-            <p>🌳 <strong>{{count}} trees</strong> planted and growing</p>
-            <p>💨 Absorbing CO₂ and producing oxygen for decades</p>
-            <p>🦜 Creating habitat for local wildlife and biodiversity</p>
-            <p>💧 Supporting soil health and water retention</p>
-        </div>
-
-        <div class="tree-grid">
-            {{#each trees}}
-            <div class="tree-card">
-                {{#if card_image_url}}
-                <img src="{{card_image_url}}" alt="Tree {{sapling_id}}">
-                {{/if}}
-                <p><strong>{{sapling_id}}</strong></p>
-                <p>{{plant_type}}</p>
-                <a href="{{dashboard_link}}" style="color: #4a7c59; font-size: 12px; text-decoration: none;">View Profile →</a>
-            </div>
-            {{/each}}
-        </div>
-
-        <div style="text-align: center;">
-            <a href="https://dashboard.14trees.org" class="cta-button">View All Your Trees</a>
-        </div>
-
-        <div class="content">
-            <p>We invite you to visit 14 Trees and experience firsthand the growth and contribution of your trees towards a greener future.</p>
-
-            <p>Thank you for making a difference!</p>
-
-            <p>With gratitude,<br>
-            <strong>The Glowback & 14 Trees Team</strong></p>
-        </div>
-
-        <div class="footer">
-            <p>14 Trees Foundation | Reforesting India, One Tree at a Time</p>
-            <p>📧 dashboard@14trees.org | 🌐 <a href="https://www.14trees.org" style="color: #4a7c59;">www.14trees.org</a></p>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h2>Greetings from Glowback & 14 Trees Foundation</h2>
     </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        Thank you for your Glowback! {{count}} trees have been planted in the following names, through our reforestation partner, the 14 Trees Foundation.
+      </p>
+      <p>You can track your trees here:</p>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Tree ID</th>
+            <th>Tree Name</th>
+            <th>Scientific Name</th>
+            <th>Name</th>
+            {{#if event_name}}<th>Event</th>{{/if}}
+            <th>Dashboard Link</th>
+          </tr>
+          {{#each trees}}
+          <tr>
+            <td>{{sapling_id}}</td>
+            <td>{{plant_type}}</td>
+            <td>{{scientific_name}}</td>
+            <td>{{assigned_to_name}}</td>
+            {{#if event_name}}<td>{{event_name}}</td>{{/if}}
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      <p>
+        Every tree brings us closer to a world where beauty and sustainability go hand in hand — and your action today helps make that real. Glowback is the world’s first beauty offset program, and it exists because people like you choose to care.
+      </p>
+      <p>
+        A Glowback is a small but powerful way to love your beauty routine and love the planet at the same time.
+      </p>
+      <p>
+        Thank you again for being part of this. If you can, share the story — because every tree matters.
+      </p>
+    </div>
+    <div class="footer">
+      <div class="footer-content">
+        <p>With gratitude,</p>
+        <p><b>Sia Domkundwar</b></p>
+        <p>Founder, Glowback</p>
+      </div>
+      <div class="footer-logo-container">
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/campaigns/gb-li-profile-picture.png"
+          alt="Glowback" />
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" />
+      </div>
+    </div>
+  </div>
 </body>
+
 </html>
