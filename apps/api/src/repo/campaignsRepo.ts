@@ -1,6 +1,6 @@
 import { WhereOptions, QueryTypes } from "sequelize";
 import { sequelize } from '../config/postgreDB';
-import { Campaign, CampaignAttributes } from "../models/campaign";
+import { Campaign, CampaignAttributes, CampaignEmailConfig } from "../models/campaign";
 import { FilterItem, PaginatedResponse } from "../models/pagination";
 import { SortOrder } from "../models/common";
 import { getSqlQueryExpression } from "../controllers/helper/filters";
@@ -126,11 +126,12 @@ export class CampaignsRepository {
         return updatedCampaigns[0];
     }
 
-    public static async createCampaign(name: string, c_key: string, description?: string): Promise<Campaign> {
+    public static async createCampaign(name: string, c_key: string, description?: string, email_config?: CampaignEmailConfig): Promise<Campaign> {
         const campaign = await Campaign.create({
             name,
             c_key,
             description: description || null,
+            email_config: email_config || null,
         });
 
         return campaign;

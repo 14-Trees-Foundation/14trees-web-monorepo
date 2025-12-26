@@ -151,12 +151,25 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
   }
 };
 
-const sendDashboardMail = async (templateName: string, emailData: any, toEmails: string[], cc?: string[], attachments?: { filename: string; path: string }[], subject?: string) => {
+const sendDashboardMail = async (
+  templateName: string,
+  emailData: any,
+  toEmails: string[],
+  cc?: string[],
+  attachments?: { filename: string; path: string }[],
+  subject?: string,
+  fromName?: string,
+  fromEmail?: string,
+  replyTo?: string
+) => {
 
   const options = {
-    from: { name: '14 Trees', address: 'dashboard@14trees.org' },
+    from: {
+      name: fromName || '14 Trees',
+      address: fromEmail || 'dashboard@14trees.org'
+    },
     to: toEmails,
-    replyTo: 'dashboard@14trees.org',
+    replyTo: replyTo || 'dashboard@14trees.org',
     cc: cc,
     subject: subject ? subject : emailData.count > 1 ? `${emailData.count} Trees have been planted` : 'A Tree has been planted',
     html: "",

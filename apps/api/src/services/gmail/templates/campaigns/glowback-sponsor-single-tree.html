@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Glowback is Live</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px 30px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header img {
+            max-width: 180px;
+            height: auto;
+        }
+        .hero {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .hero h1 {
+            color: #2c5234;
+            font-size: 28px;
+            margin: 0 0 15px 0;
+            font-weight: 600;
+        }
+        .tagline {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .content {
+            color: #333;
+            line-height: 1.6;
+            font-size: 15px;
+            margin-bottom: 25px;
+        }
+        .tree-card {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .tree-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .tree-details {
+            margin: 15px 0;
+        }
+        .tree-details p {
+            margin: 8px 0;
+            color: #555;
+        }
+        .tree-details strong {
+            color: #2c5234;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 14px 32px;
+            background-color: #4a7c59;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .cta-button:hover {
+            background-color: #3d6849;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://14trees-web-assets.s3.ap-south-1.amazonaws.com/logo/14treeslogo.png" alt="14 Trees Foundation">
+        </div>
+
+        <div class="hero">
+            <h1>🌱 Your Glowback is Live!</h1>
+        </div>
+
+        {{#if campaign_tagline}}
+        <p class="tagline"><em>{{campaign_tagline}}</em></p>
+        {{/if}}
+
+        <div class="content">
+            <p>Dear {{name}},</p>
+
+            <p>Thank you for being part of Glowback! Your tree has been planted at the 14 Trees Foundation reforestation site in Pune.</p>
+
+            <p>This tree will grow for years to come, helping rejuvenate local ecosystems, support biodiversity, and offset the harmful effects of climate change.</p>
+        </div>
+
+        {{#each trees}}
+        <div class="tree-card">
+            {{#if card_image_url}}
+            <img src="{{card_image_url}}" alt="Tree Card">
+            {{/if}}
+
+            <div class="tree-details">
+                <p><strong>Tree ID:</strong> {{sapling_id}}</p>
+                <p><strong>Species:</strong> {{plant_type}}</p>
+                {{#if scientific_name}}
+                <p><strong>Scientific Name:</strong> <em>{{scientific_name}}</em></p>
+                {{/if}}
+            </div>
+
+            <a href="{{dashboard_link}}" class="cta-button">View Your Tree's Profile</a>
+        </div>
+        {{/each}}
+
+        <div class="content">
+            <p>We invite you to visit 14 Trees and experience firsthand the growth and contribution of your tree towards a greener future.</p>
+
+            <p>Thank you for making a difference!</p>
+
+            <p>With gratitude,<br>
+            <strong>The Glowback & 14 Trees Team</strong></p>
+        </div>
+
+        <div class="footer">
+            <p>14 Trees Foundation | Reforesting India, One Tree at a Time</p>
+            <p>📧 dashboard@14trees.org | 🌐 <a href="https://www.14trees.org" style="color: #4a7c59;">www.14trees.org</a></p>
+        </div>
+    </div>
+</body>
+</html>

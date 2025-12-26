@@ -539,7 +539,7 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
         emailData.count++;
     }
 
-    const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+    let ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
     const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
 
     let attachments: { filename: string; path: string }[] | undefined = undefined;
@@ -557,14 +557,70 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
         if (files.length > 0) attachments = files;
     }
 
-    const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
-    const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
-    if (templates.length === 0) {
-        console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
-        return;
+    // Check for campaign-specific email configuration
+    let campaignConfig = null;
+    if (giftCardRequest.rfr_id) {
+        const referrals = await ReferralsRepository.getReferrals({ id: giftCardRequest.rfr_id });
+        if (referrals.length > 0 && referrals[0].c_key) {
+            const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+                { columnField: 'c_key', operatorValue: 'equals', value: referrals[0].c_key }
+            ]);
+            if (campaignsResp.results.length > 0 && campaignsResp.results[0].email_config?.sponsor_email?.enabled) {
+                campaignConfig = campaignsResp.results[0].email_config.sponsor_email;
+                // Merge campaign custom_data into emailData
+                if (campaignConfig.custom_data) {
+                    Object.assign(emailData, campaignConfig.custom_data);
+                }
+            }
+        }
     }
 
-    const statusMessage: string = await sendDashboardMail(templates[0].template_name, emailData, mailIds, ccMailIds, attachments);
+    let templateName: string;
+    let subject: string | undefined;
+    let fromName: string | undefined;
+    let fromEmail: string | undefined;
+    let replyTo: string | undefined;
+
+    if (campaignConfig) {
+        // Use campaign-specific template and settings
+        templateName = emailData.count > 1
+            ? campaignConfig.template_name_multi
+            : campaignConfig.template_name_single;
+        subject = emailData.count > 1
+            ? campaignConfig.subject_template_multi
+            : campaignConfig.subject_template_single;
+        fromName = campaignConfig.from_name;
+        fromEmail = campaignConfig.from_email;
+        replyTo = campaignConfig.reply_to;
+
+        // Merge campaign CC emails with existing CC emails
+        if (campaignConfig.cc_emails && campaignConfig.cc_emails.length > 0) {
+            ccMailIds = ccMailIds
+                ? [...ccMailIds, ...campaignConfig.cc_emails]
+                : campaignConfig.cc_emails;
+        }
+    } else {
+        // Use default email template
+        const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+        const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType });
+        if (templates.length === 0) {
+            console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+            return;
+        }
+        templateName = templates[0].template_name;
+    }
+
+    const statusMessage: string = await sendDashboardMail(
+        templateName,
+        emailData,
+        mailIds,
+        ccMailIds,
+        attachments,
+        subject,
+        fromName,
+        fromEmail,
+        replyTo
+    );
 
     if (statusMessage === '' && (!testMails || testMails.length === 0)) {
         await GiftCardsRepository.updateGiftCardRequests(
