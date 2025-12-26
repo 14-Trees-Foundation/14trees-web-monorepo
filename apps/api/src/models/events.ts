@@ -33,12 +33,14 @@ interface EventAttributes {
   landing_image_s3_path?: string;
   landing_image_mobile_s3_path?: string;
   show_blessings?: boolean;
+  total_views?: number;
+  unique_views?: number;
   created_at: Date;
   updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'show_blessings' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'show_blessings' | 'total_views' | 'unique_views' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -145,6 +147,20 @@ implements EventAttributes {
     defaultValue: true
   })
   show_blessings?: boolean;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  })
+  total_views?: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  })
+  unique_views?: number;
 
   @Column(DataType.DATE)
   created_at!: Date;

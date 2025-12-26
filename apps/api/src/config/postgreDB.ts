@@ -46,6 +46,7 @@ import { MailSub } from "../models/mail_sub";
 import { PlotPlantType } from "../models/plot_plant_type";
 import { EventMessage } from "../models/event_message";
 import { EventImage } from "../models/event_image";
+import { EventView } from "../models/eventViews";
 import { AutoPrsReqPlot } from "../models/auto_prs_req_plot";
 import { Referral } from "../models/referral";
 import { Campaign } from "../models/campaign";
@@ -103,6 +104,7 @@ class Database {
         Event,
         EventMessage,
         EventImage,
+        EventView,
         CorpEvent,
         Site,
         Group,

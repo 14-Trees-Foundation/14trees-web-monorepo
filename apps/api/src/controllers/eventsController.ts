@@ -909,3 +909,47 @@ export const reorderEventMessages = async (req: Request, res: Response) => {
     res.status(status.error).send({ error: error.message });
   }
 };
+
+// Track Event View (for analytics)
+export const trackEventView = async (req: Request, res: Response) => {
+  try {
+    const eventLink = req.params.linkId;
+
+    // Get visitor_id from custom header
+    const visitorId = req.headers['x-visitor-id'] as string;
+
+    if (!visitorId) {
+      return res.status(status.bad).send({ error: "visitor_id header required" });
+    }
+
+    // Get event by link
+    const eventResp = await EventRepository.getEvents(0, 1, [
+      { columnField: 'link', operatorValue: 'equals', value: eventLink }
+    ]);
+
+    if (eventResp.results.length === 0) {
+      return res.status(status.notfound).send({ error: "Event not found" });
+    }
+
+    const event = eventResp.results[0];
+
+    // Get metadata for analytics
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+                      || req.socket.remoteAddress
+                      || 'unknown';
+
+    // Track the view with visitor_id
+    await EventRepository.trackEventView(event.id, visitorId, ipAddress, userAgent);
+
+    res.status(status.success).send({
+      message: "View tracked successfully",
+      total_views: event.total_views || 0,
+      unique_views: event.unique_views || 0
+    });
+  } catch (error: any) {
+    console.error("[ERROR] EventsController::trackEventView", error);
+    // Don't fail the request if tracking fails - just log it
+    res.status(status.success).send({ message: "View tracking skipped" });
+  }
+};
