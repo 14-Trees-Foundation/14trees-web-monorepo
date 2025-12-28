@@ -769,12 +769,13 @@ export class DonationService {
             })
         }
 
+        const profileImageUrl = user.profile_image_url ?? user.image_url ?? null;
         let donationUserId: number = user.id;
         if (donationUserId) {
             await DonationUserRepository.updateDonationUsers({
                 recipient: recipient.id,
                 assignee: assignee.id,
-                profile_image_url: user.profile_image_url,
+                profile_image_url: profileImageUrl,
                 trees_count: user.trees_count,
                 updated_at: new Date(),
             }, {
@@ -786,11 +787,34 @@ export class DonationService {
                 recipient: recipient.id,
                 assignee: assignee.id,
                 donation_id: donationId,
-                profile_image_url: user.profile_image_url,
+                profile_image_url: profileImageUrl,
                 trees_count: user.trees_count,
             }], true)
 
             if (createdUsers.length === 1) donationUserId = createdUsers[0].id;
+        }
+
+        // Refresh user_tree_image on already-assigned trees for this donation user
+        try {
+            const assignedTrees = await TreeRepository.getTrees(0, -1, [
+                { columnField: 'donation_id', operatorValue: 'equals', value: donationId },
+                // { columnField: 'gifted_to', operatorValue: 'equals', value: recipient.id },
+                { columnField: 'assigned_to', operatorValue: 'equals', value: assignee.id },
+            ]);
+
+            const treeIds = assignedTrees.results.map((t: any) => t.id);
+            if (treeIds.length > 0) {
+                await TreeRepository.updateTrees(
+                    {
+                        user_tree_image: user.profile_image_url || null,
+                        updated_at: new Date(),
+                    },
+                    { id: { [Op.in]: treeIds } }
+                );
+            }
+        } catch (error) {
+            console.error("[ERROR]", "DonationService::upsertDonationUser - Failed to refresh user image on trees", error);
+            // Do not fail the main operation due to image sync failure
         }
 
         const donationUsersResp = await DonationUserRepository.getDonationUsers(0, 1, [
@@ -919,25 +943,58 @@ export class DonationService {
 
 
     /**
-     * @param donation 
-     * @param sponsorUser 
-     * @param testMails List of email ids (string[]) to receive test email
-     * @param ccMails List of email ids (string[])
+     * Generate 80G certificate for a donation and upload to S3 (separable action)
      */
-    public static async sendDonationAcknowledgement(
+    public static async generate80GReceiptAndUploadForDonation(
+        donation: Donation,
+        sponsorUser: User
+    ): Promise<{ donationReceiptId: string; fileUrl: string; panNumber: string; amount: number }> {
+        const date = new Date();
+        const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+        const donationReceiptId = FY + "/" + donation.id;
+
+        let panNumber = "";
+        if (donation.payment_id) {
+            const payment = await PaymentRepository.getPayment(donation.payment_id);
+            panNumber = payment?.pan_number || "";
+        }
+
+        const docService = new GoogleDoc();
+        const receiptId = await docService.get80GRecieptFileId({
+            "{Name}": sponsorUser.name,
+            "{FY}": "Year " + (FY - 1) + "-" + (FY % 100),
+            "{Rec}": donationReceiptId,
+            "{Date}": moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
+            "{AmountW}": numberToWords(donation.amount_donated || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+            "{PAN}": panNumber,
+            "{Amt}": formatNumber(donation.amount_donated || 0),
+            "{CO}": "",
+            "{SG}": "",
+            "{OT}": "✓",
+        }, donationReceiptId);
+
+        const resp = await docService.download(receiptId);
+        const fileUrl = await uploadFileToS3('cards', resp, `donations/${donation.id}/${donationReceiptId}`);
+
+        return {
+            donationReceiptId,
+            fileUrl,
+            panNumber,
+            amount: donation.amount_donated || 0,
+        };
+    }
+
+    /**
+     * Send acknowledgement email for a donation using an already generated receipt (separable action)
+     */
+    public static async sendDonationAcknowledgementEmail(
         donation: Donation,
         sponsorUser: User,
+        receipt: { donationReceiptId: string; fileUrl: string; panNumber: string; amount: number },
         testMails?: string[],
         ccMails?: string[]
     ): Promise<void> {
         try {
-
-            let panNumber = ""
-            if (donation.payment_id) {
-                const payment = await PaymentRepository.getPayment(donation.payment_id);
-                panNumber = payment?.pan_number || "";
-            }
-
             let referredBy = "";
             let campaignName = "";
             if (donation.rfr_id) {
@@ -961,37 +1018,16 @@ export class DonationService {
                 }
             }
 
-            const date = new Date();
-            const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-            const donationReceiptId = FY + "/" + donation.id;
-            const docService = new GoogleDoc();
-            const receiptId = await docService.get80GRecieptFileId({
-                "{Name}": sponsorUser.name,
-                "{FY}": "Year " + (FY - 1) + "-" + (FY % 100),
-                "{Rec}": donationReceiptId,
-                "{Date}": moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
-                "{AmountW}": numberToWords(donation.amount_donated || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-                "{PAN}": panNumber,
-                "{Amt}": formatNumber(donation.amount_donated || 0),
-                "{CO}": "",
-                "{SG}": "",
-                "{OT}": "✓",
-            }, donationReceiptId);
-
-            const resp = await docService.download(receiptId);
-
-            const fileUrl = await uploadFileToS3('cards', resp, `donations/${donation.id}/${donationReceiptId}`);
-
             const emailData = {
                 userDetails: {
                     name: sponsorUser.name,
                     email: sponsorUser.email,
                     phone: sponsorUser.phone,
-                    panNumber: panNumber,
+                    panNumber: receipt.panNumber,
                 },
                 donationDetails: {
                     donationId: donation.id,
-                    amount: formatNumber(donation.amount_donated || 0),
+                    amount: formatNumber(receipt.amount || 0),
                     date: moment(new Date(donation.created_at)).format('MMMM DD, YYYY'),
                     treesCount: donation.trees_count,
                     referredBy: referredBy,
@@ -1005,11 +1041,8 @@ export class DonationService {
             };
 
             const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
-            const mailIds = (testMails && testMails.length !== 0) ?
-                testMails :
-                [sponsorUser.email];
+            const mailIds = (testMails && testMails.length !== 0) ? testMails : [sponsorUser.email];
 
-            // Use template directly instead of querying from repository
             const templateName = 'donor-ack.html';
             const statusMessage = await sendDashboardMail(
                 templateName,
@@ -1017,21 +1050,44 @@ export class DonationService {
                 mailIds,
                 ccMailIds,
                 [{
-                    filename: donationReceiptId + " " + sponsorUser.name + ".pdf",
-                    path: fileUrl,
-                }], // no attachments
+                    filename: receipt.donationReceiptId + " " + sponsorUser.name + ".pdf",
+                    path: receipt.fileUrl,
+                }],
                 ' Thank You for Your Donation to 14Trees Foundation!'
             );
 
             if (statusMessage) {
                 await DonationRepository.updateDonation(donation.id, { mail_error: statusMessage });
-                console.error("[ERROR] DonationService::sendDonationAcknowledgement", statusMessage);
+                console.error("[ERROR] DonationService::sendDonationAcknowledgementEmail", statusMessage);
             } else {
                 await DonationRepository.updateDonation(donation.id, {
                     mail_status: donation.mail_status ? [...donation.mail_status, DonationMailStatus_AckSent] : [DonationMailStatus_AckSent],
                 });
             }
+        } catch (error) {
+            console.error("[ERROR] DonationService::sendDonationAcknowledgementEmail", error);
+            throw new Error("Failed to send acknowledgement email");
+        }
+    }
 
+    /**
+     * Backward-compatible orchestrator: generate receipt + send email
+     */
+    public static async sendDonationAcknowledgement(
+        donation: Donation,
+        sponsorUser: User,
+        testMails?: string[],
+        ccMails?: string[]
+    ): Promise<void> {
+        try {
+            const receipt = await this.generate80GReceiptAndUploadForDonation(donation, sponsorUser);
+            await this.sendDonationAcknowledgementEmail(
+                donation,
+                sponsorUser,
+                receipt,
+                testMails,
+                ccMails
+            );
         } catch (error) {
             console.error("[ERROR] DonationService::sendDonationAcknowledgement", error);
             throw new Error("Failed to send acknowledgement email");

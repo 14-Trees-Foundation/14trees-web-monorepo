@@ -69,6 +69,7 @@ class TreeRepository {
       pt."name" as plant_type, 
       pt.habit as habit, 
       pt.illustration_s3_path as illustration_s3_path, 
+      pt.info_card_s3_path as info_card_s3_path, 
       p."name" as plot,
       s.name_english as site_name,
       mu."name" as mapped_user_name, 
@@ -393,6 +394,7 @@ class TreeRepository {
         mapped_to_group: { [Op.is]: undefined },
         assigned_at: { [Op.is]: undefined },
         plot_id: { [Op.in]: plotIds },
+        status: { [Op.notIn]: ['dead', 'lost'] },
       },
       limit: count
     });
@@ -449,7 +451,7 @@ class TreeRepository {
       query += `JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"\n`
     }
 
-    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND t.plot_id IN (' + plotIds.join(',') + ')\n'
+    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND (t.tree_status IS NULL OR (t.tree_status != \'dead\' AND t.tree_status != \'lost\')) AND t.plot_id IN (' + plotIds.join(',') + ')\n'
     if (!diversify) {
       query += `LIMIT ${count}`
     }
@@ -517,6 +519,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL 
         AND t.mapped_to_group IS NULL 
         AND t.assigned_to IS NULL 
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND t.plot_id = :plotId
     `;
 
@@ -541,6 +544,8 @@ class TreeRepository {
       throw new Error("Tree with given sapling id not found");
     } else if (tree.assigned_to !== null) {
       throw new Error("Tree is already assigned to someone");
+    } else if (tree.status === 'dead' || tree.status === 'lost') {
+      throw new Error("Tree is dead or lost");
     }
 
     // Get the user
@@ -631,6 +636,7 @@ class TreeRepository {
         au."name" AS assigned_to,
         au."id" AS assigned_to_id, gu."name" AS gifted_by_user, t.created_at,
         t.visit_id,
+        e.link as event_link,
         array_agg(distinct(vi.image_url)) AS visit_images,
         json_agg(ts) AS tree_audits
       FROM "${getSchema()}".trees t
@@ -642,8 +648,9 @@ class TreeRepository {
       LEFT JOIN "${getSchema()}".visits v ON v.id = t.visit_id
       LEFT JOIN "${getSchema()}".visit_images vi ON v.id = vi.visit_id
       LEFT JOIN "${getSchema()}".trees_snapshots ts ON ts.sapling_id = t.sapling_id
+      LEFT JOIN "${getSchema()}".events e ON e.id = t.event_id
       WHERE t.assigned_to = '${userId}'
-      GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id;
+      GROUP BY v.id, t.id, pt.id, p.id, du.id, au.id, gu.id, e.link;
     `;
 
     const data: any[] = await sequelize.query(query, {
@@ -773,6 +780,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
       OFFSET ${offset} LIMIT ${limit};
@@ -798,6 +806,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
     `;
 

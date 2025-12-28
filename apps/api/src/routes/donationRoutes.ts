@@ -328,6 +328,65 @@ routes.post('/:id/process', donations.processDonation);
 
 routes.post('/requests/payment-success', donations.paymentSuccessForDonation);
 
+// New: separable APIs similar to gift requests
+/**
+ * @swagger
+ * /donations/requests/{id}/80g:
+ *   post:
+ *     summary: Generate and upload 80G receipt for a donation
+ *     description: Generates the 80G receipt and uploads it to S3 for the given donation id.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Donation ID
+ *         type: integer
+ *         example: 1032
+ *     responses:
+ *       200:
+ *         description: 80G receipt generated and uploaded
+ */
+routes.post('/requests/:id/80g', donations.generate80GForDonation);
+
+/**
+ * @swagger
+ * /donations/requests/{id}/acknowledgement:
+ *   post:
+ *     summary: Send acknowledgement email for a donation
+ *     description: Triggers the acknowledgement process (80G + email) for the donation id.
+ *     tags:
+ *       - Donations
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Donation ID
+ *         type: integer
+ *         example: 1032
+ *       - in: body
+ *         name: body
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             test_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["test@example.com"]
+ *             cc_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["cc@example.com"]
+ *     responses:
+ *       200:
+ *         description: Acknowledgement triggered
+ */
+routes.post('/requests/:id/acknowledgement', donations.sendAcknowledgementForDonation);
+
 routes.post('/requests/auto-process', donations.autoProcessDonationRequest);
 routes.post('/requests/plot-trees-cnt/get', donations.getTreesCountForAutoReserveTrees);
 

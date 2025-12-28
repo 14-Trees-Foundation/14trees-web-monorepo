@@ -30,7 +30,7 @@ import { UserGroupRepository } from "../repo/userGroupRepo";
 import { GiftRedeemTransactionCreationAttributes } from "../models/gift_redeem_transaction";
 import { GRTransactionsRepository } from "../repo/giftRedeemTransactionsRepo";
 import GiftRequestHelper from "../helpers/giftRequests";
-import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors } from "./helper/giftRequestHelper";
+import { autoAssignTrees, autoProcessGiftRequest, defaultGiftMessages, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestAcknowledgement, sendMailsToSponsors, generate80GReceiptAndUpload } from "./helper/giftRequestHelper";
 import runWithConcurrency, { Task } from "../helpers/consurrency";
 import { VisitRepository } from "../repo/visitsRepo";
 import RazorpayService from "../services/razorpay/razorpay";
@@ -395,6 +395,88 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
     }
 }
 
+
+export const generate80GForGiftRequest = async (req: Request, res: Response) => {
+    try {
+        const idParam = (req.params as any)?.id || req.body?.gift_request_id || req.query?.id;
+        const giftRequestId = Number(idParam);
+        if (!giftRequestId || Number.isNaN(giftRequestId)) {
+            res.status(status.bad).json({ message: 'Please provide a valid gift_request_id' });
+            return;
+        }
+
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
+        if (!giftRequest) {
+            res.status(status.notfound).json({ message: 'Gift request not found' });
+            return;
+        }
+
+        const sponsorUser = {
+            id: giftRequest.user_id,
+            name: (giftRequest as any).user_name,
+            email: (giftRequest as any).user_email,
+            phone: (giftRequest as any).user_phone,
+        };
+
+        const receipt = await generate80GReceiptAndUpload(giftRequest, sponsorUser);
+
+        res.status(status.success).json({
+            message: '80G receipt generated and uploaded',
+            gift_request_id: giftRequestId,
+            receipt,
+        });
+    } catch (error: any) {
+        console.error('[ERROR] generate80GForGiftRequest', {
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        res.status(status.error).json({ message: 'Failed to generate 80G receipt', error: error?.message || String(error) });
+    }
+};
+
+export const sendAcknowledgementForGiftRequest = async (req: Request, res: Response) => {
+    try {
+        const idParam = (req.params as any)?.id || req.body?.gift_request_id || req.query?.id;
+        const giftRequestId = Number(idParam);
+        if (!giftRequestId || Number.isNaN(giftRequestId)) {
+            res.status(status.bad).json({ message: 'Please provide a valid gift_request_id' });
+            return;
+        }
+
+        const remainingTrees = Number(req.body?.remaining_trees || req.query?.remaining_trees || 0);
+        const testMails: string[] | undefined = req.body?.test_mails;
+        const ccMails: string[] | undefined = req.body?.cc_mails;
+
+        const giftRequest = await GiftCardsService.getGiftCardsRequest(giftRequestId);
+        if (!giftRequest) {
+            res.status(status.notfound).json({ message: 'Gift request not found' });
+            return;
+        }
+
+        const sponsorUser = {
+            id: giftRequest.user_id,
+            name: (giftRequest as any).user_name,
+            email: (giftRequest as any).user_email,
+            phone: (giftRequest as any).user_phone,
+        };
+
+        await sendGiftRequestAcknowledgement(
+            giftRequest,
+            sponsorUser,
+            remainingTrees || 0,
+            testMails,
+            ccMails
+        );
+
+        res.status(status.success).json({ message: 'Acknowledgement email triggered', gift_request_id: giftRequestId });
+    } catch (error: any) {
+        console.error('[ERROR] sendAcknowledgementForGiftRequest', {
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        res.status(status.error).json({ message: 'Failed to trigger acknowledgement', error: error?.message || String(error) });
+    }
+};
 
 export const cloneGiftCardRequest = async (req: Request, res: Response) => {
     const {
@@ -1328,21 +1410,45 @@ export const bookGiftCardTrees = async (req: Request, res: Response) => {
 
 export const getBookedTrees = async (req: Request, res: Response) => {
     const { offset, limit } = getOffsetAndLimitFromRequest(req);
-    const { gift_card_request_id: giftCardRequestId } = req.params;
-    if (!giftCardRequestId || isNaN(parseInt(giftCardRequestId))) {
-        res.status(status.bad).json({
-            message: 'Please provide valid input details!'
-        })
+
+    // Accept filters from body (POST) or query string (GET) or fallback to route param
+    let filters: FilterItem[] = [];
+
+    // Parse filters from query param if provided (as JSON string)
+    if (req.query && req.query.filters) {
+        try {
+            const parsed = typeof req.query.filters === 'string' ? JSON.parse(req.query.filters) : req.query.filters;
+            if (Array.isArray(parsed)) filters = filters.concat(parsed as FilterItem[]);
+        } catch (err) {
+            // ignore parse errors, will validate below
+        }
+    }
+
+    // Merge body filters (if any)
+    if (req.body && Array.isArray(req.body.filters)) {
+        filters = filters.concat(req.body.filters as FilterItem[]);
+    }
+
+    // If route param gift_card_request_id exists, ensure it's included in filters
+    const giftCardRequestIdParam = req.params?.gift_card_request_id;
+    if (giftCardRequestIdParam && !isNaN(parseInt(giftCardRequestIdParam))) {
+        const exists = filters.some(f => f.columnField === 'gift_card_request_id' || f.columnField === 'gift_card_request_id');
+        if (!exists) filters.push({ columnField: 'gift_card_request_id', operatorValue: 'equals', value: parseInt(giftCardRequestIdParam) } as FilterItem);
+    }
+
+    // Require a gift_card_request_id filter (either from params or filters)
+    const hasReq = filters.some(f => f.columnField === 'gift_card_request_id' || f.columnField === 'giftCardRequestId');
+    if (!hasReq) {
+        res.status(status.bad).json({ message: 'Please provide valid input details!' });
+        return;
     }
 
     try {
-        const resp = await GiftCardsRepository.getBookedTrees(offset, limit, [{ columnField: 'gift_card_request_id', operatorValue: 'equals', value: parseInt(giftCardRequestId) }]);
+        const resp = await GiftCardsRepository.getBookedTrees(offset, limit, filters as FilterItem[]);
         res.status(status.success).json(resp);
     } catch (error: any) {
-        console.log("[ERROR]", "GiftCardController::getBookedTrees", error);
-        res.status(status.error).json({
-            message: 'Something went wrong. Please try again later.'
-        })
+        console.log('[ERROR]', 'GiftCardController::getBookedTrees', error);
+        res.status(status.error).json({ message: 'Something went wrong. Please try again later.' });
     }
 }
 
@@ -1437,8 +1543,10 @@ const assignTrees = async (giftCardRequest: GiftCardRequestAttributes, trees: Gi
         if (data.gift_request_user_id) {
             const user = users.find(user => user.id === tree.gift_request_user_id);
             if (user) {
+                let gifted_on_date = new Date(giftCardRequest.gifted_on);
+                const gifted_on_date_iso = new Date(gifted_on_date.getTime() + (5.5 * 60 * 60 * 1000));
                 const updateRequest = {
-                    assigned_at: normalAssignment ? new Date() : user.gifted_on || giftCardRequest.gifted_on,
+                    assigned_at: normalAssignment ? new Date() : user.gifted_on || gifted_on_date_iso.toISOString(),
                     assigned_to: user.assignee,
                     gifted_to: normalAssignment ? null : user.recipient,
                     updated_at: new Date(),
@@ -2274,15 +2382,17 @@ const sendMailsToReceivers = async (giftCardRequest: any, giftCards: any[], even
     for (const emailData of Object.values(userEmailDataMap)) {
         const templateType: TemplateType = emailData.count > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
         if (!templatesMap[templateType]) {
-            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
+            const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: giftCardRequest.request_type === 'Visit'? 'visit': eventType, template_type: templateType })
             if (templates.length === 0) {
                 console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
                 return;
             }
             templatesMap[templateType] = templates[0].template_name
+            // add logic to override templateName in case there is need of customized email
+            if (giftCardRequest.notes == 'custom_email') templatesMap[templateType] = 'receiver-single-tree-hsbc.html'
         }
 
-        tasks.push(() => emailReceiver(giftCardRequest, emailData, eventType, templatesMap[templateType], attachCard, ccMailIds, testMails));
+        tasks.push(() => emailReceiver(giftCardRequest, emailData, giftCardRequest.request_type === 'Visit'? "visit": eventType, templatesMap[templateType], attachCard, ccMailIds, testMails));
 
         count = count - 1;
         if (isTestMail && count === 0) break;

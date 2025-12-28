@@ -210,7 +210,10 @@ class GiftCardsService {
         const trees: typeof data = []
         for (const tree of data) {
             const templateId = plantTypeTemplateIdMap.get(tree.plantType);
-            if (!templateId) continue;
+            if (!templateId) {
+                console.log(`Skipping sapling ${tree.saplingId}: Template not found`);
+                continue;
+            }
 
             templateIds.push(templateId);
             trees.push(tree);
@@ -223,6 +226,7 @@ class GiftCardsService {
             const tree = trees[i];
 
             let primaryMessage = defaultMessage;
+            // primaryMessage = "Dear {recipient},\n\n" + "Wishing you a very Happy Diwali from the Globeview team! The tree dedicated in your name last year at the 14 Trees Foundation, Pune, is being nurtured—rejuvenating ecosystems, supporting biodiversity, and helping offset climate change. 14 Trees provide the oxygen one person needs for a lifetime! Track your tree’s journey by scanning QR code below.\n\nBest regards,\nAmeya Kunte";
             primaryMessage = primaryMessage.replace("{recipient}", tree.assignedTo || "");
             const record = {
                 slideId: templateId,

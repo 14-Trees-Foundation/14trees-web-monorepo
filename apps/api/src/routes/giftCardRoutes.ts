@@ -312,6 +312,67 @@ routes.post('/requests/plot-trees-cnt/get', giftCards.getTreesCountForAutoReserv
 
 /**
  * @swagger
+ * /gift-cards/requests/{id}/acknowledgement:
+ *   post:
+ *     summary: Send acknowledgement email for a gift request
+ *     description: Triggers the acknowledgement process (80G + email) for the gift request id.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Gift request ID
+ *         type: integer
+ *         example: 1032
+ *       - in: body
+ *         name: body
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             remaining_trees:
+ *               type: integer
+ *               example: 0
+ *             test_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["test@example.com"]
+ *             cc_mails:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["cc@example.com"]
+ *     responses:
+ *       200:
+ *         description: Acknowledgement triggered
+ */
+routes.post('/requests/:id/acknowledgement', giftCards.sendAcknowledgementForGiftRequest);
+
+/**
+ * @swagger
+ * /gift-cards/requests/{id}/80g:
+ *   post:
+ *     summary: Generate and upload 80G receipt for a gift request
+ *     description: Generates the 80G receipt and uploads it to S3 for the given gift request id.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Gift request ID
+ *         type: integer
+ *         example: 1032
+ *     responses:
+ *       200:
+ *         description: 80G receipt generated and uploaded
+ */
+routes.post('/requests/:id/80g', giftCards.generate80GForGiftRequest);
+
+/**
+ * @swagger
  * /gift-cards/{id}/process:
  *   post:
  *     summary: Mark gcr as processed

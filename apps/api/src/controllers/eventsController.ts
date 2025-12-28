@@ -6,8 +6,8 @@ import EventImageRepository from "../repo/eventImagesRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
 import { getWhereOptions } from "./helper/filters";
-
-import { EventCreationAttributes, EventAttributes } from "../models/events";
+import { UploadFileToS3 } from "./helper/uploadtos3";
+import { EventCreationAttributes, LocationCoordinate } from "../models/events";
 
 // export const getOverallOrgDashboard = async (req: Request, res: Response) => {
 //   try {
@@ -295,44 +295,40 @@ import { EventCreationAttributes, EventAttributes } from "../models/events";
 
 export const addEvent = async (req: Request, res: Response) => {
   const fields = req.body;
+  
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  
   try {
-    // Handle tags - convert from string to array if needed
-    let tags = fields.tags;
-    if (typeof tags === 'string') {
-      if (tags.trim() === '') {
-        // Empty string should become empty array
-        tags = [];
-      } else {
-        // Handle JSON string from multipart form data
-        try {
-          const parsed = JSON.parse(tags);
-          // Ensure the parsed result is an array
-          if (Array.isArray(parsed)) {
-            tags = parsed;
-          } else if (typeof parsed === 'object' && parsed !== null) {
-            // If it's an object (like {}), convert to empty array
-            tags = [];
-          } else {
-            // If it's some other type, convert to empty array
-            tags = [];
-          }
-        } catch {
-          // If not JSON, split by comma
-          tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
-        }
-      }
-    } else if (!tags) {
-      // Handle null, undefined, or other falsy values
-      tags = [];
+    // event_location stays as simple string: 'onsite' or 'offsite' (no parsing needed)
+    let eventLocation: any = fields.event_location || 'onsite';
+    
+    // Parse tags if it's a string
+    let tags: string[] | undefined = undefined;
+    if (fields.tags) {
+      tags = typeof fields.tags === 'string' ? JSON.parse(fields.tags) : fields.tags;
     }
 
-    // Handle images from multipart form data
-    let images: string[] | null = null;
-    const files = req.files as Express.Multer.File[];
-    if (files && files.length > 0) {
-      // Extract image URLs/paths from uploaded files
-      images = files.map(file => file.path || file.filename);
-      console.log(`Processing ${files.length} uploaded images for event creation`);
+    // Parse optional detailed `location` field (single point)
+    // Accept either a parsed object or a JSON string in multipart/form-data
+    let location: LocationCoordinate | undefined = undefined;
+    if (fields.location) {
+      let locCandidate: any = fields.location;
+      if (typeof fields.location === 'string') {
+        if (fields.location === '[object Object]') {
+          return res.status(status.bad).send({ error: 'Invalid location: send JSON string or object with lat and lng numbers' });
+        }
+        try {
+          locCandidate = JSON.parse(fields.location);
+        } catch (e) {
+          return res.status(status.bad).send({ error: 'Invalid location JSON' });
+        }
+      }
+      // Validate shape
+      if (locCandidate && (typeof locCandidate.lat === 'number') && (typeof locCandidate.lng === 'number')) {
+        location = { lat: locCandidate.lat, lng: locCandidate.lng, address: locCandidate.address };
+      } else {
+        return res.status(status.bad).send({ error: 'Invalid location: lat and lng required as numbers' });
+      }
     }
 
     const data: EventCreationAttributes = {
@@ -341,19 +337,88 @@ export const addEvent = async (req: Request, res: Response) => {
       assigned_by: parseInt(fields.assigned_by), // Ensure assigned_by is number
       site_id: fields.site_id ? parseInt(fields.site_id) : null, // Handle site_id conversion
       description: fields.description,
-      tags: tags,
-      event_date: fields.event_date ? new Date(fields.event_date) : new Date(),
-      event_location: fields.event_location ?? 'onsite',
       message: fields.message,
-      link: fields.link,
-      images: images, // Store image URLs directly in the event
+      tags: tags,
+      event_date: fields.event_date ?? new Date(),
+      event_location: eventLocation,
+      theme_color: fields.theme_color,  // NEW: yellow/red/green/blue/pink
+      location: location,
+      // Generate a stable random link on create; if client provided a link, keep it
+      link: fields.link ? String(fields.link) : Math.random().toString(36).slice(2, 10),
       default_tree_view_mode: fields.default_tree_view_mode || 'profile', // Default to profile images
     }
 
-    console.log('Creating event with data:', {
-      ...data,
-      images: images ? `${images.length} images` : 'no images'
-    });
+    // Handle event poster upload to S3 (wrap to avoid upload errors bubbling up)
+    if (files && files['event_poster'] && files['event_poster'].length > 0) {
+      const posterFile = files['event_poster'][0];
+      if (posterFile && posterFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(posterFile.originalname, 'events', 'posters');
+          if (s3Url) {
+            data.event_poster = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent poster upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent poster upload failed', uErr);
+          // Do not fail the entire request because poster upload failed
+        }
+      }
+    }
+
+    // Handle landing image upload to S3 (optional)
+    if (files && files['landing_image'] && files['landing_image'].length > 0) {
+      const landingFile = files['landing_image'][0];
+      if (landingFile && landingFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(landingFile.originalname, 'events', 'landing_images');
+          if (s3Url) {
+            data.landing_image_s3_path = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent landing image upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent landing image upload failed', uErr);
+          // Do not fail the entire request because landing image upload failed
+        }
+      }
+    }
+
+    // Handle mobile landing image upload to S3 (optional)
+    if (files && files['landing_image_mobile'] && files['landing_image_mobile'].length > 0) {
+      const landingMobileFile = files['landing_image_mobile'][0];
+      if (landingMobileFile && landingMobileFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(landingMobileFile.originalname, 'events', 'landing_images');
+          if (s3Url) {
+            data.landing_image_mobile_s3_path = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent landing mobile image upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent landing mobile image upload failed', uErr);
+          // Do not fail the entire request because mobile landing image upload failed
+        }
+      }
+    }
+
+    // Handle multiple images upload to S3 (if needed)
+    if (files && files['images'] && files['images'].length > 0) {
+      const imageUrls: string[] = [];
+      for (const imageFile of files['images']) {
+        try {
+          const s3Url = await UploadFileToS3(imageFile.originalname, 'events', 'images');
+          if (s3Url) {
+            imageUrls.push(s3Url);
+          }
+        } catch (iErr) {
+          console.error('[WARN] EventsController::addEvent image upload failed', iErr);
+        }
+      }
+      if (imageUrls.length > 0) {
+        data.images = imageUrls;
+      }
+    }
 
     const result = await EventRepository.addEvent(data);
     res.status(status.created).send(result);
@@ -391,95 +456,147 @@ export const deleteEvent = async (req: Request, res: Response) => {
 };
 
 export const updateEvent = async (req: Request, res: Response) => {
+  const fields = req.body;
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  
   try {
-    const fields = req.body;
-    const eventId = parseInt(req.params.id);
+    // event_location stays as string ('onsite'/'offsite') - no parsing
+    
+    // Parse optional detailed `location` field for updates
+    if (fields.location && typeof fields.location === 'string') {
+      if (fields.location === '[object Object]') {
+        return res.status(status.bad).send({ error: 'Invalid location: send JSON string or object with lat and lng numbers' });
+      }
+      try {
+        fields.location = JSON.parse(fields.location);
+      } catch (e) {
+        return res.status(status.bad).send({ error: 'Invalid location JSON' });
+      }
+    }
 
-    // Handle tags - convert from string to array if needed
-    let tags = fields.tags;
-    if (typeof tags === 'string') {
-      if (tags.trim() === '') {
-        // Empty string should become empty array
-        tags = [];
-      } else {
-        // Handle JSON string from multipart form data
-        try {
-          const parsed = JSON.parse(tags);
-          // Ensure the parsed result is an array
-          if (Array.isArray(parsed)) {
-            tags = parsed;
-          } else if (typeof parsed === 'object' && parsed !== null) {
-            // If it's an object (like {}), convert to empty array
-            tags = [];
-          } else {
-            // If it's some other type, convert to empty array
-            tags = [];
-          }
-        } catch {
-          // If not JSON, split by comma
-          tags = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+    // If provided, validate location shape
+    if (fields.location) {
+      const loc = fields.location as any;
+      if (!(typeof loc.lat === 'number' && typeof loc.lng === 'number')) {
+        return res.status(status.bad).send({ error: 'Invalid location: lat and lng required as numbers' });
+      }
+    }
+
+    // Parse tags if it's a string
+    if (fields.tags && typeof fields.tags === 'string') {
+      try {
+        fields.tags = JSON.parse(fields.tags);
+      } catch (e) {
+        // Keep as is if parse fails
+      }
+    }
+
+    // Ensure tags is an array when provided; if it's an empty object, treat as not provided (do not clear existing tags)
+    if (fields.tags !== undefined) {
+      if (typeof fields.tags === 'object' && !Array.isArray(fields.tags)) {
+        // If empty object, remove the key so we don't overwrite existing data
+        if (Object.keys(fields.tags).length === 0) {
+          delete fields.tags;
+        } else {
+          fields.tags = Object.values(fields.tags);
         }
       }
-    } else if (!tags) {
-      // Handle null, undefined, or other falsy values
-      tags = [];
+      if (fields.tags !== undefined && !Array.isArray(fields.tags)) {
+        return res.status(status.bad).send({ error: 'Invalid tags: must be an array' });
+      }
     }
 
-    // Handle images - this could be a mix of existing URLs and new File uploads
-    let finalImages: string[] | null = null;
-    const files = req.files as Express.Multer.File[];
-    
-    // Parse existing images from form data (sent as JSON string)
-    let existingImages: string[] = [];
-    if (fields.existingImages) {
+    // Handle new event poster upload
+    if (files && files['event_poster'] && files['event_poster'].length > 0) {
+      const posterFile = files['event_poster'][0];
       try {
-        existingImages = JSON.parse(fields.existingImages);
-      } catch (error) {
-        console.warn('Failed to parse existing images:', error);
+        const s3Url = await UploadFileToS3(posterFile.originalname, 'events', 'posters');
+        if (s3Url) {
+          fields.event_poster = s3Url;
+        }
+        // Note: Consider deleting old poster from S3 if needed
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent poster upload failed', uErr);
       }
     }
 
-    // Combine existing images with new uploads
-    if (existingImages.length > 0 || (files && files.length > 0)) {
-      finalImages = [...existingImages];
-      
-      // Add new uploaded images
-      if (files && files.length > 0) {
-        const newImageUrls = files.map(file => file.path || file.filename);
-        finalImages.push(...newImageUrls);
-        console.log(`Adding ${files.length} new images to existing ${existingImages.length} images`);
+    // Handle new landing image upload
+    if (files && files['landing_image'] && files['landing_image'].length > 0) {
+      const landingFile = files['landing_image'][0];
+      try {
+        const s3Url = await UploadFileToS3(landingFile.originalname, 'events', 'landing_images');
+        if (s3Url) {
+          fields.landing_image_s3_path = s3Url;
+        }
+        // Note: consider deleting old landing image from S3 if required
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent landing image upload failed', uErr);
       }
     }
 
-    const eventData: Partial<EventAttributes> & { id: number } = {
-      id: eventId,
-      name: fields.name,
-      type: fields.type ? parseInt(fields.type) : undefined,
-      assigned_by: fields.assigned_by ? parseInt(fields.assigned_by) : undefined,
-      site_id: fields.site_id ? parseInt(fields.site_id) : null,
-      description: fields.description,
-      tags: tags,
-      event_date: fields.event_date ? new Date(fields.event_date) : undefined,
-      event_location: fields.event_location,
-      message: fields.message,
-      link: fields.link,
-      images: finalImages,
-      default_tree_view_mode: fields.default_tree_view_mode,
-    };
-
-    // Remove undefined values
-    Object.keys(eventData).forEach(key => {
-      if (eventData[key as keyof typeof eventData] === undefined) {
-        delete eventData[key as keyof typeof eventData];
+    // Handle new mobile landing image upload
+    if (files && files['landing_image_mobile'] && files['landing_image_mobile'].length > 0) {
+      const landingMobileFile = files['landing_image_mobile'][0];
+      try {
+        const s3Url = await UploadFileToS3(landingMobileFile.originalname, 'events', 'landing_images');
+        if (s3Url) {
+          fields.landing_image_mobile_s3_path = s3Url;
+        }
+        // Note: consider deleting old mobile landing image from S3 if required
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent landing mobile image upload failed', uErr);
       }
-    });
+    }
 
-    console.log('Updating event with data:', {
-      ...eventData,
-      images: finalImages ? `${finalImages.length} images` : 'no images'
-    });
+    // Handle new images upload
+    if (files && files['images'] && files['images'].length > 0) {
+      const imageUrls: string[] = [];
+      for (const imageFile of files['images']) {
+        try {
+          const s3Url = await UploadFileToS3(imageFile.originalname, 'events', 'images');
+          if (s3Url) {
+            imageUrls.push(s3Url);
+          }
+        } catch (iErr) {
+          console.error('[WARN] EventsController::updateEvent image upload failed', iErr);
+        }
+      }
+      if (imageUrls.length > 0) {
+        // Append to existing images or replace based on your requirement
+        fields.images = imageUrls;
+      }
+    }
 
-    await EventRepository.updateEvent(eventData);
+    // Ensure we set the id from route params so repository can find the record
+    const idNum = Number(req.params.id);
+    if (isNaN(idNum) || idNum <= 0) {
+      return res.status(status.bad).send({ error: 'Invalid event id' });
+    }
+    // Build update payload: only include keys explicitly provided (avoid overwriting existing values with undefined/empty values)
+    const allowedKeys = [
+      'name','type','assigned_by','site_id','description','tags','event_date','event_location',
+      'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode',
+      'show_blessings'
+    ];
+    // Allow updating landing_image_s3_path via upload or direct value
+    allowedKeys.push('landing_image_s3_path');
+    // Allow updating mobile landing image path
+    allowedKeys.push('landing_image_mobile_s3_path');
+    const updatePayload: any = { id: idNum };
+    for (const key of allowedKeys) {
+      if (Object.prototype.hasOwnProperty.call(fields, key)) {
+        const val = (fields as any)[key];
+        // Skip empty or null values to avoid accidental deletion
+        if (val === "" || val === null || val === undefined) continue;
+        if (Array.isArray(val) && val.length === 0) continue; // skip empty arrays
+        if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val).length === 0) continue; // skip empty objects
+        updatePayload[key] = val;
+      }
+    }
+
+    console.log('[DEBUG] updateEvent - updatePayload:', updatePayload);
+
+    await EventRepository.updateEvent(updatePayload);
     res.status(status.success).json({
       message: "Event updated successfully"
     });
@@ -647,9 +764,21 @@ export const uploadEventImages = async (req: Request, res: Response) => {
       return res.status(status.bad).send({ error: "No images uploaded" });
     }
 
-    // Extract image URLs from uploaded files
-    // Note: This assumes multer is configured to provide file paths/URLs
-    const imageUrls = files.map(file => file.path || file.filename);
+
+    // Handle multiple memory images upload to S3
+    const imageUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const imageFile of files) {
+        try {
+          const s3Url = await UploadFileToS3(imageFile.originalname, 'events', 'images');
+          if (s3Url) {
+            imageUrls.push(s3Url);
+          }
+        } catch (iErr) {
+          console.error('[WARN] EventsController::uploadEventImages image upload failed', iErr);
+        }
+      }
+    }
 
     const createdImages = await EventImageRepository.addEventImages(eventId, imageUrls);
     res.status(status.created).send(createdImages);
@@ -705,17 +834,17 @@ export const reorderEventImages = async (req: Request, res: Response) => {
 export const createEventMessage = async (req: Request, res: Response) => {
   try {
     const eventId = parseInt(req.params.id);
-    const { message, userId } = req.body;
+    const { message, userId, user_name } = req.body;
 
     if (isNaN(eventId)) {
       return res.status(status.bad).send({ error: "Invalid event ID" });
     }
 
-    if (!message || !userId) {
-      return res.status(status.bad).send({ error: "Message and user ID are required" });
+    if (!message || (!userId && !user_name)) {
+      return res.status(status.bad).send({ error: "Message and user ID|user name are required" });
     }
 
-    const createdMessage = await EventRepository.createEventMessage(eventId, message, userId);
+    const createdMessage = await EventRepository.createEventMessage(eventId, message, userId, user_name);
     res.status(status.created).send(createdMessage);
   } catch (error: any) {
     console.error("[ERROR] EventsController::createEventMessage", error);
@@ -778,5 +907,49 @@ export const reorderEventMessages = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("[ERROR] EventsController::reorderEventMessages", error);
     res.status(status.error).send({ error: error.message });
+  }
+};
+
+// Track Event View (for analytics)
+export const trackEventView = async (req: Request, res: Response) => {
+  try {
+    const eventLink = req.params.linkId;
+
+    // Get visitor_id from custom header
+    const visitorId = req.headers['x-visitor-id'] as string;
+
+    if (!visitorId) {
+      return res.status(status.bad).send({ error: "visitor_id header required" });
+    }
+
+    // Get event by link
+    const eventResp = await EventRepository.getEvents(0, 1, [
+      { columnField: 'link', operatorValue: 'equals', value: eventLink }
+    ]);
+
+    if (eventResp.results.length === 0) {
+      return res.status(status.notfound).send({ error: "Event not found" });
+    }
+
+    const event = eventResp.results[0];
+
+    // Get metadata for analytics
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+                      || req.socket.remoteAddress
+                      || 'unknown';
+
+    // Track the view with visitor_id
+    await EventRepository.trackEventView(event.id, visitorId, ipAddress, userAgent);
+
+    res.status(status.success).send({
+      message: "View tracked successfully",
+      total_views: event.total_views || 0,
+      unique_views: event.unique_views || 0
+    });
+  } catch (error: any) {
+    console.error("[ERROR] EventsController::trackEventView", error);
+    // Don't fail the request if tracking fails - just log it
+    res.status(status.success).send({ message: "View tracking skipped" });
   }
 };

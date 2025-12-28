@@ -88,10 +88,109 @@ const imageMessage = {
     }
   }
 
+const interactiveMenuFormResponse = {
+    "messaging_product": "whatsapp",
+    "recipient_type": "individual",
+    "to": "PHONE_NUMBER",
+    "type": "interactive",
+    "interactive": {
+        "type": "flow",
+        // "header": {
+        // "type": "text",
+        // "text": "Flow message header"
+        // },
+        "body": {
+        "text": "Click the button below to submit new expense."
+        },
+        // "footer": {
+        // "text": "Flow message footer"
+        // },
+        "action": {
+            "name": "flow",
+            "parameters": {
+                "flow_message_version": "3",
+                "flow_token": "AQAAAAACS5FpgQ_cAAAAAD0QI3s.",
+                "flow_id": "1113268020927942",
+                "flow_cta": "Add new expense",
+                "flow_action": "navigate",
+                // "mode": "draft",
+                "flow_action_payload": {
+                "screen": "EXPENSE_FORM"
+                }
+            }
+        }
+    }
+}
+
+const menuOptionsMessage = 
+{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "917829723729",
+  "type": "interactive",
+  "interactive": {
+    "type": "list",
+    "header": {
+      "type": "text",
+      "text": "🌱 Welcome to 14 Trees!"
+    },
+    "body": {
+      "text": "Please select one of the options below:"
+    },
+    "action": {
+      "button": "Menu Options",
+      "sections": [
+        {
+          "title": "🏞️ Site Visit",
+          "rows": [
+            {
+              "id": "site_visit_register",
+              "title": "Register for site visit",
+              "description": "Join our next plantation/site visit"
+            },
+            {
+              "id": "site_visit_feedback",
+              "title": "Site visit feedback",
+              "description": "Share your experience with us"
+            }
+          ]
+        },
+        {
+          "title": "🎁 Gifting Trees",
+          "rows": [
+            {
+              "id": "gift_trees",
+              "title": "Gift Trees",
+              "description": "Plant trees for friends, family, or employees"
+            },
+            {
+              "id": "track_gift_status",
+              "title": "Track gift request",
+              "description": "Check the progress of your gift order"
+            }
+          ]
+        },
+        {
+          "title": "💼 Add Expense",
+          "rows": [
+            {
+              "id": "submit_expense",
+              "title": "Submit new expense",
+              "description": "For internal 14 Trees team use only"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+
 export {
     interactiveReplyButton,
     giftSuccessMessage,
     interactiveGiftTreesFlow,
     textMessage,
     imageMessage,
+    interactiveMenuFormResponse,
+    menuOptionsMessage
 }

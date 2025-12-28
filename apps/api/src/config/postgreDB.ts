@@ -24,6 +24,7 @@ import { TreesSnapshot } from "../models/trees_snapshots";
 import { Visit } from "../models/visits";
 import { VisitUsers } from "../models/visit_users"
 import { VisitImage } from "../models/visit_images"
+import { VisitorImage } from "../models/visitor_images"
 import { SyncHistory } from "../models/sync_history";
 import { GiftCardRequest } from "../models/gift_card_request";
 import { GiftCard } from "../models/gift_card";
@@ -45,6 +46,7 @@ import { MailSub } from "../models/mail_sub";
 import { PlotPlantType } from "../models/plot_plant_type";
 import { EventMessage } from "../models/event_message";
 import { EventImage } from "../models/event_image";
+import { EventView } from "../models/eventViews";
 import { AutoPrsReqPlot } from "../models/auto_prs_req_plot";
 import { Referral } from "../models/referral";
 import { Campaign } from "../models/campaign";
@@ -102,6 +104,7 @@ class Database {
         Event,
         EventMessage,
         EventImage,
+        EventView,
         CorpEvent,
         Site,
         Group,
@@ -115,6 +118,7 @@ class Database {
         TreesSnapshot,
         Visit,
         VisitImage,
+        VisitorImage,
         VisitUsers,
         SyncHistory,
         GiftCard,

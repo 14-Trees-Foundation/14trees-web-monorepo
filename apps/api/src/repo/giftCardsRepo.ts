@@ -299,7 +299,7 @@ export class GiftCardsRepository {
 
     static async getDetailedGiftCardByTreeId(treeId: number): Promise<GiftCard | null> {
         const getQuery = `
-            SELECT gc.*, sg.name as group_name, su.name as sponsor_name, u.name as user_name, t.sapling_id, pt.name as plant_type
+            SELECT gc.*, sg.name as group_name, su.name as sponsor_name, u.name as user_name, t.sapling_id, t.gifted_by_name, pt.name as plant_type
             FROM "${getSchema()}".gift_cards gc
             JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
             LEFT JOIN "${getSchema()}".gift_request_users gru ON gru.id = gc.gift_request_user_id
@@ -411,12 +411,18 @@ export class GiftCardsRepository {
         if (filters && filters.length > 0) {
             filters.forEach(filter => {
                 let columnField = "gc." + filter.columnField
-                if (filter.columnField === "recipient_name") {
+                // support both snake_case and camelCase from frontend
+                const col = filter.columnField;
+                if (col === "recipient_name" || col === "recipientName") {
                     columnField = "ru.name"
-                } else if (filter.columnField === "assignee_name") {
+                } else if (col === "assignee_name" || col === "assigneeName") {
                     columnField = "au.name"
-                } else if (filter.columnField === "sapling_id") {
+                } else if (col === "sapling_id" || col === "saplingId") {
                     columnField = "t.sapling_id"
+                } else if (col === "plot_name" || col === "plotName") {
+                    columnField = "p.name"
+                } else if (col === "plot_id" || col === "plotId") {
+                    columnField = "p.id"
                 }
                 const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, filter.columnField, filter.value);
                 whereConditions = whereConditions + " " + condition + " AND";
@@ -430,6 +436,7 @@ export class GiftCardsRepository {
             ru.name as recipient_name, ru.email as recipient_email, ru.phone as recipient_phone,
             au.name as assignee_name, au.email as assignee_email, au.phone as assignee_phone,
             t.sapling_id, t.assigned_to, t.gifted_to, t.assigned_to as assigned, pt.name as plant_type, pt.scientific_name,
+            p.id as plot_id, p.name as plot_name,
             ur.relation
             FROM "${getSchema()}".gift_cards gc
             LEFT JOIN "${getSchema()}".trees t ON t.id = gc.tree_id
@@ -437,6 +444,7 @@ export class GiftCardsRepository {
             LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
             LEFT JOIN "${getSchema()}".user_relations ur ON ur.primary_user = t.gifted_to AND ur.secondary_user = t.assigned_to
             LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
+            LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"}
             ORDER BY gc.id DESC ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `
@@ -452,6 +460,7 @@ export class GiftCardsRepository {
             LEFT JOIN "${getSchema()}".trees t ON t.id = gc.tree_id
             LEFT JOIN "${getSchema()}".users ru ON ru.id = t.gifted_to
             LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
+            LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
 

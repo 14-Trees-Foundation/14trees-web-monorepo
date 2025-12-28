@@ -1,0 +1,201 @@
+{
+  "apiBase": "http://localhost:8088/api",
+  "testMails": [],
+  "ccMails": [
+    "tech@14trees.org"
+  ],
+  "results": [
+    {
+      "donationId": 5019,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5019
+      }
+    },
+    {
+      "donationId": 5020,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5020
+      }
+    },
+    {
+      "donationId": 5021,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5021
+      }
+    },
+    {
+      "donationId": 5022,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5022
+      }
+    },
+    {
+      "donationId": 5023,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5023
+      }
+    },
+    {
+      "donationId": 5024,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5024
+      }
+    },
+    {
+      "donationId": 5025,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5025
+      }
+    },
+    {
+      "donationId": 5026,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5026
+      }
+    },
+    {
+      "donationId": 5028,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5028
+      }
+    },
+    {
+      "donationId": 5029,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5029
+      }
+    },
+    {
+      "donationId": 5030,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5030
+      }
+    },
+    {
+      "donationId": 5031,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5031
+      }
+    },
+    {
+      "donationId": 5067,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5067
+      }
+    },
+    {
+      "donationId": 5069,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5069
+      }
+    },
+    {
+      "donationId": 5070,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5070
+      }
+    },
+    {
+      "donationId": 5071,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5071
+      }
+    },
+    {
+      "donationId": 5072,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5072
+      }
+    },
+    {
+      "donationId": 5073,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5073
+      }
+    },
+    {
+      "donationId": 5074,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5074
+      }
+    },
+    {
+      "donationId": 5075,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5075
+      }
+    },
+    {
+      "donationId": 5076,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5076
+      }
+    },
+    {
+      "donationId": 5077,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5077
+      }
+    },
+    {
+      "donationId": 5078,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5078
+      }
+    },
+    {
+      "donationId": 5079,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5079
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "types": []   // 🚀 disables auto-inclusion of global type defs like minimatch
+  },
+  "include": ["index.ts", "config.ts"]
+}

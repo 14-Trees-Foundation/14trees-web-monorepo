@@ -8,10 +8,29 @@ const routes = Router();
 // routes.post('/addevents', uploadFiles.array('files',1), events.addEvents);
 
 routes.post('/get', events.getEvents);
-// routes.post('/', uploadFiles.array('files', 1), events.addEvents);
 routes.delete('/:id', events.deleteEvent);
-routes.post('/', uploadFiles.array('images', 10), events.addEvent);
-routes.put('/:id', uploadFiles.array('images', 10), events.updateEvent);
+// Add/Update event with file upload support (event_poster and images)
+routes.post('/', 
+  uploadFiles.fields([
+    { name: 'event_poster', maxCount: 1 },
+    { name: 'landing_image', maxCount: 1 },
+    { name: 'landing_image_mobile', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  events.addEvent
+);
+
+routes.put('/:id', 
+  uploadFiles.fields([
+    { name: 'event_poster', maxCount: 1 },
+    { name: 'landing_image', maxCount: 1 },
+    { name: 'landing_image_mobile', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  events.updateEvent
+);
+
+// add support for file uploads (event_poster and images) and improve location and theme color attributes)
 routes.get('/messages/:event_id' , events.getEventMessages);
 // routes.get("/birthday", events.getBirthdayEvent);
 // routes.get("/org", events.getOverallOrgDashboard);
@@ -40,5 +59,8 @@ routes.post('/:id/messages', events.createEventMessage);
 routes.put('/messages/:messageId', events.updateEventMessage);
 routes.delete('/messages/:messageId', events.deleteEventMessage);
 routes.put('/:id/messages/reorder', events.reorderEventMessages);
+
+// View Tracking Route (public endpoint for analytics)
+routes.post('/track-view/:linkId', events.trackEventView);
 
 export default routes;

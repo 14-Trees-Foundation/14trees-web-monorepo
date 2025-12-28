@@ -102,8 +102,10 @@ export const autoAssignTrees = async (giftCardRequest: GiftCardRequestAttributes
         const cards = userTreesMap[user.id];
         const treeIds = cards.map(card => card.tree_id);
 
+        let gifted_on_date = new Date(giftCardRequest.gifted_on);
+        const gifted_on_date_iso = new Date(gifted_on_date.getTime() + (5.5 * 60 * 60 * 1000));
         const updateRequest = {
-            assigned_at: normalAssignment ? new Date() : giftCardRequest.gifted_on,
+            assigned_at: normalAssignment ? new Date() : gifted_on_date_iso.toISOString(),
             assigned_to: user.assignee,
             gifted_to: normalAssignment ? null : user.recipient,
             updated_at: new Date(),
@@ -358,6 +360,128 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
     await GiftCardsRepository.updateGiftCardRequest(giftCardRequest);
 }
 
+// Generate 80G certificate and upload to S3 (separable action)
+export const generate80GReceiptAndUpload = async (
+    giftRequest: any,
+    sponsorUser: any
+): Promise<{ giftReceiptId: string; fileUrl: string; panNumber: string; amount: number }> => {
+    let panNumber = "";
+    if (giftRequest.payment_id) {
+        const payment = await PaymentRepository.getPayment(giftRequest.payment_id);
+        panNumber = payment?.pan_number || "";
+    }
+
+    const amount = (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards;
+
+    const date = new Date();
+    const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+    const giftReceiptId = FY + "/" + giftRequest.id;
+
+    const docService = new GoogleDoc();
+    const receiptId = await docService.get80GRecieptFileId({
+        "{Name}": sponsorUser.name,
+        "{FY}": "Year " + (FY - 1) + "-" + (FY % 100),
+        "{Rec}": giftReceiptId,
+        "{Date}": moment(new Date(giftRequest.created_at)).format('MMMM DD, YYYY'),
+        "{AmountW}": numberToWords(amount || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+        "{PAN}": panNumber,
+        "{Amt}": formatNumber(amount || 0),
+        "{CO}": "",
+        "{SG}": "",
+        "{OT}": "✓",
+    }, giftReceiptId);
+
+    const resp = await docService.download(receiptId);
+    const fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}_80_G.pdf`);
+
+    return { giftReceiptId, fileUrl, panNumber, amount };
+};
+
+// Send acknowledgement email (separable action)
+export const sendGiftRequestAcknowledgementEmail = async (
+    giftRequest: any,
+    sponsorUser: any,
+    remainingTrees: number,
+    receipt: { giftReceiptId: string; fileUrl: string; panNumber: string; amount: number },
+    testMails?: string[],
+    ccMails?: string[]
+): Promise<void> => {
+    let referredBy = "";
+    let campaignName = "";
+    if (giftRequest.rfr_id) {
+        const referrals = await ReferralsRepository.getReferrals({ id: giftRequest.rfr_id });
+        if (referrals.length > 0) {
+            const referral = referrals[0];
+
+            if (referral.c_key) {
+                const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [{ columnField: 'c_key', operatorValue: 'equals', value: referral.c_key }]);
+                if (campaignsResp.results.length > 0) {
+                    campaignName = campaignsResp.results[0].name;
+                }
+            }
+
+            if (referral.rfr) {
+                const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }]);
+                if (usersResp.results.length > 0) {
+                    referredBy = usersResp.results[0].name;
+                }
+            }
+        }
+    }
+
+    const recipients = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id);
+
+    const emailData = {
+        sponsorDetails: {
+            name: sponsorUser.name,
+            email: sponsorUser.email,
+            phone: sponsorUser.phone,
+            panNumber: receipt.panNumber,
+        },
+        giftDetails: {
+            date: new Date(giftRequest.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            remainingTrees: remainingTrees,
+            quantity: giftRequest.no_of_cards,
+            eventName: giftRequest.event_name,
+            eventType: giftRequest.event_type,
+            message: giftRequest.primary_message,
+            groupName: giftRequest.group_name,
+            amount: formatNumber(receipt.amount || 0),
+            requestId: giftRequest.id,
+            referredBy: referredBy,
+            campaignName: campaignName,
+            recipients: recipients.map((user: any) => ({
+                name: user.recipient_name,
+                trees: user.gifted_trees,
+            }))
+        }
+    };
+
+    const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+    const mailIds = (testMails && testMails.length !== 0) ? testMails : [sponsorUser.email];
+
+    const templateName = 'gifting-ack.html';
+
+    const attachments = [{
+        filename: receipt.giftReceiptId + " " + sponsorUser.name + ".pdf",
+        path: receipt.fileUrl,
+    }];
+
+    await sendDashboardMail(
+        templateName,
+        emailData,
+        mailIds,
+        ccMailIds,
+        attachments,
+        'Your Donation and A Planted Memory - Thank You!'
+    );
+};
+
+// Backward-compatible orchestrator
 export const sendGiftRequestAcknowledgement = async (
     giftRequest: any,
     sponsorUser: any,
@@ -365,119 +489,21 @@ export const sendGiftRequestAcknowledgement = async (
     testMails?: string[],
     ccMails?: string[]
 ): Promise<void> => {
-
     try {
-
-        let panNumber = "";
-        if (giftRequest.payment_id) {
-            const payment = await PaymentRepository.getPayment(giftRequest.payment_id);
-            panNumber = payment?.pan_number || "";
-        }
-
-        let referredBy = "";
-        let campaignName = "";
-        if (giftRequest.rfr_id) {
-            const referrals = await ReferralsRepository.getReferrals({ id: giftRequest.rfr_id });
-            if (referrals.length > 0) {
-                const referral = referrals[0];
-
-                if (referral.c_key) {
-                    const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [{ columnField: 'c_key', operatorValue: 'equals', value: referral.c_key }]);
-                    if (campaignsResp.results.length > 0) {
-                        campaignName = campaignsResp.results[0].name;
-                    }
-                }
-
-                if (referral.rfr) {
-                    const usersResp = await UserRepository.getUsers(0, 1, [{ columnField: 'rfr', operatorValue: 'equals', value: referral.rfr }]);
-                    if (usersResp.results.length > 0) {
-                        referredBy = usersResp.results[0].name;
-                    }
-                }
-            }
-        }
-
-        const amount = (giftRequest.category === 'Public' ? 2000 : 3000) * giftRequest.no_of_cards;
-        const recipients = await GiftCardsRepository.getGiftRequestUsers(giftRequest.id)
-
-        // Generate 80G receipt if applicable
-        const date = new Date();
-        const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-        const giftReceiptId = FY + "/" + giftRequest.id;
-
-        const docService = new GoogleDoc();
-        const receiptId = await docService.get80GRecieptFileId({
-            "{Name}": sponsorUser.name,
-            "{FY}": "Year " + (FY - 1) + "-" + (FY % 100),
-            "{Rec}": giftReceiptId,
-            "{Date}": moment(new Date(giftRequest.created_at)).format('MMMM DD, YYYY'),
-            "{AmountW}": numberToWords(amount || 0).split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-            "{PAN}": panNumber,
-            "{Amt}": formatNumber(amount || 0),
-            "{CO}": "",
-            "{SG}": "",
-            "{OT}": "✓",
-        }, giftReceiptId);
-
-        const resp = await docService.download(receiptId);
-        const fileUrl = await uploadFileToS3('cards', resp, `giftRequests/${giftRequest.id}_80_G.pdf`);
-
-        const emailData = {
-            sponsorDetails: {
-                name: sponsorUser.name,
-                email: sponsorUser.email,
-                phone: sponsorUser.phone,
-                panNumber: panNumber,
-            },
-            giftDetails: {
-                date: new Date(giftRequest.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                }),
-                remainingTrees: remainingTrees,
-                quantity: giftRequest.no_of_cards,
-                eventName: giftRequest.event_name,
-                eventType: giftRequest.event_type,
-                message: giftRequest.primary_message,
-                groupName: giftRequest.group_name,
-                amount: formatNumber(amount || 0),
-                requestId: giftRequest.id,
-                referredBy: referredBy,
-                campaignName: campaignName,
-                recipients: recipients.map((user: any) => ({
-                    name: user.recipient_name,
-                    trees: user.gifted_trees,
-                }))
-            }
-        };
-
-        const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
-        const mailIds = (testMails && testMails.length !== 0) ? testMails : [sponsorUser.email];
-
-        const templateName = 'gifting-ack.html';
-
-        // Prepare attachments if there's a donation amount
-        const attachments = [{
-            filename: giftReceiptId + " " + sponsorUser.name + ".pdf",
-            path: fileUrl,
-        }];
-
-        await sendDashboardMail(
-            templateName,
-            emailData,
-            mailIds,
-            ccMailIds,
-            attachments,
-            'Your Donation and A Planted Memory - Thank You!'
+        const receipt = await generate80GReceiptAndUpload(giftRequest, sponsorUser);
+        await sendGiftRequestAcknowledgementEmail(
+            giftRequest,
+            sponsorUser,
+            remainingTrees,
+            receipt,
+            testMails,
+            ccMails
         );
-
     } catch (error) {
         console.error('[ERROR] Exception in sendGiftRequestAcknowledgement:', {
             error: error,
             stack: error instanceof Error ? error.stack : undefined
         });
-
         throw error;
     } finally {
         console.log('[INFO] Completed sendGiftRequestAcknowledgement processing');

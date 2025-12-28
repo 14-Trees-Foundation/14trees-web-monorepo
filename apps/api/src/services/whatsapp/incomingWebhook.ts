@@ -1,4 +1,4 @@
-import { giftSuccessMessage, imageMessage, interactiveGiftTreesFlow, interactiveReplyButton, textMessage } from './messages';
+import { giftSuccessMessage, imageMessage, interactiveGiftTreesFlow, interactiveReplyButton, textMessage, interactiveMenuFormResponse, menuOptionsMessage } from './messages';
 import { logResponseError } from './logResponseError';
 import { sendWhatsAppMessage } from './messageHelper';
 import { autoAssignTrees, generateGiftCardsForGiftRequest, processGiftRequest, sendGiftRequestRecipientsMail } from '../../controllers/helper/giftRequestHelper';
@@ -16,34 +16,73 @@ function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function processIncomingWAMessageUsingGenAi(message: any) {
+function isGreeting(message: string): boolean {
+  if (!message) {
+    return false;
+  }
+
+  const normalizedMessage = message.trim().toLowerCase();
+  if (!normalizedMessage) {
+    return false;
+  }
+
+  const greetingPatterns: RegExp[] = [
+    /\bhi\b/,
+    /\bhello\b/,
+    /\bhey\b/,
+    /\bgood\s+(morning|afternoon|evening|day)\b/,
+    /\bnamaste\b/,
+    /\bgreetings\b/,
+    /\bhowdy\b/,
+  ];
+
+  return greetingPatterns.some(pattern => pattern.test(normalizedMessage));
+}
+
+export async function processIncomingWAMessage(message: any) {
   const customerPhoneNumber = message.from;
   const messageType = message.type;
+  let messageUser = textMessage;
+  messageUser.to = customerPhoneNumber;
 
   if (messageType === "text") {
     const text = message.text.body;
 
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-    const chatHistory = await ChatHistoryRepository.getChatMessages({ user_phone: customerPhoneNumber, timestamp: { [Op.gte]: fifteenMinutesAgo } })
+    if(isGreeting(text)){
+      let responseMessage = menuOptionsMessage;
+      responseMessage.to = customerPhoneNumber;
 
-    const history = chatHistory.map(item => {
-      if (item.message_type === 'ai') return new AIMessage(item.message);
+      // giftMessage.text.body = 'We have succesfully processed your request!'
+      //   + `\n\n*Here is your gift request number: ${requestId}*.`
+      //   + '\n\nIf you have any query regarding the gift request you can reach out to us!'
 
-      return new HumanMessage(item.message);
-    })
-    await ChatHistoryRepository.addChatMessage(text, 'human', customerPhoneNumber, 'phone');
-    const resp = await waInteractionsWithGiftingAgent(text, history, customerPhoneNumber);
-    await ChatHistoryRepository.addChatMessage(resp, 'ai', customerPhoneNumber, 'phone');
+      try {
+        await sendWhatsAppMessage(responseMessage);
+      } catch (error) {
+        logResponseError(error);
+      }
+    } else{
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const chatHistory = await ChatHistoryRepository.getChatMessages({ user_phone: customerPhoneNumber, timestamp: { [Op.gte]: fifteenMinutesAgo } })
 
-    let messageUser = textMessage;
-    messageUser.to = customerPhoneNumber;
-    messageUser.text.body = resp
+      const history = chatHistory.map(item => {
+        if (item.message_type === 'ai') return new AIMessage(item.message);
 
-    try {
-      await sendWhatsAppMessage(messageUser);
-    } catch (error) {
-      logResponseError(error);
+        return new HumanMessage(item.message);
+      })
+      await ChatHistoryRepository.addChatMessage(text, 'human', customerPhoneNumber, 'phone');
+      const resp = await waInteractionsWithGiftingAgent(text, history, customerPhoneNumber);
+      await ChatHistoryRepository.addChatMessage(resp, 'ai', customerPhoneNumber, 'phone');
+
+      messageUser.text.body = resp
+      try {
+        await sendWhatsAppMessage(messageUser);
+      } catch (error) {
+        logResponseError(error);
+      }
     }
+
+    
   } else if (messageType === "interactive") {
     const interactiveType = message.interactive.type;
     if (interactiveType === "nfm_reply") {
@@ -52,11 +91,84 @@ export async function processIncomingWAMessageUsingGenAi(message: any) {
 
       console.log(formData);
       await handleFlowFormSubmit(customerPhoneNumber, formData, false);
+    } else if (message.interactive.type === "list_reply") {
+        const selectedId = message.interactive.list_reply.id;
+
+      switch (selectedId) {
+        case "site_visit_register":
+          // Call WhatsApp API to trigger Site Visit Registration Flow
+          triggerVisitRegisterationFlow("2052341365575119", message.from);
+          break;
+
+        case "site_visit_feedback":
+          triggerFlow("<FLOW_ID_FOR_SITE_VISIT_FEEDBACK>", message.from);
+          break;
+
+        case "gift_trees":
+          triggerFlow("<FLOW_ID_FOR_GIFT_TREES>", message.from);
+          break;
+
+        case "track_gift_status":
+          triggerFlow("<FLOW_ID_FOR_TRACK_GIFT>", message.from);
+          break;
+
+        case "submit_expense":
+          triggerExpenseFlow("1113268020927942", message.from);
+          break;
+      }
     }
   }
 }
 
-async function processIncomingWAMessage(message: any) {
+function triggerExpenseFlow(flowId: string, to: string) {
+
+  try {
+      const replyMessage = { ...interactiveMenuFormResponse };
+      replyMessage.to = to;
+      replyMessage.interactive.action.parameters.flow_id = flowId;
+      replyMessage.interactive.body.text = "Click the button below to submit new expense.";
+      replyMessage.interactive.action.parameters.flow_cta = "Add new expense";
+      replyMessage.interactive.action.parameters.flow_action_payload.screen = "EXPENSE_FORM";
+      
+      sendWhatsAppMessage(replyMessage);
+  } catch (error) {
+      logResponseError(error);
+  }
+}
+
+function triggerVisitRegisterationFlow(flowId: string, to: string) {
+
+  try {
+      const replyMessage = { ...interactiveMenuFormResponse };
+      replyMessage.to = to;
+      replyMessage.interactive.action.parameters.flow_id = flowId;
+      replyMessage.interactive.body.text = "Click the button below for:";
+      replyMessage.interactive.action.parameters.flow_cta = "Visit Registration";
+      replyMessage.interactive.action.parameters.flow_action_payload.screen = "SITE_VISIT_WELCOME";
+      
+      sendWhatsAppMessage(replyMessage);
+  } catch (error) {
+      logResponseError(error);
+  }
+}
+
+function triggerFlow(flowId: string, to: string) {
+
+  try {
+      const replyMessage = { ...interactiveMenuFormResponse };
+      replyMessage.to = to;
+      replyMessage.interactive.action.parameters.flow_id = flowId;
+      replyMessage.interactive.body.text = "Click the button below to submit new expense.";
+      replyMessage.interactive.action.parameters.flow_cta = "Add new expense";
+      replyMessage.interactive.action.parameters.flow_action_payload.screen = "EXPENSE_FORM";
+      
+      sendWhatsAppMessage(replyMessage);
+  } catch (error) {
+      logResponseError(error);
+  }
+}
+
+async function processIncomingWAMessagOLD(message: any) {
   const customerPhoneNumber = message.from;
   const messageType = message.type;
 
@@ -112,12 +224,22 @@ async function processIncomingWAMessage(message: any) {
 }
 
 async function handleFlowFormSubmit(customerPhoneNumber: string, formData: any, sendActionButtons: boolean) {
-  if (formData.flow_token.startsWith("edit_recipients")) {
-    await handleRecipientEditSubmit(customerPhoneNumber, formData, sendActionButtons);
-  } else if (formData.flow_token.startsWith("edit_gift_msg")) {
-    await handleGiftMsgsEditSubmit(customerPhoneNumber, formData);
-  } else {
-    await handleGiftFormSubmit(customerPhoneNumber, formData);
+  const flowToken = formData?.flow_token ?? '';
+  const flowName = formData?.['flow-name'];
+
+  switch (true) {
+    case flowToken.startsWith("edit_recipients"):
+      await handleRecipientEditSubmit(customerPhoneNumber, formData, sendActionButtons);
+      break;
+    case flowToken.startsWith("edit_gift_msg"):
+      await handleGiftMsgsEditSubmit(customerPhoneNumber, formData);
+      break;
+    case flowName === 'MenuFlow':
+      await handleMenuFormSubmit(customerPhoneNumber, formData);
+      break;
+    default:
+      // await handleGiftFormSubmit(customerPhoneNumber, formData);
+      // break;
   }
 }
 
@@ -179,6 +301,22 @@ async function handleGiftFormSubmit(customerPhoneNumber: string, formData: any) 
 
 }
 
+async function handleMenuFormSubmit(customerPhoneNumber: string, formData: any) {
+
+    let responseMessage = interactiveMenuFormResponse;
+    responseMessage.to = customerPhoneNumber;
+
+    // giftMessage.text.body = 'We have succesfully processed your request!'
+    //   + `\n\n*Here is your gift request number: ${requestId}*.`
+    //   + '\n\nIf you have any query regarding the gift request you can reach out to us!'
+
+    try {
+      await sendWhatsAppMessage(responseMessage);
+    } catch (error) {
+      logResponseError(error);
+    }
+
+}
 async function handleRecipientEditSubmit(customerPhoneNumber: string, formData: any, sendActionButtons: boolean = false) {
   const requestIdStr = formData.flow_token.split("_").slice(-1)[0];
   const requestId: number = parseInt(requestIdStr);
@@ -326,6 +464,10 @@ async function sendEmailMessage(customerPhoneNumber: string, requestId: number) 
   }
 
   await sendEditRecipientsFlow(customerPhoneNumber, requestId);
+}
+
+async function handleMenuFlowExchange(_formData: any) {
+  // TODO: Implement functionality for MenuFlow submissions
 }
 
 async function sendEmailsToGiftRecipients(customerPhoneNumber: string, requestId: number) {

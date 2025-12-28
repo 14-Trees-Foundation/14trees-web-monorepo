@@ -16,6 +16,8 @@ const getObjectKey = (type: string, subKey: string) => {
             return `events/${subKey}`
         case 'logo':
             return `logos/${subKey}`
+        case 'donation-users':
+            return `donations/${subKey}`
         default:
             return ''
     }
