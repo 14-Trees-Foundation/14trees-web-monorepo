@@ -12,6 +12,8 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "composite": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "typeRoots" : ["./node_modules/@types"],
   }
 }
