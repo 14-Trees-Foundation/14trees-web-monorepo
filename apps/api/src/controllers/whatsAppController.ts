@@ -5,7 +5,7 @@ import axios from 'axios'
 import { Request, Response } from "express";
 import { messageStatuses } from '../services/whatsapp/messageStatuses';
 import { sendWhatsAppMessage } from '../services/whatsapp/messageHelper';
-import processIncomingWAMessage, { processIncomingWAMessageUsingGenAi } from '../services/whatsapp/incomingWebhook';
+import processIncomingWAMessage from '../services/whatsapp/incomingWebhook';
 import { decryptRequest, encryptResponse } from '../services/whatsapp/incomingFlowWebhook';
 import { defaultGiftMessages, generateGiftCardTemplate } from './helper/giftRequestHelper';
 import { getSlideThumbnail, updateSlide } from './helper/slides';
@@ -61,7 +61,7 @@ export const whatsAppWebHookController = async (req: Request, res: Response) => 
             console.log(error);
         }
 
-        body.value.messages.forEach(processIncomingWAMessageUsingGenAi);
+        body.value.messages.forEach(processIncomingWAMessage);
     }
 
     res.sendStatus(200);
