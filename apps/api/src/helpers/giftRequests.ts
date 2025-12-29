@@ -331,11 +331,11 @@ class GiftRequestHelper {
 
     public static generateGiftCardTemplates = async (giftCardRequest: GiftCardRequest, giftCards: GiftCard[], messages?: GiftMessages) => {
         const startTime = new Date().getTime();
-        if (!process.env.GIFT_CARD_PRESENTATION_ID) {
+        if (!process.env.LIVE_GIFT_CARD_PRESENTATION_ID) {
             throw new Error("Missing gift card template presentation id in ENV variables.");
         }
-    
-        const templatePresentationId: string = process.env.GIFT_CARD_PRESENTATION_ID;
+
+        const templatePresentationId: string = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
     
         const userTreeCount: Record<string, number> = {};
         const idToCardMap: Map<number, GiftCard> = new Map();
