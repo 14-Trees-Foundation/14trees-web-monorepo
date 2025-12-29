@@ -1,0 +1,20 @@
+{
+  "name": "bulk-donation-processor",
+  "version": "1.0.0",
+  "description": "Script to process bulk donations from CSV file",
+  "main": "bulk-donation-processor.js",
+  "scripts": {
+    "start": "node bulk-donation-processor.js",
+    "dev": "node --watch bulk-donation-processor.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

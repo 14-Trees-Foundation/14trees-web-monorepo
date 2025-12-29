@@ -1,14 +1,22 @@
 {
   "private": true,
+  "name": "14trees-web-monorepo",
   "scripts": {
     "build": "NODE_ENV=production dotenv -- turbo run build",
     "dev": "NODE_ENV=development dotenv -- turbo dev",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
     "ui:add": "yarn workspace ui shadcn:add",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "mobile:install": "cd apps/mobile-app && npm install",
+    "mobile:start": "cd apps/mobile-app && npm start",
+    "mobile:android": "cd apps/mobile-app && npm run android",
+    "mobile:ios": "cd apps/mobile-app && npm run ios"
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.16",
     "dotenv-cli": "latest",
     "eslint-config-custom": "*",
     "prettier": "^2.7.1",
@@ -18,13 +26,18 @@
   },
   "packageManager": "yarn@1.22.19",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.18.1"
   },
   "workspaces": [
     "apps/*",
+    "!apps/mobile-app",
+    "!apps/frontend",
     "packages/*"
   ],
   "dependencies": {
     "@notionhq/client": "^2.2.15"
+  },
+  "resolutions": {
+    "**/cheerio": "1.0.0"
   }
 }

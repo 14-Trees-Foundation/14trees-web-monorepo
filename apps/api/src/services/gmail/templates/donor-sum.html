@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donation Acknowledgment Summary</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; color: #333;">
+  <table align="center" width="600" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background: #ffffff; margin: 20px auto; border: 1px solid #dddddd;">
+    <tr>
+      <td style="padding: 20px; text-align: center; background-color: #4CAF50; color: white;">
+        <h1>Donation Details 🌱</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px;">
+        <p>Dear <strong>{{user_name}}</strong>,</p>
+        <p>Thank you for your contribution to our reforestation efforts. This email serves as a summary of the donation information you provided.</p>
+        
+        <h3 style="color: #4CAF50;">Donation Details</h3>
+        <table width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
+          <tr style="background-color: #f1f1f1;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Donation ID</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{id}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{user_email}}</td>
+          </tr>
+          <tr style="background-color: #f1f1f1;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Category</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{category}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Grove</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{grove}}{{#if grove_type_other}} ({{grove_type_other}}){{/if}}</td>
+          </tr>
+          <tr style="background-color: #f1f1f1;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Trees Pledged</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{trees_count}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Contribution Options</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{contribution_options}}</td>
+          </tr>
+          {{#if names_for_plantation}}
+          <tr style="background-color: #f1f1f1;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Names for Plantation</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{names_for_plantation}}</td>
+          </tr>
+          {{/if}}
+          {{#if comments}}
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Comments</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{comments}}</td>
+          </tr>
+          {{/if}}
+          <tr style="background-color: #f1f1f1;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Donation Date</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{created_at}}</td>
+          </tr>
+        </table>
+        
+        <p>Your support is invaluable to our mission of creating a greener, more sustainable future. Each tree you've pledged will contribute to mitigating climate change and enhancing biodiversity in our ecosystems.</p>
+        
+        <p>If you notice any discrepancies in the information above or have any questions regarding your donation, please don't hesitate to contact us.</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px; background-color: #f1f1f1; color: #555; line-height: 0.7;">
+        <table width="100%" style="border-collapse: collapse;">
+          <tr>
+            <td style="text-align: left; vertical-align: top;">
+              <p>Warm regards,</p>
+              <p><strong>14 Trees Foundation</strong></p>
+              <a href="https://14trees.org">https://14trees.org</a>
+            </td>
+            <td style="text-align: right; vertical-align: top;">
+              <img src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png" alt="Logo" style="max-width: 70px; height: auto;">
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,13 +1,29 @@
 {
   "extends": "tsconfig/base.json",
-  "exclude": ["./dist/**/*"],
+  "exclude": ["./dist/**/*", "./node_modules/**/*", "./src/swagger_output.json", "./test_data/**/*", "./tests/**/*"],
   "include": ["src/**/*.js", "src/**/*.ts"],
   "compilerOptions": {
     "outDir": "./dist",
     "target": "ES2020",
-    "sourceMap": true,
-    "module": "CommonJS",
+    "sourceMap": false,
     "moduleResolution": "node",
     "allowJs": true,
+    "module": "commonjs",
+    "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "declarationMap": false,
+    "removeComments": true,
+    "noEmitOnError": false,
+    "importsNotUsedAsValues": "remove",
+    "baseUrl": ".",
+    "paths": {
+      "schema": ["../../packages/schema/src"],
+      "schema/*": ["../../packages/schema/src/*"]
+    }
   }
 }

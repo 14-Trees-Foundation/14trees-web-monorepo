@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Donation and A Planted Memory – Thank You!</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; color: #333;">
+  <table align="center" width="600" cellpadding="0" cellspacing="0"
+    style="border-collapse: collapse; background: #ffffff; margin: 20px auto; border: 1px solid #dddddd;">
+    <tr>
+      <td style="padding: 20px; text-align: center; background-color: #4CAF50; color: white;">
+        <h1>Your Donation and A Planted Memory – Thank You!</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px;">
+        <p>Dear <strong>{{sponsorDetails.name}}</strong>,</p>
+
+        <p>Thank you so much for your generous donation dated {{giftDetails.date}} to 14 Trees Foundation! It will create a unique memory for you and many others.</p>
+
+        {{#if donationDetails.referredBy}}
+        <p>Referred By: <strong>{{donationDetails.referredBy}}</strong></p>
+        {{/if}}
+
+        {{#if donationDetails.campaignName}}
+        <p>Campaign Name: <strong>{{donationDetails.campaignName}}</strong></p>
+        {{/if}}
+
+        <p>Your request number is <strong>{{giftDetails.requestId}}</strong>. Please keep this number handy for any queries or correspondence related to your gift request.</p>
+
+        <p>Your initiative to plant {{giftDetails.quantity}} tree(s) will help transform barren lands into biodiverse forests full
+          of native flora and fauna. Each tree you've gifted will grow to offset carbon emissions, support local
+          ecosystems, and contribute to sustainable livelihoods in the community.</p>
+
+        <p>This living memory will continue to grow and benefit our planet for years to come. The recipient will receive
+          details about the trees planted and can follow its journey as part of our reforestation efforts. That will enable your recipient and yourself to track the impact of your donation and find more ways to be involved at <a href="https://14trees.org">14Trees</a>.</p>
+
+        <p><strong>For reference, here are the details of your tree plantation request:</strong></p>
+        <p>Request Number: <strong>{{giftDetails.requestId}}</strong> (Please keep this number handy for any queries later)</p>
+        <p>Amount donated: <strong>{{giftDetails.amount}}</strong></p>
+        <p>Date: {{giftDetails.date}}</p>
+
+        {{#if giftDetails.recipients}}
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+          <tr style="background-color: #f2f2f2;">
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Recipients</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Number of trees</th>
+          </tr>
+          {{#each giftDetails.recipients}}
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{this.name}}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{this.trees}}</td>
+          </tr>
+          {{/each}}
+          <tr style="font-weight: bold;">
+            <td style="border: 1px solid #ddd; padding: 8px;">Total</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{giftDetails.quantity}}</td>
+          </tr>
+        </table>
+        {{/if}}
+
+        <p>Attached is the 80G receipt for your contribution. The 10BE certificates will be emailed after the end of
+          current financial year.</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px; background-color: #f1f1f1; color: #555; line-height: 0.7;">
+        <table width="100%" style="border-collapse: collapse;">
+          <tr>
+            <td style="text-align: left; vertical-align: top;">
+              <p>Warm regards,</p>
+              <p><strong>14 Trees Foundation</strong></p>
+              <a href="https://14trees.org">https://14trees.org</a>
+            </td>
+            <td style="text-align: right; vertical-align: top;">
+              <img
+                src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+                alt="Logo" style="max-width: 70px; height: auto;">
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

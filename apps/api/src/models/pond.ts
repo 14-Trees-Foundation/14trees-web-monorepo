@@ -1,34 +1,80 @@
-import mongoose from "mongoose";
-import { MONGO_CREATE_INDEX_MAX_TIMEOUT } from "../services/mongo";
+//Model in postgresql db
 
-const Schema = mongoose.Schema;
+import { Optional } from 'sequelize';
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
+import { Boundaries } from './common';
 
-const pondUpdate = new Schema({
-  date: { type: Date },
-  levelFt: { type: Number },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "onsitestaffs" },
-  images: [{ type: String }],
-});
+interface PondAttributes {
+	id: number;
+	name: string;
+	tags: string[];
+	type: string;
+  site_id: number;
+	boundaries: Boundaries;
+  image: string | null;
+  length_ft: number;
+  width_ft: number;
+  depth_ft: number;
+  created_at: Date;
+  updated_at: Date;
+}
 
-const pondSchema = new Schema({
-  name: { type: String, required: true },
-  tags: [{ type: String }],
-  desc: { type: String },
-  type: { type: String },
-  boundaries: {
-    type: { type: String, default: "Polygon" },
-    coordinates: { type: [[[Number]]] },
-  },
-  date_added: { type: Date },
-  images: [{ type: String }],
-  lengthFt: { type: Number },
-  widthFt: { type: Number },
-  depthFt: { type: Number },
-  updates: [pondUpdate],
-});
+interface PondCreationAttributes
+	extends Optional<PondAttributes, 'id' | 'tags' | 'boundaries'> {}
 
-const PondModel = mongoose.model("ponds", pondSchema);
+@Table({ tableName: 'ponds' })
+export class Pond extends Model<PondAttributes, PondCreationAttributes>
+implements PondAttributes {
 
-PondModel.createIndexes({ maxTimeMS: MONGO_CREATE_INDEX_MAX_TIMEOUT }); //create index
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: false,
+    primaryKey: true,
+    autoIncrement: true,
+    unique: true
+  })
+  id!: number;
 
-export { PondModel, pondUpdate };
+
+  @Column(DataType.STRING)
+  name!: string;
+
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: true
+  })
+  tags!: string[];
+
+  @Column(DataType.STRING)
+  type!: string;
+
+  
+  @Column({ type :DataType.NUMBER , allowNull: true})
+  site_id!: number;
+
+  @Column({
+    type: DataType.JSON,
+    allowNull: true
+  })
+  boundaries!: Boundaries;
+
+  @Column(DataType.STRING)
+  image!: string;
+
+  @Column(DataType.FLOAT)
+  length_ft!: number;
+
+  @Column(DataType.FLOAT)
+  width_ft!: number;
+
+  @Column(DataType.FLOAT)
+  depth_ft!: number;
+
+  @Column(DataType.DATE)
+  created_at!: Date;
+
+  @Column(DataType.DATE)
+  updated_at!: Date;
+}
+
+export type {PondCreationAttributes, PondAttributes}

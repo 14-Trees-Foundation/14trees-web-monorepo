@@ -1,0 +1,25 @@
+{
+  "apiBase": "http://localhost:8088/api",
+  "testMails": [],
+  "ccMails": [
+    "tech@14trees.org"
+  ],
+  "results": [
+    {
+      "donationId": 5020,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5020
+      }
+    },
+    {
+      "donationId": 5098,
+      "success": true,
+      "response": {
+        "message": "Acknowledgement email triggered",
+        "donation_id": 5098
+      }
+    }
+  ]
+}

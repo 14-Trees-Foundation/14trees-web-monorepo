@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Planting Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #58708a;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background-image: url("https://cdn.designer-images.eu/c195f5a7-e310-1309-524e-40e8cae15fda/d1941b4e628a4a5ba7ca65573748fe27/httpsucarecdn.com4ff5f833-990b-4b27-b46c-0a9f9bace647") !important;
+      background-repeat: repeat !important;
+      background-position: initial !important;
+      background-size: auto !important;
+    }
+
+    .header {
+      text-align: center;
+      background-color: #f3faf6;
+      color: #58708a;
+      padding: 10px 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header h2 {
+      margin: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .info-table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table th {
+      color: #58708a;
+    }
+
+    .info-table th,
+    .info-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .info-table th {
+      background-color: #f3faf6;
+    }
+
+    /* Optional: Enhance table layout for smaller screens */
+    @media screen and (max-width: 600px) {
+
+      .info-table th,
+      .info-table td {
+        padding: 6px;
+        font-size: 14px;
+      }
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding: 10px;
+      background-color: #f3faf6;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .footer-content {
+      text-align: left;
+      line-height: 0.5;
+      color: #58708a;
+    }
+
+    .footer-logo {
+      height: 80px;
+      margin-left: 10px;
+    }
+
+    .footer-logo-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .image-message {
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 52px;
+      font-weight: bolder;
+      color: white;
+      z-index: 100;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Greetings from 14 Trees Foundation</h2>
+    </div>
+    <div style="position: relative; display: inline-block;">
+      <p class="image-message">Happy New Year</p>
+      <img
+        src="https://images.stockcake.com/public/9/9/7/997faf36-a743-44b1-b5c8-5fb07d18e89b_large/snowy-sunset-lake-stockcake.jpg"
+        alt="Email Image" class="newsletter-image not-resized" height="auto" width="600" data-resize-width="0"
+        data-resize-height="0" align="bottom">
+    </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        Hope this mail finds you in good health. It gives us great pleasure to inform you that {{count}} trees have been
+        planted in
+        {{#if memorial}}
+        memory of {{assigned_to_name}}.
+        {{else}}
+        {{#if relational}}
+        your {{relation}} {{assigned_to_name}}'s name.
+        {{else}}
+        {{#if self}}
+        your name.
+        {{else}}
+        {{assigned_to_name}}'s name.
+        {{/if}}
+        {{/if}}
+        {{/if}}
+      </p>
+      <h3>Tagging Information about the Trees:</h3>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Tree ID</th>
+            <th>Tree Name</th>
+            <th>Scientific Name</th>
+            <th>Name</th>
+            {{#if event_name}}<th>Event</th>{{/if}}
+            <th>Dashboard Link</th>
+          </tr>
+          {{#each trees}}
+          <tr>
+            <td>{{sapling_id}}</td>
+            <td>{{plant_type}}</td>
+            <td>{{scientific_name}}</td>
+            <td>{{assigned_to_name}}</td>
+            {{#if event_name}}<td>{{event_name}}</td>{{/if}}
+            <td><a href="{{dashboard_link}}">Dashboard</a></td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      <p>
+        For their many living years, these trees will support local biodiversity, rejuvenate the local ecosystem and
+        also offset the devastating effects of carbon consumption and climate change.
+      </p>
+      <p>
+        You can follow our shared journey and find more ways of continuing to be involved at <a
+          href="https://14trees.org">14 Trees</a>.
+      </p>
+      <p>
+        We are looking forward to your visit to 14 Trees Foundation in the near future.
+      </p>
+      <p>
+        For any feedback or changes related to your dashboard, please reply to this mail.
+      </p>
+    </div>
+    <div class="footer">
+      <div class="footer-content">
+        <p>With warmest regards,</p>
+        <p>14 Trees Foundation</p>
+        <a href="https://14trees.org" style="color: #58708a;">https://14trees.org</a>
+      </div>
+      <div class="footer-logo-container">
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" />
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

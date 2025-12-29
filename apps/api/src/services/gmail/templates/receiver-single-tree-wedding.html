@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Planting Confirmation - Wedding Gift</title>
+  <style>
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      color: #5a3e2b;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f5f0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #e0d5c8;
+      border-radius: 8px;
+      background: linear-gradient(to bottom, #fff9f2, #f5ebe0);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .header {
+      text-align: center;
+      background-color: #8c6e5d;
+      color: #fff;
+      padding: 15px 0;
+      border-radius: 8px 8px 0 0;
+      font-family: 'Playfair Display', Georgia, serif;
+      letter-spacing: 1px;
+    }
+
+    .header h2 {
+      margin: 10px;
+      font-weight: 500;
+    }
+
+    .content {
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .wedding-image-container {
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    .wedding-image {
+      max-width: 80%;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .info-table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: Arial, sans-serif;
+    }
+
+    .info-table th,
+    .info-table td {
+      border: 1px solid #d4b483;
+      padding: 10px;
+      text-align: left;
+      background-color: rgba(255, 248, 240, 0.8);
+    }
+
+    .info-table th {
+      background-color: #b38b6d;
+      color: white;
+      font-weight: 500;
+    }
+
+    @media screen and (max-width: 600px) {
+      .info-table th,
+      .info-table td {
+        padding: 8px;
+        font-size: 14px;
+      }
+      
+      .wedding-image {
+        max-width: 100%;
+      }
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #f5ebe0;
+      border-radius: 0 0 8px 8px;
+      border-top: 1px solid #e0d5c8;
+    }
+
+    .footer-content {
+      text-align: left;
+      line-height: 1.4;
+    }
+
+    .footer-logo {
+      height: 70px;
+      margin-left: 10px;
+      opacity: 0.9;
+    }
+
+    .footer-logo-container {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .dashboard-link {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 12px 20px;
+      color: white;
+      background-color: #a78a72;
+      text-decoration: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: background-color 0.3s;
+    }
+
+    .dashboard-link:hover {
+      background-color: #8c6e5d;
+    }
+
+    a {
+      color: #8c6e5d;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Greetings from {{#if group_name}} {{group_name}} and {{/if}} 14 Trees Foundation</h2>
+    </div>
+    <div class="wedding-image-container">
+      <img
+        src="https://i.postimg.cc/kGZ9B4gZ/Whats-App-Image-2025-05-20-at-19-32-59-6b4e90a0.jpg"
+        alt="Wedding Wishes" class="wedding-image" width="450">
+    </div>
+    <div class="content">
+      <p>Dear {{user_name}},</p>
+      <p>
+        As you begin your beautiful journey together, we're honored to celebrate your union by planting a tree in
+        {{#if relational}}
+          your {{relation}} {{assigned_to_name}}'s name
+        {{else}}
+          {{#if self}}
+            your name
+          {{else}}
+            {{assigned_to_name}}'s name
+          {{/if}}
+        {{/if}}
+        on the occasion of your wedding{{#if trees.[0].planted_via}} by {{trees.[0].planted_via}}{{/if}}.
+      </p>
+      <h3>Tree Planting Details:</h3>
+      <div class="info-table-container">
+        <table class="info-table">
+          <tr>
+            <th>Name</th>
+            <td>{{assigned_to_name}}</td>
+          </tr>
+          {{#if trees.[0].planted_via}}
+          <tr>
+            {{#if is_gift}}
+            <th>Gifted By</th>
+            {{else}}
+            <th>Planted By</th>
+            {{/if}}
+            <td>{{trees.[0].planted_via}}</td>
+          </tr>
+          {{/if}}
+          <tr>
+            <th>Tree Name</th>
+            <td>{{trees.[0].plant_type}}</td>
+          </tr>
+          <tr>
+            <th>Scientific Name</th>
+            <td>{{trees.[0].scientific_name}}</td>
+          </tr>
+          <tr>
+            <th>Tree ID</th>
+            <td>{{trees.[0].sapling_id}}</td>
+          </tr>
+          {{#if trees.[0].event_name}}
+          <tr>
+            <th>Event</th>
+            <td>{{trees.[0].event_name}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </div>
+      <p>
+        Below's the link to your personalized dashboard.<br />
+        <a href="{{trees.[0].dashboard_link}}" class="dashboard-link">Dashboard</a>
+      </p>
+      <p>
+        Just as your love will grow deeper with each passing year, this tree will flourish, creating a living testament to your commitment - both to each other and to our planet.
+      </p>
+      <p>
+        You can follow our shared journey at <a href="https://14trees.org">14 Trees</a>.
+      </p>
+      <p>
+        We wish you a lifetime of happiness together and look forward to welcoming you to visit your tree in the future.
+      </p>
+    </div>
+    <div class="footer">
+      <div class="footer-content">
+        <p>With warmest wishes,</p>
+        {{#if group_name}}
+        <p>{{group_name}}</p>
+        <p>In Association with 14 Trees Foundation</p>
+        {{else}}
+        <p>14 Trees Foundation</p>
+        {{/if}}
+        <a href="https://14trees.org">https://14trees.org</a>
+      </div>
+      <div class="footer-logo-container">
+        {{#if company_logo_url}}
+        <img class="footer-logo" src="{{company_logo_url}}" alt="14 Trees" />
+        {{/if}}
+        <img class="footer-logo"
+          src="https://14treesplants.s3.ap-south-1.amazonaws.com/gift-card-requests/pognz3sohziz2y542rvulq/dark_logo.png"
+          alt="14 Trees" />
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
