@@ -128,7 +128,7 @@
             <th>Scientific Name</th>
             <th>Name</th>
             {{#if event_name}}<th>Event</th>{{/if}}
-            <th>Dashboard Link</th>
+            <th>Link to your tree:</th>
           </tr>
           {{#each trees}}
           <tr>
@@ -137,7 +137,7 @@
             <td>{{scientific_name}}</td>
             <td>{{assigned_to_name}}</td>
             {{#if event_name}}<td>{{event_name}}</td>{{/if}}
-            <td><a href="{{dashboard_link}}">Dashboard</a></td>
+            <td><a href="{{dashboard_link}}">Click here</a></td>
           </tr>
           {{/each}}
         </table>
