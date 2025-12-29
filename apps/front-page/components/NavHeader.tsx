@@ -22,10 +22,11 @@ import {
 } from "ui/components/dropdown-menu";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
-import { usePathname } from "next/navigation"; // to detect route change
+import { usePathname, useSearchParams } from "next/navigation"; // to detect route change
+import { preserveReferralParams } from "~/utils";
 // import { DropDown } from "ui";
 
-function getDonationAction() {
+function getDonationAction(searchParams: URLSearchParams | null) {
   return (
     <div className="relative w-full">
       <DropdownMenu modal={false}>
@@ -33,7 +34,7 @@ function getDonationAction() {
           Donate
         </DropdownMenuTrigger>
         <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
-          <Link href="/donate" className="header-link">
+          <Link href={preserveReferralParams("/donate", searchParams)} className="header-link">
             <DropdownMenuItem
               className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
             >
@@ -58,7 +59,7 @@ function getDonationAction() {
   );
 }
 
-function getGiftTreesAction() {
+function getGiftTreesAction(searchParams: URLSearchParams | null) {
   return (
     <div className="relative w-full">
       <DropdownMenu modal={false}>
@@ -66,7 +67,7 @@ function getGiftTreesAction() {
           Plant a Memory
         </DropdownMenuTrigger>
         <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
-          <Link href="/plant-memory " className="header-link">
+          <Link href={preserveReferralParams("/plant-memory", searchParams)} className="header-link">
             <DropdownMenuItem
               className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
             >
@@ -94,6 +95,7 @@ function getGiftTreesAction() {
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Close menu on route change
   useEffect(() => {
@@ -125,19 +127,20 @@ export default function Header() {
             <div className="absolute top-full right-4 mt-2 w-48 bg-white shadow-md rounded-md p-2 z-50 md:hidden">
               <NavItemsDesktop
                 items={navItems}
+                searchParams={searchParams}
                 onClick={() => setMobileMenuOpen(false)} // optional if NavItemsDesktop accepts onClick not here
-              /> 
-              <Link href="/volunteer">
+              />
+              <Link href={preserveReferralParams("/volunteer", searchParams)}>
                 <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
                   Volunteer
                 </Button>
               </Link>
-              <Link href="/donate">
+              <Link href={preserveReferralParams("/donate", searchParams)}>
                 <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
                   Donate
                 </Button>
               </Link>
-              <Link href="/plant-memory">
+              <Link href={preserveReferralParams("/plant-memory", searchParams)}>
                 <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
                   Plant a Memory
                 </Button>
@@ -148,24 +151,24 @@ export default function Header() {
           {/* Desktop nav remains unchanged */}
           <div className="hidden md:flex items-center">
             <div className="mx-4 hidden items-center overflow-hidden md:inline-flex">
-              <NavItemsDesktop items={navItems} />
+              <NavItemsDesktop items={navItems} searchParams={searchParams} />
             </div>
             {/* <Link href="/corporate-login">
             <Button className="mr-3" variant="secondary">
                 Corporate Login
                 </Button>
               </Link> */}
-            <Link href="/volunteer">
+            <Link href={preserveReferralParams("/volunteer", searchParams)}>
               <Button className="mr-3" variant="secondary">
                 Volunteer
               </Button>
             </Link>
-            <Link href="/donate">
+            <Link href={preserveReferralParams("/donate", searchParams)}>
               <Button className="mr-3" variant="secondary">
                 Donate
               </Button>
             </Link>
-            <Link href="/plant-memory">
+            <Link href={preserveReferralParams("/plant-memory", searchParams)}>
               <Button className="mr-3" variant="secondary">
                 Plant a Memory
               </Button>
@@ -217,22 +220,22 @@ const NavItemsMobile = ({
   );
 };
 
-const NavItemsDesktop = ({ items, onClick }: { items: Array<NavItem>,  onClick?: () => void }) => {
+const NavItemsDesktop = ({ items, searchParams, onClick }: { items: Array<NavItem>, searchParams: URLSearchParams | null, onClick?: () => void }) => {
   return items.map((navItem) => (
     <div
       key={navItem.name}
       className="my-2 border-zinc-200 px-2 text-xs md:text-sm lg:px-6"
     >
-      <Item navItem={navItem} onClick={onClick} />
+      <Item navItem={navItem} searchParams={searchParams} onClick={onClick} />
     </div>
   ));
 };
 
-const Item = ({ navItem, onClick }: { navItem: NavItem, onClick?: () => void }) => {
+const Item = ({ navItem, searchParams, onClick }: { navItem: NavItem, searchParams?: URLSearchParams | null, onClick?: () => void }) => {
   return (
     <>
       {!navItem.sub ? (
-        <Link href={navItem.link} onClick={onClick} title={navItem.name} className="header-link text-base md:text-lg">
+        <Link href={navItem.external ? navItem.link : preserveReferralParams(navItem.link, searchParams || null)} onClick={onClick} title={navItem.name} className="header-link text-base md:text-lg">
           {navItem.name}
         </Link>
       ) : (
@@ -244,7 +247,7 @@ const Item = ({ navItem, onClick }: { navItem: NavItem, onClick?: () => void }) 
             <DropdownMenuContent>
               {navItem.sub.map((subItem, index) => (
                 <Fragment key={index}>
-                  <Link href={subItem.link} onClick={onClick} className="header-link">
+                  <Link href={subItem.external ? subItem.link : preserveReferralParams(subItem.link, searchParams || null)} onClick={onClick} className="header-link">
                     <DropdownMenuItem className="py-3 pl-2 pr-5">
                       {subItem.name}
                     </DropdownMenuItem>

@@ -1268,22 +1268,73 @@ export class DonationService {
             email: user.email
         };
 
-        const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
-        const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
-            event_type,
-            template_type: sponsorTemplateType
-        });
+        // Check for campaign-specific email configuration
+        let campaignConfig = null;
+        if (donation.rfr_id) {
+            const referrals = await ReferralsRepository.getReferrals({ id: donation.rfr_id });
+            if (referrals.length > 0 && referrals[0].c_key) {
+                const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+                    { columnField: 'c_key', operatorValue: 'equals', value: referrals[0].c_key }
+                ]);
+                if (campaignsResp.results.length > 0 && campaignsResp.results[0].email_config?.sponsor_email?.enabled) {
+                    campaignConfig = campaignsResp.results[0].email_config.sponsor_email;
+                    // Merge campaign custom_data into emailData
+                    if (campaignConfig.custom_data) {
+                        Object.assign(sponsorEmailData, campaignConfig.custom_data);
+                    }
+                }
+            }
+        }
 
-        if (!sponsorTemplates?.length) {
-            throw new Error('Sponsor email template not found');
+        let templateName: string;
+        let subject: string | undefined;
+        let fromName: string | undefined;
+        let fromEmail: string | undefined;
+        let replyTo: string | undefined;
+        let ccMails = sponsor_cc_mails || [];
+
+        if (campaignConfig) {
+            // Use campaign-specific template and settings
+            templateName = treeData.length > 1
+                ? campaignConfig.template_name_multi
+                : campaignConfig.template_name_single;
+            subject = treeData.length > 1
+                ? campaignConfig.subject_template_multi
+                : campaignConfig.subject_template_single;
+            fromName = campaignConfig.from_name;
+            fromEmail = campaignConfig.from_email;
+            replyTo = campaignConfig.reply_to;
+
+            // Merge campaign CC emails with existing CC emails
+            if (campaignConfig.cc_emails && campaignConfig.cc_emails.length > 0) {
+                ccMails = [...ccMails, ...campaignConfig.cc_emails];
+            }
+        } else {
+            // Use default email template
+            const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+            const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
+                event_type,
+                template_type: sponsorTemplateType
+            });
+
+            if (!sponsorTemplates?.length) {
+                throw new Error('Sponsor email template not found');
+            }
+
+            templateName = sponsorTemplates[0].template_name;
         }
 
         const isTestMail = test_mails?.length ? true : false;
         const statusMessage = await sendDashboardMail(
-            sponsorTemplates[0].template_name,
+            templateName,
             sponsorEmailData,
             test_mails?.length ? test_mails : [user.email],
-            sponsor_cc_mails || []
+            ccMails,
+            undefined,
+            subject,
+            fromName,
+            fromEmail,
+            replyTo
         );
 
         if (isTestMail) return;

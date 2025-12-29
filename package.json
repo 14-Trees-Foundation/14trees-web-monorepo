@@ -7,9 +7,16 @@
     "lint": "turbo run lint",
     "clean": "turbo run clean",
     "ui:add": "yarn workspace ui shadcn:add",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "mobile:install": "cd apps/mobile-app && npm install",
+    "mobile:start": "cd apps/mobile-app && npm start",
+    "mobile:android": "cd apps/mobile-app && npm run android",
+    "mobile:ios": "cd apps/mobile-app && npm run ios"
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.16",
     "dotenv-cli": "latest",
     "eslint-config-custom": "*",
     "prettier": "^2.7.1",
@@ -23,6 +30,8 @@
   },
   "workspaces": [
     "apps/*",
+    "!apps/mobile-app",
+    "!apps/frontend",
     "packages/*"
   ],
   "dependencies": {

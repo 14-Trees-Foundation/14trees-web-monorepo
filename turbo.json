@@ -19,7 +19,10 @@
     "MONGO_USERNAME",
     "MONGO_PWD",
     "MONGO_URL",
-    "DEST_IMG_FOLDER"
+    "DEST_IMG_FOLDER",
+    "POSTGRES_PD"
+   
+    
   ],
   "tasks": {
     "clear-content": {

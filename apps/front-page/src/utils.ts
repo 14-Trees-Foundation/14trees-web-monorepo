@@ -71,3 +71,25 @@ export const getInternalTestMetadata = (email: string, originalAmount?: number) 
   }
   return {};
 };
+
+/**
+ * Preserves referral query parameters (r and c) when navigating between pages
+ * @param url - The target URL path
+ * @param searchParams - The current URLSearchParams from useSearchParams()
+ * @returns URL with preserved referral parameters
+ */
+export const preserveReferralParams = (url: string, searchParams: URLSearchParams | null): string => {
+  if (!searchParams) return url;
+
+  const r = searchParams.get('r');
+  const c = searchParams.get('c');
+
+  if (!r && !c) return url;
+
+  const params = new URLSearchParams();
+  if (r) params.set('r', r);
+  if (c) params.set('c', c);
+
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}${params.toString()}`;
+};

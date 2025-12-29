@@ -7,6 +7,7 @@ import NavHeader from "components/NavHeader";
 import Footer from "components/Footer";
 import Script from "next/script";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Suspense } from 'react';
 
 const font = Inter({ subsets: ["latin"] });
 // const font = Roboto({ weight: ["100", "300", "400", "700"], subsets: ["latin"] , display: "swap"});
@@ -42,9 +43,13 @@ export default function RootLayout({
       </head>
       <body className={font.className}>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
-          <NavHeader />
+          <Suspense fallback={<div className="fixed top-0 z-20 w-full bg-white h-16" />}>
+            <NavHeader />
+          </Suspense>
           <div className="mt-18">{children}</div>
-          <Footer />
+          <Suspense fallback={<div className="bg-[#363e39] py-8 text-gray-300 md:py-12 h-64" />}>
+            <Footer />
+          </Suspense>
         </GoogleOAuthProvider>
       </body>
     </html>

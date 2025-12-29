@@ -1302,8 +1302,18 @@ function Donation() {
                 {referralDetails && (referralDetails.name || referralDetails.description || referralDetails.referred_by) && (
                   <div className="my-8 p-6 rounded-xl border border-green-200 bg-green-50 shadow-sm flex flex-col gap-2">
                     <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7" /></svg>
-                      <span className="text-xl font-bold text-green-800">{referralDetails.name || 'Campaign'}</span>
+                      {referralDetails.c_key === 'glowback' ? (
+                        <img
+                          src="https://14treesplants.s3.ap-south-1.amazonaws.com/campaigns/glowback-logo.png"
+                          alt="Glowback Campaign"
+                          className="h-8 w-auto object-contain ml-8"
+                        />
+                      ) : (
+                        <>
+                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7" /></svg>
+                          <span className="text-xl font-bold text-green-800">{referralDetails.name || 'Campaign'}</span>
+                        </>
+                      )}
                     </div>
                     {referralDetails.description && (
                       <div className="text-gray-700 mb-1 pl-8" style={{ whiteSpace: 'pre-line' }}>
