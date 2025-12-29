@@ -235,7 +235,7 @@ export const addPlantTypeTemplate = async (req: Request, res: Response) => {
     return;
   }
 
-  const presentationId = process.env.GIFT_CARD_PRESENTATION_ID;
+  const presentationId = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
   if (!presentationId) {
     res.status(status.error).send({ message: "Can't add new plant type templates at the moment!" });
     return;
