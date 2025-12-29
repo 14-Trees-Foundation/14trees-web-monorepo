@@ -6,7 +6,7 @@ export interface TeamRow {
     myInterestshobbies: any[];
     tenure: string;
     engagedIn: any[];
-    targetDate: string;
+    intern: any[];
     startDate: string;
     publicBio: string;
     user: {
@@ -24,6 +24,7 @@ export interface TeamRow {
     aboutMe: string;
     tshirtSize: string;
     publicTitle: string;
+    multiselect: any[];
     email: string;
     status: string;
     languages: any[];

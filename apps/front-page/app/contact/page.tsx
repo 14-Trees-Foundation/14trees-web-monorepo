@@ -12,6 +12,17 @@ const ContactPage: React.FC = () => {
     <div className="">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="px-4">
+          {/* <h2 className="mb-2 text-xl font-bold text-gray-700">Registered Office</h2>
+          <p className="mb-4 text-gray-600">
+            14 Trees Foundation 
+            <br />
+            Vetale, Taluka Khed
+            <br/>
+            Pune - 412404
+            <br />
+            Maharashtra
+            <br />
+          </p> */}
           <h2 className="mb-2 text-xl font-bold text-gray-700">Site Address</h2>
           <p className="mb-4 text-gray-600">
             14 Trees Foundation 

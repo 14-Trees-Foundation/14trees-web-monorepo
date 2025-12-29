@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import labels from "~/assets/labels.json";
 import { IconsAttribution } from "./Partials/Icons";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { preserveReferralParams } from "~/utils";
+
 export default function Footer() {
+  const searchParams = useSearchParams();
   return (
     <footer className="bg-[#363e39] py-8 text-gray-300 md:py-12">
       <div className="mx-auto max-w-6xl px-4 pt-6">
@@ -16,34 +22,34 @@ export default function Footer() {
                 alt="Logo"
                 className="mx-auto mb-6"
               />
-              <Link href="/" className="text-xl font-bold md:text-2xl">
+              <Link href={preserveReferralParams("/", searchParams)} className="text-xl font-bold md:text-2xl">
                 {labels.site.title}
               </Link>
             </div>
           </div>
 
-          <div className="border-l h-[150px] border-gray-400 pr-6 self-center"></div>
+          <div className="hidden md:block border-l h-[150px] border-gray-400 pr-6 self-center"></div>
 
           <div className="px-8 mb-8 w-full md:mb-0 md:w-auto">
             <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/activity-reports" className="hover:text-white">
+                <Link href={preserveReferralParams("/activity-reports", searchParams)} className="hover:text-white">
                   Activity Reports
                 </Link>
               </li>
               <li>
-                <Link href="/blogs" className="hover:text-white">
+                <Link href={preserveReferralParams("/blogs", searchParams)} className="hover:text-white">
                   Blogs
                 </Link>
               </li>
               <li>
-                <Link href="/team" className="hover:text-white">
+                <Link href={preserveReferralParams("/team", searchParams)} className="hover:text-white">
                   Team
                 </Link>
               </li>
               <li>
-                <Link href="/volunteer" className="hover:text-white">
+                <Link href={preserveReferralParams("/volunteer", searchParams)} className="hover:text-white">
                   Volunteer
                 </Link>
               </li>
@@ -54,13 +60,13 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-semibold">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/80g" className="hover:text-white">
+                <Link href={preserveReferralParams("/80g", searchParams)} className="hover:text-white">
                   80G Certificate
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/contact"
+                  href={preserveReferralParams("/contact", searchParams)}
                   className="mt-4 block hover:text-white md:mt-0 md:inline-block"
                 >
                   Contact
@@ -68,7 +74,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/policies"
+                  href={preserveReferralParams("/policies", searchParams)}
                   className="mt-4 block hover:text-white md:mt-0 md:inline-block"
                 >
                   Privacy Policy
