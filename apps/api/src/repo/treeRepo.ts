@@ -41,7 +41,7 @@ class TreeRepository {
         } else if (filter.columnField === "tree_health") {
           columnField = 't.tree_status'
         } else if (filter.columnField === "association_type") {
-          columnField = 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' ELSE NULL END'
+          columnField = 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' WHEN t.gifted_to IS NOT NULL THEN \'Gift Cards\' WHEN t.assigned_to IS NOT NULL THEN \'Normal Assignment\' ELSE NULL END'
         } else if (filter.columnField === "request_id") {
           columnField = 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END'
         }
@@ -57,7 +57,7 @@ class TreeRepository {
         if (o.column === 'assigned_to_name')
           return 'au."name"' + " " + o.order
         else if (o.column === 'association_type')
-          return 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' ELSE NULL END' + " " + o.order
+          return 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' WHEN t.gifted_to IS NOT NULL THEN \'Gift Cards\' WHEN t.assigned_to IS NOT NULL THEN \'Normal Assignment\' ELSE NULL END' + " " + o.order
         else if (o.column === 'request_id')
           return 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END' + " " + o.order
         return 't.' + o.column + " " + o.order
@@ -78,9 +78,11 @@ class TreeRepository {
       sg."name" as sponsor_group_name, 
       au."name" as assigned_to_name,
       t.tree_status as tree_health,
-      CASE 
+      CASE
         WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text
         WHEN t.donation_id IS NOT NULL THEN 'Donation'
+        WHEN t.gifted_to IS NOT NULL THEN 'Gift Cards'
+        WHEN t.assigned_to IS NOT NULL THEN 'Normal Assignment'
         ELSE NULL
       END as association_type,
       CASE 
