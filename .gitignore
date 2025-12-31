@@ -62,3 +62,5 @@ CLAUDE.md
 DONATION_NOTES_IMPLEMENTATION.md
 *.code-workspace
 apps/plan/
+
+deploy-api.sh
