@@ -65,18 +65,21 @@ class TreeRepository {
       : null;
 
     let query = `
-    SELECT t.*, 
-      pt."name" as plant_type, 
-      pt.habit as habit, 
-      pt.illustration_s3_path as illustration_s3_path, 
-      pt.info_card_s3_path as info_card_s3_path, 
+    SELECT t.*,
+      pt."name" as plant_type,
+      pt.habit as habit,
+      pt.illustration_s3_path as illustration_s3_path,
+      pt.info_card_s3_path as info_card_s3_path,
       p."name" as plot,
       s.name_english as site_name,
-      mu."name" as mapped_user_name, 
-      mg."name" as mapped_group_name, 
-      su."name" as sponsor_user_name, 
-      sg."name" as sponsor_group_name, 
+      mu."name" as mapped_user_name,
+      mu.email as mapped_user_email,
+      mg."name" as mapped_group_name,
+      su."name" as sponsor_user_name,
+      su.email as sponsor_user_email,
+      sg."name" as sponsor_group_name,
       au."name" as assigned_to_name,
+      au.email as assigned_to_email,
       t.tree_status as tree_health,
       CASE
         WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text
@@ -85,12 +88,12 @@ class TreeRepository {
         WHEN t.assigned_to IS NOT NULL THEN 'Normal Assignment'
         ELSE NULL
       END as association_type,
-      CASE 
+      CASE
         WHEN gcr.id IS NOT NULL THEN gcr.id
         WHEN t.donation_id IS NOT NULL THEN t.donation_id
         ELSE NULL
       END as request_id
-    FROM "${getSchema()}".trees t 
+    FROM "${getSchema()}".trees t
     LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
     LEFT JOIN "${getSchema()}".sites s ON s.id = p.site_id
@@ -98,7 +101,7 @@ class TreeRepository {
     LEFT JOIN "${getSchema()}".groups mg ON mg.id = t.mapped_to_group
     LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
-    LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
+    LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
     LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
     LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
