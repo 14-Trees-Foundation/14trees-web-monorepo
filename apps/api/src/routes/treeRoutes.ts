@@ -553,9 +553,227 @@ routes.get("/assigned/:user_id", trees.getAssignedTrees);
  *             message:
  *               type: string
  *               example: "Something went wrong. Please try again after some time."
+ *   post:
+ *     summary: Get mapped trees for user with filters
+ *     description: Fetches a list of trees which are mapped to/reserved for user with optional filters
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *       - name: user_id
+ *         in: path
+ *         description: ID of the user
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *       - in: body
+ *         name: body
+ *         description: Request body for fetching trees with filters
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             filters:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Filter'
+ *     responses:
+ *       200:
+ *         description: Trees fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 #ref: '#/definitions/Tree'
+ *       400:
+ *         description: Invalid User ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "bad"
+ *             message:
+ *               type: string
+ *               example: "Invalid User ID!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
  */
 routes.get("/mapped/:user_id", trees.getMappedTreesForUser);
+routes.post("/mapped/:user_id", trees.getMappedTreesForUser);
+
+/**
+ * @swagger
+ * /trees/mapped/group/{group_id}:
+ *   get:
+ *     summary: Get mapped trees for group
+ *     description: Fetches a list of trees which are mapped to/reserved for group
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *       - name: group_id
+ *         in: path
+ *         description: ID of the group
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Trees fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             results:
+ *               type: array
+ *               items:
+ *                 #ref: '#/definitions/Tree'
+ *       400:
+ *         description: Invalid Group ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "bad"
+ *             message:
+ *               type: string
+ *               example: "Invalid Group!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
+ *   post:
+ *     summary: Get mapped trees for group with filters
+ *     description: Fetches a list of trees which are mapped to/reserved for group with optional filters
+ *     tags:
+ *       - Trees
+ *     parameters:
+ *       - name: offset
+ *         in: query
+ *         description: Offset for pagination
+ *         required: false
+ *         type: integer
+ *         example: 0
+ *       - name: limit
+ *         in: query
+ *         description: Limit for pagination
+ *         required: false
+ *         type: integer
+ *         example: 10
+ *       - name: group_id
+ *         in: path
+ *         description: ID of the group
+ *         required: true
+ *         type: integer
+ *         example: 1
+ *       - in: body
+ *         name: body
+ *         description: Request body for fetching trees with filters
+ *         required: false
+ *         schema:
+ *           type: object
+ *           properties:
+ *             filters:
+ *               type: array
+ *               items:
+ *                 $ref: '#/definitions/Filter'
+ *     responses:
+ *       200:
+ *         description: Trees fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             offset:
+ *               type: integer
+ *               example: 0
+ *             total:
+ *               type: integer
+ *               example: 20
+ *             group_name:
+ *               type: string
+ *               example: "Corporate Group"
+ *             results:
+ *               type: array
+ *               items:
+ *                 #ref: '#/definitions/Tree'
+ *       400:
+ *         description: Invalid Group ID
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "bad"
+ *             message:
+ *               type: string
+ *               example: "Invalid Group!"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             status:
+ *               type: string
+ *               example: "error"
+ *             message:
+ *               type: string
+ *               example: "Something went wrong. Please try again after some time."
+ */
 routes.get("/mapped/group/:group_id", trees.getMappedTreesForGroup);
+routes.post("/mapped/group/:group_id", trees.getMappedTreesForGroup);
 // routes.get("/plot/count", trees.countByPlot);
 // routes.get("/plot/list", trees.treeListByPlot);
 // routes.post('/update/photo', uploadFiles.array('files', 1), trees.addPhotoUpdate);

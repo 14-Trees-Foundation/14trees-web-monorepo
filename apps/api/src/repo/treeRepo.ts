@@ -44,6 +44,10 @@ class TreeRepository {
           columnField = 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' WHEN t.gifted_to IS NOT NULL THEN \'Gift Cards\' WHEN t.assigned_to IS NOT NULL THEN \'Normal Assignment\' ELSE NULL END'
         } else if (filter.columnField === "request_id") {
           columnField = 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END'
+        } else if (filter.columnField === "gift_card_request_id") {
+          columnField = 'gc.gift_card_request_id'
+        } else if (filter.columnField === "donation_id") {
+          columnField = 't.donation_id'
         }
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
         whereCondition = whereCondition + " " + condition + " AND";
