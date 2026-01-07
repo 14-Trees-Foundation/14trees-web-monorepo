@@ -823,7 +823,17 @@ export const getMappedTreesForUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const trees = await TreeRepository.getTrees(offset, limit, [{ operatorValue: 'equals', value: userId, columnField: 'sponsored_by_user' }, { operatorValue: 'isNotEmpty', value: userId, columnField: 'assigned_to' }]);
+    // Accept additional filters from request body
+    const additionalFilters: FilterItem[] = req.body?.filters || [];
+
+    // Combine base filters with additional filters
+    const filters: FilterItem[] = [
+      { operatorValue: 'equals', value: userId, columnField: 'sponsored_by_user' },
+      { operatorValue: 'isNotEmpty', value: userId, columnField: 'assigned_to' },
+      ...additionalFilters
+    ];
+
+    const trees = await TreeRepository.getTrees(offset, limit, filters);
     res.status(status.success).send(trees);
   } catch (error: any) {
     console.log("[ERROR]", "TreesController::getMappedTreesForUser", error);
@@ -857,14 +867,17 @@ export const getMappedTreesForGroup = async (req: Request, res: Response) => {
       });
     }
 
-    const trees = await TreeRepository.getTrees(offset, limit, [
-      { operatorValue: 'equals', value: groupId, columnField: 'sponsored_by_group' },
-      { operatorValue: 'isNotEmpty', value: groupId, columnField: 'assigned_to' }
-    ]);
+    // Accept additional filters from request body
+    const additionalFilters: FilterItem[] = req.body?.filters || [];
 
-    console.log("Filter applied:", [
+    // Combine base filters with additional filters
+    const filters: FilterItem[] = [
       { operatorValue: 'equals', value: groupId, columnField: 'sponsored_by_group' },
-    ])
+      { operatorValue: 'isNotEmpty', value: groupId, columnField: 'assigned_to' },
+      ...additionalFilters
+    ];
+
+    const trees = await TreeRepository.getTrees(offset, limit, filters);
 
     return res.status(status.success).json({
       group_name: group.name,

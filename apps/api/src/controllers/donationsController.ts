@@ -31,16 +31,30 @@ export const getDonations = async (req: Request, res: Response) => {
 
     try {
         let result = await DonationRepository.getDonations(offset, limit, filters, orderBy);
+
+        // Determine photo to display for each donation: group logo > first tree photo
+        const resultsWithPhotos = await Promise.all(result.results.map(async (item: any) => {
+            let photoUrl: string | null = null;
+            if (item.group_logo_url) {
+                // Priority 1: Use group logo if donation belongs to a group/corporate
+                photoUrl = item.group_logo_url;
+            } else {
+                // Priority 2: Fetch first tree photo as fallback
+                photoUrl = await TreeRepository.getFirstTreePhotoByDonationId(item.id);
+            }
+
+            return {
+                ...item,
+                booked: Number(item.booked),
+                assigned: Number(item.assigned),
+                first_tree_photo_url: photoUrl,
+            };
+        }));
+
         res.status(status.success).send({
             offset: result.offset,
             total: Number(result.total),
-            results: result.results.map((item: any) => {
-                return {
-                    ...item,
-                    booked: Number(item.booked),
-                    assigned: Number(item.assigned),
-                }
-            })
+            results: resultsWithPhotos
         });
     } catch (error: any) {
         console.log("[ERROR]", "DonationsController::getDonations", error)

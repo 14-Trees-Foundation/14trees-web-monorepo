@@ -66,11 +66,12 @@ export class GiftCardsRepository {
         }
 
         const getQuery = `
-            SELECT gcr.*, 
-                u.name as user_name, 
-                u.email as user_email, 
-                u.phone as user_phone, 
-                g.name as group_name, 
+            SELECT gcr.*,
+                u.name as user_name,
+                u.email as user_email,
+                u.phone as user_phone,
+                g.name as group_name,
+                g.logo_url as group_logo_url,
                 cu.name as created_by_name,
                 pu.name as processed_by_name,
                 MIN(ru.name) AS recipient_name,
@@ -117,7 +118,7 @@ export class GiftCardsRepository {
             LEFT JOIN "${getSchema()}".gift_request_users gru ON gru.id = gc.gift_request_user_id
             LEFT JOIN "${getSchema()}".users ru ON ru.id = gru.recipient
             WHERE ${whereConditions || "1=1"}
-            GROUP BY gcr.id, u.id, cu.id, pu.id, g.name 
+            GROUP BY gcr.id, u.id, cu.id, pu.id, g.name, g.logo_url
             ORDER BY ${orderBy?.map(o => `gcr.${o.column} ${o.order}`).join(", ") || 'gcr.id DESC'}
             ${limit === -1 ? "" : `LIMIT ${limit} OFFSET ${offset}`};
         `;
