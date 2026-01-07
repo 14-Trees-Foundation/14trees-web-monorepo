@@ -83,12 +83,12 @@ export class DonationRepository {
                     GROUP BY donation_id
                 )
 
-                SELECT 
-                    d.id, d.user_id, d.payment_id, d.category, d.grove, d.grove_type_other, 
-                    d.trees_count, d.pledged_area_acres, d.contribution_options, d.names_for_plantation, 
-                    d.comments, d.created_by, d.rfr_id, d.tags, d.donation_type, d.donation_method, 
-                    d.amount_donated, d.visit_date, d.status, d.prs_status, d.mail_status, d.mail_error, 
-                    d.processed_by, d.group_id, d.donation_date, d.donation_receipt_number, 
+                SELECT
+                    d.id, d.user_id, d.payment_id, d.category, d.grove, d.grove_type_other,
+                    d.trees_count, d.pledged_area_acres, d.contribution_options, d.names_for_plantation,
+                    d.comments, d.created_by, d.rfr_id, d.tags, d.donation_type, d.donation_method,
+                    d.amount_donated, d.visit_date, d.status, d.prs_status, d.mail_status, d.mail_error,
+                    d.processed_by, d.group_id, d.donation_date, d.donation_receipt_number,
                     d.sponsorship_type, d.amount_received, d.notes,
                     d.created_at AT TIME ZONE 'UTC' AS created_at,
                     d.updated_at AT TIME ZONE 'UTC' AS updated_at,
@@ -96,6 +96,7 @@ export class DonationRepository {
                     u.email AS user_email,
                     u.phone AS user_phone,
                     pu.name AS processed_by_name,
+                    g.logo_url AS group_logo_url,
                     p.order_id AS order_id,
                     COALESCE(dus.mailed_count, 0) AS mailed_count,
                     COALESCE(dus.users_count, 0) AS users_count,
@@ -104,6 +105,7 @@ export class DonationRepository {
                 FROM "${getSchema()}".donations d
                 LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
                 LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
+                LEFT JOIN "${getSchema()}".groups g ON g.id = d.group_id
                 LEFT JOIN "${getSchema()}".payments p ON p.id = d.payment_id
                 LEFT JOIN donation_user_stats dus ON dus.donation_id = d.id
                 LEFT JOIN tree_counts tc ON tc.donation_id = d.id
@@ -113,17 +115,18 @@ export class DonationRepository {
     
             const countQuery = `
                 WITH donation_user_stats AS (
-                    SELECT 
+                    SELECT
                         donation_id,
                         COUNT(DISTINCT id) AS users_count,
                         SUM(CASE WHEN mail_sent THEN 1 ELSE 0 END) AS mailed_count
                     FROM "${getSchema()}".donation_users
                     GROUP BY donation_id
                 )
-                SELECT COUNT(*) 
+                SELECT COUNT(*)
                 FROM "${getSchema()}".donations d
                 LEFT JOIN "${getSchema()}".users u ON u.id = d.user_id
                 LEFT JOIN "${getSchema()}".users pu ON pu.id = d.processed_by
+                LEFT JOIN "${getSchema()}".groups g ON g.id = d.group_id
                 LEFT JOIN "${getSchema()}".payments p ON p.id = d.payment_id
                 LEFT JOIN donation_user_stats dus ON dus.donation_id = d.id
                 WHERE ${whereConditions !== "" ? whereConditions : "1=1"};

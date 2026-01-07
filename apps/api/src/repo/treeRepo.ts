@@ -1079,6 +1079,41 @@ class TreeRepository {
     return data[0] || { total_trees: 0, donated_trees: 0, remaining_trees: 0 };
   }
 
+  public static async getFirstTreePhotoByRequestId(requestId: number): Promise<string | null> {
+    const query = `
+      SELECT COALESCE(t.user_tree_image, t.image) as photo_url
+      FROM "${getSchema()}".trees t
+      JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+      WHERE gc.gift_card_request_id = ${requestId}
+      AND (t.user_tree_image IS NOT NULL OR t.image IS NOT NULL)
+      ORDER BY t.id ASC
+      LIMIT 1
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+    });
+
+    return data.length > 0 ? data[0].photo_url : null;
+  }
+
+  public static async getFirstTreePhotoByDonationId(donationId: number): Promise<string | null> {
+    const query = `
+      SELECT COALESCE(t.user_tree_image, t.image) as photo_url
+      FROM "${getSchema()}".trees t
+      WHERE t.donation_id = ${donationId}
+      AND (t.user_tree_image IS NOT NULL OR t.image IS NOT NULL)
+      ORDER BY t.id ASC
+      LIMIT 1
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+    });
+
+    return data.length > 0 ? data[0].photo_url : null;
+  }
+
 }
 
 export default TreeRepository;

@@ -77,6 +77,19 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             }
         }
 
+        // Determine photo to display: gift request logo > group logo > first tree photo
+        let photoUrl: string | null = null;
+        if (giftCardRequest.logo_url) {
+            // Priority 1: Use gift request logo if provided
+            photoUrl = giftCardRequest.logo_url;
+        } else if ((giftCardRequest as any).group_logo_url) {
+            // Priority 2: Use group logo if gift request belongs to a group/corporate
+            photoUrl = (giftCardRequest as any).group_logo_url;
+        } else {
+            // Priority 3: Fetch first tree photo as fallback
+            photoUrl = await TreeRepository.getFirstTreePhotoByRequestId(giftCardRequest.id);
+        }
+
         data.push({
             ...giftCardRequest,
             plot_ids: (giftCardRequest as any).plot_ids.filter((plot_id: any) => plot_id !== null),
@@ -88,6 +101,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
                     : paidAmount === 0
                         ? "Pending payment"
                         : "Partially paid",
+            first_tree_photo_url: photoUrl,
         })
 
     }
