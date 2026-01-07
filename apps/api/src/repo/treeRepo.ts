@@ -84,6 +84,7 @@ class TreeRepository {
       sg."name" as sponsor_group_name,
       au."name" as assigned_to_name,
       au.email as assigned_to_email,
+      gc.card_image_url as gift_card_image,
       t.tree_status as tree_health,
       CASE
         WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text
