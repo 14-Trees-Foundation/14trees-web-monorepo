@@ -138,7 +138,7 @@ async function insertCsvIntoPostgres(filePath: string, sequelize: Sequelize) {
         },
         'Google Earth placemark': {
           type: DataTypes.BOOLEAN,
-          allowNull: false,
+          allowNull: true,
         },
         Presentable: {
           type: DataTypes.STRING,

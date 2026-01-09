@@ -88,7 +88,7 @@ async function insertCsvIntoPostgres(filePath: string) {
         },
         'Google Earth placemark': {
             type: DataTypes.BOOLEAN,
-            allowNull: false,
+            allowNull: true,
         },
         Presentable: {
             type: DataTypes.STRING,
