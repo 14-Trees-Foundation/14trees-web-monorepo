@@ -499,13 +499,19 @@ class TreeRepository {
       if (noMoreTrees) break;
     }
 
+    // Deduplicate tree IDs as a safety measure (should not happen but prevents DB constraint violations)
+    const uniqueFinalTreeIds = Array.from(new Set(finalTreeIds));
+    if (uniqueFinalTreeIds.length !== finalTreeIds.length) {
+      console.warn(`[WARNING] mapTreesInPlotToUserAndGroup: Removed ${finalTreeIds.length - uniqueFinalTreeIds.length} duplicate tree IDs`);
+    }
+
     await Tree.update(updateConfig, {
       where: {
-        id: { [Op.in]: finalTreeIds },
+        id: { [Op.in]: uniqueFinalTreeIds },
       },
     });
 
-    return finalTreeIds;
+    return uniqueFinalTreeIds;
   }
 
   /**

@@ -335,6 +335,12 @@ export class GiftCardsRepository {
     }
 
     static async bookGiftCards(cardId: number, treeIds: number[]): Promise<void> {
+        // Deduplicate tree IDs to prevent unique constraint violations
+        const uniqueTreeIds = Array.from(new Set(treeIds));
+
+        if (uniqueTreeIds.length !== treeIds.length) {
+            console.warn(`[WARNING] bookGiftCards: Removed ${treeIds.length - uniqueTreeIds.length} duplicate tree IDs from request`);
+        }
 
         const cards = await GiftCard.findAll({
             where: {
@@ -345,18 +351,18 @@ export class GiftCardsRepository {
 
         let idx = 0;
         for (let card of cards) {
-            if (idx === treeIds.length) {
+            if (idx === uniqueTreeIds.length) {
                 break;
             }
 
-            card.tree_id = treeIds[idx];
+            card.tree_id = uniqueTreeIds[idx];
             card.updated_at = new Date();
             await card.save();
             idx++;
         }
 
-        if (idx < treeIds.length) {
-            const remainingTreeIds = treeIds.slice(idx);
+        if (idx < uniqueTreeIds.length) {
+            const remainingTreeIds = uniqueTreeIds.slice(idx);
             const giftCards = remainingTreeIds.map(treeId => {
                 return {
                     gift_card_request_id: cardId,
