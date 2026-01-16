@@ -44,9 +44,11 @@ const ContactPage: React.FC = () => {
           <p className="mb-4 text-gray-600">
             14 Trees Foundation
             <br />
-            Atal Incubation Centre (AIC)
+            4th floor, Vishwakalyan building
             <br />
-            IISER-Pune (411008)
+            Near Parihar Chowk, Aundh
+            <br />
+            Pune 411007
             <br />
             Maharashtra
           </p>
