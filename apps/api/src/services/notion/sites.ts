@@ -6,11 +6,13 @@ import { sequelize } from '../../config/postgreDB';
 import { dataBaseId, syncDataFromNotionToDb } from './notion';
 
 async function insertCsvIntoPostgres(filePath: string) {
+    console.log('[INFO]', 'insertCsvIntoPostgres', `Reading CSV from ${filePath}...`);
     const fileName = path.basename(filePath, path.extname(filePath)); // Use the file name as the table name
     const headers: string[] = [];
     const records: any[] = [];
 
     // Step 1: Read the CSV file and gather headers and records
+    const csvStartTime = Date.now();
     await new Promise<void>((resolve, reject) => {
         fs.createReadStream(filePath)
             .pipe(csv())
@@ -46,6 +48,7 @@ async function insertCsvIntoPostgres(filePath: string) {
             .on('end', () => resolve())
             .on('error', (error) => reject(error));
     });
+    console.log('[INFO]', 'insertCsvIntoPostgres', `CSV parsed: ${records.length} records (${Date.now() - csvStartTime}ms)`);
 
     // Step 2: Define a dynamic Sequelize model based on the headers
     const tableDefinition: { [key: string]: any } = {
@@ -226,16 +229,24 @@ async function insertCsvIntoPostgres(filePath: string) {
     });
 
     // Step 3: Sync the model to create the table in the database
+    const syncStartTime = Date.now();
+    console.log('[INFO]', 'insertCsvIntoPostgres', `Dropping and recreating ${fileName} table...`);
     await DynamicModel.sync({ force: true }); // `force: true` drops the table if it already exists
+    console.log('[INFO]', 'insertCsvIntoPostgres', `Table recreated (${Date.now() - syncStartTime}ms)`);
 
     // Step 4: Insert the records into the database
+    const bulkStartTime = Date.now();
+    console.log('[INFO]', 'insertCsvIntoPostgres', `Bulk inserting ${records.length} records into ${fileName}...`);
     await DynamicModel.bulkCreate(records);
+    console.log('[INFO]', 'insertCsvIntoPostgres', `Bulk insert completed (${Date.now() - bulkStartTime}ms)`);
 }
 
 export const syncNotionSites = async () => {
+    console.log('[INFO]', 'syncNotionSites', 'Starting Notion sites sync...');
     const dbId = dataBaseId.find(db => db.key === 'notion_db');
     if (dbId) {
         const filePath = await syncDataFromNotionToDb(dbId);
         await insertCsvIntoPostgres(filePath);
     }
+    console.log('[INFO]', 'syncNotionSites', 'Notion sites sync completed');
 }

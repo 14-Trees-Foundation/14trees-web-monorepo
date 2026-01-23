@@ -426,6 +426,8 @@ export class GiftCardsRepository {
                     columnField = "au.name"
                 } else if (col === "sapling_id" || col === "saplingId") {
                     columnField = "t.sapling_id"
+                } else if (col === "plant_type" || col === "plantType") {
+                    columnField = "pt.name"
                 } else if (col === "plot_name" || col === "plotName") {
                     columnField = "p.name"
                 } else if (col === "plot_id" || col === "plotId") {
@@ -467,6 +469,7 @@ export class GiftCardsRepository {
             LEFT JOIN "${getSchema()}".trees t ON t.id = gc.tree_id
             LEFT JOIN "${getSchema()}".users ru ON ru.id = t.gifted_to
             LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
+            LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
             LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
             WHERE ${whereConditions !== "" ? whereConditions : "1=1"};
         `
