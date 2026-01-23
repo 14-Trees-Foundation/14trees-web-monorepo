@@ -38,10 +38,12 @@ export const getDonations = async (req: Request, res: Response) => {
             if (item.group_logo_url) {
                 // Priority 1: Use group logo if donation belongs to a group/corporate
                 photoUrl = item.group_logo_url;
-            } else {
-                // Priority 2: Fetch first tree photo as fallback
-                photoUrl = await TreeRepository.getFirstTreePhotoByDonationId(item.id);
-            }
+            } 
+            // it's a heavy operation, so commenting it out -- visit once this feature is really needed
+            // else {
+            //     // Priority 2: Fetch first tree photo as fallback
+            //     photoUrl = await TreeRepository.getFirstTreePhotoByDonationId(item.id);
+            // }
 
             return {
                 ...item,
