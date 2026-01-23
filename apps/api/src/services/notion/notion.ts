@@ -16,10 +16,14 @@ export const dataBaseId: dbIdModel[] = [
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 const getDatabaseData = async (databaseId: string) => {
+  console.log('[INFO]', 'getDatabaseData', `Fetching data from Notion database ${databaseId}...`);
 
   let startCursor: string | undefined
   let hasMoreData = true
   let dbData: Array<any> = []
+  let pageCount = 0;
+  const startTime = Date.now();
+
   while (hasMoreData) {
     const query = {
       database_id: databaseId,
@@ -28,7 +32,11 @@ const getDatabaseData = async (databaseId: string) => {
       query["start_cursor"] = startCursor;
     }
 
+    const pageStartTime = Date.now();
     const response = await notion.databases.query(query);
+    pageCount++;
+    console.log('[INFO]', 'getDatabaseData', `Fetched page ${pageCount}: ${response.results.length} records (${Date.now() - pageStartTime}ms)`);
+
     if (response.results) {
       for (let i = 0; i < response.results.length; i++) {
         let data = {} as any
@@ -72,10 +80,14 @@ const getDatabaseData = async (databaseId: string) => {
     hasMoreData = response.has_more;
     startCursor = response.next_cursor ? response.next_cursor : "";
   }
+
+  console.log('[INFO]', 'getDatabaseData', `Completed fetching ${dbData.length} total records from ${pageCount} pages (${Date.now() - startTime}ms)`);
   return dbData;
 };
 
 export const syncDataFromNotionToDb = async (dbId: { key: string; value: string }) => {
+  console.log('[INFO]', 'syncDataFromNotionToDb', `Starting sync for database: ${dbId.key}`);
+
   const data = await getDatabaseData(dbId.value);
   const filePath = `${process.env.DEST_IMG_FOLDER}${dbId.key}.csv`;
   const hdr: Array<string> = [];
@@ -88,11 +100,14 @@ export const syncDataFromNotionToDb = async (dbId: { key: string; value: string 
     }
   }
 
+  console.log('[INFO]', 'syncDataFromNotionToDb', `Writing ${data.length} records to CSV: ${filePath}`);
+  const csvStartTime = Date.now();
   const csvWriter = createObjectCsvWriter({
     path: filePath,
     header: hdr.map(key => ({ id: key, title: key }))
   });
   await csvWriter.writeRecords(data);
+  console.log('[INFO]', 'syncDataFromNotionToDb', `CSV file written successfully (${Date.now() - csvStartTime}ms)`);
 
   return filePath;
 }

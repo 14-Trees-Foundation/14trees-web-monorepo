@@ -119,14 +119,37 @@ export const deleteSite = async (req: Request, res: Response) => {
 }
 
 export const syncSitesDatFromNotion = async (req: Request, res: Response) => {
-    try {
-        await syncNotionSites();
-        await SiteRepository.updateSitesDataUsingNotionData();
-        await SiteRepository.insertNewSitesDataUsingNotionData();
+    const startTime = Date.now();
+    console.log('[INFO]', 'SitesController::syncSitesDatFromNotion', 'Starting Notion sync...');
 
-        res.status(status.success).json();
+    try {
+        // Step 1: Sync data from Notion to CSV and load into notion_db table
+        const syncStart = Date.now();
+        await syncNotionSites();
+        console.log('[INFO]', 'SitesController::syncSitesDatFromNotion', `Notion data synced to notion_db table (${Date.now() - syncStart}ms)`);
+
+        // Step 2: Update existing sites
+        const updateStart = Date.now();
+        const updateResult = await SiteRepository.updateSitesDataUsingNotionData();
+        console.log('[INFO]', 'SitesController::syncSitesDatFromNotion', `Updated ${updateResult} existing sites (${Date.now() - updateStart}ms)`);
+
+        // Step 3: Insert new sites
+        const insertStart = Date.now();
+        const insertResult = await SiteRepository.insertNewSitesDataUsingNotionData();
+        console.log('[INFO]', 'SitesController::syncSitesDatFromNotion', `Inserted ${insertResult} new sites (${Date.now() - insertStart}ms)`);
+
+        const totalTime = Date.now() - startTime;
+        console.log('[INFO]', 'SitesController::syncSitesDatFromNotion', `Sync completed successfully. Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
+
+        res.status(status.success).json({
+            message: 'Sync completed successfully',
+            updated: updateResult,
+            inserted: insertResult,
+            duration_ms: totalTime
+        });
     } catch (error: any) {
-        console.log('[ERROR]', 'SitesController::syncSitesDatFromNotion', error);
+        const totalTime = Date.now() - startTime;
+        console.log('[ERROR]', 'SitesController::syncSitesDatFromNotion', `Failed after ${totalTime}ms:`, error);
         res.status(status.bad).send({ error: 'Something went wrong!' });
     }
 }
