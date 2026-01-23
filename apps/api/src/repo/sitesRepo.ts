@@ -51,12 +51,19 @@ export class SiteRepository {
 
     // CRUD
     static async getSites(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Site>> {
-        const sites = await Site.findAll({
+        const options: any = {
             where: whereClause,
             offset: Number(offset),
-            limit: Number(limit),
             order: [['created_at', 'DESC']], // Order by created_at in descending order
-        });
+        };
+
+        // Only add limit if it's not -1 (which means "get all")
+        // This matches the pattern used in other repositories (donationsRepo, userRepo, etc.)
+        if (limit !== -1) {
+            options.limit = Number(limit);
+        }
+
+        const sites = await Site.findAll(options);
         const count = await Site.count({ where: whereClause });
         return { results: sites, total: count, offset: offset };
     }
