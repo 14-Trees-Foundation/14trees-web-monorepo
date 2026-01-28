@@ -2927,3 +2927,54 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         res.status(status.error).send({ message: error.message || 'Something went wrong while creating gift card request. Please try again later.' });
     }
 }
+
+export const getGiftCardMonthOnMonthAnalytics = async (req: Request, res: Response) => {
+    try {
+        // Extract and validate query parameters
+        const dateField = (req.query.dateField as string) || 'created_at';
+        const months = req.query.months ? parseInt(req.query.months as string) : 12;
+
+        // Validate dateField
+        if (dateField !== 'created_at' && dateField !== 'gifted_on') {
+            return res.status(status.bad).send({
+                error: 'Invalid dateField parameter. Must be "created_at" or "gifted_on"'
+            });
+        }
+
+        // Calculate date range
+        let startDate: Date;
+        let endDate: Date;
+
+        if (req.query.startDate && req.query.endDate) {
+            // Use provided date range
+            startDate = new Date(req.query.startDate as string);
+            endDate = new Date(req.query.endDate as string);
+
+            // Validate dates
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(status.bad).send({
+                    error: 'Invalid date format. Use ISO date format (YYYY-MM-DD)'
+                });
+            }
+        } else {
+            // Calculate rolling window based on months parameter
+            endDate = new Date();
+            startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - months);
+        }
+
+        // Fetch analytics data from repository
+        const analyticsData = await GiftCardsRepository.getMonthOnMonthAnalytics(
+            dateField,
+            startDate,
+            endDate
+        );
+
+        res.status(status.success).send(analyticsData);
+    } catch (error: any) {
+        await Logger.logError('giftCardController', 'getGiftCardMonthOnMonthAnalytics', error, req);
+        res.status(status.error).send({
+            error: error.message || 'Failed to fetch analytics data'
+        });
+    }
+}
