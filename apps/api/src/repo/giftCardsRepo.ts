@@ -161,7 +161,7 @@ export class GiftCardsRepository {
     
     static async getGiftCardSummaryCounts(): Promise<{ personal_gift_requests: number, corporate_gift_requests: number, personal_gifted_trees: number, corporate_gifted_trees: number,total_gift_requests: number, total_gifted_trees: number}>{
         const query = `
-          SELECT 
+          SELECT
               COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_gift_requests,
               COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_gift_requests,
               SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_gifted_trees,
@@ -179,6 +179,192 @@ export class GiftCardsRepository {
             corporate_gifted_trees: number,
             total_gift_requests: number,
             total_gifted_trees: number
+        };
+    }
+
+    static async getMonthOnMonthAnalytics(
+        dateField: 'created_at' | 'gifted_on',
+        startDate: Date,
+        endDate: Date
+    ): Promise<{
+        summary: {
+            total_requests: number,
+            total_requests_corporate: number,
+            total_requests_personal: number,
+            total_trees: number,
+            total_trees_corporate: number,
+            total_trees_personal: number
+        },
+        monthly: Array<{
+            month: string,
+            requests: number,
+            requests_corporate: number,
+            requests_personal: number,
+            trees: number,
+            trees_corporate: number,
+            trees_personal: number
+        }>,
+        by_occasion: Array<{
+            event_type: string,
+            total_requests: number,
+            total_trees: number,
+            monthly: Array<{
+                month: string,
+                requests: number,
+                requests_corporate: number,
+                requests_personal: number,
+                trees: number,
+                trees_corporate: number,
+                trees_personal: number
+            }>
+        }>
+    }> {
+        // Query to get aggregated data by month and event_type
+        const query = `
+            SELECT
+                TO_CHAR(DATE_TRUNC('month', ${dateField})::date, 'YYYY-MM') as month,
+                COALESCE(event_type, 'Not Specified') as event_type,
+                COUNT(CASE WHEN group_id IS NULL THEN id END) as personal_requests,
+                COUNT(CASE WHEN group_id IS NOT NULL THEN id END) as corporate_requests,
+                SUM(CASE WHEN group_id IS NULL THEN no_of_cards ELSE 0 END) as personal_trees,
+                SUM(CASE WHEN group_id IS NOT NULL THEN no_of_cards ELSE 0 END) as corporate_trees,
+                COUNT(id) as total_requests,
+                SUM(no_of_cards) as total_trees
+            FROM "${getSchema()}".gift_card_requests
+            WHERE request_type = 'Gift Cards'
+                AND ${dateField} IS NOT NULL
+                AND ${dateField} BETWEEN :startDate AND :endDate
+            GROUP BY month, event_type
+            ORDER BY month ASC, event_type ASC
+        `;
+
+        const results: any[] = await sequelize.query(query, {
+            replacements: { startDate, endDate },
+            type: QueryTypes.SELECT
+        });
+
+        // Calculate summary totals
+        const summary = {
+            total_requests: 0,
+            total_requests_corporate: 0,
+            total_requests_personal: 0,
+            total_trees: 0,
+            total_trees_corporate: 0,
+            total_trees_personal: 0
+        };
+
+        // Group data by month for overall monthly trends
+        const monthlyMap = new Map<string, {
+            month: string,
+            requests: number,
+            requests_corporate: number,
+            requests_personal: number,
+            trees: number,
+            trees_corporate: number,
+            trees_personal: number
+        }>();
+
+        // Group data by occasion type
+        const occasionMap = new Map<string, {
+            event_type: string,
+            total_requests: number,
+            total_trees: number,
+            monthly: Map<string, {
+                month: string,
+                requests: number,
+                requests_corporate: number,
+                requests_personal: number,
+                trees: number,
+                trees_corporate: number,
+                trees_personal: number
+            }>
+        }>();
+
+        // Process results
+        for (const row of results) {
+            const month = row.month;
+            const eventType = row.event_type;
+            const personalRequests = parseInt(row.personal_requests) || 0;
+            const corporateRequests = parseInt(row.corporate_requests) || 0;
+            const personalTrees = parseInt(row.personal_trees) || 0;
+            const corporateTrees = parseInt(row.corporate_trees) || 0;
+            const totalRequests = parseInt(row.total_requests) || 0;
+            const totalTrees = parseInt(row.total_trees) || 0;
+
+            // Update summary
+            summary.total_requests += totalRequests;
+            summary.total_requests_corporate += corporateRequests;
+            summary.total_requests_personal += personalRequests;
+            summary.total_trees += totalTrees;
+            summary.total_trees_corporate += corporateTrees;
+            summary.total_trees_personal += personalTrees;
+
+            // Update monthly data
+            if (!monthlyMap.has(month)) {
+                monthlyMap.set(month, {
+                    month,
+                    requests: 0,
+                    requests_corporate: 0,
+                    requests_personal: 0,
+                    trees: 0,
+                    trees_corporate: 0,
+                    trees_personal: 0
+                });
+            }
+            const monthData = monthlyMap.get(month)!;
+            monthData.requests += totalRequests;
+            monthData.requests_corporate += corporateRequests;
+            monthData.requests_personal += personalRequests;
+            monthData.trees += totalTrees;
+            monthData.trees_corporate += corporateTrees;
+            monthData.trees_personal += personalTrees;
+
+            // Update occasion data
+            if (!occasionMap.has(eventType)) {
+                occasionMap.set(eventType, {
+                    event_type: eventType,
+                    total_requests: 0,
+                    total_trees: 0,
+                    monthly: new Map()
+                });
+            }
+            const occasionData = occasionMap.get(eventType)!;
+            occasionData.total_requests += totalRequests;
+            occasionData.total_trees += totalTrees;
+
+            if (!occasionData.monthly.has(month)) {
+                occasionData.monthly.set(month, {
+                    month,
+                    requests: 0,
+                    requests_corporate: 0,
+                    requests_personal: 0,
+                    trees: 0,
+                    trees_corporate: 0,
+                    trees_personal: 0
+                });
+            }
+            const occasionMonthData = occasionData.monthly.get(month)!;
+            occasionMonthData.requests += totalRequests;
+            occasionMonthData.requests_corporate += corporateRequests;
+            occasionMonthData.requests_personal += personalRequests;
+            occasionMonthData.trees += totalTrees;
+            occasionMonthData.trees_corporate += corporateTrees;
+            occasionMonthData.trees_personal += personalTrees;
+        }
+
+        // Convert maps to arrays
+        const monthly = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month));
+        const by_occasion = Array.from(occasionMap.values()).map(occasion => ({
+            event_type: occasion.event_type,
+            total_requests: occasion.total_requests,
+            total_trees: occasion.total_trees,
+            monthly: Array.from(occasion.monthly.values()).sort((a, b) => a.month.localeCompare(b.month))
+        })).sort((a, b) => b.total_requests - a.total_requests); // Sort by total requests descending
+
+        return {
+            summary,
+            monthly,
+            by_occasion
         };
     }
 

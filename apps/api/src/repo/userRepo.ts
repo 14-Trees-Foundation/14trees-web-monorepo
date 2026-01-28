@@ -182,25 +182,63 @@ export class UserRepository {
         return await User.count()
     }
 
-    public static async search(searchStr: string): Promise<any[]> {
+    public static async search(searchStr: string): Promise<{ users: any[], groups: any[] }> {
+        const { condition: userCondition, replacement: userReplacement } = getSqlQueryExpression("u.name", "contains", "name", searchStr.split(" ").join("%"));
+        const { condition: groupCondition, replacement: groupReplacement } = getSqlQueryExpression("g.name", "contains", "name", searchStr.split(" ").join("%"));
 
-        const { condition, replacement } = getSqlQueryExpression("u.name", "contains", "name", searchStr.split(" ").join("%"));
-
-        const getQuery = `
-            SELECT u.id, u.name, 
-                count(distinct mt.id) as sponsored_trees,
-                jsonb_agg(distinct jsonb_build_object('sapling_id', t.sapling_id, 'assigned_at', t.assigned_at, 'profile_image', t.user_tree_image)) AS assigned_trees
+        // Search users
+        const userQuery = `
+            SELECT u.id, u.name, 'user' as type,
+                (
+                    SELECT COUNT(*)
+                    FROM "${getSchema()}".trees mt
+                    WHERE mt.sponsored_by_user = u.id
+                ) as sponsored_trees,
+                (
+                    SELECT COUNT(*)
+                    FROM "${getSchema()}".trees t
+                    WHERE t.assigned_to = u.id
+                ) as assigned_trees_count,
+                (
+                    SELECT t2.user_tree_image
+                    FROM "${getSchema()}".trees t2
+                    WHERE t2.assigned_to = u.id
+                      AND t2.user_tree_image IS NOT NULL
+                      AND t2.user_tree_image != ''
+                    ORDER BY t2.assigned_at DESC
+                    LIMIT 1
+                ) as profile_image
             FROM "${getSchema()}".users u
-            left JOIN "${getSchema()}".trees t ON t.assigned_to = u.id
-            left JOIN "${getSchema()}".trees mt ON mt.sponsored_by_user = u.id
-            WHERE ${condition}
-            GROUP BY u.id;
+            WHERE ${userCondition}
+            LIMIT 100;
         `
 
-        return await sequelize.query(getQuery, {
-            replacements: replacement,
-            type: QueryTypes.SELECT
-        })
+        // Search groups
+        const groupQuery = `
+            SELECT g.id, g.name, g.type as group_type, 'group' as type,
+                (
+                    SELECT COUNT(*)
+                    FROM "${getSchema()}".trees mt
+                    WHERE mt.sponsored_by_group = g.id
+                ) as sponsored_trees,
+                g.logo_url as profile_image
+            FROM "${getSchema()}".groups g
+            WHERE ${groupCondition}
+            LIMIT 100;
+        `
+
+        const [users, groups] = await Promise.all([
+            sequelize.query(userQuery, {
+                replacements: userReplacement,
+                type: QueryTypes.SELECT
+            }),
+            sequelize.query(groupQuery, {
+                replacements: groupReplacement,
+                type: QueryTypes.SELECT
+            })
+        ]);
+
+        return { users, groups };
     }
 
     public static async getDeletedUsersFromList(userIds: number[]): Promise<number[]> {
