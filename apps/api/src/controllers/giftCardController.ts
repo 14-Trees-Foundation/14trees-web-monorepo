@@ -54,6 +54,19 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
     const orderBy: any[] = req.body?.order_by;
 
     const giftCardRequests = await GiftCardsRepository.getGiftCardRequests(offset, limit, filters, orderBy);
+
+    // Batch load payments to avoid N+1 queries
+    const paymentIds = giftCardRequests.results
+        .filter(r => r.payment_id)
+        .map(r => r.payment_id as number);
+    const paymentsMap = await PaymentRepository.getPaymentsByIds(paymentIds);
+
+    // Batch load tree photos for requests without logos
+    const requestIdsNeedingPhotos = giftCardRequests.results
+        .filter(r => !r.logo_url && !(r as any).group_logo_url)
+        .map(r => r.id);
+    const photosMap = await TreeRepository.getFirstTreePhotosByRequestIds(requestIdsNeedingPhotos);
+
     const data: any[] = [];
     for (const giftCardRequest of giftCardRequests.results) {
         let paidAmount = 0;
@@ -67,7 +80,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             ) * giftCardRequest.no_of_cards;
 
         if (giftCardRequest.payment_id) {
-            const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
+            const payment: any = paymentsMap.get(giftCardRequest.payment_id);
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
@@ -87,7 +100,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             photoUrl = (giftCardRequest as any).group_logo_url;
         } else {
             // Priority 3: Fetch first tree photo as fallback
-            photoUrl = await TreeRepository.getFirstTreePhotoByRequestId(giftCardRequest.id);
+            photoUrl = photosMap.get(giftCardRequest.id) || null;
         }
 
         data.push({
