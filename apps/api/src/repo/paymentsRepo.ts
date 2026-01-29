@@ -23,6 +23,32 @@ export class PaymentRepository {
         return payments.length > 0 ? payments[0] : null;
     }
 
+    public static async getPaymentsByIds(ids: number[]): Promise<Map<number, Payment>> {
+        if (ids.length === 0) {
+            return new Map();
+        }
+
+        const query = `
+            SELECT p.*, COALESCE(json_agg(ph) FILTER (WHERE ph.id IS NOT NULL), '[]') AS payment_history
+            FROM "${getSchema()}".payments p
+            LEFT JOIN "${getSchema()}".payment_history ph ON ph.payment_id = p.id
+            WHERE p.id IN (:ids)
+            GROUP BY p.id;
+        `
+
+        const payments: any[] = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements: { ids }
+        })
+
+        const paymentMap = new Map<number, Payment>();
+        payments.forEach(payment => {
+            paymentMap.set(payment.id, payment);
+        });
+
+        return paymentMap;
+    }
+
     public static async createPayment(paymentData: PaymentCreationAttributes ): Promise<Payment> {
         const payment = Payment.create(paymentData);
         return payment;

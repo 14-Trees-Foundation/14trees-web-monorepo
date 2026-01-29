@@ -120,21 +120,30 @@ class TreeRepository {
       type: QueryTypes.SELECT
     })
 
-    const countQuery = `
-    SELECT count(*)
-    FROM "${getSchema()}".trees t 
-    LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
-    LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
-    LEFT JOIN "${getSchema()}".sites s ON s.id = p.site_id
-    LEFT JOIN "${getSchema()}".users mu ON mu.id = t.mapped_to_user
-    LEFT JOIN "${getSchema()}".groups mg ON mg.id = t.mapped_to_group
-    LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
-    LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
-    LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
-    LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
-    LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
-    WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
-    `
+    // Optimize count query: skip JOINs when no filters are applied
+    let countQuery: string;
+    if (whereCondition === "" || whereCondition === "1=1") {
+      // Fast count without JOINs when no filters
+      countQuery = `SELECT count(*) FROM "${getSchema()}".trees`;
+    } else {
+      // Full count query with all JOINs when filters are present
+      countQuery = `
+      SELECT count(*)
+      FROM "${getSchema()}".trees t
+      LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
+      LEFT JOIN "${getSchema()}".sites s ON s.id = p.site_id
+      LEFT JOIN "${getSchema()}".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "${getSchema()}".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
+      LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+      LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+      WHERE ${whereCondition};
+      `;
+    }
+
     const resp = await sequelize.query(countQuery, {
       replacements: replacements,
     });
@@ -1102,6 +1111,40 @@ class TreeRepository {
     });
 
     return data.length > 0 ? data[0].photo_url : null;
+  }
+
+  public static async getFirstTreePhotosByRequestIds(requestIds: number[]): Promise<Map<number, string>> {
+    if (requestIds.length === 0) {
+      return new Map();
+    }
+
+    const query = `
+      WITH ranked_photos AS (
+        SELECT
+          gc.gift_card_request_id,
+          COALESCE(t.user_tree_image, t.image) as photo_url,
+          ROW_NUMBER() OVER (PARTITION BY gc.gift_card_request_id ORDER BY t.id ASC) as rn
+        FROM "${getSchema()}".trees t
+        JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+        WHERE gc.gift_card_request_id IN (:requestIds)
+        AND (t.user_tree_image IS NOT NULL OR t.image IS NOT NULL)
+      )
+      SELECT gift_card_request_id, photo_url
+      FROM ranked_photos
+      WHERE rn = 1
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements: { requestIds }
+    });
+
+    const photoMap = new Map<number, string>();
+    data.forEach(row => {
+      photoMap.set(row.gift_card_request_id, row.photo_url);
+    });
+
+    return photoMap;
   }
 
   public static async getFirstTreePhotoByDonationId(donationId: number): Promise<string | null> {
