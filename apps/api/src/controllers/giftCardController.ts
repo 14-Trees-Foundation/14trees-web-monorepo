@@ -1720,8 +1720,7 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
 
 export const updateGiftCardImagesForGiftRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
-    const presentationIdMap: Record<string, GiftCard[]> = {}
-    const pIdToSlideMap: Record<string, string[]> = {}
+    const presentationIdMap: Record<string, Map<string, GiftCard>> = {}
 
     try {
 
@@ -1741,17 +1740,15 @@ export const updateGiftCardImagesForGiftRequest = async (req: Request, res: Resp
         for (const card of giftCards.results) {
             if (!card.presentation_id || !card.slide_id) continue;
             if (!presentationIdMap[card.presentation_id]){
-                presentationIdMap[card.presentation_id] = [];
-                pIdToSlideMap[card.presentation_id] = [];
+                presentationIdMap[card.presentation_id] = new Map();
             }
 
-            presentationIdMap[card.presentation_id].push(card);
-            pIdToSlideMap[card.presentation_id].push(card.slide_id);
+            // Build explicit slideId-to-card mapping to prevent index mismatches
+            presentationIdMap[card.presentation_id].set(card.slide_id, card);
         }
 
-        for (const [presentationId, cards] of Object.entries(presentationIdMap)) {
-            const slideIds = pIdToSlideMap[presentationId];
-            await GiftRequestHelper.generateTreeCardImages(giftCardRequest.request_id, presentationId, slideIds, cards)
+        for (const [presentationId, slideToCardMap] of Object.entries(presentationIdMap)) {
+            await GiftRequestHelper.generateTreeCardImages(giftCardRequest.request_id, presentationId, slideToCardMap)
         }
 
     } catch (error: any) {

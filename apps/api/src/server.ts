@@ -38,7 +38,7 @@ import visitUserRoutes from "./routes/visitUsersRoutes";
 import visitImageRoutes from "./routes/visitImageRoutes";
 import treeSnapshotRoutes from "./routes/treeSnapshotRoutes";
 import tagRoutes from "./routes/tagRoutes";
-import { cleanUpGiftCardLiveTemplates, sendDonationMails, sendGiftCardMails, startAppV2ErrorLogsCronJob, recalculateAggregatedData, updatePlotPlantTypes, updateTheAuditReport, updateAutoProcessReqInventory } from "./services/cron";
+import { cleanUpGiftCardLiveTemplates, sendDonationMails, sendGiftCardMails, startAppV2ErrorLogsCronJob, recalculateAggregatedData, updatePlotPlantTypes, updateTheAuditReport, updateUsersEngagementRoles } from "./services/cron";
 import utilsRoutes from "./routes/utilsRoutes";
 import emailTemplateRoutes from "./routes/emailTemplateRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
@@ -174,10 +174,11 @@ const initServer = async () => {
   cleanUpGiftCardLiveTemplates();
   updatePlotPlantTypes();
   updateTheAuditReport();
-  
+  updateUsersEngagementRoles();
+
   sendDonationMails();
   sendGiftCardMails();
-  updateAutoProcessReqInventory();
+  // updateAutoProcessReqInventory();
   initExpressApp(app);
 };
 

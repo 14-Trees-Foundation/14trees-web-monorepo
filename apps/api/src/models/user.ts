@@ -3,6 +3,16 @@
 import { Optional } from 'sequelize';
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
+export interface EngagementRoles {
+  is_sponsor: boolean;
+  is_gifter: boolean;
+  is_gift_recipient: boolean;
+  is_donation_recipient: boolean;
+  is_visitor: boolean;
+  is_normal_assignment_recipient: boolean;
+  is_gift_card_assignee: boolean;
+}
+
 interface UserAttributes {
 	id: number;
 	name: string;
@@ -13,6 +23,7 @@ interface UserAttributes {
   birth_date?: Date | null;
   pin: string | null;
   roles: string[] | null;
+  engagement_roles?: EngagementRoles | null;
   status?: string;
   status_message?: string[];
   last_system_updated_at?: Date;
@@ -22,7 +33,7 @@ interface UserAttributes {
 }
 
 interface UserCreationAttributes
-	extends Optional<UserAttributes, 'birth_date' | 'id' | 'pin' | 'roles' | 'rfr'> {}
+	extends Optional<UserAttributes, 'birth_date' | 'id' | 'pin' | 'roles' | 'rfr' | 'engagement_roles'> {}
 
 @Table({ tableName: 'users' })
 class User extends Model<UserAttributes, UserCreationAttributes>
@@ -59,6 +70,9 @@ implements UserAttributes {
 
   @Column(DataType.ARRAY(DataType.STRING))
   roles!: string[] | null;
+
+  @Column(DataType.JSONB)
+  engagement_roles?: EngagementRoles | null;
 
   @Column(DataType.ENUM('system_invalidated', 'user_validated'))
   status?: string;
