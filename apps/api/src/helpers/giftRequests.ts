@@ -275,8 +275,11 @@ class GiftRequestHelper {
         }
     }
     
-    public static generateTreeCardImages = async (requestId: string, presentationId: string, slideIds: string[], giftCards: GiftCard[]) => {
-    
+    public static generateTreeCardImages = async (
+        requestId: string,
+        presentationId: string,
+        slideToCardMap: Map<string, GiftCard>
+    ) => {
         try {
             const resp = await downloadSlide(presentationId, 'application/pdf');
             const chunks: Buffer[] = [];
@@ -284,47 +287,49 @@ class GiftRequestHelper {
                 chunks.push(chunk);
             }
             const data = Buffer.concat(chunks);
-    
+
+            // Build s3Keys using explicit mapping to ensure correct card-to-key association
             const s3Keys: string[] = [];
-            for (let i = 0; i < slideIds.length; i++) {
-                const giftCard = giftCards[i];
-                s3Keys.push(`/cards/${requestId}/thumbnails/${(giftCard as any).sapling_id}.png`)
+            const slideToS3KeyMap: Map<string, string> = new Map();
+
+            for (const [slideId, giftCard] of slideToCardMap.entries()) {
+                // Fixed: removed leading slash from S3 key path
+                const s3Key = `cards/${requestId}/thumbnails/${(giftCard as any).sapling_id}.png`;
+                s3Keys.push(s3Key);
+                slideToS3KeyMap.set(slideId, s3Key);
             }
-    
+
             console.log("No. of s3 keys:", s3Keys.length);
-    
+
             const time = new Date().getTime();
             const results = await convertPdfToImage(data, s3Keys);
             console.log("Time to convert pdf into images: ", new Date().getTime() - time);
-    
+
             const tasks: Task<void>[] = [];
-            for (let i = 0; i < slideIds.length; i++) {
-                const giftCard = giftCards[i];
-                const s3Key = s3Keys[i];
-    
+            for (const [slideId, giftCard] of slideToCardMap.entries()) {
+                const s3Key = slideToS3KeyMap.get(slideId);
+                if (!s3Key) continue;
+
                 if (results[s3Key]) {
                     giftCard.card_image_url = results[s3Key];
-                    giftCard.slide_id = slideIds[i];
+                    giftCard.slide_id = slideId;
                     giftCard.presentation_id = presentationId;
                     giftCard.updated_at = new Date();
-    
+
                     tasks.push(() => GiftCardsRepository.updateGiftCard(giftCard));
                 }
             }
-    
+
             await runWithConcurrency(tasks, 20);
         } catch (error) {
             console.log('[ERROR]', 'GiftCardController::generateTreeCardImages', error);
-    
+
+            // Fallback to individual image generation with explicit mapping
             const tasks: Task<void>[] = []
-            for (let i = 0; i < slideIds.length; i++) {
-                const templateId = slideIds[i];
-                const giftCard = giftCards[i];
-                if (giftCard) {
-                    tasks.push(() => this.generateTreeCardImage(requestId, presentationId, giftCard, templateId));
-                }
+            for (const [slideId, giftCard] of slideToCardMap.entries()) {
+                tasks.push(() => this.generateTreeCardImage(requestId, presentationId, giftCard, slideId));
             }
-    
+
             await runWithConcurrency(tasks, 3);
         }
     }
@@ -392,14 +397,18 @@ class GiftRequestHelper {
             let time = new Date().getTime();
     
             const records: any[] = [];
-            const batchGiftCards: GiftCard[] = [];
+            const slideToCardMap: Map<string, GiftCard> = new Map();
             const slideIds: string[] = await createCopyOfTheCardTemplates(presentationId, templateIds.slice(batch * batchSize, (batch + 1) * batchSize));
+
+            // Build explicit mapping between slideId and giftCard to prevent index mismatches
             for (let i = 0; i < slideIds.length; i++) {
-                const templateId = slideIds[i];
+                const slideId = slideIds[i];
                 const cardId = cardIds[(batch * batchSize) + i];
                 const giftCard = idToCardMap.get(cardId);
                 if (giftCard) {
-                    batchGiftCards.push(giftCard);
+                    // Store the mapping for later use in image generation
+                    slideToCardMap.set(slideId, giftCard);
+
                     let primaryMessage = messages ? messages.primary_message : giftCardRequest.primary_message;
                     let eventType = messages ? messages.event_type : giftCardRequest.event_type;
                     if (giftCard.gifted_to && giftCard.assigned_to) {
@@ -407,31 +416,32 @@ class GiftRequestHelper {
                         if (giftCard.assigned_to !== giftCard.gifted_to) primaryMessage = this.getPersonalizedMessage(primaryMessage, (giftCard as any).assignee_name, eventType, (giftCard as any).relation);
                         if (userTreeCount[key] > 1) primaryMessage = this.getPersonalizedMessageForMoreTrees(primaryMessage, userTreeCount[key]);
                     }
-    
+
                     primaryMessage = primaryMessage.replace("{recipient}", (giftCard as any).recipient_name || "");
                     primaryMessage = primaryMessage.replace("{giftedBy}", messages?.gifted_by || giftCardRequest.planted_by || "");
                     const record = {
-                        slideId: templateId,
+                        slideId: slideId,
                         sapling: (giftCard as any).sapling_id,
                         message: primaryMessage,
                         logo: giftCardRequest.logo_url,
                         logo_message: giftCardRequest.logo_message
                     }
-    
+
                     records.push(record);
                 }
             }
             console.log('[INFO]', 'GenerateTreeCards::', `Time taken to generate gift cards: ${new Date().getTime() - time}ms`);
-    
+
             time = new Date().getTime();
             await bulkUpdateSlides(presentationId, records);
             console.log('[INFO]', 'GenerateTreeCards::', `Time taken to update slides: ${new Date().getTime() - time}ms`);
             await deleteUnwantedSlides(presentationId, slideIds);
             await reorderSlides(presentationId, slideIds);
-    
+
             console.log(presentationId);
-    
-            await this.generateTreeCardImages(giftCardRequest.request_id, presentationId, slideIds, batchGiftCards)
+
+            // Pass explicit slideId-to-GiftCard mapping instead of separate arrays
+            await this.generateTreeCardImages(giftCardRequest.request_id, presentationId, slideToCardMap)
             console.log("[INFO]", `Batch: ${batch + 1} --------------------------- END`)
         }
     
