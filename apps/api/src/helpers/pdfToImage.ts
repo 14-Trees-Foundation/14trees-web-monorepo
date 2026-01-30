@@ -19,10 +19,13 @@ const extractImage = async (convert: Convert, s3Key: string, result: any, page: 
 
             const location = await uploadFileToS3('cards', readableStream, s3Key, 'image/png');
             result[s3Key] = location;
+        } else {
+            console.error(`[PDF2IMG] ERROR: resp.base64 is empty for page ${page}. Full response:`, JSON.stringify(resp));
+            result[s3Key] = false;
         }
 
     } catch (error) {
-        console.log(error);
+        console.error(`[PDF2IMG] ERROR converting page ${page}:`, error);
         result[s3Key] = false;
     }
 }
@@ -37,8 +40,16 @@ export const convertPdfToImage = async (pdfData: Buffer, s3Keys: string[]) => {
         width: 1600,
         height: 1200
     };
+
+    console.log('[PDF2IMG] Conversion options:', options);
+
+    if (!pdfData || pdfData.length === 0) {
+        console.error('[PDF2IMG] ERROR: PDF buffer is empty or null!');
+        return {};
+    }
+
     const convert = fromBuffer(pdfData, options);
-    
+
     const result: any = {};
     const tasks: Task<void>[] = []
     for (let i = 0; i < s3Keys.length; i++) {
