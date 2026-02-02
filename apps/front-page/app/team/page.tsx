@@ -42,7 +42,7 @@ const Team = () => {
   }
 
   const founders = ["Pravin Bhagwat"];
-  const board_members = ["Pravin Bhagwat", "Kiran Deshpande"];
+  const board_members = ["Pravin Bhagwat", "Kiran Deshpande", "Nirmala Samant"];
   const advisory_members = ["Girish Sohani", "Shirish Deodhar", "Ajay Phatak"];
   const backoffice_members = [
     "Sanjeev Jagtap",
