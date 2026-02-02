@@ -49,9 +49,29 @@ async function fetchDB(
 ) {
   const { jsonSchema, describe, types } = await getSchemaAndTypes(name, database_id, filter);
 
-  const DB = await notion.databases.query({ database_id, filter });
+  // Fetch all pages with pagination support
+  let allResults: any[] = [];
+  let hasMore = true;
+  let startCursor: string | undefined = undefined;
+  let pageCount = 0;
+
+  while (hasMore) {
+    pageCount++;
+    const DB = await notion.databases.query({
+      database_id,
+      filter,
+      start_cursor: startCursor,
+    });
+    console.log(`📄 Fetched page ${pageCount}: ${DB.results.length} records (has_more: ${DB.has_more})`);
+    allResults = allResults.concat(DB.results);
+    hasMore = DB.has_more;
+    startCursor = DB.next_cursor || undefined;
+  }
+
+  console.log(`✅ Total records fetched for ${name}: ${allResults.length}`);
+
   const collectedPages = await Promise.all(
-    DB.results.map(async (dbPage) => {
+    allResults.map(async (dbPage) => {
       const page = await notion.pages.retrieve({ page_id: dbPage.id });
       if (page) {
         // @ts-ignore
