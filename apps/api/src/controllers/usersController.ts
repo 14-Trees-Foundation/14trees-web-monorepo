@@ -504,16 +504,19 @@ export const getUsersProfilePhotos = async (req: Request, res: Response) => {
       return;
     }
 
-    // Use DISTINCT ON to get the most recent visit photo for each user
+    // Use DISTINCT ON to get profile photo for each user
+    // Priority: 1st try visit photos, then fall back to any tree photo
     const query = `
       SELECT DISTINCT ON (assigned_to)
         assigned_to as user_id,
         user_tree_image as profile_photo
       FROM "${getSchema()}".trees
       WHERE assigned_to IN (:userIds)
-        AND description ILIKE '%visit%'
         AND user_tree_image IS NOT NULL
-      ORDER BY assigned_to, updated_at DESC
+      ORDER BY
+        assigned_to,
+        CASE WHEN description ILIKE '%visit%' THEN 0 ELSE 1 END,
+        updated_at DESC
     `;
 
     const results: any[] = await sequelize.query(query, {
