@@ -435,3 +435,110 @@ export const combineUsers = async (req: Request, res: Response) => {
     res.status(status.error).send({ message: "Something went wrong. Please try again after some time!" });
   }
 };
+
+/**
+ * Get profile photo for a single user
+ * Fetches trees assigned to the user with "visit" in description
+ * Returns the user_tree_image from the first matching tree
+ */
+export const getUserProfilePhoto = async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (isNaN(userId)) {
+      res.status(status.bad).send({ error: "Invalid user ID" });
+      return;
+    }
+
+    const query = `
+      SELECT user_tree_image, description
+      FROM "${getSchema()}".trees
+      WHERE assigned_to = :userId
+        AND description ILIKE '%visit%'
+        AND user_tree_image IS NOT NULL
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `;
+
+    const result: any[] = await sequelize.query(query, {
+      replacements: { userId },
+      type: QueryTypes.SELECT
+    });
+
+    if (result.length > 0 && result[0].user_tree_image) {
+      res.status(status.success).json({
+        userId,
+        profilePhoto: result[0].user_tree_image
+      });
+    } else {
+      res.status(status.success).json({
+        userId,
+        profilePhoto: null
+      });
+    }
+  } catch (error: any) {
+    await Logger.logError('usersController', 'getUserProfilePhoto', error, req);
+    res.status(status.error).send({ error: error.message });
+  }
+};
+
+/**
+ * Get profile photos for multiple users (batch operation)
+ * Fetches trees assigned to each user with "visit" in description
+ * Returns a mapping of userId -> profilePhoto
+ */
+export const getUsersProfilePhotos = async (req: Request, res: Response) => {
+  try {
+    const userIds: number[] = req.body.userIds;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      res.status(status.bad).send({ error: "userIds array is required" });
+      return;
+    }
+
+    // Validate all user IDs are numbers
+    const validUserIds = userIds.filter(id => !isNaN(Number(id))).map(id => Number(id));
+
+    if (validUserIds.length === 0) {
+      res.status(status.bad).send({ error: "No valid user IDs provided" });
+      return;
+    }
+
+    // Use DISTINCT ON to get the most recent visit photo for each user
+    const query = `
+      SELECT DISTINCT ON (assigned_to)
+        assigned_to as user_id,
+        user_tree_image as profile_photo
+      FROM "${getSchema()}".trees
+      WHERE assigned_to IN (:userIds)
+        AND description ILIKE '%visit%'
+        AND user_tree_image IS NOT NULL
+      ORDER BY assigned_to, updated_at DESC
+    `;
+
+    const results: any[] = await sequelize.query(query, {
+      replacements: { userIds: validUserIds },
+      type: QueryTypes.SELECT
+    });
+
+    // Create a map of userId -> profilePhoto
+    const photoMap: { [key: number]: string | null } = {};
+
+    // Initialize all requested users with null
+    validUserIds.forEach(userId => {
+      photoMap[userId] = null;
+    });
+
+    // Update with found photos
+    results.forEach(row => {
+      photoMap[row.user_id] = row.profile_photo;
+    });
+
+    res.status(status.success).json({
+      profilePhotos: photoMap
+    });
+  } catch (error: any) {
+    await Logger.logError('usersController', 'getUsersProfilePhotos', error, req);
+    res.status(status.error).send({ error: error.message });
+  }
+};
