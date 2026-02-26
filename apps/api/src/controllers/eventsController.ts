@@ -593,6 +593,11 @@ export const updateEvent = async (req: Request, res: Response) => {
         updatePayload[key] = val;
       }
     }
+    // blessings_cta_text: handled separately because empty string means "revert to default" (null)
+    if (Object.prototype.hasOwnProperty.call(fields, 'blessings_cta_text')) {
+      const ctaVal = (fields as any).blessings_cta_text;
+      updatePayload.blessings_cta_text = (ctaVal === '' || ctaVal === null || ctaVal === undefined) ? null : String(ctaVal);
+    }
 
     console.log('[DEBUG] updateEvent - updatePayload:', updatePayload);
 
