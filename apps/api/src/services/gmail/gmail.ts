@@ -78,10 +78,13 @@ const encodeMessage = (message: string): string => {
 interface MailOptions {
   from?: string | { name: string; address: string };
   to: string | string[];
+  cc?: string[];
+  replyTo?: string;
   subject: string;
   text?: string;
   html?: string;
   attachments?: { filename: string; path: string }[];
+  textEncoding?: 'base64' | 'quoted-printable';
 }
 
 handlebars.registerHelper('eq', function (a, b) {
@@ -136,13 +139,13 @@ const sendMail = async (options: MailOptions): Promise<{ status: number, statusT
   
   try {
     const rawMessage = await createMail(options);
+
     const response = await gmail.users.messages.send({
       userId: 'me',
       requestBody: {
         raw: rawMessage,
       },
     });
-
     return { status: response.status, statusText: response.statusText };
   } catch (error) {
     console.error('Error sending email:', error);
@@ -163,7 +166,7 @@ const sendDashboardMail = async (
   replyTo?: string
 ) => {
 
-  const options = {
+  const options: MailOptions = {
     from: {
       name: fromName || '14 Trees',
       address: fromEmail || 'dashboard@14trees.org'
