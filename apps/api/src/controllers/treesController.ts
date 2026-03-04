@@ -695,6 +695,7 @@ export const getCountSummaryForGroup = async (req: Request, res: Response) => {
           const grovesVal = getCellByHeader(headers, rowData, 'Groves');
           const eventsVal = getCellByHeader(headers, rowData, 'Events');
           const giftCardsVal = getCellByHeader(headers, rowData, 'Gift Cards');
+          const woodenLogoUrlVal = getCellByHeader(headers, rowData, 'Wooden Logo URL');
 
           spreadsheetData = {
             group_info: {
@@ -707,6 +708,7 @@ export const getCountSummaryForGroup = async (req: Request, res: Response) => {
               groves: grovesVal,
               events: eventsVal ? parseInt(eventsVal) : null,
               gift_cards: giftCardsVal ? parseInt(giftCardsVal) : null,
+              wooden_logo_url: woodenLogoUrlVal,
             }
           };
         }
