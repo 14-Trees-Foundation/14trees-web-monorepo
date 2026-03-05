@@ -126,10 +126,14 @@ class PageVisitsRepository {
     tracked_urls: number;
     top_urls: Array<{ pathname: string; section: PageVisitSection; hit_count: number }>;
   }> {
+    // qualify table names with schema to avoid search_path issues
+    const rawSchema = process.env.POSTGRES_SCHEMA || 'public';
+    const schema = rawSchema.replace(/^['\"]+|['\"]+$/g, '');
+
     const totalsResp = await sequelize.query<PageVisitTotalsRow>(
       `
         SELECT section, total_hits
-        FROM dashboard_page_visit_totals
+        FROM "${schema}"."dashboard_page_visit_totals"
         WHERE domain = :domain
       `,
       {
@@ -141,7 +145,7 @@ class PageVisitsRepository {
     const trackedUrlsResp = await sequelize.query<PageVisitTrackedUrlsRow>(
       `
         SELECT COUNT(*)::int AS tracked_urls
-        FROM dashboard_page_visit_urls
+        FROM "${schema}"."dashboard_page_visit_urls"
         WHERE domain = :domain
       `,
       {
@@ -153,7 +157,7 @@ class PageVisitsRepository {
     const topUrlsResp = await sequelize.query<PageVisitTopUrlRow>(
       `
         SELECT pathname, section, hit_count
-        FROM dashboard_page_visit_urls
+        FROM "${schema}"."dashboard_page_visit_urls"
         WHERE domain = :domain
         ORDER BY hit_count DESC, pathname ASC
         LIMIT :topUrlsLimit

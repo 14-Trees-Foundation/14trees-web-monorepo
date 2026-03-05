@@ -173,10 +173,18 @@ export const pageVisitsSummary = async (req: Request, res: Response) => {
     const topUrlsLimitRaw = Number(req.query.limit);
     const topUrlsLimit = Number.isFinite(topUrlsLimitRaw) && topUrlsLimitRaw > 0 ? Math.min(topUrlsLimitRaw, 50) : 5;
 
+    // Allow domain to be passed as query parameter, otherwise default to the request's domain
     const domainFilterRaw = req.query.domain;
-    const domainFilter = typeof domainFilterRaw === 'string' && domainFilterRaw.trim().length > 0
-      ? domainFilterRaw.trim()
-      : 'dashboard.14trees.org';
+    let domainFilter = 'dashboard.14trees.org'; // fallback
+
+    if (typeof domainFilterRaw === 'string' && domainFilterRaw.trim().length > 0) {
+      // Domain explicitly provided
+      domainFilter = domainFilterRaw.trim();
+    } else {
+      // Default to the current request's domain
+      const hostHeader = req.get('host') || req.hostname || 'dashboard.14trees.org';
+      domainFilter = hostHeader.split(':')[0]; // strip port
+    }
 
     const summaryResp = await PageVisitsRepository.getSummary(domainFilter, topUrlsLimit);
 
