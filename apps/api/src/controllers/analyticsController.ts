@@ -43,9 +43,7 @@ export const summary = async (req: Request, res: Response) => {
       totalGiftRequests: giftCardCounts.total_gift_requests,
       totalGiftedTrees: giftCardCounts.total_gifted_trees
     });
-  }
-  /* c8 ignore next 4 */
-  catch (error) {
+  } catch (error) {
     await Logger.logError('analyticsController', 'summary', error, req);
     res.status(status.error).send({ error: error });
   }
@@ -57,9 +55,7 @@ export const getTotalTree = async (req: Request, res: Response) => {
     res.status(status.success).send({
       count,
     });
-  }
-  /* c8 ignore next 4 */
-  catch (error) {
+  } catch (error) {
     await Logger.logError('analyticsController', 'getTotalTree', error, req);
     res.status(status.error).send({ error: error });
   }
@@ -71,9 +67,7 @@ export const getTotalPlantType = async (req: Request, res: Response) => {
     res.status(status.success).send({
       count,
     });
-  }
-  /* c8 ignore next 4 */
-  catch (error) {
+  } catch (error) {
     await Logger.logError('analyticsController', 'getTotalPlantType', error, req);
     res.status(status.error).send({ error: error });
   }
@@ -85,9 +79,7 @@ export const getUniqueUsers = async (req: Request, res: Response) => {
     res.status(status.success).send({
       count,
     });
-  }
-  /* c8 ignore next 4 */
-  catch (error) {
+  } catch (error) {
     await Logger.logError('analyticsController', 'getUniqueUsers', error, req);
     res.status(status.error).send({ error: error });
   }
@@ -99,9 +91,7 @@ export const getTotalPlots = async (req: Request, res: Response) => {
     res.status(status.success).send({
       count,
     });
-  }
-  /* c8 ignore next 4 */
-  catch (error) {
+  } catch (error) {
     await Logger.logError('analyticsController', 'getTotalPlots', error, req);
     res.status(status.error).send({ error: error });
   }
@@ -113,9 +103,7 @@ export const getTotalPonds = async (req: Request, res: Response) => {
         res.status(status.success).send({
           count,
         });
-    }
-    /* c8 ignore next 4 */
-    catch (error) {
+    } catch (error) {
         await Logger.logError('analyticsController', 'getTotalPonds', error, req);
         res.status(status.error).send({ error: error });
     }
@@ -127,9 +115,7 @@ export const getTotalEmployees = async (req: Request, res: Response) => {
         res.status(status.success).send({
           count,
         });
-    }
-    /* c8 ignore next 4 */
-    catch (error) {
+    } catch (error) {
         await Logger.logError('analyticsController', 'getTotalEmployees', error, req);
         res.status(status.error).send({ error: error });
     }
