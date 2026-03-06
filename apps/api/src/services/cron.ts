@@ -21,6 +21,7 @@ import { GiftCardsRepository } from '../repo/giftCardsRepo';
 import { updateInventoryStates } from '../facade/autoProcessInventory';
 import { PaymentRepository } from '../repo/paymentsRepo';
 import { getSchema } from '../helpers/utils';
+import { updateAllUsersEngagementRoles } from '../helpers/engagementRolesCalculator';
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
@@ -341,12 +342,25 @@ export function sendGiftCardMails() {
     });
 }
 
-export function updateAutoProcessReqInventory() {
-    const task = cron.schedule('*/5 * * * *', async () => {
+// export function updateAutoProcessReqInventory() {
+//     const task = cron.schedule('*/5 * * * *', async () => {
+//         try {
+//             await updateInventoryStates();
+//         } catch(error) {
+//             console.error("[ERROR] Failed to update auto process req inventory:", error);
+//         }
+//     });
+// }
+
+export function updateUsersEngagementRoles() {
+    // Run daily at 2 AM to recalculate engagement roles for all users
+    const task = cron.schedule('0 2 * * *', async () => {
         try {
-            await updateInventoryStates();
-        } catch(error) {
-            console.error("[ERROR] Failed to update auto process req inventory:", error);
+            console.log('[INFO] Starting user engagement roles update...');
+            const result = await updateAllUsersEngagementRoles();
+            console.log(`[INFO] Updated engagement roles for ${result.updated} users`);
+        } catch (error) {
+            console.error("[ERROR] Failed to update user engagement roles:", error);
         }
     });
 }

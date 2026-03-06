@@ -31,7 +31,7 @@ export const getWhereOptions = (fieldName: string, operatorValue: string, value?
 
 export const getSqlQueryExpression = (fieldName: string, operatorValue: string, valuePlaceHolder: string, value?: any): { condition: string, replacement: any } => {
 
-    if (operatorValue !== 'isEmpty' && operatorValue !== 'isNotEmpty' && value === undefined) {
+    if (operatorValue !== 'isEmpty' && operatorValue !== 'isNotEmpty' && operatorValue !== 'isNull' && value === undefined) {
         throw new Error("Value is required");
     }
 
@@ -57,6 +57,7 @@ export const getSqlQueryExpression = (fieldName: string, operatorValue: string, 
         case 'endsWith':
             return { condition: `${fieldName} ILIKE :${valuePlaceHolder}`, replacement: { [valuePlaceHolder]: `%${value}` } };
         case 'isEmpty':
+        case 'isNull':
             return { condition: `${fieldName} IS NULL`, replacement: {} };
         case 'isNotEmpty':
             return { condition: `${fieldName} IS NOT NULL`, replacement: {} }

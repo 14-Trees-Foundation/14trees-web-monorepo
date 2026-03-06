@@ -1268,22 +1268,73 @@ export class DonationService {
             email: user.email
         };
 
-        const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
-        const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
-            event_type,
-            template_type: sponsorTemplateType
-        });
+        // Check for campaign-specific email configuration
+        let campaignConfig = null;
+        if (donation.rfr_id) {
+            const referrals = await ReferralsRepository.getReferrals({ id: donation.rfr_id });
+            if (referrals.length > 0 && referrals[0].c_key) {
+                const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+                    { columnField: 'c_key', operatorValue: 'equals', value: referrals[0].c_key }
+                ]);
+                if (campaignsResp.results.length > 0 && campaignsResp.results[0].email_config?.sponsor_email?.enabled) {
+                    campaignConfig = campaignsResp.results[0].email_config.sponsor_email;
+                    // Merge campaign custom_data into emailData
+                    if (campaignConfig.custom_data) {
+                        Object.assign(sponsorEmailData, campaignConfig.custom_data);
+                    }
+                }
+            }
+        }
 
-        if (!sponsorTemplates?.length) {
-            throw new Error('Sponsor email template not found');
+        let templateName: string;
+        let subject: string | undefined;
+        let fromName: string | undefined;
+        let fromEmail: string | undefined;
+        let replyTo: string | undefined;
+        let ccMails = sponsor_cc_mails || [];
+
+        if (campaignConfig) {
+            // Use campaign-specific template and settings
+            templateName = treeData.length > 1
+                ? campaignConfig.template_name_multi
+                : campaignConfig.template_name_single;
+            subject = treeData.length > 1
+                ? campaignConfig.subject_template_multi
+                : campaignConfig.subject_template_single;
+            fromName = campaignConfig.from_name;
+            fromEmail = campaignConfig.from_email;
+            replyTo = campaignConfig.reply_to;
+
+            // Merge campaign CC emails with existing CC emails
+            if (campaignConfig.cc_emails && campaignConfig.cc_emails.length > 0) {
+                ccMails = [...ccMails, ...campaignConfig.cc_emails];
+            }
+        } else {
+            // Use default email template
+            const sponsorTemplateType: TemplateType = treeData.length > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+            const sponsorTemplates = await EmailTemplateRepository.getEmailTemplates({
+                event_type,
+                template_type: sponsorTemplateType
+            });
+
+            if (!sponsorTemplates?.length) {
+                throw new Error('Sponsor email template not found');
+            }
+
+            templateName = sponsorTemplates[0].template_name;
         }
 
         const isTestMail = test_mails?.length ? true : false;
         const statusMessage = await sendDashboardMail(
-            sponsorTemplates[0].template_name,
+            templateName,
             sponsorEmailData,
             test_mails?.length ? test_mails : [user.email],
-            sponsor_cc_mails || []
+            ccMails,
+            undefined,
+            subject,
+            fromName,
+            fromEmail,
+            replyTo
         );
 
         if (isTestMail) return;
@@ -1312,21 +1363,63 @@ export class DonationService {
             }
         });
 
-        const recipientTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
-        const recipientTemplates = await EmailTemplateRepository.getEmailTemplates({
-            event_type,
-            template_type: recipientTemplateType
-        });
+        // Check for campaign-specific email configuration
+        let campaignConfig = null;
+        if (donation.rfr_id) {
+            const referrals = await ReferralsRepository.getReferrals({ id: donation.rfr_id });
+            if (referrals.length > 0 && referrals[0].c_key) {
+                const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+                    { columnField: 'c_key', operatorValue: 'equals', value: referrals[0].c_key }
+                ]);
+                if (campaignsResp.results.length > 0 && campaignsResp.results[0].email_config?.receiver_email?.enabled) {
+                    campaignConfig = campaignsResp.results[0].email_config.receiver_email;
+                }
+            }
+        }
 
-        if (!recipientTemplates?.length) {
-            throw new Error('Recipient email template not found');
+        let defaultTemplateName: string | undefined;
+        let fromName: string | undefined;
+        let fromEmail: string | undefined;
+        let replyTo: string | undefined;
+        let ccMails = recipient_cc_mails || [];
+
+        if (campaignConfig) {
+            fromName = campaignConfig.from_name;
+            fromEmail = campaignConfig.from_email;
+            replyTo = campaignConfig.reply_to;
+            if (campaignConfig.cc_emails?.length) {
+                ccMails = [...ccMails, ...campaignConfig.cc_emails];
+            }
+        } else {
+            const recipientTemplateType: TemplateType = treeData.length > 1 ? 'receiver-multi-trees' : 'receiver-single-tree';
+            const recipientTemplates = await EmailTemplateRepository.getEmailTemplates({
+                event_type,
+                template_type: recipientTemplateType
+            });
+
+            if (!recipientTemplates?.length) {
+                throw new Error('Recipient email template not found');
+            }
+            defaultTemplateName = recipientTemplates[0].template_name;
         }
 
         // Send to each recipient
         const isTestMail = test_mails?.length ? true : false;
+        let testMailCount = 5;
         for (const [recipient, recipientTrees] of recipientsMap) {
+            if (isTestMail && testMailCount === 0) break;
+
+            const isMulti = recipientTrees.length > 1;
+            const recipientTemplateName = campaignConfig
+                ? (isMulti ? campaignConfig.template_name_multi : campaignConfig.template_name_single)
+                : defaultTemplateName!;
+            const subject = campaignConfig
+                ? (isMulti ? campaignConfig.subject_template_multi : campaignConfig.subject_template_single)
+                : undefined;
+
             const recipientEmailData = {
                 ...commonEmailData,
+                ...(campaignConfig?.custom_data || {}),
                 user_name: recipientTrees[0].recipient_name,
                 assigned_to_name: recipientTrees[0].assignee_name,
                 self: recipientTrees[0].recipient_name == recipientTrees[0].assignee_name,
@@ -1337,13 +1430,18 @@ export class DonationService {
 
             if ((!test_mails || test_mails.length === 0) && (recipientTrees[0].recipient_email as string).includes("14trees")) continue;
             const statusMessage = await sendDashboardMail(
-                recipientTemplates[0].template_name,
+                recipientTemplateName,
                 recipientEmailData,
                 test_mails?.length ? test_mails : [recipientTrees[0].recipient_email],
-                recipient_cc_mails || []
+                ccMails,
+                undefined,
+                subject,
+                fromName,
+                fromEmail,
+                replyTo
             );
 
-            if (isTestMail) continue;
+            if (isTestMail) { testMailCount--; continue; }
             else if (statusMessage) {
                 await DonationUserRepository.updateDonationUsers({
                     mail_error: statusMessage,
@@ -1381,7 +1479,11 @@ export class DonationService {
         }
 
         // Send to each assignee
+        const isTestMail = test_mails?.length ? true : false;
+        let testMailCount = 5;
         for (const [assigneeEmail, assigneeTrees] of assigneesMap) {
+            if (isTestMail && testMailCount === 0) break;
+
             const assigneeEmailData = {
                 ...commonEmailData,
                 user_name: assigneeTrees[0].assignee_name,
@@ -1398,6 +1500,8 @@ export class DonationService {
                 test_mails || [assigneeEmail],
                 assignee_cc_mails || []
             );
+
+            if (isTestMail) testMailCount--;
         }
     }
 

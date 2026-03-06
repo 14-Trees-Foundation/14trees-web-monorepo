@@ -51,12 +51,19 @@ export class SiteRepository {
 
     // CRUD
     static async getSites(offset: number = 0, limit: number = 20, whereClause: WhereOptions): Promise<PaginatedResponse<Site>> {
-        const sites = await Site.findAll({
+        const options: any = {
             where: whereClause,
             offset: Number(offset),
-            limit: Number(limit),
             order: [['created_at', 'DESC']], // Order by created_at in descending order
-        });
+        };
+
+        // Only add limit if it's not -1 (which means "get all")
+        // This matches the pattern used in other repositories (donationsRepo, userRepo, etc.)
+        if (limit !== -1) {
+            options.limit = Number(limit);
+        }
+
+        const sites = await Site.findAll(options);
         const count = await Site.count({ where: whereClause });
         return { results: sites, total: count, offset: offset };
     }
@@ -105,9 +112,11 @@ export class SiteRepository {
         return result.map((row: any) => row.num);
     }
 
-    public static async updateSitesDataUsingNotionData() {
-        const query = `UPDATE "${getSchema()}".sites 
-        SET 
+    public static async updateSitesDataUsingNotionData(): Promise<number> {
+        console.log('[INFO]', 'SiteRepository::updateSitesDataUsingNotionData', 'Updating existing sites from Notion data...');
+
+        const query = `UPDATE "${getSchema()}".sites
+        SET
             name_marathi = n."नाव (मराठी)",
             name_english  = n."Name",
             "owner" = n."Land Owner",
@@ -133,72 +142,80 @@ export class SiteRepository {
             maintenance_type = n."Service offered"::"${getSchema()}".maintenence_type_enum
         FROM notion_db n
         WHERE n.id = notion_id
-          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
+          AND n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban')
           AND (n."Name" IS NOT NULL OR n."नाव (मराठी)" IS NOT NULL);`
 
-        await sequelize.query(query);
+        const result: any = await sequelize.query(query);
+        const rowsAffected = result[1]?.rowCount || 0;
+        console.log('[INFO]', 'SiteRepository::updateSitesDataUsingNotionData', `Updated ${rowsAffected} existing sites`);
+        return rowsAffected;
     }
 
-    public static async insertNewSitesDataUsingNotionData() {
+    public static async insertNewSitesDataUsingNotionData(): Promise<number> {
+        console.log('[INFO]', 'SiteRepository::insertNewSitesDataUsingNotionData', 'Inserting new sites from Notion data...');
+
         const query = `INSERT INTO "${getSchema()}".sites (
             notion_id,
             name_marathi,
-            name_english, 
-            "owner", 
-            land_type, 
-            district, 
-            taluka, 
-            village, 
-            area_acres, 
-            length_km, 
-            tree_count, 
-            unique_id, 
+            name_english,
+            "owner",
+            land_type,
+            district,
+            taluka,
+            village,
+            area_acres,
+            length_km,
+            tree_count,
+            unique_id,
             photo_album,
-            grove_type, 
-            album, 
-            album_contains, 
-            status, 
-            remark, 
+            grove_type,
+            album,
+            album_contains,
+            status,
+            remark,
             created_at,
             updated_at,
-            google_earth_link, 
-            account, 
+            google_earth_link,
+            account,
             data_errors,
             category,
             maintenance_type
         )
-        SELECT 
-            n.id, 
-            n."नाव (मराठी)", 
-            n."Name", 
-            n."Land Owner", 
-            n."Land Type", 
-            n."District", 
-            n."Taluka", 
-            n."Village", 
-            n."Area Measured (Acres)", 
-            n."Length (Kms)", 
-            n."Trees", 
-            n."Unique Site Id", 
+        SELECT
+            n.id,
+            n."नाव (मराठी)",
+            n."Name",
+            n."Land Owner",
+            n."Land Type",
+            n."District",
+            n."Taluka",
+            n."Village",
+            n."Area Measured (Acres)",
+            n."Length (Kms)",
+            n."Trees",
+            n."Unique Site Id",
             n."Link",
-            n."Grove type", 
-            n."Album (1)", 
-            n."Album contains", 
-            n."Status", 
-            n."Remark", 
-            now() as created_at, 
-            now() as updated_at, 
-            array["Google Earth link"], 
-            n."Account", 
+            n."Grove type",
+            n."Album (1)",
+            n."Album contains",
+            n."Status",
+            n."Remark",
+            now() as created_at,
+            now() as updated_at,
+            array["Google Earth link"],
+            n."Account",
             n."Data errors",
             n."Site Type",
             n."Service offered"::"${getSchema()}".maintenence_type_enum
         FROM notion_db n
-        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban') 
+        WHERE n."Tag" IN ('site-forest', 'site-school', 'site-NGO', 'site-road', 'site-gairan', 'site-Govt', 'site-14T', 'site-farmer', 'site-pond', 'site-Urban')
           AND n."Name" IS NOT NULL
           AND n.id NOT IN (SELECT notion_id FROM "${getSchema()}".sites where notion_id is not null);`
 
-        await sequelize.query(query);
+        const result: any = await sequelize.query(query);
+        const rowsAffected = result[1]?.rowCount || 0;
+        console.log('[INFO]', 'SiteRepository::insertNewSitesDataUsingNotionData', `Inserted ${rowsAffected} new sites`);
+        return rowsAffected;
     }
 
     public static async treeCountForSites(offset: number, limit: number, filters: any[], orderBy: { column: string, order: "ASC" | "DESC" }[]): Promise<PaginatedResponse<Site>> {

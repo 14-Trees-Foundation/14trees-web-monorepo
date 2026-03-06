@@ -366,6 +366,42 @@ export const addEvent = async (req: Request, res: Response) => {
       }
     }
 
+    // Handle landing image upload to S3 (optional)
+    if (files && files['landing_image'] && files['landing_image'].length > 0) {
+      const landingFile = files['landing_image'][0];
+      if (landingFile && landingFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(landingFile.originalname, 'events', 'landing_images');
+          if (s3Url) {
+            data.landing_image_s3_path = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent landing image upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent landing image upload failed', uErr);
+          // Do not fail the entire request because landing image upload failed
+        }
+      }
+    }
+
+    // Handle mobile landing image upload to S3 (optional)
+    if (files && files['landing_image_mobile'] && files['landing_image_mobile'].length > 0) {
+      const landingMobileFile = files['landing_image_mobile'][0];
+      if (landingMobileFile && landingMobileFile.originalname) {
+        try {
+          const s3Url = await UploadFileToS3(landingMobileFile.originalname, 'events', 'landing_images');
+          if (s3Url) {
+            data.landing_image_mobile_s3_path = s3Url;
+          } else {
+            console.warn('[WARN] EventsController::addEvent landing mobile image upload returned empty URL');
+          }
+        } catch (uErr) {
+          console.error('[WARN] EventsController::addEvent landing mobile image upload failed', uErr);
+          // Do not fail the entire request because mobile landing image upload failed
+        }
+      }
+    }
+
     // Handle multiple images upload to S3 (if needed)
     if (files && files['images'] && files['images'].length > 0) {
       const imageUrls: string[] = [];
@@ -484,6 +520,34 @@ export const updateEvent = async (req: Request, res: Response) => {
       }
     }
 
+    // Handle new landing image upload
+    if (files && files['landing_image'] && files['landing_image'].length > 0) {
+      const landingFile = files['landing_image'][0];
+      try {
+        const s3Url = await UploadFileToS3(landingFile.originalname, 'events', 'landing_images');
+        if (s3Url) {
+          fields.landing_image_s3_path = s3Url;
+        }
+        // Note: consider deleting old landing image from S3 if required
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent landing image upload failed', uErr);
+      }
+    }
+
+    // Handle new mobile landing image upload
+    if (files && files['landing_image_mobile'] && files['landing_image_mobile'].length > 0) {
+      const landingMobileFile = files['landing_image_mobile'][0];
+      try {
+        const s3Url = await UploadFileToS3(landingMobileFile.originalname, 'events', 'landing_images');
+        if (s3Url) {
+          fields.landing_image_mobile_s3_path = s3Url;
+        }
+        // Note: consider deleting old mobile landing image from S3 if required
+      } catch (uErr) {
+        console.error('[WARN] EventsController::updateEvent landing mobile image upload failed', uErr);
+      }
+    }
+
     // Handle new images upload
     if (files && files['images'] && files['images'].length > 0) {
       const imageUrls: string[] = [];
@@ -511,8 +575,13 @@ export const updateEvent = async (req: Request, res: Response) => {
     // Build update payload: only include keys explicitly provided (avoid overwriting existing values with undefined/empty values)
     const allowedKeys = [
       'name','type','assigned_by','site_id','description','tags','event_date','event_location',
-      'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode'
+      'theme_color','location','event_poster','images','memories','message','link', 'default_tree_view_mode',
+      'show_blessings'
     ];
+    // Allow updating landing_image_s3_path via upload or direct value
+    allowedKeys.push('landing_image_s3_path');
+    // Allow updating mobile landing image path
+    allowedKeys.push('landing_image_mobile_s3_path');
     const updatePayload: any = { id: idNum };
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(fields, key)) {
@@ -523,6 +592,11 @@ export const updateEvent = async (req: Request, res: Response) => {
         if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val).length === 0) continue; // skip empty objects
         updatePayload[key] = val;
       }
+    }
+    // blessings_cta_text: handled separately because empty string means "revert to default" (null)
+    if (Object.prototype.hasOwnProperty.call(fields, 'blessings_cta_text')) {
+      const ctaVal = (fields as any).blessings_cta_text;
+      updatePayload.blessings_cta_text = (ctaVal === '' || ctaVal === null || ctaVal === undefined) ? null : String(ctaVal);
     }
 
     console.log('[DEBUG] updateEvent - updatePayload:', updatePayload);
@@ -838,5 +912,49 @@ export const reorderEventMessages = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("[ERROR] EventsController::reorderEventMessages", error);
     res.status(status.error).send({ error: error.message });
+  }
+};
+
+// Track Event View (for analytics)
+export const trackEventView = async (req: Request, res: Response) => {
+  try {
+    const eventLink = req.params.linkId;
+
+    // Get visitor_id from custom header
+    const visitorId = req.headers['x-visitor-id'] as string;
+
+    if (!visitorId) {
+      return res.status(status.bad).send({ error: "visitor_id header required" });
+    }
+
+    // Get event by link
+    const eventResp = await EventRepository.getEvents(0, 1, [
+      { columnField: 'link', operatorValue: 'equals', value: eventLink }
+    ]);
+
+    if (eventResp.results.length === 0) {
+      return res.status(status.notfound).send({ error: "Event not found" });
+    }
+
+    const event = eventResp.results[0];
+
+    // Get metadata for analytics
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+                      || req.socket.remoteAddress
+                      || 'unknown';
+
+    // Track the view with visitor_id
+    await EventRepository.trackEventView(event.id, visitorId, ipAddress, userAgent);
+
+    res.status(status.success).send({
+      message: "View tracked successfully",
+      total_views: event.total_views || 0,
+      unique_views: event.unique_views || 0
+    });
+  } catch (error: any) {
+    console.error("[ERROR] EventsController::trackEventView", error);
+    // Don't fail the request if tracking fails - just log it
+    res.status(status.success).send({ message: "View tracking skipped" });
   }
 };

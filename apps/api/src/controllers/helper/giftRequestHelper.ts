@@ -194,8 +194,11 @@ const generateTreeCardImage = async (requestId: string, presentationId: string, 
     }
 }
 
-const generateTreeCardImages = async (requestId: string, presentationId: string, slideIds: string[], giftCards: GiftCard[]) => {
-
+const generateTreeCardImages = async (
+    requestId: string,
+    presentationId: string,
+    slideToCardMap: Map<string, GiftCard>
+) => {
     try {
         const resp = await downloadSlide(presentationId, 'application/pdf');
         const chunks: Buffer[] = [];
@@ -204,10 +207,14 @@ const generateTreeCardImages = async (requestId: string, presentationId: string,
         }
         const data = Buffer.concat(chunks);
 
+        // Build s3Keys using explicit mapping to ensure correct card-to-key association
         const s3Keys: string[] = [];
-        for (let i = 0; i < slideIds.length; i++) {
-            const giftCard = giftCards[i];
-            s3Keys.push(`${requestId}/${(giftCard as any).sapling_id}.png`)
+        const slideToS3KeyMap: Map<string, string> = new Map();
+
+        for (const [slideId, giftCard] of slideToCardMap.entries()) {
+            const s3Key = `${requestId}/${(giftCard as any).sapling_id}.png`;
+            s3Keys.push(s3Key);
+            slideToS3KeyMap.set(slideId, s3Key);
         }
 
         console.log("No. of s3 keys:", s3Keys.length);
@@ -216,14 +223,15 @@ const generateTreeCardImages = async (requestId: string, presentationId: string,
         const results = await convertPdfToImage(data, s3Keys);
         console.log(new Date().getTime() - time);
         console.log(results);
+
         const tasks: Task<void>[] = [];
-        for (let i = 0; i < slideIds.length; i++) {
-            const giftCard = giftCards[i];
-            const s3Key = s3Keys[i];
+        for (const [slideId, giftCard] of slideToCardMap.entries()) {
+            const s3Key = slideToS3KeyMap.get(slideId);
+            if (!s3Key) continue;
 
             if (results[s3Key]) {
                 giftCard.card_image_url = results[s3Key];
-                giftCard.slide_id = slideIds[i];
+                giftCard.slide_id = slideId;
                 giftCard.presentation_id = presentationId;
                 giftCard.updated_at = new Date();
 
@@ -235,13 +243,10 @@ const generateTreeCardImages = async (requestId: string, presentationId: string,
     } catch (error) {
         console.log('[ERROR]', 'GiftCardController::generateTreeCardImages', error);
 
+        // Fallback to individual image generation with explicit mapping
         const tasks: Task<void>[] = []
-        for (let i = 0; i < slideIds.length; i++) {
-            const templateId = slideIds[i];
-            const giftCard = giftCards[i];
-            if (giftCard) {
-                tasks.push(() => generateTreeCardImage(requestId, presentationId, giftCard, templateId));
-            }
+        for (const [slideId, giftCard] of slideToCardMap.entries()) {
+            tasks.push(() => generateTreeCardImage(requestId, presentationId, giftCard, slideId));
         }
 
         await runWithConcurrency(tasks, 3);
@@ -310,14 +315,18 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
         let time = new Date().getTime();
 
         const records: any[] = [];
-        const batchGiftCards: GiftCard[] = [];
+        const slideToCardMap: Map<string, GiftCard> = new Map();
         const slideIds: string[] = await createCopyOfTheCardTemplates(presentationId, templateIds.slice(batch * batchSize, (batch + 1) * batchSize));
+
+        // Build explicit mapping between slideId and giftCard to prevent index mismatches
         for (let i = 0; i < slideIds.length; i++) {
-            const templateId = slideIds[i];
+            const slideId = slideIds[i];
             const cardId = cardIds[(batch * batchSize) + i];
             const giftCard = idToCardMap.get(cardId);
             if (giftCard) {
-                batchGiftCards.push(giftCard);
+                // Store the mapping for later use in image generation
+                slideToCardMap.set(slideId, giftCard);
+
                 let primaryMessage = giftCardRequest.primary_message;
                 if (giftCard.gifted_to && giftCard.assigned_to) {
                     const key = giftCard.gifted_to.toString() + "_" + giftCard.assigned_to.toString();
@@ -328,7 +337,7 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
                 primaryMessage = primaryMessage.replace("{recipient}", (giftCard as any).recipient_name || "");
                 primaryMessage = primaryMessage.replace("{giftedBy}", giftCardRequest.planted_by || "");
                 const record = {
-                    slideId: templateId,
+                    slideId: slideId,
                     sapling: (giftCard as any).sapling_id,
                     message: primaryMessage,
                     logo: giftCardRequest.logo_url,
@@ -348,7 +357,8 @@ export const generateGiftCardsForGiftRequest = async (giftCardRequest: GiftCardR
 
         console.log(presentationId);
 
-        await generateTreeCardImages(giftCardRequest.request_id, presentationId, slideIds, batchGiftCards)
+        // Pass explicit slideId-to-GiftCard mapping instead of separate arrays
+        await generateTreeCardImages(giftCardRequest.request_id, presentationId, slideToCardMap)
         console.log("[INFO]", `Batch: ${batch + 1} Presentation id: ${presentationId} --------------------------- END`)
     }
 
@@ -539,7 +549,7 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
         emailData.count++;
     }
 
-    const ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
+    let ccMailIds = (ccMails && ccMails.length !== 0) ? ccMails : undefined;
     const mailIds = (testMails && testMails.length !== 0) ? testMails : [emailData.user_email];
 
     let attachments: { filename: string; path: string }[] | undefined = undefined;
@@ -557,14 +567,70 @@ export const sendMailsToSponsors = async (giftCardRequest: any, giftCards: any[]
         if (files.length > 0) attachments = files;
     }
 
-    const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
-    const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType })
-    if (templates.length === 0) {
-        console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
-        return;
+    // Check for campaign-specific email configuration
+    let campaignConfig = null;
+    if (giftCardRequest.rfr_id) {
+        const referrals = await ReferralsRepository.getReferrals({ id: giftCardRequest.rfr_id });
+        if (referrals.length > 0 && referrals[0].c_key) {
+            const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+                { columnField: 'c_key', operatorValue: 'equals', value: referrals[0].c_key }
+            ]);
+            if (campaignsResp.results.length > 0 && campaignsResp.results[0].email_config?.sponsor_email?.enabled) {
+                campaignConfig = campaignsResp.results[0].email_config.sponsor_email;
+                // Merge campaign custom_data into emailData
+                if (campaignConfig.custom_data) {
+                    Object.assign(emailData, campaignConfig.custom_data);
+                }
+            }
+        }
     }
 
-    const statusMessage: string = await sendDashboardMail(templates[0].template_name, emailData, mailIds, ccMailIds, attachments);
+    let templateName: string;
+    let subject: string | undefined;
+    let fromName: string | undefined;
+    let fromEmail: string | undefined;
+    let replyTo: string | undefined;
+
+    if (campaignConfig) {
+        // Use campaign-specific template and settings
+        templateName = emailData.count > 1
+            ? campaignConfig.template_name_multi
+            : campaignConfig.template_name_single;
+        subject = emailData.count > 1
+            ? campaignConfig.subject_template_multi
+            : campaignConfig.subject_template_single;
+        fromName = campaignConfig.from_name;
+        fromEmail = campaignConfig.from_email;
+        replyTo = campaignConfig.reply_to;
+
+        // Merge campaign CC emails with existing CC emails
+        if (campaignConfig.cc_emails && campaignConfig.cc_emails.length > 0) {
+            ccMailIds = ccMailIds
+                ? [...ccMailIds, ...campaignConfig.cc_emails]
+                : campaignConfig.cc_emails;
+        }
+    } else {
+        // Use default email template
+        const templateType: TemplateType = emailData.count > 1 ? 'sponsor-multi-trees' : 'sponsor-single-tree';
+        const templates = await EmailTemplateRepository.getEmailTemplates({ event_type: eventType, template_type: templateType });
+        if (templates.length === 0) {
+            console.log("[ERROR]", "giftCardsController::sendEmailForGiftCardRequest", "Email template not found");
+            return;
+        }
+        templateName = templates[0].template_name;
+    }
+
+    const statusMessage: string = await sendDashboardMail(
+        templateName,
+        emailData,
+        mailIds,
+        ccMailIds,
+        attachments,
+        subject,
+        fromName,
+        fromEmail,
+        replyTo
+    );
 
     if (statusMessage === '' && (!testMails || testMails.length === 0)) {
         await GiftCardsRepository.updateGiftCardRequests(

@@ -4,6 +4,9 @@ import uploadFiles from "../helpers/multer";
 
 const routes = express.Router();
 
+// Fetch a group by its URL name_key
+routes.get('/by-key/:name_key', group.getGroupByKey);
+
 routes.get('/:search', group.searchGroups);
 
 

@@ -333,4 +333,75 @@ routes.post("/combine", users.combineUsers);
  */
 routes.get('/birthday/notifications', users.checkGroupBirthdays);
 
+/**
+ * @swagger
+ * /users/{userId}/profile-photo:
+ *   get:
+ *     summary: Get profile photo for a user
+ *     description: Fetches the profile photo from trees assigned to the user with "visit" in description
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - name: userId
+ *         in: path
+ *         description: ID of the user
+ *         required: true
+ *         type: integer
+ *         example: 10367
+ *     responses:
+ *       200:
+ *         description: Profile photo fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             userId:
+ *               type: integer
+ *               example: 10367
+ *             profilePhoto:
+ *               type: string
+ *               example: "https://example.com/photo.jpg"
+ *       400:
+ *         description: Invalid user ID
+ *       500:
+ *         description: Internal server error
+ */
+routes.get('/:userId/profile-photo', users.getUserProfilePhoto);
+
+/**
+ * @swagger
+ * /users/profile-photos:
+ *   post:
+ *     summary: Get profile photos for multiple users (batch)
+ *     description: Fetches profile photos for multiple users in a single request. More efficient than individual calls.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Array of user IDs
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             userIds:
+ *               type: array
+ *               items:
+ *                 type: integer
+ *               example: [10367, 6539, 6605]
+ *     responses:
+ *       200:
+ *         description: Profile photos fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             profilePhotos:
+ *               type: object
+ *               example: { "10367": "https://example.com/photo1.jpg", "6539": "https://example.com/photo2.jpg", "6605": null }
+ *       400:
+ *         description: Invalid request body
+ *       500:
+ *         description: Internal server error
+ */
+routes.post('/profile-photos', users.getUsersProfilePhotos);
+
 export default routes;

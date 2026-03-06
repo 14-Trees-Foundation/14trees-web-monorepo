@@ -15,15 +15,30 @@ export const getAll = async (req: Request, res: Response): Promise<void> => {
     }
     
     try {
-        const data: any[] = await UserRepository.search(key);
+        const { users, groups } = await UserRepository.search(key);
         res.status(status.success).json({
-            users: data.map(item => ({ ...item, assigned_trees: item.assigned_trees.filter((tree: any) => tree.sapling_id), sponsored_trees: Number(item.sponsored_trees) })),
-            total_results: data.length,
+            users: users.map(item => ({
+                id: item.id,
+                name: item.name,
+                type: 'user',
+                sponsored_trees: Number(item.sponsored_trees),
+                assigned_trees_count: Number(item.assigned_trees_count),
+                profile_image: item.profile_image
+            })),
+            groups: groups.map(item => ({
+                id: item.id,
+                name: item.name,
+                type: 'group',
+                group_type: item.group_type,
+                sponsored_trees: Number(item.sponsored_trees),
+                profile_image: item.profile_image
+            })),
+            total_results: users.length + groups.length,
         })
     } catch (error: any) {
         console.log("search getAll", JSON.stringify(error))
         res.status(status.error).json({
-            message: "Failed to search users!",
+            message: "Failed to search users and groups!",
         });
     }
 }

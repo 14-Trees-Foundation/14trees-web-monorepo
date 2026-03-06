@@ -13,6 +13,8 @@ routes.delete('/:id', events.deleteEvent);
 routes.post('/', 
   uploadFiles.fields([
     { name: 'event_poster', maxCount: 1 },
+    { name: 'landing_image', maxCount: 1 },
+    { name: 'landing_image_mobile', maxCount: 1 },
     { name: 'images', maxCount: 10 }
   ]), 
   events.addEvent
@@ -21,6 +23,8 @@ routes.post('/',
 routes.put('/:id', 
   uploadFiles.fields([
     { name: 'event_poster', maxCount: 1 },
+    { name: 'landing_image', maxCount: 1 },
+    { name: 'landing_image_mobile', maxCount: 1 },
     { name: 'images', maxCount: 10 }
   ]), 
   events.updateEvent
@@ -55,5 +59,8 @@ routes.post('/:id/messages', events.createEventMessage);
 routes.put('/messages/:messageId', events.updateEventMessage);
 routes.delete('/messages/:messageId', events.deleteEventMessage);
 routes.put('/:id/messages/reorder', events.reorderEventMessages);
+
+// View Tracking Route (public endpoint for analytics)
+routes.post('/track-view/:linkId', events.trackEventView);
 
 export default routes;

@@ -1855,6 +1855,156 @@ routes.post('/update-users/', giftCards.updateGiftCardUserDetails);
  */
 routes.get('/requests/tags', giftCards.getGiftRequestTags);
 
+/**
+ * @swagger
+ * /gift-cards/analytics/month-on-month:
+ *   get:
+ *     summary: Get gift cards analytics (month-on-month)
+ *     description: Fetches month-on-month analytics data for gift cards including totals, trends, and breakdowns by corporate/personal and occasion types.
+ *     tags:
+ *       - Gift Cards
+ *     parameters:
+ *       - name: dateField
+ *         in: query
+ *         description: Date field to use for aggregation (created_at or gifted_on)
+ *         required: false
+ *         type: string
+ *         enum: [created_at, gifted_on]
+ *         default: created_at
+ *         example: "created_at"
+ *       - name: startDate
+ *         in: query
+ *         description: Start date for date range (ISO format YYYY-MM-DD)
+ *         required: false
+ *         type: string
+ *         format: date
+ *         example: "2024-01-01"
+ *       - name: endDate
+ *         in: query
+ *         description: End date for date range (ISO format YYYY-MM-DD)
+ *         required: false
+ *         type: string
+ *         format: date
+ *         example: "2025-12-31"
+ *       - name: months
+ *         in: query
+ *         description: Number of months to look back (used if startDate/endDate not provided)
+ *         required: false
+ *         type: integer
+ *         default: 12
+ *         example: 12
+ *     responses:
+ *       200:
+ *         description: Analytics data fetched successfully
+ *         schema:
+ *           type: object
+ *           properties:
+ *             summary:
+ *               type: object
+ *               properties:
+ *                 total_requests:
+ *                   type: integer
+ *                   example: 150
+ *                 total_requests_corporate:
+ *                   type: integer
+ *                   example: 100
+ *                 total_requests_personal:
+ *                   type: integer
+ *                   example: 50
+ *                 total_trees:
+ *                   type: integer
+ *                   example: 1500
+ *                 total_trees_corporate:
+ *                   type: integer
+ *                   example: 1000
+ *                 total_trees_personal:
+ *                   type: integer
+ *                   example: 500
+ *             monthly:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   month:
+ *                     type: string
+ *                     example: "2025-01"
+ *                   requests:
+ *                     type: integer
+ *                     example: 15
+ *                   requests_corporate:
+ *                     type: integer
+ *                     example: 10
+ *                   requests_personal:
+ *                     type: integer
+ *                     example: 5
+ *                   trees:
+ *                     type: integer
+ *                     example: 150
+ *                   trees_corporate:
+ *                     type: integer
+ *                     example: 100
+ *                   trees_personal:
+ *                     type: integer
+ *                     example: 50
+ *             by_occasion:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   event_type:
+ *                     type: string
+ *                     example: "Birthday"
+ *                   total_requests:
+ *                     type: integer
+ *                     example: 50
+ *                   total_trees:
+ *                     type: integer
+ *                     example: 500
+ *                   monthly:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         month:
+ *                           type: string
+ *                           example: "2025-01"
+ *                         requests:
+ *                           type: integer
+ *                           example: 5
+ *                         requests_corporate:
+ *                           type: integer
+ *                           example: 3
+ *                         requests_personal:
+ *                           type: integer
+ *                           example: 2
+ *                         trees:
+ *                           type: integer
+ *                           example: 50
+ *                         trees_corporate:
+ *                           type: integer
+ *                           example: 30
+ *                         trees_personal:
+ *                           type: integer
+ *                           example: 20
+ *       400:
+ *         description: Bad request - invalid parameters
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Invalid dateField parameter. Must be 'created_at' or 'gifted_on'"
+ *       500:
+ *         description: Internal server error
+ *         schema:
+ *           type: object
+ *           properties:
+ *             error:
+ *               type: string
+ *               example: "Failed to fetch analytics data"
+ */
+routes.get('/analytics/month-on-month', giftCards.getGiftCardMonthOnMonthAnalytics);
+
 
 /**
  * @swagger

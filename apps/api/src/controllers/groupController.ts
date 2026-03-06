@@ -38,6 +38,23 @@ export const getGroups = async (req: Request, res: Response) => {
     }
 }
 
+export const getGroupByKey = async (req: Request, res: Response) => {
+    const nameKey = req.params.name_key;
+    if (!nameKey) {
+        return res.status(status.bad).json({ error: 'name_key is required' });
+    }
+
+    try {
+        const group = await GroupRepository.getGroupByKey(nameKey);
+        if (!group) {
+            return res.status(status.notfound).json({ error: 'Group not found' });
+        }
+        res.status(status.success).json(group);
+    } catch (error: any) {
+        res.status(status.error).json({ status: status.error, message: error.message });
+    }
+}
+
 export const addGroup = async (req: Request, res: Response) => {
 
     if (!req.body.name) {

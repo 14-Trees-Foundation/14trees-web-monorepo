@@ -54,6 +54,19 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
     const orderBy: any[] = req.body?.order_by;
 
     const giftCardRequests = await GiftCardsRepository.getGiftCardRequests(offset, limit, filters, orderBy);
+
+    // Batch load payments to avoid N+1 queries
+    const paymentIds = giftCardRequests.results
+        .filter(r => r.payment_id)
+        .map(r => r.payment_id as number);
+    const paymentsMap = await PaymentRepository.getPaymentsByIds(paymentIds);
+
+    // Batch load tree photos for requests without logos
+    const requestIdsNeedingPhotos = giftCardRequests.results
+        .filter(r => !r.logo_url && !(r as any).group_logo_url)
+        .map(r => r.id);
+    const photosMap = await TreeRepository.getFirstTreePhotosByRequestIds(requestIdsNeedingPhotos);
+
     const data: any[] = [];
     for (const giftCardRequest of giftCardRequests.results) {
         let paidAmount = 0;
@@ -67,7 +80,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
             ) * giftCardRequest.no_of_cards;
 
         if (giftCardRequest.payment_id) {
-            const payment: any = await PaymentRepository.getPayment(giftCardRequest.payment_id);
+            const payment: any = paymentsMap.get(giftCardRequest.payment_id);
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
@@ -75,6 +88,19 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
                     if (payment.status === 'validated') validatedAmount += payment.amount;
                 })
             }
+        }
+
+        // Determine photo to display: gift request logo > group logo > first tree photo
+        let photoUrl: string | null = null;
+        if (giftCardRequest.logo_url) {
+            // Priority 1: Use gift request logo if provided
+            photoUrl = giftCardRequest.logo_url;
+        } else if ((giftCardRequest as any).group_logo_url) {
+            // Priority 2: Use group logo if gift request belongs to a group/corporate
+            photoUrl = (giftCardRequest as any).group_logo_url;
+        } else {
+            // Priority 3: Fetch first tree photo as fallback
+            photoUrl = photosMap.get(giftCardRequest.id) || null;
         }
 
         data.push({
@@ -88,6 +114,7 @@ export const getGiftCardRequests = async (req: Request, res: Response) => {
                     : paidAmount === 0
                         ? "Pending payment"
                         : "Partially paid",
+            first_tree_photo_url: photoUrl,
         })
 
     }
@@ -1693,8 +1720,7 @@ export const generateGiftCardTemplatesForGiftCardRequest = async (req: Request, 
 
 export const updateGiftCardImagesForGiftRequest = async (req: Request, res: Response) => {
     const { gift_card_request_id: giftCardRequestId } = req.params;
-    const presentationIdMap: Record<string, GiftCard[]> = {}
-    const pIdToSlideMap: Record<string, string[]> = {}
+    const presentationIdMap: Record<string, Map<string, GiftCard>> = {}
 
     try {
 
@@ -1714,17 +1740,15 @@ export const updateGiftCardImagesForGiftRequest = async (req: Request, res: Resp
         for (const card of giftCards.results) {
             if (!card.presentation_id || !card.slide_id) continue;
             if (!presentationIdMap[card.presentation_id]){
-                presentationIdMap[card.presentation_id] = [];
-                pIdToSlideMap[card.presentation_id] = [];
+                presentationIdMap[card.presentation_id] = new Map();
             }
 
-            presentationIdMap[card.presentation_id].push(card);
-            pIdToSlideMap[card.presentation_id].push(card.slide_id);
+            // Build explicit slideId-to-card mapping to prevent index mismatches
+            presentationIdMap[card.presentation_id].set(card.slide_id, card);
         }
 
-        for (const [presentationId, cards] of Object.entries(presentationIdMap)) {
-            const slideIds = pIdToSlideMap[presentationId];
-            await GiftRequestHelper.generateTreeCardImages(giftCardRequest.request_id, presentationId, slideIds, cards)
+        for (const [presentationId, slideToCardMap] of Object.entries(presentationIdMap)) {
+            await GiftRequestHelper.generateTreeCardImages(giftCardRequest.request_id, presentationId, slideToCardMap)
         }
 
     } catch (error: any) {
@@ -2911,5 +2935,56 @@ export const createGiftCardRequestV2 = async (req: Request, res: Response) => {
         res.status(status.created).send({ gift_request: updated, order_id: payment.order_id });
     } catch (error: any) {
         res.status(status.error).send({ message: error.message || 'Something went wrong while creating gift card request. Please try again later.' });
+    }
+}
+
+export const getGiftCardMonthOnMonthAnalytics = async (req: Request, res: Response) => {
+    try {
+        // Extract and validate query parameters
+        const dateField = (req.query.dateField as string) || 'created_at';
+        const months = req.query.months ? parseInt(req.query.months as string) : 12;
+
+        // Validate dateField
+        if (dateField !== 'created_at' && dateField !== 'gifted_on') {
+            return res.status(status.bad).send({
+                error: 'Invalid dateField parameter. Must be "created_at" or "gifted_on"'
+            });
+        }
+
+        // Calculate date range
+        let startDate: Date;
+        let endDate: Date;
+
+        if (req.query.startDate && req.query.endDate) {
+            // Use provided date range
+            startDate = new Date(req.query.startDate as string);
+            endDate = new Date(req.query.endDate as string);
+
+            // Validate dates
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(status.bad).send({
+                    error: 'Invalid date format. Use ISO date format (YYYY-MM-DD)'
+                });
+            }
+        } else {
+            // Calculate rolling window based on months parameter
+            endDate = new Date();
+            startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - months);
+        }
+
+        // Fetch analytics data from repository
+        const analyticsData = await GiftCardsRepository.getMonthOnMonthAnalytics(
+            dateField,
+            startDate,
+            endDate
+        );
+
+        res.status(status.success).send(analyticsData);
+    } catch (error: any) {
+        await Logger.logError('giftCardController', 'getGiftCardMonthOnMonthAnalytics', error, req);
+        res.status(status.error).send({
+            error: error.message || 'Failed to fetch analytics data'
+        });
     }
 }

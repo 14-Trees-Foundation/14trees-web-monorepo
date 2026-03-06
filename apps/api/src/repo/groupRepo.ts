@@ -10,6 +10,7 @@ export class GroupRepository {
     public static async addGroup(data: any): Promise<Group> {
         let obj: GroupCreationAttributes = {
             name: data.name as string,
+            name_key: data.name_key?.trim() || undefined,
             type: data.type as GroupType,
             description: data.description ? data.description as string : undefined,
             logo_url: data.logo_url ? data.logo_url : null,
@@ -18,6 +19,19 @@ export class GroupRepository {
             created_at: new Date(),
             updated_at: new Date(),
         };
+        // If name_key is not provided, generate a unique slug from the name
+        if (!obj.name_key) {
+            const base = GroupRepository.slugify(obj.name || `group-${Date.now()}`);
+            let candidate = base;
+            let suffix = 1;
+            // ensure uniqueness
+            while (await Group.findOne({ where: { name_key: candidate } })) {
+                candidate = `${base}-${suffix}`;
+                suffix++;
+            }
+            (obj as any).name_key = candidate;
+        }
+
         const group = await Group.create(obj);
         return group;
     }
@@ -90,8 +104,24 @@ export class GroupRepository {
         return await Group.findByPk(id);
     }
 
+    public static async getGroupByKey(nameKey: string): Promise<Group | null> {
+        return await Group.findOne({ where: { name_key: nameKey } });
+    }
+
     public static async deleteGroup(id: number): Promise<number> {
         const resp = await Group.destroy({ where: { id: id } });
         return resp;
+    }
+
+    private static slugify(input: string): string {
+        if (!input) return 'group';
+        let s = input.toLowerCase();
+        s = s.normalize('NFKD').replace(/\p{Diacritic}/gu, '');
+        s = s.replace(/[^a-z0-9]+/g, '-');
+        s = s.replace(/-+/g, '-');
+        s = s.replace(/(^-|-$)/g, '');
+        if (s.length === 0) s = 'group';
+        if (s.length > 64) s = s.substring(0, 64).replace(/(^-|-$)/g, '');
+        return s;
     }
 }

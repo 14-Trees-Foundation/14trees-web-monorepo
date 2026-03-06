@@ -8,6 +8,7 @@ import { sequelize } from '../config/postgreDB';
 import { getSchema } from '../helpers/utils';
 import { Tree } from '../models/tree';
 import { User } from '../models/user';
+import { EventView } from '../models/eventViews';
 
 
 export class EventRepository {
@@ -235,8 +236,8 @@ export class EventRepository {
     try {
       await Tree.update(
         { event_id: null },
-        { 
-          where: { 
+        {
+          where: {
             id: {
               [Op.in]: treeIds
             },
@@ -246,6 +247,42 @@ export class EventRepository {
       );
     } catch (error) {
       console.error('[ERROR] EventRepository::dissociateTreesFromEvent', error);
+      throw error;
+    }
+  }
+
+  // View Tracking Methods
+  public static async trackEventView(
+    eventId: number,
+    visitorId: string,
+    ipAddress: string,
+    userAgent: string
+  ): Promise<void> {
+    try {
+      // Try to insert the view record
+      // If it already exists (same event + visitor), it will be ignored due to unique constraint
+      const [viewRecord, created] = await EventView.findOrCreate({
+        where: {
+          event_id: eventId,
+          visitor_id: visitorId
+        },
+        defaults: {
+          event_id: eventId,
+          visitor_id: visitorId,
+          ip_address: ipAddress,
+          user_agent: userAgent
+        }
+      });
+
+      // Always increment total_views
+      await Event.increment('total_views', { where: { id: eventId } });
+
+      // Only increment unique_views if this is a new visitor
+      if (created) {
+        await Event.increment('unique_views', { where: { id: eventId } });
+      }
+    } catch (error) {
+      console.error('[ERROR] EventRepository::trackEventView', error);
       throw error;
     }
   }

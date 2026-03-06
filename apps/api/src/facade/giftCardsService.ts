@@ -193,11 +193,11 @@ class GiftCardsService {
             }
         })
 
-        if (!process.env.GIFT_CARD_PRESENTATION_ID) {
+        if (!process.env.LIVE_GIFT_CARD_PRESENTATION_ID) {
             throw new Error("Missing gift card template presentation id in ENV variables.");
         }
 
-        const templatePresentationId: string = process.env.GIFT_CARD_PRESENTATION_ID;
+        const templatePresentationId: string = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
         const presentationId = await copyFile(templatePresentationId, `Adhoc Gift Cards - ${new Date().toDateString()}`);
 
         const plantTypeTemplateIdMap: Map<string, string> = new Map();

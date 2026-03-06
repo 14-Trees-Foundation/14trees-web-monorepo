@@ -30,12 +30,18 @@ interface EventAttributes {
   default_tree_view_mode?: 'illustrations' | 'profile';
   theme_color?: ThemeColor;
   event_poster?: string;
+  landing_image_s3_path?: string;
+  landing_image_mobile_s3_path?: string;
+  show_blessings?: boolean;
+  blessings_cta_text?: string | null;
+  total_views?: number;
+  unique_views?: number;
   created_at: Date;
   updated_at: Date;
 }
 
 interface EventCreationAttributes
-	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'id' | 'created_at' | 'updated_at'> {}
+	extends Optional<EventAttributes, 'tags' | 'memories' | 'images' | 'description' | 'message' | 'theme_color' | 'event_poster' | 'link' | 'default_tree_view_mode' | 'show_blessings' | 'blessings_cta_text' | 'total_views' | 'unique_views' | 'id' | 'created_at' | 'updated_at'> {}
 
 @Table({ tableName: 'events' })
 export class Event extends Model<EventAttributes, EventCreationAttributes>
@@ -94,6 +100,18 @@ implements EventAttributes {
   event_poster?: string;
 
   @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  landing_image_s3_path?: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  landing_image_mobile_s3_path?: string;
+
+  @Column({
     type: DataType.JSONB,
     allowNull: true,
   })
@@ -123,6 +141,33 @@ implements EventAttributes {
     defaultValue: 'profile'
   })
   default_tree_view_mode?: 'illustrations' | 'profile';
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: true,
+    defaultValue: true
+  })
+  show_blessings?: boolean;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  blessings_cta_text?: string | null;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  })
+  total_views?: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  })
+  unique_views?: number;
 
   @Column(DataType.DATE)
   created_at!: Date;

@@ -77,11 +77,16 @@ export class PlotRepository {
 
         const query = `
         SELECT p.*,
-            case 
-                when s.name_english is null 
+            case
+                when s.name_english is null
                     then s.name_marathi
-                    else s.name_english 
+                    else s.name_english
                 end site_name,
+            s.village as site_village,
+            s.district as site_district,
+            s.taluka as site_taluka,
+            s.created_at as site_added_date,
+            s.unique_id as site_unique_id,
             COUNT(t.id) as total, 
             COUNT(t.assigned_to) as assigned,
             SUM(CASE 
@@ -96,6 +101,8 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL
                     AND ppt.sustainable = true
+                    AND t.tree_status != 'dead'
+                    AND t.tree_status != 'lost'
                 THEN 1 
                 ELSE 0 
             END) AS available,
@@ -192,6 +199,7 @@ export class PlotRepository {
                     AND t.assigned_to IS NULL 
                     AND t.id IS NOT NULL) AND pt.habit = 'Tree'
                     AND ppt.sustainable = true
+                    AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
                 THEN 1 
                 ELSE 0 
             END) AS available_trees,

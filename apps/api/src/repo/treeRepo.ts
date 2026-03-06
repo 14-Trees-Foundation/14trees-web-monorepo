@@ -41,9 +41,13 @@ class TreeRepository {
         } else if (filter.columnField === "tree_health") {
           columnField = 't.tree_status'
         } else if (filter.columnField === "association_type") {
-          columnField = 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' ELSE NULL END'
+          columnField = 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' WHEN t.gifted_to IS NOT NULL THEN \'Gift Cards\' WHEN t.assigned_to IS NOT NULL THEN \'Normal Assignment\' ELSE NULL END'
         } else if (filter.columnField === "request_id") {
           columnField = 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END'
+        } else if (filter.columnField === "gift_card_request_id") {
+          columnField = 'gc.gift_card_request_id'
+        } else if (filter.columnField === "donation_id") {
+          columnField = 't.donation_id'
         }
         const { condition, replacement } = getSqlQueryExpression(columnField, filter.operatorValue, valuePlaceHolder, filter.value);
         whereCondition = whereCondition + " " + condition + " AND";
@@ -57,7 +61,7 @@ class TreeRepository {
         if (o.column === 'assigned_to_name')
           return 'au."name"' + " " + o.order
         else if (o.column === 'association_type')
-          return 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' ELSE NULL END' + " " + o.order
+          return 'CASE WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text WHEN t.donation_id IS NOT NULL THEN \'Donation\' WHEN t.gifted_to IS NOT NULL THEN \'Gift Cards\' WHEN t.assigned_to IS NOT NULL THEN \'Normal Assignment\' ELSE NULL END' + " " + o.order
         else if (o.column === 'request_id')
           return 'CASE WHEN gcr.id IS NOT NULL THEN gcr.id WHEN t.donation_id IS NOT NULL THEN t.donation_id ELSE NULL END' + " " + o.order
         return 't.' + o.column + " " + o.order
@@ -65,30 +69,36 @@ class TreeRepository {
       : null;
 
     let query = `
-    SELECT t.*, 
-      pt."name" as plant_type, 
-      pt.habit as habit, 
-      pt.illustration_s3_path as illustration_s3_path, 
-      pt.info_card_s3_path as info_card_s3_path, 
+    SELECT t.*,
+      pt."name" as plant_type,
+      pt.habit as habit,
+      pt.illustration_s3_path as illustration_s3_path,
+      pt.info_card_s3_path as info_card_s3_path,
       p."name" as plot,
       s.name_english as site_name,
-      mu."name" as mapped_user_name, 
-      mg."name" as mapped_group_name, 
-      su."name" as sponsor_user_name, 
-      sg."name" as sponsor_group_name, 
+      mu."name" as mapped_user_name,
+      mu.email as mapped_user_email,
+      mg."name" as mapped_group_name,
+      su."name" as sponsor_user_name,
+      su.email as sponsor_user_email,
+      sg."name" as sponsor_group_name,
       au."name" as assigned_to_name,
+      au.email as assigned_to_email,
+      gc.card_image_url as gift_card_image,
       t.tree_status as tree_health,
-      CASE 
+      CASE
         WHEN gcr.request_type IS NOT NULL THEN gcr.request_type::text
         WHEN t.donation_id IS NOT NULL THEN 'Donation'
+        WHEN t.gifted_to IS NOT NULL THEN 'Gift Cards'
+        WHEN t.assigned_to IS NOT NULL THEN 'Normal Assignment'
         ELSE NULL
       END as association_type,
-      CASE 
+      CASE
         WHEN gcr.id IS NOT NULL THEN gcr.id
         WHEN t.donation_id IS NOT NULL THEN t.donation_id
         ELSE NULL
       END as request_id
-    FROM "${getSchema()}".trees t 
+    FROM "${getSchema()}".trees t
     LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
     LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
     LEFT JOIN "${getSchema()}".sites s ON s.id = p.site_id
@@ -96,7 +106,7 @@ class TreeRepository {
     LEFT JOIN "${getSchema()}".groups mg ON mg.id = t.mapped_to_group
     LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
     LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
-    LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
+    LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
     LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
     LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
     WHERE ${whereCondition !== "" ? whereCondition : "1=1"}
@@ -110,21 +120,30 @@ class TreeRepository {
       type: QueryTypes.SELECT
     })
 
-    const countQuery = `
-    SELECT count(*)
-    FROM "${getSchema()}".trees t 
-    LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
-    LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
-    LEFT JOIN "${getSchema()}".sites s ON s.id = p.site_id
-    LEFT JOIN "${getSchema()}".users mu ON mu.id = t.mapped_to_user
-    LEFT JOIN "${getSchema()}".groups mg ON mg.id = t.mapped_to_group
-    LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
-    LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
-    LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to 
-    LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
-    LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
-    WHERE ${whereCondition !== "" ? whereCondition : "1=1"};
-    `
+    // Optimize count query: skip JOINs when no filters are applied
+    let countQuery: string;
+    if (whereCondition === "" || whereCondition === "1=1") {
+      // Fast count without JOINs when no filters
+      countQuery = `SELECT count(*) FROM "${getSchema()}".trees`;
+    } else {
+      // Full count query with all JOINs when filters are present
+      countQuery = `
+      SELECT count(*)
+      FROM "${getSchema()}".trees t
+      LEFT JOIN "${getSchema()}".plant_types pt ON pt.id = t.plant_type_id
+      LEFT JOIN "${getSchema()}".plots p ON p.id = t.plot_id
+      LEFT JOIN "${getSchema()}".sites s ON s.id = p.site_id
+      LEFT JOIN "${getSchema()}".users mu ON mu.id = t.mapped_to_user
+      LEFT JOIN "${getSchema()}".groups mg ON mg.id = t.mapped_to_group
+      LEFT JOIN "${getSchema()}".users su ON su.id = t.sponsored_by_user
+      LEFT JOIN "${getSchema()}".groups sg ON sg.id = t.sponsored_by_group
+      LEFT JOIN "${getSchema()}".users au ON au.id = t.assigned_to
+      LEFT JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+      LEFT JOIN "${getSchema()}".gift_card_requests gcr ON gcr.id = gc.gift_card_request_id
+      WHERE ${whereCondition};
+      `;
+    }
+
     const resp = await sequelize.query(countQuery, {
       replacements: replacements,
     });
@@ -394,6 +413,7 @@ class TreeRepository {
         mapped_to_group: { [Op.is]: undefined },
         assigned_at: { [Op.is]: undefined },
         plot_id: { [Op.in]: plotIds },
+        status: { [Op.notIn]: ['dead', 'lost'] },
       },
       limit: count
     });
@@ -450,7 +470,7 @@ class TreeRepository {
       query += `JOIN "${getSchema()}".plant_type_card_templates ptct on ptct.plant_type = pt."name"\n`
     }
 
-    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND t.plot_id IN (' + plotIds.join(',') + ')\n'
+    query += 'WHERE t.mapped_to_user IS NULL AND t.mapped_to_group IS NULL AND t.assigned_to IS NULL AND (t.tree_status IS NULL OR (t.tree_status != \'dead\' AND t.tree_status != \'lost\')) AND t.plot_id IN (' + plotIds.join(',') + ')\n'
     if (!diversify) {
       query += `LIMIT ${count}`
     }
@@ -488,13 +508,19 @@ class TreeRepository {
       if (noMoreTrees) break;
     }
 
+    // Deduplicate tree IDs as a safety measure (should not happen but prevents DB constraint violations)
+    const uniqueFinalTreeIds = Array.from(new Set(finalTreeIds));
+    if (uniqueFinalTreeIds.length !== finalTreeIds.length) {
+      console.warn(`[WARNING] mapTreesInPlotToUserAndGroup: Removed ${finalTreeIds.length - uniqueFinalTreeIds.length} duplicate tree IDs`);
+    }
+
     await Tree.update(updateConfig, {
       where: {
-        id: { [Op.in]: finalTreeIds },
+        id: { [Op.in]: uniqueFinalTreeIds },
       },
     });
 
-    return finalTreeIds;
+    return uniqueFinalTreeIds;
   }
 
   /**
@@ -518,6 +544,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL 
         AND t.mapped_to_group IS NULL 
         AND t.assigned_to IS NULL 
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND t.plot_id = :plotId
     `;
 
@@ -542,6 +569,8 @@ class TreeRepository {
       throw new Error("Tree with given sapling id not found");
     } else if (tree.assigned_to !== null) {
       throw new Error("Tree is already assigned to someone");
+    } else if (tree.status === 'dead' || tree.status === 'lost') {
+      throw new Error("Tree is dead or lost");
     }
 
     // Get the user
@@ -776,6 +805,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
       ORDER BY t.id DESC
       OFFSET ${offset} LIMIT ${limit};
@@ -801,6 +831,7 @@ class TreeRepository {
         AND t.mapped_to_user IS NULL
         AND t.mapped_to_group IS NULL
         AND t.assigned_to IS NULL
+        AND (t.tree_status IS NULL OR (t.tree_status != 'dead' AND t.tree_status != 'lost'))
         AND ${whereCondition !== "" ? whereCondition : "1=1"}
     `;
 
@@ -1062,6 +1093,75 @@ class TreeRepository {
     });
 
     return data[0] || { total_trees: 0, donated_trees: 0, remaining_trees: 0 };
+  }
+
+  public static async getFirstTreePhotoByRequestId(requestId: number): Promise<string | null> {
+    const query = `
+      SELECT COALESCE(t.user_tree_image, t.image) as photo_url
+      FROM "${getSchema()}".trees t
+      JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+      WHERE gc.gift_card_request_id = ${requestId}
+      AND (t.user_tree_image IS NOT NULL OR t.image IS NOT NULL)
+      ORDER BY t.id ASC
+      LIMIT 1
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+    });
+
+    return data.length > 0 ? data[0].photo_url : null;
+  }
+
+  public static async getFirstTreePhotosByRequestIds(requestIds: number[]): Promise<Map<number, string>> {
+    if (requestIds.length === 0) {
+      return new Map();
+    }
+
+    const query = `
+      WITH ranked_photos AS (
+        SELECT
+          gc.gift_card_request_id,
+          COALESCE(t.user_tree_image, t.image) as photo_url,
+          ROW_NUMBER() OVER (PARTITION BY gc.gift_card_request_id ORDER BY t.id ASC) as rn
+        FROM "${getSchema()}".trees t
+        JOIN "${getSchema()}".gift_cards gc ON gc.tree_id = t.id
+        WHERE gc.gift_card_request_id IN (:requestIds)
+        AND (t.user_tree_image IS NOT NULL OR t.image IS NOT NULL)
+      )
+      SELECT gift_card_request_id, photo_url
+      FROM ranked_photos
+      WHERE rn = 1
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements: { requestIds }
+    });
+
+    const photoMap = new Map<number, string>();
+    data.forEach(row => {
+      photoMap.set(row.gift_card_request_id, row.photo_url);
+    });
+
+    return photoMap;
+  }
+
+  public static async getFirstTreePhotoByDonationId(donationId: number): Promise<string | null> {
+    const query = `
+      SELECT COALESCE(t.user_tree_image, t.image) as photo_url
+      FROM "${getSchema()}".trees t
+      WHERE t.donation_id = ${donationId}
+      AND (t.user_tree_image IS NOT NULL OR t.image IS NOT NULL)
+      ORDER BY t.id ASC
+      LIMIT 1
+    `;
+
+    const data: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+    });
+
+    return data.length > 0 ? data[0].photo_url : null;
   }
 
 }

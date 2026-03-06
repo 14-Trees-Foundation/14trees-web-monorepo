@@ -4,6 +4,11 @@
   "globalEnv": [
     "NODE_ENV",
     "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_BASE_URL",
+    "BACKEND_TOKEN",
+    "NEXT_PUBLIC_RAZORPAY_KEY_ID",
+    "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
+    "NEXT_PUBLIC_DASHBOARD_URL",
     "SERVER_PORT",
     "NEXT_PUBLIC_RAZORPAY_KEY",
     "NOTION_API_KEY", 
@@ -19,17 +24,11 @@
    
     
   ],
-  "globalDotEnv": [
-    ".env.local",
-    ".env.development",
-    ".env"
-  ],
-  "pipeline": {
+  "tasks": {
     "clear-content": {
       "outputs": ["content/**"]
     },
     "fetch-content": {
-      "dotEnv": [".env"],
       "inputs": ["src/scripts/fetchContent.ts"],
       "outputs": ["src/data/content/**", "public/content/**"]
     },
@@ -37,6 +36,9 @@
       "cache": false,
       "dependsOn": ["^build", "fetch-content"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "start": {
+      "dependsOn": ["build"]
     },
     "lint": {},
     "check-types": {},

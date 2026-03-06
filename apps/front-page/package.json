@@ -11,29 +11,41 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@heroicons/react": "^2.0.16",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
+    "@mui/styles": "^6.5.0",
     "@notionhq/client": "^2.2.4",
+    "@react-oauth/google": "^0.12.2",
+    "axios": "^1.11.0",
+    "contentful-fetch": "*",
     "framer-motion": "^11.0.3",
     "next": "^14.0.4",
+    "papaparse": "^5.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.1",
-    "contentful-fetch" : "*",
+    "react-share": "^5.2.2",
+    "sharp": "^0.33.5",
     "ui": "*"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
     "@babel/core": "^7.0.0",
     "@types/node": "^17.0.12",
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "19.1.8",
     "autoprefixer": "^10.4.13",
     "eslint": "7.32.0",
     "eslint-config-custom": "*",
+    "notion-sync": "*",
     "postcss": "^8.4.21",
     "schema": "*",
     "tailwind-config": "*",
     "tailwindcss": "^3.2.7",
+    "ts-node": "^10.9.2",
     "tsconfig": "*",
-    "notion-sync": "*"
+    "typescript": "^5.3.3"
   }
 }

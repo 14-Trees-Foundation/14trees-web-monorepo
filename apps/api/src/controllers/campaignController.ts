@@ -4,11 +4,12 @@ import { status } from "../helpers/status";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { FilterItem } from "../models/pagination";
 import { SortOrder } from "../models/common";
+import { CampaignEmailConfig } from "../models/campaign";
 
 
 export const createCampaign = async (req: Request, res: Response) => {
 
-    const { name, c_key, description } = req.body;
+    const { name, c_key, description, email_config } = req.body;
     if (!name || !c_key) {
         return res.status(400).json({ error: "Name and campaign key are required" });
     }
@@ -27,6 +28,7 @@ export const createCampaign = async (req: Request, res: Response) => {
             name,
             c_key,
             description,
+            email_config
         );
 
         return res.status(201).json(campaign);
@@ -178,6 +180,78 @@ export const updateCampaign = async (req: Request, res: Response) => {
         console.error("[ERROR] CampaignsController::updateCampaign:", error);
         res.status(status.error).json({
             message: 'Failed to update campaign'
+        });
+    }
+};
+
+export const getCampaignEmailConfig = async (req: Request, res: Response) => {
+    const { c_key } = req.params;
+
+    if (!c_key) {
+        return res.status(400).json({ message: "Campaign key (c_key) is required" });
+    }
+
+    try {
+        const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+            { columnField: 'c_key', operatorValue: 'equals', value: c_key }
+        ]);
+
+        if (campaignsResp.results.length === 0) {
+            return res.status(404).json({ message: "Campaign not found" });
+        }
+
+        const campaign = campaignsResp.results[0];
+        return res.status(200).json({
+            c_key: campaign.c_key,
+            email_config: campaign.email_config
+        });
+    } catch (error: any) {
+        console.error("[ERROR] CampaignController::getCampaignEmailConfig", error);
+        return res.status(500).json({
+            message: 'Failed to fetch campaign email configuration',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+export const updateCampaignEmailConfig = async (req: Request, res: Response) => {
+    const { c_key } = req.params;
+    const { email_config } = req.body;
+
+    if (!c_key) {
+        return res.status(400).json({ message: "Campaign key (c_key) is required" });
+    }
+
+    if (!email_config) {
+        return res.status(400).json({ message: "email_config is required" });
+    }
+
+    try {
+        // First, get the campaign to find its ID
+        const campaignsResp = await CampaignsRepository.getCampaigns(0, 1, [
+            { columnField: 'c_key', operatorValue: 'equals', value: c_key }
+        ]);
+
+        if (campaignsResp.results.length === 0) {
+            return res.status(404).json({ message: "Campaign not found" });
+        }
+
+        const campaign = campaignsResp.results[0];
+
+        // Update the email_config
+        const updatedCampaign = await CampaignsRepository.updateCampaign(campaign.id, {
+            email_config
+        });
+
+        return res.status(200).json({
+            c_key: updatedCampaign.c_key,
+            email_config: updatedCampaign.email_config
+        });
+    } catch (error: any) {
+        console.error("[ERROR] CampaignController::updateCampaignEmailConfig", error);
+        return res.status(500).json({
+            message: 'Failed to update campaign email configuration',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
