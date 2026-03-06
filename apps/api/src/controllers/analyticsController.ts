@@ -9,7 +9,6 @@ import { PondRepository } from '../repo/pondsRepo';
 import { OnsiteStaffRepository } from '../repo/onSiteStaffRepo';
 import { SiteRepository } from '../repo/sitesRepo';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
-import PageVisitsRepository, { PageVisitSection } from '../repo/pageVisitsRepo';
 
 export const summary = async (req: Request, res: Response) => {
   try {
@@ -119,78 +118,4 @@ export const getTotalEmployees = async (req: Request, res: Response) => {
         await Logger.logError('analyticsController', 'getTotalEmployees', error, req);
         res.status(status.error).send({ error: error });
     }
-};
-
-export const trackPageVisit = async (req: Request, res: Response) => {
-  try {
-    const { pathname, section, url } = req.body || {};
-
-    if (!pathname || !section) {
-      return res.status(status.bad).send({ error: 'pathname and section are required' });
-    }
-
-    if (!['profile', 'dashboard'].includes(section)) {
-      return res.status(status.bad).send({ error: 'section must be profile or dashboard' });
-    }
-
-    const normalizedPathname = String(pathname).split('?')[0];
-
-    if (!(normalizedPathname.startsWith('/profile/') || normalizedPathname.startsWith('/dashboard/'))) {
-      return res.status(status.nocontent).send();
-    }
-
-    const hostHeader = req.get('host') || req.hostname || 'unknown';
-    const domain = hostHeader.split(':')[0];
-    const visitorIdHeader = req.headers['x-visitor-id'];
-    const visitorId = typeof visitorIdHeader === 'string' ? visitorIdHeader : null;
-
-    const userAgentHeader = req.headers['user-agent'];
-    const userAgent = typeof userAgentHeader === 'string' ? userAgentHeader : null;
-
-    const xForwardedFor = req.headers['x-forwarded-for'];
-    const forwardedIp = typeof xForwardedFor === 'string' ? xForwardedFor.split(',')[0].trim() : null;
-    const socketIp = req.socket?.remoteAddress || null;
-console.log('Tracking page visit:', { domain, pathname: normalizedPathname, section, visitorId, ipAddress: forwardedIp || socketIp, userAgent });
-    await PageVisitsRepository.trackPageVisit({
-      domain,
-      pathname: normalizedPathname,
-      section: section as PageVisitSection,
-      url: typeof url === 'string' ? url : null,
-      visitorId,
-      ipAddress: forwardedIp || socketIp,
-      userAgent,
-    });
-
-    return res.status(status.nocontent).send();
-  } catch (error) {
-    await Logger.logError('analyticsController', 'trackPageVisit', error, req);
-    return res.status(status.nocontent).send();
-  }
-};
-
-export const pageVisitsSummary = async (req: Request, res: Response) => {
-  try {
-    const topUrlsLimitRaw = Number(req.query.limit);
-    const topUrlsLimit = Number.isFinite(topUrlsLimitRaw) && topUrlsLimitRaw > 0 ? Math.min(topUrlsLimitRaw, 50) : 5;
-
-    // Allow domain to be passed as query parameter, otherwise default to the request's domain
-    const domainFilterRaw = req.query.domain;
-    let domainFilter = 'dashboard.14trees.org'; // fallback
-
-    if (typeof domainFilterRaw === 'string' && domainFilterRaw.trim().length > 0) {
-      // Domain explicitly provided
-      domainFilter = domainFilterRaw.trim();
-    } else {
-      // Default to the current request's domain
-      const hostHeader = req.get('host') || req.hostname || 'dashboard.14trees.org';
-      domainFilter = hostHeader.split(':')[0]; // strip port
-    }
-
-    const summaryResp = await PageVisitsRepository.getSummary(domainFilter, topUrlsLimit);
-
-    return res.status(status.success).send(summaryResp);
-  } catch (error) {
-    await Logger.logError('analyticsController', 'pageVisitsSummary', error, req);
-    return res.status(status.error).send({ error: error });
-  }
 };

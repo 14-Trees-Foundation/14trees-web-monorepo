@@ -12,7 +12,4 @@ routes.get('/totalUsers', analytics.getUniqueUsers);
 routes.get('/totalPlots', analytics.getTotalPlots);
 routes.get('/summary', verifyToken, analytics.summary);
 
-routes.post('/page-visits/track', analytics.trackPageVisit);
-routes.get('/page-visits/summary', verifyToken, analytics.pageVisitsSummary);
-
 export default routes;
