@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: 14trees_test_db
+    environment:
+      POSTGRES_DB: 14trees_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: 'UTC'
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test_network
+
+volumes:
+  postgres_test_data:
+
+networks:
+  test_network:
+    driver: bridge

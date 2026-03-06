@@ -1,0 +1,13 @@
+{
+  "require": ["ts-node/register"],
+  "spec": "test/**/*.test.ts",
+  "timeout": 30000,
+  "ui": "bdd",
+  "exit": true,
+  "recursive": true,
+  "color": true,
+  "reporter": "spec",
+  "node-option": [
+    "loader=ts-node/esm"
+  ]
+}
