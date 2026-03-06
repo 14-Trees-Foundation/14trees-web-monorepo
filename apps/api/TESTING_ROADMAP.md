@@ -18,12 +18,44 @@ This document outlines the complete plan to implement testing infrastructure wit
 - Delete `.nycrc.json` (keep c8 only)
 - Update test documentation to reference c8
 
-#### 2. Convert Test Files to TypeScript
+#### 2. Environment Isolation (NEW)
+Create a `.env.test` file with test-specific credentials:
+```bash
+NODE_ENV=test
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=14trees_test
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_SCHEMA=public
+SECRET_KEY=test-secret-key
+```
+
+Create `docker-compose.test.yml` so local dev matches CI exactly:
+```yaml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: 14trees_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+#### 3. Convert Test Files to TypeScript
 - Move `test/**/*.js` → `test/**/*.ts`
 - Add proper TypeScript imports and type annotations
 - Update import statements in bootstrap
 
-#### 3. Migrate mocha.opts to .mocharc.json
+#### 4. Migrate mocha.opts to .mocharc.json
 ```json
 {
   "require": ["ts-node/register"],
@@ -35,8 +67,8 @@ This document outlines the complete plan to implement testing infrastructure wit
 }
 ```
 
-#### 4. Fix c8 Configuration
-Create/update `.c8rc.json`:
+#### 5. Fix c8 Configuration
+Create/update `.c8rc.json` with expanded exclusions:
 ```json
 {
   "all": true,
@@ -45,6 +77,9 @@ Create/update `.c8rc.json`:
     "src/**/*.d.ts",
     "src/swagger.ts",
     "src/testServer.ts",
+    "src/migrations/**",
+    "src/seeders/**",
+    "src/config/**",
     "test/**/*",
     "coverage/**/*"
   ],
@@ -54,12 +89,13 @@ Create/update `.c8rc.json`:
   "lines": 70,
   "statements": 70,
   "functions": 70,
-  "branches": 65,
+  "branches": 70,
   "skip-full": false
 }
 ```
+**Note**: Migrations, seeders, and config files have no testable business logic and are excluded. Branch coverage aligned with other thresholds at 70%.
 
-#### 5. Update package.json Scripts
+#### 6. Update package.json Scripts
 ```json
 {
   "test": "NODE_ENV=test c8 mocha --require ts-node/register test/bootstrap.test.ts test/**/*.test.ts --exit",
@@ -77,8 +113,72 @@ Create/update `.c8rc.json`:
 
 ---
 
-## Phase 2: Unit Tests Foundation (Weeks 2-3)
-*Highest ROI - repositories are most complex*
+## Phase 2: Test Data Factories (Weeks 2-3)
+*Create seeders BEFORE unit tests — they're dependencies*
+
+### Why Reorder First?
+Building seeders before unit tests means:
+- Unit tests have consistent test data ready
+- No retrofit of existing tests
+- Clear dependency chain: Seeders → Unit Tests → Integration Tests
+
+### Seeders to Create
+```
+test/seeders/
+├── baseSeeder.ts           (abstract base)
+├── analyticsSeeder.ts      (exists, update to .ts)
+├── userSeeder.ts           (NEW)
+├── treeSeeder.ts           (NEW)
+├── groupSeeder.ts          (NEW)
+├── pageVisitsSeeder.ts     (NEW)
+├── seederFactory.ts        (update)
+└── index.ts
+```
+
+### Seeder Pattern Template
+```typescript
+export class UserSeeder extends BaseSeeder {
+  private sequelize: any;
+
+  constructor() {
+    super();
+    this.sequelize = getSequelizeInstance();
+  }
+
+  async setup(): Promise<TestData> {
+    // Create test users
+    // Create test groups
+    // Create relationships
+    // Return test data for assertions
+    return {
+      users: [...],
+      groups: [...]
+    };
+  }
+
+  async teardown(): Promise<void> {
+    // Delete all created data
+    // Maintain referential integrity
+  }
+
+  async close(): Promise<void> {
+    // Close database connection
+  }
+}
+```
+
+### Benefits
+- ✅ Consistent, reusable test data
+- ✅ Isolated test data per test
+- ✅ Easy to create complex scenarios
+- ✅ Maintainable, DRY approach
+
+---
+
+## Phase 3: Unit Tests Foundation (Weeks 3-4)
+*Highest ROI - repositories are most testable*
+
+**Prerequisite**: Phase 2 (Test Data Factories/Seeders) must be complete first.
 
 ### Priority Repositories
 
@@ -170,63 +270,7 @@ test/unit/
 
 ### Coverage Goal
 - **Target**: 75%+ for repositories
-- **Minimum**: 60% to proceed to Phase 3
-
----
-
-## Phase 3: Test Data Factories (Week 3-4)
-*Reusable seeders for all repositories*
-
-### Seeders to Create
-```
-test/seeders/
-├── baseSeeder.ts           (abstract base)
-├── analyticsSeeder.ts      (exists, update to .ts)
-├── userSeeder.ts           (NEW)
-├── treeSeeder.ts           (NEW)
-├── groupSeeder.ts          (NEW)
-├── pageVisitsSeeder.ts     (NEW)
-├── seederFactory.ts        (update)
-└── index.ts
-```
-
-### Each Seeder Pattern
-```typescript
-export class UserSeeder extends BaseSeeder {
-  private sequelize: any;
-
-  constructor() {
-    super();
-    this.sequelize = getSequelizeInstance();
-  }
-
-  async setup(): Promise<TestData> {
-    // Create test users
-    // Create test groups
-    // Create relationships
-    // Return test data for assertions
-    return {
-      users: [...],
-      groups: [...]
-    };
-  }
-
-  async teardown(): Promise<void> {
-    // Delete all created data
-    // Maintain referential integrity
-  }
-
-  async close(): Promise<void> {
-    // Close database connection
-  }
-}
-```
-
-### Benefits
-- ✅ Consistent, reusable test data
-- ✅ Isolated test data per test
-- ✅ Easy to create complex scenarios
-- ✅ Maintainable, DRY approach
+- **Minimum**: 60% to proceed to Phase 4
 
 ---
 
@@ -254,6 +298,11 @@ test/integration/
 - ✅ Pagination and filtering
 - ✅ Authorization/authentication
 - ✅ Response schema validation
+- ✅ **Concurrent request handling** (especially critical for pageVisitsRepo hit counting — vulnerable to race conditions)
+- ✅ **Large/edge case inputs** (very long strings, Unicode, SQL injection attempts)
+- ✅ **Rate limiting** (if any endpoints have throttling)
+
+⚠️ **Important**: Integration tests must use a **real test database**, NOT mocks. The entire value is catching real constraint violations, query errors, and data integrity issues that unit tests with mocks will never surface.
 
 ### Example Integration Test
 ```typescript
@@ -323,6 +372,14 @@ jobs:
           node-version: '18'
           cache: 'npm'
       
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
       - name: Install dependencies
         run: npm ci
         working-directory: ./apps/api
@@ -331,13 +388,8 @@ jobs:
         run: npm run test:db:setup || true
         working-directory: ./apps/api
       
-      - name: Run tests
-        run: npm test
-        working-directory: ./apps/api
-      
-      - name: Generate coverage report
-        if: always()
-        run: npm run test:coverage
+      - name: Run tests with coverage
+        run: npm run test:ci
         working-directory: ./apps/api
       
       - name: Upload coverage to Codecov
@@ -377,20 +429,13 @@ jobs:
 ## Phase 6: Coverage Enforcement (Week 6)
 
 ### Update `.c8rc.json`
-```json
-{
-  "all": true,
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.d.ts", "src/swagger.ts", "test/**/*"],
-  "reporter": ["text", "text-summary", "html", "lcov"],
-  "lines": 70,
-  "statements": 70,
-  "functions": 70,
-  "branches": 65,
-  "check-coverage": true,
-  "skip-full": false
-}
-```
+(Already done in Phase 1 — no additional changes needed)
+
+Thresholds are now consistent at 70%:
+- Lines: 70%
+- Statements: 70%
+- Functions: 70%
+- Branches: 70%
 
 ### What This Does
 - ✅ Fails tests if coverage < thresholds
@@ -414,21 +459,17 @@ npx husky add .husky/pre-commit "npm test --prefix apps/api"
 
 ## Phase 7: Coverage Dashboard (Week 6-7)
 
-### Option 1: Codecov (Recommended for GitHub)
+### Setup Codecov (Recommended — Automatic Trend Tracking)
 1. Visit https://codecov.io
 2. Connect GitHub account
 3. Enable repository
-4. Coverage badge appears in workflow results
+4. Coverage badge and trend graphs appear automatically
 
-### Option 2: Coveralls.io
-Add to GitHub Actions workflow:
-```yaml
-- name: Upload to Coveralls
-  uses: coverallsapp/github-action@master
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    path-to-lcov: ./apps/api/coverage/lcov.info
-```
+**Benefits**:
+- ✅ Historical coverage trends (automatic tracking, no manual spreadsheet)
+- ✅ Per-file coverage changes in PRs
+- ✅ Coverage badges for README
+- ✅ Commit-level tracking
 
 ### Coverage Badge in README
 ```markdown
@@ -437,7 +478,7 @@ Add to GitHub Actions workflow:
 [![Tests](https://github.com/14-Trees-Foundation/14trees-web-monorepo/actions/workflows/test.yml/badge.svg)](https://github.com/14-Trees-Foundation/14trees-web-monorepo/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/14-Trees-Foundation/14trees-web-monorepo/branch/main/graph/badge.svg)](https://codecov.io/gh/14-Trees-Foundation/14trees-web-monorepo)
 
-Test coverage and CI/CD passing on every commit.
+Test coverage and CI/CD passing on every commit. Coverage trends available on [Codecov](https://codecov.io/gh/14-Trees-Foundation/14trees-web-monorepo).
 ```
 
 ---
@@ -446,9 +487,9 @@ Test coverage and CI/CD passing on every commit.
 
 | Phase | Tasks | Duration | Effort | Dependencies |
 |-------|-------|----------|--------|--------------|
-| **1** | Cleanup & configuration | 2-3 days | Low | - |
-| **2** | Unit tests (3 repos) | 1-2 weeks | Medium | Phase 1 |
-| **3** | Test data factories | 3-5 days | Medium | Phase 2 |
+| **1** | Cleanup + environment isolation | 2-3 days | Low | - |
+| **2** | Test data factories (seeders) | 3-5 days | Medium | Phase 1 |
+| **3** | Unit tests (3 repos) | 1-2 weeks | Medium | Phase 2 |
 | **4** | Integration tests | 1 week | Medium | Phase 3 |
 | **5** | GitHub Actions setup | 2-3 days | Low | Phase 4 |
 | **6** | Coverage enforcement | 1 day | Low | Phase 5 |
@@ -462,7 +503,7 @@ Test coverage and CI/CD passing on every commit.
 | Milestone | Tests | Coverage | Effort |
 |-----------|-------|----------|--------|
 | Before implementation | ~15 | ~5% | - |
-| After Phase 2 (unit tests) | ~100 | 35-40% | 1-2 weeks |
+| After Phase 3 (unit tests) | ~100 | 35-40% | 1-2 weeks |
 | After Phase 4 (all tests) | ~200+ | 65-70% | 2 more weeks |
 | Mature state | 300+ | 75%+ | 1-2 more weeks |
 
@@ -498,7 +539,8 @@ open coverage/index.html  # macOS
 ## Success Criteria
 
 - ✅ **Phase 1**: All tests run without errors
-- ✅ **Phase 2**: 35%+ code coverage achieved
+- ✅ **Phase 2**: Seeders created and working
+- ✅ **Phase 3**: 35%+ code coverage achieved
 - ✅ **Phase 4**: 70%+ code coverage achieved
 - ✅ **Phase 5**: GitHub Actions passing on main branch
 - ✅ **Phase 6**: Coverage enforcement prevents regressions
@@ -508,14 +550,13 @@ open coverage/index.html  # macOS
 
 ## Key Metrics to Track
 
-Create a spreadsheet to track progress:
+**Use Codecov's built-in dashboard instead of manual spreadsheet:**
+- Historical coverage trend graphs
+- Per-branch coverage comparison
+- File-level coverage changes
+- Automated email reports on regressions
 
-| Week | Total Tests | Coverage % | Pass Rate | Avg Test Time |
-|------|------------|-----------|-----------|----------------|
-| 1 | 15 | 5% | 100% | 50ms |
-| 2 | 65 | 35% | 98% | 200ms |
-| 3 | 120 | 50% | 99% | 250ms |
-| 4 | 200+ | 70%+ | 99%+ | 300ms |
+No manual spreadsheet needed — Codecov tracks automatically.
 
 ---
 
@@ -558,11 +599,12 @@ Create a spreadsheet to track progress:
 
 ## Next Steps
 
-1. **This Week**: Complete Phase 1 (cleanup & configuration)
-2. **Week 2-3**: Begin Phase 2 (unit tests for userRepo)
-3. **Week 4**: Complete Phase 4 (integration tests)
-4. **Week 5**: Deploy Phase 5 (GitHub Actions)
-5. **Week 6+**: Monitor and maintain coverage
+1. **This Week**: Complete Phase 1 (cleanup & environment isolation)
+2. **Week 2-3**: Complete Phase 2 (test data factories/seeders)
+3. **Week 3-4**: Begin Phase 3 (unit tests with seeders ready)
+4. **Week 5**: Complete Phase 4 (integration tests with real database)
+5. **Week 6**: Deploy Phase 5 (GitHub Actions with npm run test:ci)
+6. **Week 6+**: Monitor Codecov trends automatically
 
 ---
 
