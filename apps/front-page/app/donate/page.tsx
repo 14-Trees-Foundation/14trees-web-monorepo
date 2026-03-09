@@ -1330,7 +1330,7 @@ function Donation() {
                 )}
 
                 <p className="text-gray-700 leading-relaxed">
-                  By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
+                  By funding 14 Trees Foundation, you're enabling long-term environmental healing and economic empowerment for those who depend most on the land.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1688,7 +1688,7 @@ function Donation() {
                           )}
                         </div>
                         <p className="mt-2 text-sm text-gray-600">
-                          At present we can accept donations only from Indian residents. PAN number is required to know the donor&apos;s identity.
+                          At present we can accept donations only from Indian residents. PAN number is required to know the donor's identity. Your donation will quality for 80g tax deduction benefit.
                         </p>
                       </div>
                     </div>
