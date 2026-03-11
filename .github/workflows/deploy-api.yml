@@ -3,7 +3,7 @@ name: Deploy API
 
 on:
   push:
-    branches: [ci-cd-test]
+    branches: [ci_setup]
   workflow_dispatch:
 
 jobs:
