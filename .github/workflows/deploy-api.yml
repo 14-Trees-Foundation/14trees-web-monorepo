@@ -75,3 +75,41 @@ jobs:
             echo "=== Live build (dist) ==="
             ls -la /home/ubuntu/14trees-web-monorepo/apps/api/dist/
             echo "✅ Safe — live app untouched"
+
+      - name: Swap dist and restart PM2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/14trees-web-monorepo/apps/api
+
+            # Backup live build
+            cp -r dist/ dist-backup/
+
+            # Swap new build in
+            rm -rf dist/
+            mv dist-new/ dist/
+
+            # Pull latest non-build files
+            cd /home/ubuntu/14trees-web-monorepo
+            git pull origin ${{ github.ref_name }}
+
+            # Restart PM2
+            cd /home/ubuntu/14trees-web-monorepo/apps/api
+            pm2 restart 14trees-api
+
+            # Verify
+            sleep 5
+            pm2 status 14trees-api | grep -q "online" \
+              && echo "✅ Deploy successful" \
+              || (echo "❌ Deploy failed — rolling back" \
+                  && rm -rf dist/ \
+                  && mv dist-backup/ dist/ \
+                  && pm2 restart 14trees-api \
+                  && echo "↩️ Rollback complete" \
+                  && exit 1)
+
+            rm -rf dist-backup/
+            echo "🚀 Deployment complete"
