@@ -3,7 +3,10 @@ name: Deploy API
 
 on:
   push:
-    branches: [ci_setup]
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
 
 jobs:
