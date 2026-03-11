@@ -1690,7 +1690,7 @@ function Donation() {
                           )}
                         </div>
                         <p className="mt-2 text-sm text-gray-600">
-                          At present we can accept donations only from Indian residents. PAN number is required to know the donor's identity. Your donation will quality for 80g tax deduction benefit.
+                          At present we can accept donations only from Indian residents. PAN number is required to know the donor's identity. Your donation will qualify for 80g tax deduction benefit.
                         </p>
                       </div>
                     </div>
