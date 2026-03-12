@@ -1,0 +1,36 @@
+name: Railway Dev Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+
+jobs:
+  manage-railway-service:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start Service
+        if: inputs.action == 'start'
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "mutation { serviceInstanceUpdate(input: { serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\", environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", numReplicas: 1 }) }"}' \
+            https://backboard.railway.app/graphql/v2
+          echo "✅ Service started"
+
+      - name: Stop Service
+        if: inputs.action == 'stop'
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "mutation { serviceInstanceUpdate(input: { serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\", environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", numReplicas: 0 }) }"}' \
+            https://backboard.railway.app/graphql/v2
+          echo "✅ Service stopped"
