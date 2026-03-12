@@ -29,6 +29,7 @@ import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 import { Visit } from "../models/visits";
 import { SyncRepo } from "../repo/syncRepo";
 import { syncTreeFromVisitorImages } from "./helper/treeSync";
+import { ActivityLogService } from "../services/activityLogService";
 
 // Parse a string/number/Date into a valid Date or return null
 function parseOptionalDate(value: any): Date | null {
@@ -166,6 +167,30 @@ export const uploadTrees = async (req: Request, res: Response) => {
 
         try {
             const tree = await TreeRepository.addTreeObject(treeObj);
+
+            try {
+                await ActivityLogService.logActivity({
+                    entity_type: 'tree',
+                    action: 'create',
+                    actor: treeObj.planted_by ?? treeObj.assigned_to,
+                    plot_id: treeObj.plot_id,
+                    sapling_id: treeObj.sapling_id,
+                    plant_type_id: treeObj.plant_type_id,
+                    planted_by: treeObj.planted_by,
+                    metadata: {
+                        tree_status: treeObj.tree_status,
+                        assigned_to: treeObj.assigned_to,
+                        visit_id: treeObj.visit_id,
+                        description: treeObj.description,
+                        image: treeObj.image,
+                        location: treeObj.location,
+                        assigned_at: treeObj.assigned_at,
+                    }
+                });
+            } catch (logErr) {
+                console.error('[activity_log] tree log failed:', logErr);
+            }
+
             treeUploadStatuses[saplingID].dataUploaded = true;
             treeUploadStatuses[saplingID].tree = tree;
 
