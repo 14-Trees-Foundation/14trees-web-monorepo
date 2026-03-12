@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "rm -rf ./dist && npx swc src -d dist --strip-leading-paths"
-    "build:fast": "rm -rf ./dist && node --max-old-space-size=6144 --max-semi-space-size=1024 ./node_modules/.bin/tsc --transpileOnly",
-    "build:memory": "rm -rf ./dist && node --max-old-space-size=8192 --max-semi-space-size=2048 --optimize-for-size ./node_modules/.bin/tsc",
+    "build": "rimraf ./dist && swc src -d dist --strip-leading-paths",
+    "build:fast": "rimraf ./dist && node --max-old-space-size=6144 --max-semi-space-size=1024 ./node_modules/.bin/tsc --transpileOnly",
+    "build:memory": "rimraf ./dist && node --max-old-space-size=8192 --max-semi-space-size=2048 --optimize-for-size ./node_modules/.bin/tsc",
     "clean": "rm -rf dist",
     "dev": "nodemon",
     "start": "node dist/server.js",
