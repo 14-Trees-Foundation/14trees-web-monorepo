@@ -81,7 +81,7 @@ function Donation() {
   const rfr = searchParams.get('r');
   const c_key = searchParams.get('c');
 
-  const [treeLocation, setTreeLocation] = useState("");
+  const [treeLocation, setTreeLocation] = useState(c_key ? "donate" : "");
   const [multipleNames, setMultipleNames] = useState(false);
   const [dedicatedNames, setDedicatedNames] = useState<DedicatedName[]>([{
     recipient_name: "",
@@ -91,7 +91,7 @@ function Donation() {
     assignee_email: "",
     assignee_phone: "",
     relation: "",
-    trees_count: 14
+    trees_count: 3
   }]);
   const [isAssigneeDifferent, setIsAssigneeDifferent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -142,7 +142,7 @@ function Donation() {
   const [donationId, setDonationId] = useState<number | null>(null);
   const [donationType, setDonationType] = useState<"adopt" | "donate">("adopt");
   const [donationMethod, setDonationMethod] = useState<"trees" | "amount">("trees");
-  const [donationTreeCount, setDonationTreeCount] = useState<number>(14);
+  const [donationTreeCount, setDonationTreeCount] = useState<number>(3);
   const [donationAmount, setDonationAmount] = useState<number>(5000);
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -1118,7 +1118,7 @@ function Donation() {
       setRazorpayOrderId(null);
       setRazorpayPaymentId(null);
       setDonationAmount(5000);
-      setDonationTreeCount(14);
+      setDonationTreeCount(3);
       setCurrentStep(1);
       setDonationId(null);
     }
@@ -1330,7 +1330,7 @@ function Donation() {
                 )}
 
                 <p className="text-gray-700 leading-relaxed">
-                  By donating to 14Trees, you&apos;re directly contributing to the restoration of ecologically degraded hills near Pune. These barren landscapes are currently home only to fire-prone grass and suffer from severe topsoil erosion and depleted groundwater.
+                  By funding 14 Trees Foundation, you're enabling long-term environmental healing and economic empowerment for those who depend most on the land.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1412,43 +1412,43 @@ function Donation() {
               {currentStep === 1 ? (
                 <form className="space-y-8">
                   <div className="space-y-6">
+                    {/* First radio option - Donation (hidden when `c` query param exists) */}
+                    {!c_key && (
+                      <div className="space-y-6 bg-green-50 p-4 rounded-lg border border-gray-600">
+                        <div className="space-y-3">
+                          <label className="flex items-start space-x-3">
+                            <input
+                              type="radio"
+                              name="treeLocation"
+                              value="donate"
+                              className="mt-1 h-5 w-5"
+                              onChange={() => {
+                                setTreeLocation("donate");
+                              }}
+                              checked={treeLocation === "donate"}
+                            />
+                            <span>I want to make a donation to support reforestation.</span>
+                          </label>
+                        </div>
 
-                    {/* First radio option - Donation */}
-                    <div className="space-y-6 bg-green-50 p-4 rounded-lg border border-gray-600">
-                      <div className="space-y-3">
-                        <label className="flex items-start space-x-3">
-                          <input
-                            type="radio"
-                            name="treeLocation"
-                            value="donate"
-                            className="mt-1 h-5 w-5"
-                            onChange={() => {
-                              setTreeLocation("donate");
-                            }}
-                            checked={treeLocation === "donate"}
-                          />
-                          <span>I want to make a donation to support reforestation.</span>
-                        </label>
+                        {/* Second radio option - Adoption (hidden when `c` query param exists) */}
+                        <div className="space-y-3">
+                          <label className="flex items-start space-x-3">
+                            <input
+                              type="radio"
+                              name="treeLocation"
+                              value="adopt"
+                              className="mt-1 h-5 w-5"
+                              onChange={() => {
+                                setTreeLocation("adopt");
+                              }}
+                              checked={treeLocation === "adopt"}
+                            />
+                            <span>I would like to adopt the trees, I/we planted during my visit at 14 Trees in the past.</span>
+                          </label>
+                        </div>
                       </div>
-
-                      {/* Second radio option - Adoption */}
-                      <div className="space-y-3">
-                        <label className="flex items-start space-x-3">
-                          <input
-                            type="radio"
-                            name="treeLocation"
-                            value="adopt"
-                            className="mt-1 h-5 w-5"
-                            onChange={() => {
-                              setTreeLocation("adopt");
-                            }}
-                            checked={treeLocation === "adopt"}
-                          />
-                          <span>I would like to adopt the trees, I/we planted during my visit at 14 Trees in the past.</span>
-                        </label>
-                      </div>
-                    </div>
-
+                    )}
 
                     <div className="mt-6 mb-8 h-px bg-gray-200"></div>
 
@@ -1493,45 +1493,47 @@ function Donation() {
                             </div>
 
                             {/* Option 2: Donate Amount */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
-                              <label className="flex items-center space-x-2">
+                            {!c_key && (
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                                <label className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    name="donationMethod"
+                                    value="amount"
+                                    className="h-5 w-5"
+                                    checked={donationMethod === "amount"}
+                                    onChange={() => setDonationMethod("amount")}
+                                  />
+                                  <span>I want to donate</span>
+                                </label>
                                 <input
-                                  type="radio"
-                                  name="donationMethod"
-                                  value="amount"
-                                  className="h-5 w-5"
-                                  checked={donationMethod === "amount"}
-                                  onChange={() => setDonationMethod("amount")}
-                                />
-                                <span>I want to donate</span>
-                              </label>
-                              <input
-                                type="number"
-                                min="1500"
-                                step="1"
-                                inputMode="numeric"
-                                className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100 appearance-none" // Removes up/down arrows
-                                disabled={donationMethod !== 'amount'}
-                                value={donationMethod !== 'amount' ? 0 : donationAmount || ""}
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/[^0-9]/g, "");
-                                  const amount = parseInt(value, 10);
+                                  type="number"
+                                  min="1500"
+                                  step="1"
+                                  inputMode="numeric"
+                                  className="min-w-0 w-full sm:w-36 rounded-md border border-gray-300 px-3 py-1 text-gray-700 disabled:bg-gray-100 appearance-none" // Removes up/down arrows
+                                  disabled={donationMethod !== 'amount'}
+                                  value={donationMethod !== 'amount' ? 0 : donationAmount || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^0-9]/g, "");
+                                    const amount = parseInt(value, 10);
 
-                                  if (!isNaN(amount)) {
-                                    setDonationAmount(amount);
-                                  } else {
-                                    setDonationAmount(0);
-                                  }
-                                }}
-                                onBlur={() => {
-                                  if (donationAmount < 1500) {
-                                    setDonationAmount(1500);
-                                  }
-                                }}
-                                placeholder="1500"
-                              />
-                              <span className="text-sm">Rupees</span>
-                            </div>
+                                    if (!isNaN(amount)) {
+                                      setDonationAmount(amount);
+                                    } else {
+                                      setDonationAmount(0);
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    if (donationAmount < 1500) {
+                                      setDonationAmount(1500);
+                                    }
+                                  }}
+                                  placeholder="1500"
+                                />
+                                <span className="text-sm">Rupees</span>
+                              </div>
+                            )}
                             {donationMethod === 'amount' && donationAmount < 1500 && donationAmount > 0 && (
                               <p className="text-sm text-red-600 mt-1">Minimum donation amount is ₹1,500</p>
                             )}
@@ -1688,13 +1690,13 @@ function Donation() {
                           )}
                         </div>
                         <p className="mt-2 text-sm text-gray-600">
-                          At present we can accept donations only from Indian residents. PAN number is required to know the donor&apos;s identity.
+                          At present we can accept donations only from Indian residents. PAN number is required to know the donor's identity. Your donation will qualify for 80g tax deduction benefit.
                         </p>
                       </div>
                     </div>
                   </div>}
 
-                  {treeLocation === "donate" && donationMethod === "trees" &&
+                  {!c_key && treeLocation === "donate" && donationMethod === "trees" &&
                     <div className="flex items-center mb-4">
                       <input
                         type="checkbox"

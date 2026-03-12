@@ -1,0 +1,118 @@
+# .github/workflows/deploy-api.yml
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.12.2
+
+      - name: Install dependencies
+        working-directory: apps/api
+        run: npm install
+
+      - name: Build
+        working-directory: apps/api
+        run: npm run build
+
+      - name: Verify entry point exists
+        run: |
+          test -f apps/api/dist/apps/api/src/server.js \
+            && echo "✅ server.js found" \
+            || (echo "❌ server.js NOT found — listing dist:" && find apps/api/dist -name "*.js" | head -20 && exit 1)
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist
+          path: apps/api/dist/
+          retention-days: 3
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-dist
+          path: dist/
+
+      - name: Copy build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "dist/"
+          target: "/home/ubuntu/14trees-web-monorepo/apps/api/dist-new/"
+          strip_components: 1
+
+      - name: Verify files landed on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "=== New build (dist-new) ==="
+            ls -la /home/ubuntu/14trees-web-monorepo/apps/api/dist-new/
+            echo "=== Live build (dist) ==="
+            ls -la /home/ubuntu/14trees-web-monorepo/apps/api/dist/
+            echo "✅ Safe — live app untouched"
+
+      - name: Swap dist and restart PM2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/14trees-web-monorepo/apps/api
+
+            # Backup live build
+            cp -r dist/ dist-backup/
+
+            # Swap new build in
+            rm -rf dist/
+            mv dist-new/ dist/
+
+            # Pull latest non-build files
+            cd /home/ubuntu/14trees-web-monorepo
+            git pull origin ${{ github.ref_name }}
+
+            # Restart PM2
+            cd /home/ubuntu/14trees-web-monorepo/apps/api
+            pm2 restart 14trees-api
+
+            # Verify
+            sleep 5
+            pm2 status 14trees-api | grep -q "online" \
+              && echo "✅ Deploy successful" \
+              || (echo "❌ Deploy failed — rolling back" \
+                  && rm -rf dist/ \
+                  && mv dist-backup/ dist/ \
+                  && pm2 restart 14trees-api \
+                  && echo "↩️ Rollback complete" \
+                  && exit 1)
+
+            rm -rf dist-backup/
+            echo "🚀 Deployment complete"

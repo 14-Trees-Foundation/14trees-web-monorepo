@@ -60,6 +60,8 @@ function getDonationAction(searchParams: URLSearchParams | null) {
 }
 
 function getGiftTreesAction(searchParams: URLSearchParams | null) {
+  const hasC = !!searchParams?.get("c");
+  if (hasC) return null;
   return (
     <div className="relative w-full">
       <DropdownMenu modal={false}>
@@ -96,6 +98,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const hasC = !!searchParams?.get("c");
 
   // Close menu on route change
   useEffect(() => {
@@ -140,11 +143,13 @@ export default function Header() {
                   Donate
                 </Button>
               </Link>
-              <Link href={preserveReferralParams("/plant-memory", searchParams)}>
-                <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
-                  Plant a Memory
-                </Button>
-              </Link>
+              {!hasC && (
+                <Link href={preserveReferralParams("/plant-memory", searchParams)}>
+                  <Button variant="secondary" className="w-full mt-2" onClick={() => setMobileMenuOpen(false)}>
+                    Plant a Memory
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
 
@@ -168,11 +173,13 @@ export default function Header() {
                 Donate
               </Button>
             </Link>
-            <Link href={preserveReferralParams("/plant-memory", searchParams)}>
-              <Button className="mr-3" variant="secondary">
-                Plant a Memory
-              </Button>
-            </Link>
+            {!hasC && (
+              <Link href={preserveReferralParams("/plant-memory", searchParams)}>
+                <Button className="mr-3" variant="secondary">
+                  Plant a Memory
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </nav>
