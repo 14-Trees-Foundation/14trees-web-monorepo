@@ -171,13 +171,12 @@ export const uploadTrees = async (req: Request, res: Response) => {
             try {
                 await ActivityLogService.logActivity({
                     entity_type: 'tree',
-                    entity_id: tree.id,
                     action: 'create',
-                    sapling_id: treeObj.sapling_id,
+                    actor: treeObj.planted_by ?? treeObj.assigned_to,
                     plot_id: treeObj.plot_id,
+                    sapling_id: treeObj.sapling_id,
                     plant_type_id: treeObj.plant_type_id,
                     planted_by: treeObj.planted_by,
-                    actor: treeObj.planted_by ?? treeObj.assigned_to,
                     metadata: {
                         tree_status: treeObj.tree_status,
                         assigned_to: treeObj.assigned_to,

@@ -7,14 +7,13 @@ type ActivityAction = 'create' | 'update' | 'delete';
 
 type LogActivityInput = {
     entity_type: ActivityEntityType;
-    entity_id: number;
     action: ActivityAction;
+    actor?: string | number | null;
     sapling_id?: string | null;
     plot_id?: number | null;
     plant_type_id?: number | null;
     planted_by?: number | null;
     metadata?: unknown;
-    actor?: string | number | null;
 }
 
 export class ActivityLogService {
@@ -22,33 +21,38 @@ export class ActivityLogService {
         const query = `
             INSERT INTO "${getSchema()}".activity_logs (
                 entity_type,
-                entity_id,
                 action,
-                sapling_id,
+                actor,
                 plot_id,
+                sapling_id,
                 plant_type_id,
                 planted_by,
-                metadata,
-                actor
+                metadata
             ) VALUES (
                 :entity_type,
-                :entity_id,
                 :action,
-                :sapling_id,
+                :actor,
                 :plot_id,
+                :sapling_id,
                 :plant_type_id,
                 :planted_by,
-                :metadata,
-                :actor
+                :metadata
             );
         `;
 
+        const replacements = {
+            entity_type: data.entity_type,
+            action: data.action,
+            actor: data.actor === undefined || data.actor === null ? null : String(data.actor),
+            plot_id: data.plot_id ?? null,
+            sapling_id: data.sapling_id ?? null,
+            plant_type_id: data.plant_type_id ?? null,
+            planted_by: data.planted_by ?? null,
+            metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        };
+
         await sequelize.query(query, {
-            replacements: {
-                ...data,
-                metadata: data.metadata ? JSON.stringify(data.metadata) : null,
-                actor: data.actor === undefined || data.actor === null ? null : String(data.actor),
-            },
+            replacements,
             type: QueryTypes.INSERT,
         });
     }
