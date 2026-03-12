@@ -172,13 +172,16 @@ export const uploadTrees = async (req: Request, res: Response) => {
                 await ActivityLogService.logActivity({
                     entity_type: 'tree',
                     action: 'create',
-                    actor: treeObj.planted_by ?? treeObj.assigned_to,
+                    // actor is the syncing user (user-id header), not the planted_by name string
+                    actor: !isNaN(parseInt(userId)) ? parseInt(userId) : null,
                     plot_id: treeObj.plot_id,
                     sapling_id: treeObj.sapling_id,
                     plant_type_id: treeObj.plant_type_id,
-                    planted_by: treeObj.planted_by,
+                    // planted_by on Tree is a name string, not a numeric user ID — store it in metadata
+                    planted_by: null,
                     metadata: {
                         tree_status: treeObj.tree_status,
+                        planted_by_name: treeObj.planted_by,
                         assigned_to: treeObj.assigned_to,
                         visit_id: treeObj.visit_id,
                         description: treeObj.description,
