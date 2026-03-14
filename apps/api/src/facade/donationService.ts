@@ -124,6 +124,7 @@ export class DonationService {
             prs_status: donation_type === 'donate' && trees_count ? DonationPrsStatus_PendingReservation : null,
             tags: tags || null,
             rfr_id: rfr_id,
+            c_key: data.c_key || null,
             group_id: data.group_id || null,
         };
 

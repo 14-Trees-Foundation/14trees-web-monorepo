@@ -4,7 +4,7 @@ import * as fs from 'fs'
 const appSecret = process.env.WA_APP_SECRET
 const pemFile = process.env.WA_PRIVATE_PEM || '';
 const passprase = process.env.WA_PEM_PASSPHRASE || '';
-const privatePem = fs.readFileSync(pemFile, 'utf8');
+const privatePem = pemFile ? fs.readFileSync(pemFile, 'utf8') : '';
 
 export function validateXHubSignature(requestBody: any, signature: string) {
     const calcXHubSignature = "sha256=" + crypto

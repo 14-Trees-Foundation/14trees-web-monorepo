@@ -54,7 +54,7 @@ interface ResponseError extends Error {
   status?: number;
 }
 
-const port = process.env.SERVER_PORT ?? 8088;
+const port = process.env.PORT ?? process.env.SERVER_PORT ?? 8088;
 
 function swaggerSpecification() {
 

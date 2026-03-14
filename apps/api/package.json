@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "rimraf ./dist && NODE_OPTIONS=\"--max-old-space-size=4096\" tsc",
+    "build": "rimraf ./dist && swc src -d dist --strip-leading-paths",
     "build:fast": "rimraf ./dist && node --max-old-space-size=6144 --max-semi-space-size=1024 ./node_modules/.bin/tsc --transpileOnly",
     "build:memory": "rimraf ./dist && node --max-old-space-size=8192 --max-semi-space-size=2048 --optimize-for-size ./node_modules/.bin/tsc",
     "clean": "rm -rf dist",
@@ -73,6 +73,8 @@
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
+    "@swc/cli": "^0.8.0",
+    "@swc/core": "^1.15.18",
     "@types/archiver": "^6.0.2",
     "@types/async": "^3.2.24",
     "@types/cors": "^2.8.13",
