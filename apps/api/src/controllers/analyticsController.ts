@@ -139,8 +139,20 @@ export const trackPageVisit = async (req: Request, res: Response) => {
       return res.status(status.nocontent).send();
     }
 
-    const hostHeader = req.get('host') || req.hostname || 'unknown';
-    const domain = hostHeader.split(':')[0];
+    let domain = 'unknown';
+    if (typeof url === 'string' && url.trim().length > 0) {
+      try {
+        domain = new URL(url).hostname;
+      } catch {
+      }
+    }
+
+    if (domain === 'unknown') {
+      const forwardedHostHeader = req.headers['x-forwarded-host'];
+      const forwardedHost = typeof forwardedHostHeader === 'string' ? forwardedHostHeader.split(',')[0].trim() : null;
+      const hostHeader = forwardedHost || req.get('host') || req.hostname || 'unknown';
+      domain = hostHeader.split(':')[0];
+    }
     const visitorIdHeader = req.headers['x-visitor-id'];
     const visitorId = typeof visitorIdHeader === 'string' ? visitorIdHeader : null;
 
@@ -150,7 +162,7 @@ export const trackPageVisit = async (req: Request, res: Response) => {
     const xForwardedFor = req.headers['x-forwarded-for'];
     const forwardedIp = typeof xForwardedFor === 'string' ? xForwardedFor.split(',')[0].trim() : null;
     const socketIp = req.socket?.remoteAddress || null;
-console.log('Tracking page visit:', { domain, pathname: normalizedPathname, section, visitorId, ipAddress: forwardedIp || socketIp, userAgent });
+    console.log('Tracking page visit:', { domain, pathname: normalizedPathname, section, visitorId, ipAddress: forwardedIp || socketIp, userAgent });
     await PageVisitsRepository.trackPageVisit({
       domain,
       pathname: normalizedPathname,
