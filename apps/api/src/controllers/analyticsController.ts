@@ -185,20 +185,44 @@ export const pageVisitsSummary = async (req: Request, res: Response) => {
     const topUrlsLimitRaw = Number(req.query.limit);
     const topUrlsLimit = Number.isFinite(topUrlsLimitRaw) && topUrlsLimitRaw > 0 ? Math.min(topUrlsLimitRaw, 50) : 5;
 
-    // Allow domain to be passed as query parameter, otherwise default to the request's domain
     const domainFilterRaw = req.query.domain;
-    let domainFilter = 'dashboard.14trees.org'; // fallback
+    const forwardedHostHeader = req.headers['x-forwarded-host'];
+    const forwardedHost = typeof forwardedHostHeader === 'string' ? forwardedHostHeader.split(',')[0].trim() : null;
+    const hostHeader = req.get('host') || req.hostname || 'dashboard.14trees.org';
+    let domainFilter = 'dashboard.14trees.org';
 
     if (typeof domainFilterRaw === 'string' && domainFilterRaw.trim().length > 0) {
-      // Domain explicitly provided
       domainFilter = domainFilterRaw.trim();
     } else {
-      // Default to the current request's domain
-      const hostHeader = req.get('host') || req.hostname || 'dashboard.14trees.org';
-      domainFilter = hostHeader.split(':')[0]; // strip port
+      domainFilter = hostHeader.split(':')[0];
     }
 
+    console.log('Page visits summary request:', {
+      method: req.method,
+      originalUrl: req.originalUrl,
+      queryDomain: typeof domainFilterRaw === 'string' ? domainFilterRaw : null,
+      resolvedDomain: domainFilter,
+      host: req.get('host') || null,
+      hostname: req.hostname || null,
+      forwardedHost,
+      origin: req.get('origin') || null,
+      referer: req.get('referer') || null,
+      ifNoneMatch: req.get('if-none-match') || null,
+      ifModifiedSince: req.get('if-modified-since') || null,
+      userAgent: req.get('user-agent') || null,
+      limit: topUrlsLimit,
+    });
+
     const summaryResp = await PageVisitsRepository.getSummary(domainFilter, topUrlsLimit);
+
+    console.log('Page visits summary response:', {
+      resolvedDomain: domainFilter,
+      totalHits: summaryResp.total_hits,
+      profileHits: summaryResp.profile_hits,
+      dashboardHits: summaryResp.dashboard_hits,
+      trackedUrls: summaryResp.tracked_urls,
+      topUrlsCount: summaryResp.top_urls.length,
+    });
 
     return res.status(status.success).send(summaryResp);
   } catch (error) {
