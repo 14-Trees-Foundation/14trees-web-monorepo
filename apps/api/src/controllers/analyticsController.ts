@@ -188,38 +188,49 @@ export const pageVisitsSummary = async (req: Request, res: Response) => {
     const domainFilterRaw = req.query.domain;
     const forwardedHostHeader = req.headers['x-forwarded-host'];
     const forwardedHost = typeof forwardedHostHeader === 'string' ? forwardedHostHeader.split(',')[0].trim() : null;
-    const hostHeader = req.get('host') || req.hostname || 'dashboard.14trees.org';
-    let domainFilter = 'dashboard.14trees.org';
 
+    // prefer Origin headline (set by browser cross-origin requests) over the API server's own host header
+    const originUrl = req.get('origin');
+    const originHost = originUrl ? (() => { try { return new URL(originUrl).hostname; } catch { return null; } })() : null;
+    const refererUrl = req.get('referer');
+    const refererHost = refererUrl ? (() => { try { return new URL(refererUrl).hostname; } catch { return null; } })() : null;
+    const requestHost = (req.get('host') || req.hostname || '').split(':')[0];
+
+    let domainFilter: string;
     if (typeof domainFilterRaw === 'string' && domainFilterRaw.trim().length > 0) {
+      // explicit query param takes highest priority
       domainFilter = domainFilterRaw.trim();
+    } else if (forwardedHost) {
+      domainFilter = forwardedHost.split(':')[0];
+    } else if (originHost) {
+      // Origin is the most reliable cross-origin signal for the actual frontend host
+      domainFilter = originHost;
+    } else if (refererHost) {
+      domainFilter = refererHost;
     } else {
-      domainFilter = hostHeader.split(':')[0];
+      domainFilter = requestHost || 'dashboard.14trees.org';
     }
 
     console.log('Page visits summary request:', {
-      method: req.method,
-      originalUrl: req.originalUrl,
       queryDomain: typeof domainFilterRaw === 'string' ? domainFilterRaw : null,
       resolvedDomain: domainFilter,
-      host: req.get('host') || null,
-      hostname: req.hostname || null,
-      forwardedHost,
-      origin: req.get('origin') || null,
-      referer: req.get('referer') || null,
+      host: requestHost || null,
+      forwardedHost: forwardedHost || null,
+      origin: originHost || null,
+      referer: refererHost || null,
       ifNoneMatch: req.get('if-none-match') || null,
-      ifModifiedSince: req.get('if-modified-since') || null,
-      userAgent: req.get('user-agent') || null,
       limit: topUrlsLimit,
     });
+
+    // disable ETag / conditional-GET so the browser always gets a fresh 200 with data
+    res.set('Cache-Control', 'no-store');
+    res.removeHeader('ETag');
 
     const summaryResp = await PageVisitsRepository.getSummary(domainFilter, topUrlsLimit);
 
     console.log('Page visits summary response:', {
       resolvedDomain: domainFilter,
       totalHits: summaryResp.total_hits,
-      profileHits: summaryResp.profile_hits,
-      dashboardHits: summaryResp.dashboard_hits,
       trackedUrls: summaryResp.tracked_urls,
       topUrlsCount: summaryResp.top_urls.length,
     });
