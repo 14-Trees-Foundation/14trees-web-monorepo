@@ -41,7 +41,8 @@ async function getJwtToken(
         const client = new JWT({
             email: credentials.client_email,
             key: credentials.private_key,
-            scopes: scopes
+            scopes: scopes,
+            subject: 'dashboard@14trees.org'
         });
 
         // Authenticate the client and retrieve the token
