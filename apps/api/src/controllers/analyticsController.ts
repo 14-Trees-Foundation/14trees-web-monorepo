@@ -139,8 +139,20 @@ export const trackPageVisit = async (req: Request, res: Response) => {
       return res.status(status.nocontent).send();
     }
 
-    const hostHeader = req.get('host') || req.hostname || 'unknown';
-    const domain = hostHeader.split(':')[0];
+    let domain = 'unknown';
+    if (typeof url === 'string' && url.trim().length > 0) {
+      try {
+        domain = new URL(url).hostname;
+      } catch {
+      }
+    }
+
+    if (domain === 'unknown') {
+      const forwardedHostHeader = req.headers['x-forwarded-host'];
+      const forwardedHost = typeof forwardedHostHeader === 'string' ? forwardedHostHeader.split(',')[0].trim() : null;
+      const hostHeader = forwardedHost || req.get('host') || req.hostname || 'unknown';
+      domain = hostHeader.split(':')[0];
+    }
     const visitorIdHeader = req.headers['x-visitor-id'];
     const visitorId = typeof visitorIdHeader === 'string' ? visitorIdHeader : null;
 
@@ -150,7 +162,7 @@ export const trackPageVisit = async (req: Request, res: Response) => {
     const xForwardedFor = req.headers['x-forwarded-for'];
     const forwardedIp = typeof xForwardedFor === 'string' ? xForwardedFor.split(',')[0].trim() : null;
     const socketIp = req.socket?.remoteAddress || null;
-console.log('Tracking page visit:', { domain, pathname: normalizedPathname, section, visitorId, ipAddress: forwardedIp || socketIp, userAgent });
+    console.log('Tracking page visit:', { domain, pathname: normalizedPathname, section, visitorId, ipAddress: forwardedIp || socketIp, userAgent });
     await PageVisitsRepository.trackPageVisit({
       domain,
       pathname: normalizedPathname,
@@ -173,20 +185,55 @@ export const pageVisitsSummary = async (req: Request, res: Response) => {
     const topUrlsLimitRaw = Number(req.query.limit);
     const topUrlsLimit = Number.isFinite(topUrlsLimitRaw) && topUrlsLimitRaw > 0 ? Math.min(topUrlsLimitRaw, 50) : 5;
 
-    // Allow domain to be passed as query parameter, otherwise default to the request's domain
     const domainFilterRaw = req.query.domain;
-    let domainFilter = 'dashboard.14trees.org'; // fallback
+    const forwardedHostHeader = req.headers['x-forwarded-host'];
+    const forwardedHost = typeof forwardedHostHeader === 'string' ? forwardedHostHeader.split(',')[0].trim() : null;
 
+    // prefer Origin headline (set by browser cross-origin requests) over the API server's own host header
+    const originUrl = req.get('origin');
+    const originHost = originUrl ? (() => { try { return new URL(originUrl).hostname; } catch { return null; } })() : null;
+    const refererUrl = req.get('referer');
+    const refererHost = refererUrl ? (() => { try { return new URL(refererUrl).hostname; } catch { return null; } })() : null;
+    const requestHost = (req.get('host') || req.hostname || '').split(':')[0];
+
+    let domainFilter: string;
     if (typeof domainFilterRaw === 'string' && domainFilterRaw.trim().length > 0) {
-      // Domain explicitly provided
+      // explicit query param takes highest priority
       domainFilter = domainFilterRaw.trim();
+    } else if (forwardedHost) {
+      domainFilter = forwardedHost.split(':')[0];
+    } else if (originHost) {
+      // Origin is the most reliable cross-origin signal for the actual frontend host
+      domainFilter = originHost;
+    } else if (refererHost) {
+      domainFilter = refererHost;
     } else {
-      // Default to the current request's domain
-      const hostHeader = req.get('host') || req.hostname || 'dashboard.14trees.org';
-      domainFilter = hostHeader.split(':')[0]; // strip port
+      domainFilter = requestHost || 'dashboard.14trees.org';
     }
 
+    console.log('Page visits summary request:', {
+      queryDomain: typeof domainFilterRaw === 'string' ? domainFilterRaw : null,
+      resolvedDomain: domainFilter,
+      host: requestHost || null,
+      forwardedHost: forwardedHost || null,
+      origin: originHost || null,
+      referer: refererHost || null,
+      ifNoneMatch: req.get('if-none-match') || null,
+      limit: topUrlsLimit,
+    });
+
+    // disable ETag / conditional-GET so the browser always gets a fresh 200 with data
+    res.set('Cache-Control', 'no-store');
+    res.removeHeader('ETag');
+
     const summaryResp = await PageVisitsRepository.getSummary(domainFilter, topUrlsLimit);
+
+    console.log('Page visits summary response:', {
+      resolvedDomain: domainFilter,
+      totalHits: summaryResp.total_hits,
+      trackedUrls: summaryResp.tracked_urls,
+      topUrlsCount: summaryResp.top_urls.length,
+    });
 
     return res.status(status.success).send(summaryResp);
   } catch (error) {
