@@ -8,6 +8,9 @@ const KEY_FILE_PATH = process.env.GOOGLE_APP_CREDENTIALS || ''
 const auth = new google.auth.GoogleAuth({
     keyFile: KEY_FILE_PATH,
     scopes: ['https://www.googleapis.com/auth/drive'],
+    clientOptions: {
+        subject: 'dashboard@14trees.org'
+    }
 });
 
 // Initialize the Google Drive API
