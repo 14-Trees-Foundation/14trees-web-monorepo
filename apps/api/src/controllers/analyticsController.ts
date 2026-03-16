@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { status } from '../helpers/status'; 
 import { Logger } from '../helpers/logger';
+import { QueryTypes } from 'sequelize';
 import TreeRepository from '../repo/treeRepo';
 import PlantTypeRepository from '../repo/plantTypeRepo';
 import { UserRepository } from '../repo/userRepo';
@@ -10,6 +11,7 @@ import { OnsiteStaffRepository } from '../repo/onSiteStaffRepo';
 import { SiteRepository } from '../repo/sitesRepo';
 import { GiftCardsRepository } from '../repo/giftCardsRepo';
 import PageVisitsRepository, { PageVisitSection } from '../repo/pageVisitsRepo';
+import { sequelize } from '../config/postgreDB';
 
 export const summary = async (req: Request, res: Response) => {
   try {
@@ -242,44 +244,526 @@ export const pageVisitsSummary = async (req: Request, res: Response) => {
   }
 };
 
-export const giftDashboardAnalytics = async (req: Request, res: Response) => {
-  try {
-    const dateField = (req.query.dateField as string) || 'created_at';
-    const months = req.query.months ? parseInt(req.query.months as string) : 12;
+export const getGiftCardSummaryKPIs = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
 
-    if (dateField !== 'created_at' && dateField !== 'gifted_on') {
-      return res.status(status.bad).send({
-        error: 'Invalid dateField parameter. Must be "created_at" or "gifted_on"'
+  try {
+    const query = `
+      SELECT
+        COUNT(DISTINCT request_id) AS total_requests,
+        COUNT(*) FILTER (WHERE request_type = 'Corporate') AS corporate_count,
+        COUNT(*) FILTER (WHERE request_type = 'Personal') AS personal_count,
+        COALESCE(SUM(fulfilled_cards), 0) AS fulfilled_count,
+        COALESCE(SUM(pending_cards), 0) AS pending_count,
+        COALESCE(SUM(total_trees), 0) AS total_trees,
+        ROUND(
+          COALESCE(SUM(total_trees), 0)::numeric /
+          NULLIF(COALESCE(SUM(total_cards_issued), 0), 0),
+          1
+        ) AS avg_trees_per_card
+      FROM "${schema}".mv_gift_card_request_summary
+      WHERE request_source != 'Test'
+    `;
+
+    const result = await sequelize.query(query, { type: QueryTypes.SELECT });
+    const row: any = result[0];
+
+    if (!row) {
+      return res.status(status.success).send({});
+    }
+
+    const toInt = (value: any) => (value === null || value === undefined ? 0 : parseInt(value, 10) || 0);
+    const toFloat = (value: any) => (value === null || value === undefined ? 0 : parseFloat(value));
+
+    const responsePayload = {
+      total_requests: toInt(row.total_requests),
+      corporate_count: toInt(row.corporate_count),
+      personal_count: toInt(row.personal_count),
+      fulfilled_count: toInt(row.fulfilled_count),
+      pending_count: toInt(row.pending_count),
+      total_trees: toInt(row.total_trees),
+      avg_trees_per_card: toFloat(row.avg_trees_per_card),
+    };
+
+    return res.status(status.success).send(responsePayload);
+  } catch (error) {
+    await Logger.logError('analyticsController', 'getGiftCardSummaryKPIs', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};
+
+export const getGiftCardSources = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+  try {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const summaryQuery = `
+      SELECT
+        COUNT(*) FILTER (WHERE request_source = 'Website') AS website_requests,
+        COUNT(*) FILTER (WHERE request_source = 'Manual') AS manual_requests,
+        COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Website'), 0) AS website_trees,
+        COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Manual'), 0) AS manual_trees
+      FROM "${schema}".mv_gift_card_request_summary
+      WHERE request_source != 'Test'
+    `;
+
+    const monthlyQuery = `
+      SELECT
+        EXTRACT(YEAR FROM created_at)::int AS year,
+        EXTRACT(MONTH FROM created_at)::int AS month,
+        COUNT(*) FILTER (WHERE request_source = 'Website') AS website,
+        COUNT(*) FILTER (WHERE request_source = 'Manual') AS manual,
+        COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Website'), 0) AS website_trees,
+        COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Manual'), 0) AS manual_trees
+      FROM "${schema}".mv_gift_card_request_summary
+      WHERE request_source != 'Test'
+      GROUP BY
+        EXTRACT(YEAR FROM created_at)::int,
+        EXTRACT(MONTH FROM created_at)::int
+      ORDER BY
+        EXTRACT(YEAR FROM created_at)::int ASC,
+        EXTRACT(MONTH FROM created_at)::int ASC
+    `;
+
+    const summaryRows: any[] = await sequelize.query(summaryQuery, { type: QueryTypes.SELECT });
+    const monthlyRows: any[] = await sequelize.query(monthlyQuery, { type: QueryTypes.SELECT });
+
+    const summaryRow = summaryRows[0] || {};
+    const websiteRequests = parseInt(summaryRow.website_requests, 10) || 0;
+    const manualRequests = parseInt(summaryRow.manual_requests, 10) || 0;
+    const websiteTrees = parseInt(summaryRow.website_trees, 10) || 0;
+    const manualTrees = parseInt(summaryRow.manual_trees, 10) || 0;
+    const totalRequests = websiteRequests + manualRequests;
+
+    const responsePayload = {
+      summary: {
+        website_requests: websiteRequests,
+        manual_requests: manualRequests,
+        website_trees: websiteTrees,
+        manual_trees: manualTrees,
+        website_pct: totalRequests > 0 ? Math.round((websiteRequests / totalRequests) * 1000) / 10 : 0,
+        manual_pct: totalRequests > 0 ? Math.round((manualRequests / totalRequests) * 1000) / 10 : 0,
+      },
+      monthly: monthlyRows.map((row) => {
+        const month = parseInt(row.month, 10) || 0;
+        return {
+          month,
+          month_name: monthNames[month - 1],
+          year: parseInt(row.year, 10) || 0,
+          website: parseInt(row.website, 10) || 0,
+          manual: parseInt(row.manual, 10) || 0,
+          website_trees: parseInt(row.website_trees, 10) || 0,
+          manual_trees: parseInt(row.manual_trees, 10) || 0,
+        };
+      }),
+    };
+
+    return res.status(status.success).send(responsePayload);
+  } catch (error) {
+    await Logger.logError('analyticsController', 'getGiftCardSources', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};
+
+export const getGiftCardMonthly = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+  try {
+    const currentYear = new Date().getFullYear();
+    const yearParam = req.query.year ? parseInt(req.query.year as string, 10) : currentYear;
+    const year = Number.isNaN(yearParam) ? currentYear : yearParam;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const query = `
+      SELECT
+        month,
+        request_type,
+        COUNT(*) AS total_count,
+        COALESCE(SUM(total_trees), 0) AS total_trees,
+        COALESCE(SUM(CASE WHEN request_type = 'Corporate' THEN total_trees ELSE 0 END), 0) AS corporate_trees,
+        COALESCE(SUM(CASE WHEN request_type = 'Personal' THEN total_trees ELSE 0 END), 0) AS personal_trees
+      FROM "${schema}".mv_gift_card_request_summary
+      WHERE year = :year
+      GROUP BY month, request_type
+      ORDER BY month ASC
+    `;
+
+    const rows: any[] = await sequelize.query(query, {
+      replacements: { year },
+      type: QueryTypes.SELECT,
+    });
+
+    const monthlyMap = new Map<number, {
+      month: number,
+      month_name: string,
+      corporate: number,
+      personal: number,
+      total: number,
+      total_trees: number,
+      corporate_trees: number,
+      personal_trees: number,
+    }>();
+    for (let month = 1; month <= 12; month += 1) {
+      monthlyMap.set(month, {
+        month,
+        month_name: monthNames[month - 1],
+        corporate: 0,
+        personal: 0,
+        total: 0,
+        total_trees: 0,
+        corporate_trees: 0,
+        personal_trees: 0,
       });
     }
 
-    let startDate: Date;
-    let endDate: Date;
-
-    if (req.query.startDate && req.query.endDate) {
-      startDate = new Date(req.query.startDate as string);
-      endDate = new Date(req.query.endDate as string);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return res.status(status.bad).send({
-          error: 'Invalid date format. Use ISO date format (YYYY-MM-DD)'
-        });
+    rows.forEach((row) => {
+      const monthKey = parseInt(row.month, 10);
+      if (Number.isNaN(monthKey)) {
+        return;
       }
-    } else {
-      endDate = new Date();
-      startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - months);
+      const monthRow = monthlyMap.get(monthKey);
+      if (!monthRow) return;
+      const count = parseInt(row.total_count, 10) || 0;
+      const totalTrees = parseInt(row.total_trees, 10) || 0;
+      const corporateTrees = parseInt(row.corporate_trees, 10) || 0;
+      const personalTrees = parseInt(row.personal_trees, 10) || 0;
+      if (row.request_type === 'Corporate') monthRow.corporate = count;
+      if (row.request_type === 'Personal') monthRow.personal = count;
+      if (row.request_type === 'Corporate') monthRow.corporate_trees = corporateTrees;
+      if (row.request_type === 'Personal') monthRow.personal_trees = personalTrees;
+      monthRow.total = monthRow.corporate + monthRow.personal;
+      monthRow.total_trees += totalTrees;
+    });
+
+    const responsePayload = Array.from(monthlyMap.values()).map((entry) => ({
+      month: parseInt(String(entry.month), 10) || 0,
+      month_name: entry.month_name,
+      corporate: parseInt(String(entry.corporate), 10) || 0,
+      personal: parseInt(String(entry.personal), 10) || 0,
+      total: parseInt(String(entry.total), 10) || 0,
+      total_trees: parseInt(String(entry.total_trees), 10) || 0,
+      corporate_trees: parseInt(String(entry.corporate_trees), 10) || 0,
+      personal_trees: parseInt(String(entry.personal_trees), 10) || 0,
+    }));
+
+    return res.status(status.success).send(responsePayload);
+  } catch (error) {
+    await Logger.logError('analyticsController', 'getGiftCardMonthly', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};
+
+export const getGiftCardTreeDistribution = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+  try {
+    const buckets = ['1', '2-5', '6-10', '11-25', '26-50', '51-100', '101-250', '250+'];
+    const query = `
+      SELECT
+        CASE
+          WHEN no_of_cards = 1 THEN '1'
+          WHEN no_of_cards BETWEEN 2 AND 5 THEN '2-5'
+          WHEN no_of_cards BETWEEN 6 AND 10 THEN '6-10'
+          WHEN no_of_cards BETWEEN 11 AND 25 THEN '11-25'
+          WHEN no_of_cards BETWEEN 26 AND 50 THEN '26-50'
+          WHEN no_of_cards BETWEEN 51 AND 100 THEN '51-100'
+          WHEN no_of_cards BETWEEN 101 AND 250 THEN '101-250'
+          ELSE '250+'
+        END AS bucket,
+        request_type,
+        COUNT(*) AS request_count,
+        COALESCE(SUM(no_of_cards), 0) AS total_trees
+      FROM "${schema}".mv_gift_card_request_summary
+      GROUP BY bucket, request_type
+      ORDER BY MIN(no_of_cards)
+    `;
+
+    const rows: any[] = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+    });
+
+    const distribution = {
+      buckets,
+      corporate: buckets.map(() => 0),
+      personal: buckets.map(() => 0),
+      corporate_trees: buckets.map(() => 0),
+      personal_trees: buckets.map(() => 0),
+    };
+
+    rows.forEach((row) => {
+      const bucketIndex = buckets.indexOf(row.bucket);
+      if (bucketIndex === -1) {
+        return;
+      }
+
+      const requestCount = parseInt(row.request_count, 10) || 0;
+      const totalTrees = parseInt(row.total_trees, 10) || 0;
+
+      if (row.request_type === 'Corporate') {
+        distribution.corporate[bucketIndex] = requestCount;
+        distribution.corporate_trees[bucketIndex] = totalTrees;
+      }
+
+      if (row.request_type === 'Personal') {
+        distribution.personal[bucketIndex] = requestCount;
+        distribution.personal_trees[bucketIndex] = totalTrees;
+      }
+    });
+
+    return res.status(status.success).send({
+      buckets: distribution.buckets,
+      corporate: distribution.corporate.map((value) => parseInt(String(value), 10) || 0),
+      personal: distribution.personal.map((value) => parseInt(String(value), 10) || 0),
+      corporate_trees: distribution.corporate_trees.map((value) => parseInt(String(value), 10) || 0),
+      personal_trees: distribution.personal_trees.map((value) => parseInt(String(value), 10) || 0),
+    });
+  } catch (error) {
+    await Logger.logError('analyticsController', 'getGiftCardTreeDistribution', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};
+
+export const getGiftCardOccasions = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+  try {
+    const rawType = typeof req.query.type === 'string' ? req.query.type.toLowerCase() : 'all';
+    const type = ['all', 'corporate', 'personal'].includes(rawType) ? rawType : 'all';
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const replacements: Record<string, any> = {};
+    let whereClause = '';
+    if (type !== 'all') {
+      replacements.requestType = type === 'corporate' ? 'Corporate' : 'Personal';
+      whereClause = 'WHERE request_type = :requestType';
     }
 
-    const analyticsResp = await GiftCardsRepository.getDashboardAnalytics(
-      dateField,
-      startDate,
-      endDate
+    const query = `
+      SELECT
+        COALESCE(occasion, 'Unassigned') AS occasion,
+        month,
+        year,
+        COUNT(*) AS total_count
+      FROM "${schema}".mv_gift_card_request_summary
+      ${whereClause}
+      GROUP BY COALESCE(occasion, 'Unassigned'), month, year
+      ORDER BY COALESCE(occasion, 'Unassigned') ASC, year ASC, month ASC
+    `;
+
+    const rows: any[] = await sequelize.query(query, {
+      replacements,
+      type: QueryTypes.SELECT,
+    });
+
+    const occasions: Record<string, number> = {};
+    const monthlyByOccasion: Record<string, Array<{ month: number, month_name: string, count: number }>> = {};
+
+    rows.forEach((row) => {
+      const occasion = row.occasion || 'Unassigned';
+      const count = parseInt(row.total_count, 10) || 0;
+      const month = parseInt(row.month, 10);
+
+      occasions[occasion] = (occasions[occasion] || 0) + count;
+
+      if (!monthlyByOccasion[occasion]) {
+        monthlyByOccasion[occasion] = monthNames.map((monthName, index) => ({
+          month: index + 1,
+          month_name: monthName,
+          count: 0,
+        }));
+      }
+
+      if (month >= 1 && month <= 12) {
+        monthlyByOccasion[occasion][month - 1].count += count;
+      }
+    });
+
+    const normalizedOccasions = Object.fromEntries(
+      Object.entries(occasions).map(([key, value]) => [key, parseInt(String(value), 10) || 0])
     );
 
-    return res.status(status.success).send(analyticsResp);
+    const normalizedMonthlyByOccasion = Object.fromEntries(
+      Object.entries(monthlyByOccasion).map(([key, entries]) => [
+        key,
+        entries.map((entry) => ({
+          month: parseInt(String(entry.month), 10) || 0,
+          month_name: entry.month_name,
+          count: parseInt(String(entry.count), 10) || 0,
+        })),
+      ])
+    );
+
+    return res.status(status.success).send({
+      occasions: normalizedOccasions,
+      monthly_by_occasion: normalizedMonthlyByOccasion,
+    });
   } catch (error) {
-    await Logger.logError('analyticsController', 'giftDashboardAnalytics', error, req);
+    await Logger.logError('analyticsController', 'getGiftCardOccasions', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};
+
+export const getGiftCardLeaderboard = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+  try {
+    const sortBy = req.query.sortBy === 'cards' ? 'cards' : 'trees';
+    const limitRaw = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+    const limit = Number.isNaN(limitRaw) ? 10 : Math.min(Math.max(limitRaw, 1), 50);
+    const orderColumn = sortBy === 'cards' ? 'total_cards' : 'total_trees';
+
+    const query = `
+      SELECT
+        user_id,
+        requester_name,
+        group_id,
+        group_name,
+        request_type,
+        total_requests,
+        total_cards,
+        fulfilled_cards,
+        pending_cards,
+        total_trees,
+        total_amount_received,
+        occasion_types,
+        first_request_at,
+        last_request_at
+      FROM "${schema}".mv_requester_leaderboard
+      ORDER BY ${orderColumn} DESC, total_requests DESC
+      LIMIT :limit
+    `;
+
+    const rows: any[] = await sequelize.query(query, {
+      replacements: { limit },
+      type: QueryTypes.SELECT,
+    });
+    const toNullableInt = (value: any) => (
+      value === null || value === undefined ? null : parseInt(value, 10) || 0
+    );
+    const toFloat = (value: any) => (value === null || value === undefined ? 0 : parseFloat(value));
+
+    const responsePayload = rows.map((row) => ({
+      user_id: toNullableInt(row.user_id),
+      requester_name: row.requester_name,
+      group_id: toNullableInt(row.group_id),
+      group_name: row.group_name,
+      request_type: row.request_type,
+      total_requests: parseInt(row.total_requests, 10) || 0,
+      total_cards: parseInt(row.total_cards, 10) || 0,
+      fulfilled_cards: parseInt(row.fulfilled_cards, 10) || 0,
+      pending_cards: parseInt(row.pending_cards, 10) || 0,
+      total_trees: parseInt(row.total_trees, 10) || 0,
+      total_amount_received: toFloat(row.total_amount_received),
+      occasion_types: row.occasion_types,
+      first_request_at: row.first_request_at,
+      last_request_at: row.last_request_at,
+    }));
+
+    return res.status(status.success).send(responsePayload);
+  } catch (error) {
+    await Logger.logError('analyticsController', 'getGiftCardLeaderboard', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};
+
+export const getGiftCardRequesterProfile = async (req: Request, res: Response) => {
+  const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (Number.isNaN(userId)) {
+      return res.status(status.bad).send({ error: 'Invalid userId' });
+    }
+
+    const statsQuery = `
+      SELECT
+        user_id,
+        requester_name,
+        group_id,
+        group_name,
+        request_type,
+        total_requests,
+        total_cards,
+        fulfilled_cards,
+        pending_cards,
+        total_trees,
+        total_amount_received,
+        occasion_types,
+        first_request_at,
+        last_request_at
+      FROM "${schema}".mv_requester_leaderboard
+      WHERE user_id = :userId
+      ORDER BY total_trees DESC, total_requests DESC
+      LIMIT 1
+    `;
+
+    const statsRows: any[] = await sequelize.query(statsQuery, {
+      replacements: { userId },
+      type: QueryTypes.SELECT,
+    });
+
+    if (statsRows.length === 0) {
+      return res.status(status.notfound).send({ error: 'Requester not found' });
+    }
+
+    const historyQuery = `
+      SELECT
+        id,
+        request_id,
+        event_type AS occasion,
+        no_of_cards,
+        status,
+        gifted_on,
+        created_at
+      FROM "${schema}".gift_card_requests
+      WHERE created_by = :userId
+      ORDER BY created_at DESC
+      LIMIT 20
+    `;
+
+    const historyRows: any[] = await sequelize.query(historyQuery, {
+      replacements: { userId },
+      type: QueryTypes.SELECT,
+    });
+    const toNullableInt = (value: any) => (
+      value === null || value === undefined ? null : parseInt(value, 10) || 0
+    );
+    const toFloat = (value: any) => (value === null || value === undefined ? 0 : parseFloat(value));
+
+    const rawStats = statsRows[0];
+    const stats = {
+      user_id: toNullableInt(rawStats.user_id),
+      requester_name: rawStats.requester_name,
+      group_id: toNullableInt(rawStats.group_id),
+      group_name: rawStats.group_name,
+      request_type: rawStats.request_type,
+      total_requests: parseInt(rawStats.total_requests, 10) || 0,
+      total_cards: parseInt(rawStats.total_cards, 10) || 0,
+      fulfilled_cards: parseInt(rawStats.fulfilled_cards, 10) || 0,
+      pending_cards: parseInt(rawStats.pending_cards, 10) || 0,
+      total_trees: parseInt(rawStats.total_trees, 10) || 0,
+      total_amount_received: toFloat(rawStats.total_amount_received),
+      occasion_types: rawStats.occasion_types,
+      first_request_at: rawStats.first_request_at,
+      last_request_at: rawStats.last_request_at,
+    };
+
+    const recentHistory = historyRows.map((row) => ({
+      id: toNullableInt(row.id),
+      request_id: row.request_id,
+      occasion: row.occasion,
+      no_of_cards: parseInt(row.no_of_cards, 10) || 0,
+      status: row.status,
+      gifted_on: row.gifted_on,
+      created_at: row.created_at,
+    }));
+
+    return res.status(status.success).send({
+      stats,
+      recent_history: recentHistory,
+    });
+  } catch (error) {
+    await Logger.logError('analyticsController', 'getGiftCardRequesterProfile', error, req);
     return res.status(status.error).send({ error: error });
   }
 };
