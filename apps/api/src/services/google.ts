@@ -20,7 +20,7 @@ export async function copyFile(fileId: string, fileName: string): Promise<string
             fileId: fileId,
             requestBody: {
                 name: fileName,
-                parents: [process.env.GOOGLE_DRIVE_FOLDER_ID || '1T_mBriFGk7hD7fxLqVeX22I8IGCiHYtC']
+                parents: [process.env.GIFT_CARDS_DRIVE_FOLDER_ID || '1T_mBriFGk7hD7fxLqVeX22I8IGCiHYtC']
             },
         });
 
