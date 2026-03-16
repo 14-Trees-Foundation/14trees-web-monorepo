@@ -241,3 +241,45 @@ export const pageVisitsSummary = async (req: Request, res: Response) => {
     return res.status(status.error).send({ error: error });
   }
 };
+
+export const giftDashboardAnalytics = async (req: Request, res: Response) => {
+  try {
+    const dateField = (req.query.dateField as string) || 'created_at';
+    const months = req.query.months ? parseInt(req.query.months as string) : 12;
+
+    if (dateField !== 'created_at' && dateField !== 'gifted_on') {
+      return res.status(status.bad).send({
+        error: 'Invalid dateField parameter. Must be "created_at" or "gifted_on"'
+      });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (req.query.startDate && req.query.endDate) {
+      startDate = new Date(req.query.startDate as string);
+      endDate = new Date(req.query.endDate as string);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(status.bad).send({
+          error: 'Invalid date format. Use ISO date format (YYYY-MM-DD)'
+        });
+      }
+    } else {
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - months);
+    }
+
+    const analyticsResp = await GiftCardsRepository.getDashboardAnalytics(
+      dateField,
+      startDate,
+      endDate
+    );
+
+    return res.status(status.success).send(analyticsResp);
+  } catch (error) {
+    await Logger.logError('analyticsController', 'giftDashboardAnalytics', error, req);
+    return res.status(status.error).send({ error: error });
+  }
+};

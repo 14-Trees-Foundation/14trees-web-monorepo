@@ -368,6 +368,206 @@ export class GiftCardsRepository {
         };
     }
 
+    static async getDashboardAnalytics(
+        dateField: 'created_at' | 'gifted_on',
+        startDate: Date,
+        endDate: Date
+    ): Promise<{
+        green_gifts_sold: {
+            total: number,
+            total_requests: number,
+            by_month: Array<{
+                month: string,
+                total_sold: number,
+                total_requests: number,
+                personal_sold: number,
+                corporate_sold: number,
+                personal_requests: number,
+                corporate_requests: number
+            }>,
+            by_requester: Array<{
+                requester_id: string,
+                requester_name: string,
+                requester_type: 'personal' | 'corporate',
+                total_sold: number,
+                total_requests: number
+            }>,
+            by_gift_type: Array<{
+                gift_type: string,
+                total_sold: number,
+                total_requests: number,
+                by_month: Array<{
+                    month: string,
+                    total_sold: number,
+                    total_requests: number
+                }>
+            }>
+        },
+        gift_cards_demand: {
+            total_requests: number,
+            personal_requests: number,
+            corporate_requests: number,
+            by_month: Array<{
+                month: string,
+                total_requests: number,
+                personal_requests: number,
+                corporate_requests: number
+            }>
+        }
+    }> {
+        const requesterQuery = `
+            SELECT
+                CASE
+                    WHEN gcr.group_id IS NOT NULL THEN CONCAT('group:', gcr.group_id)
+                    ELSE CONCAT('user:', gcr.user_id)
+                END AS requester_id,
+                CASE
+                    WHEN gcr.group_id IS NOT NULL THEN COALESCE(g.name, CONCAT('Group ', gcr.group_id::text))
+                    ELSE COALESCE(u.name, CONCAT('User ', gcr.user_id::text))
+                END AS requester_name,
+                CASE
+                    WHEN gcr.group_id IS NOT NULL THEN 'corporate'
+                    ELSE 'personal'
+                END AS requester_type,
+                COUNT(gcr.id) AS total_requests,
+                COALESCE(SUM(gcr.no_of_cards), 0) AS total_sold
+            FROM "${getSchema()}".gift_card_requests gcr
+            LEFT JOIN "${getSchema()}".users u ON u.id = gcr.user_id
+            LEFT JOIN "${getSchema()}".groups g ON g.id = gcr.group_id
+            WHERE gcr.request_type = 'Gift Cards'
+                AND gcr.${dateField} IS NOT NULL
+                AND gcr.${dateField} BETWEEN :startDate AND :endDate
+            GROUP BY 1, 2, 3
+            ORDER BY total_sold DESC, total_requests DESC, requester_name ASC
+        `;
+
+        const giftTypeQuery = `
+            WITH gift_type_monthly AS (
+                SELECT
+                    TO_CHAR(DATE_TRUNC('month', gcr.${dateField})::date, 'YYYY-MM') AS month,
+                    CASE
+                        WHEN gcr.event_type IS NULL OR BTRIM(gcr.event_type) = '' THEN 'Not Specified'
+                        WHEN LOWER(gcr.event_type) IN ('1', 'birthday') THEN 'Birthday'
+                        WHEN LOWER(gcr.event_type) IN ('2', 'memorial') THEN 'Memorial'
+                        WHEN LOWER(gcr.event_type) IN ('3', 'general gift', 'general', 'event') THEN 'General Gift'
+                        WHEN LOWER(gcr.event_type) IN ('4', 'anniversary') THEN 'Anniversary'
+                        WHEN LOWER(gcr.event_type) IN ('5', 'wedding') THEN 'Wedding'
+                        WHEN LOWER(gcr.event_type) IN ('6', 'christmas') THEN 'Christmas'
+                        WHEN LOWER(gcr.event_type) IN ('7', 'hny', 'new year', 'new_year') THEN 'New Year'
+                        ELSE INITCAP(REPLACE(gcr.event_type, '_', ' '))
+                    END AS gift_type,
+                    COUNT(gcr.id) AS total_requests,
+                    COALESCE(SUM(gcr.no_of_cards), 0) AS total_sold
+                FROM "${getSchema()}".gift_card_requests gcr
+                WHERE gcr.request_type = 'Gift Cards'
+                    AND gcr.${dateField} IS NOT NULL
+                    AND gcr.${dateField} BETWEEN :startDate AND :endDate
+                GROUP BY 1, 2
+            )
+            SELECT
+                gift_type,
+                SUM(total_requests) AS total_requests,
+                SUM(total_sold) AS total_sold,
+                JSON_AGG(
+                    JSON_BUILD_OBJECT(
+                        'month', month,
+                        'total_sold', total_sold,
+                        'total_requests', total_requests
+                    )
+                    ORDER BY month ASC
+                ) AS by_month
+            FROM gift_type_monthly
+            GROUP BY gift_type
+            ORDER BY SUM(total_sold) DESC, SUM(total_requests) DESC, gift_type ASC
+        `;
+
+        const monthlyQuery = `
+            SELECT
+                TO_CHAR(DATE_TRUNC('month', gcr.${dateField})::date, 'YYYY-MM') AS month,
+                COUNT(gcr.id) AS total_requests,
+                COALESCE(SUM(gcr.no_of_cards), 0) AS total_sold,
+                COUNT(CASE WHEN gcr.group_id IS NULL THEN gcr.id END) AS personal_requests,
+                COUNT(CASE WHEN gcr.group_id IS NOT NULL THEN gcr.id END) AS corporate_requests,
+                COALESCE(SUM(CASE WHEN gcr.group_id IS NULL THEN gcr.no_of_cards ELSE 0 END), 0) AS personal_sold,
+                COALESCE(SUM(CASE WHEN gcr.group_id IS NOT NULL THEN gcr.no_of_cards ELSE 0 END), 0) AS corporate_sold
+            FROM "${getSchema()}".gift_card_requests gcr
+            WHERE gcr.request_type = 'Gift Cards'
+                AND gcr.${dateField} IS NOT NULL
+                AND gcr.${dateField} BETWEEN :startDate AND :endDate
+            GROUP BY 1
+            ORDER BY month ASC
+        `;
+
+        const totalQuery = `
+            SELECT
+                COUNT(gcr.id) AS total_requests,
+                COALESCE(SUM(gcr.no_of_cards), 0) AS total_sold,
+                COUNT(CASE WHEN gcr.group_id IS NULL THEN gcr.id END) AS personal_requests,
+                COUNT(CASE WHEN gcr.group_id IS NOT NULL THEN gcr.id END) AS corporate_requests
+            FROM "${getSchema()}".gift_card_requests gcr
+            WHERE gcr.request_type = 'Gift Cards'
+                AND gcr.${dateField} IS NOT NULL
+                AND gcr.${dateField} BETWEEN :startDate AND :endDate
+        `;
+
+        const replacements = { startDate, endDate };
+        const [requestersRaw, giftTypesRaw, monthlyRaw, totalRaw] = await Promise.all([
+            sequelize.query(requesterQuery, { replacements, type: QueryTypes.SELECT }),
+            sequelize.query(giftTypeQuery, { replacements, type: QueryTypes.SELECT }),
+            sequelize.query(monthlyQuery, { replacements, type: QueryTypes.SELECT }),
+            sequelize.query(totalQuery, { replacements, type: QueryTypes.SELECT }),
+        ]);
+
+        const totals = (totalRaw[0] || {}) as any;
+        const byMonth = (monthlyRaw as any[]).map((row) => ({
+            month: row.month,
+            total_sold: parseInt(row.total_sold) || 0,
+            total_requests: parseInt(row.total_requests) || 0,
+            personal_sold: parseInt(row.personal_sold) || 0,
+            corporate_sold: parseInt(row.corporate_sold) || 0,
+            personal_requests: parseInt(row.personal_requests) || 0,
+            corporate_requests: parseInt(row.corporate_requests) || 0,
+        }));
+
+        return {
+            green_gifts_sold: {
+                total: parseInt(totals.total_sold) || 0,
+                total_requests: parseInt(totals.total_requests) || 0,
+                by_month: byMonth,
+                by_requester: (requestersRaw as any[]).map((row) => ({
+                    requester_id: row.requester_id,
+                    requester_name: row.requester_name,
+                    requester_type: row.requester_type,
+                    total_sold: parseInt(row.total_sold) || 0,
+                    total_requests: parseInt(row.total_requests) || 0,
+                })),
+                by_gift_type: (giftTypesRaw as any[]).map((row) => ({
+                    gift_type: row.gift_type,
+                    total_sold: parseInt(row.total_sold) || 0,
+                    total_requests: parseInt(row.total_requests) || 0,
+                    by_month: Array.isArray(row.by_month)
+                        ? row.by_month.map((item: any) => ({
+                            month: item.month,
+                            total_sold: parseInt(item.total_sold) || 0,
+                            total_requests: parseInt(item.total_requests) || 0,
+                        }))
+                        : [],
+                })),
+            },
+            gift_cards_demand: {
+                total_requests: parseInt(totals.total_requests) || 0,
+                personal_requests: parseInt(totals.personal_requests) || 0,
+                corporate_requests: parseInt(totals.corporate_requests) || 0,
+                by_month: byMonth.map((row) => ({
+                    month: row.month,
+                    total_requests: row.total_requests,
+                    personal_requests: row.personal_requests,
+                    corporate_requests: row.corporate_requests,
+                })),
+            },
+        };
+    }
+
     static async createGiftCardRequest(data: GiftCardRequestCreationAttributes): Promise<GiftCardRequest> {
         return await GiftCardRequest.create(data);
     }
