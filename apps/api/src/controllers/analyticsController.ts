@@ -453,6 +453,7 @@ export const getGiftCardSources = async (req: Request, res: Response) => {
 	try {
 		const yearFilter = parseYearFilter(req.query.year);
 		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
+		const requestSourceFilter = parseRequestSourceFilter(req.query.source);
 		const whereClauses = ["request_source != 'Test'"];
 		const replacements: Record<string, any> = {};
 		if (yearFilter !== null) {
@@ -462,6 +463,10 @@ export const getGiftCardSources = async (req: Request, res: Response) => {
 		if (requestTypeFilter) {
 			whereClauses.push('request_type = :requestType');
 			replacements.requestType = requestTypeFilter;
+		}
+		if (requestSourceFilter) {
+			whereClauses.push('request_source = :requestSource');
+			replacements.requestSource = requestSourceFilter;
 		}
 		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
 		const monthNames = [
@@ -587,6 +592,15 @@ export const getGiftCardMonthly = async (req: Request, res: Response) => {
 			'Dec',
 		];
 
+		const requestSourceFilter = parseRequestSourceFilter(req.query.source);
+		const replacements: Record<string, any> = { year };
+		const whereClauses = ["request_source != 'Test'", 'year = :year'];
+		if (requestSourceFilter) {
+			whereClauses.push('request_source = :requestSource');
+			replacements.requestSource = requestSourceFilter;
+		}
+		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
+
 		const query = `
       SELECT
         month,
@@ -596,13 +610,13 @@ export const getGiftCardMonthly = async (req: Request, res: Response) => {
         COALESCE(SUM(CASE WHEN request_type = 'Corporate' THEN total_trees ELSE 0 END), 0) AS corporate_trees,
         COALESCE(SUM(CASE WHEN request_type = 'Personal' THEN total_trees ELSE 0 END), 0) AS personal_trees
       FROM "${schema}".mv_gift_card_request_summary
-      WHERE year = :year
+      ${whereClause}
       GROUP BY month, request_type
       ORDER BY month ASC
     `;
 
 		const rows: any[] = await sequelize.query(query, {
-			replacements: { year },
+			replacements,
 			type: QueryTypes.SELECT,
 		});
 
@@ -855,6 +869,7 @@ export const getGiftCardOccasions = async (req: Request, res: Response) => {
 		const type = ['all', 'corporate', 'personal'].includes(rawType)
 			? rawType
 			: 'all';
+		const requestSourceFilter = parseRequestSourceFilter(req.query.source);
 		const monthNames = [
 			'Jan',
 			'Feb',
@@ -871,12 +886,17 @@ export const getGiftCardOccasions = async (req: Request, res: Response) => {
 		];
 
 		const replacements: Record<string, any> = {};
-		let whereClause = '';
+		const whereClauses = ["request_source != 'Test'"];
 		if (type !== 'all') {
 			replacements.requestType =
 				type === 'corporate' ? 'Corporate' : 'Personal';
-			whereClause = 'WHERE request_type = :requestType';
+			whereClauses.push('request_type = :requestType');
 		}
+		if (requestSourceFilter) {
+			whereClauses.push('request_source = :requestSource');
+			replacements.requestSource = requestSourceFilter;
+		}
+		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
 
 		const query = `
       SELECT
@@ -967,6 +987,7 @@ export const getGiftCardLeaderboard = async (req: Request, res: Response) => {
 			: Math.min(Math.max(limitRaw, 1), 50);
 		const yearFilter = parseYearFilter(req.query.year);
 		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
+		const requestSourceFilter = parseRequestSourceFilter(req.query.source);
 		const orderColumn = sortBy === 'cards' ? 'total_cards' : 'total_trees';
 		const filterClauses = ["request_source != 'Test'"];
 		const filterReplacements: Record<string, any> = {};
@@ -977,6 +998,10 @@ export const getGiftCardLeaderboard = async (req: Request, res: Response) => {
 		if (requestTypeFilter) {
 			filterClauses.push('request_type = :requestType');
 			filterReplacements.requestType = requestTypeFilter;
+		}
+		if (requestSourceFilter) {
+			filterClauses.push('request_source = :requestSource');
+			filterReplacements.requestSource = requestSourceFilter;
 		}
 		const filterWhere = `WHERE ${filterClauses.join(' AND ')}`;
 		const requestTypeCase = `
@@ -1354,17 +1379,7 @@ ${sourceRows
 	)
 	.join('\n')}
 
-TOP REQUESTERS (all time):
-${leaderboardRows
-	.map(
-		(r, i) =>
-			`  ${i + 1}. ${r['name']}: ${r['total_requests']} requests, ${
-				r['total_trees']
-			} trees`,
-	)
-	.join('\n')}
-`.trim();
-
+`;
 		res.setHeader('Content-Type', 'text/event-stream');
 		res.setHeader('Cache-Control', 'no-cache');
 		res.setHeader('Connection', 'keep-alive');
