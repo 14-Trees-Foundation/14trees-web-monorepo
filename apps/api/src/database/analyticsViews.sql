@@ -65,7 +65,29 @@ SELECT
     COALESCE(SUM(gcr.amount_received), 0) AS total_amount_received,
     MIN(gcr.created_at) AS first_request_at,
     MAX(gcr.created_at) AS last_request_at,
-    ARRAY_REMOVE(ARRAY_AGG(DISTINCT gcr.event_type), NULL) AS occasion_types
+    ARRAY_AGG(DISTINCT
+        CASE gcr.event_type
+            WHEN '1' THEN 'Birthday'
+            WHEN '2' THEN 'Memorial'
+            WHEN '3' THEN 'General gift'
+            WHEN '4' THEN 'Wedding'
+            WHEN '5' THEN 'Anniversary'
+            WHEN '6' THEN 'Festival Celebration'
+            WHEN '7' THEN 'Retirement'
+            ELSE NULL
+        END
+    ) FILTER (WHERE
+        CASE gcr.event_type
+            WHEN '1' THEN 'Birthday'
+            WHEN '2' THEN 'Memorial'
+            WHEN '3' THEN 'General gift'
+            WHEN '4' THEN 'Wedding'
+            WHEN '5' THEN 'Anniversary'
+            WHEN '6' THEN 'Festival Celebration'
+            WHEN '7' THEN 'Retirement'
+            ELSE NULL
+        END IS NOT NULL
+    ) AS occasion_types
 FROM "__SCHEMA__".gift_card_requests gcr
 LEFT JOIN "__SCHEMA__".users u ON u.id = gcr.user_id
 LEFT JOIN "__SCHEMA__".groups g ON g.id = gcr.group_id

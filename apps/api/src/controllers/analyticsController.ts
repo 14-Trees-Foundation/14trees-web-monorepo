@@ -16,10 +16,42 @@ import PageVisitsRepository, { PageVisitSection } from '../repo/pageVisitsRepo';
 import { sequelize } from '../config/postgreDB';
 
 const aiSummaryCache: Record<number, { text: string; cachedAt: number }> = {};
-const CACHE_TTL_MS = 60 * 60 * 1000;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 let dailyGenerationCount = 0;
 let dailyGenerationDate = new Date().toDateString();
 const DAILY_GENERATION_LIMIT = 5;
+
+const parseYearFilter = (value: unknown): number | null => {
+	if (value === undefined || value === null) {
+		return null;
+	}
+	const normalized =
+		typeof value === 'number'
+			? value
+			: typeof value === 'string'
+				? parseInt(value.trim(), 10)
+				: NaN;
+	if (Number.isNaN(normalized) || normalized <= 0) {
+		return null;
+	}
+	return normalized;
+};
+
+const parseRequestTypeFilter = (
+	value: unknown,
+): 'Corporate' | 'Personal' | null => {
+	if (typeof value !== 'string') {
+		return null;
+	}
+	const normalized = value.trim().toLowerCase();
+	if (normalized === 'corporate') {
+		return 'Corporate';
+	}
+	if (normalized === 'personal') {
+		return 'Personal';
+	}
+	return null;
+};
 
 function checkDailyLimit(): boolean {
 	const today = new Date().toDateString();
@@ -332,6 +364,19 @@ export const getGiftCardSummaryKPIs = async (req: Request, res: Response) => {
 	const schema = process.env.POSTGRES_SCHEMA || '14trees';
 
 	try {
+		const yearFilter = parseYearFilter(req.query.year);
+		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
+		const whereClauses = ["request_source != 'Test'"];
+		const replacements: Record<string, any> = {};
+		if (yearFilter !== null) {
+			whereClauses.push('year = :year');
+			replacements.year = yearFilter;
+		}
+		if (requestTypeFilter) {
+			whereClauses.push('request_type = :requestType');
+			replacements.requestType = requestTypeFilter;
+		}
+		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
 		const query = `
       SELECT
         COUNT(DISTINCT request_id) AS total_requests,
@@ -346,10 +391,13 @@ export const getGiftCardSummaryKPIs = async (req: Request, res: Response) => {
           1
         ) AS avg_trees_per_card
       FROM "${schema}".mv_gift_card_request_summary
-      WHERE request_source != 'Test'
+      ${whereClause}
     `;
 
-		const result = await sequelize.query(query, { type: QueryTypes.SELECT });
+		const result = await sequelize.query(query, {
+			replacements,
+			type: QueryTypes.SELECT,
+		});
 		const row: any = result[0];
 
 		if (!row) {
@@ -387,6 +435,19 @@ export const getGiftCardSources = async (req: Request, res: Response) => {
 	const schema = process.env.POSTGRES_SCHEMA || '14trees';
 
 	try {
+		const yearFilter = parseYearFilter(req.query.year);
+		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
+		const whereClauses = ["request_source != 'Test'"];
+		const replacements: Record<string, any> = {};
+		if (yearFilter !== null) {
+			whereClauses.push('year = :year');
+			replacements.year = yearFilter;
+		}
+		if (requestTypeFilter) {
+			whereClauses.push('request_type = :requestType');
+			replacements.requestType = requestTypeFilter;
+		}
+		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
 		const monthNames = [
 			'Jan',
 			'Feb',
@@ -408,7 +469,7 @@ export const getGiftCardSources = async (req: Request, res: Response) => {
         COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Website'), 0) AS website_trees,
         COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Manual'), 0) AS manual_trees
       FROM "${schema}".mv_gift_card_request_summary
-      WHERE request_source != 'Test'
+			${whereClause}
     `;
 
 		const monthlyQuery = `
@@ -420,7 +481,7 @@ export const getGiftCardSources = async (req: Request, res: Response) => {
         COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Website'), 0) AS website_trees,
         COALESCE(SUM(no_of_cards) FILTER (WHERE request_source = 'Manual'), 0) AS manual_trees
       FROM "${schema}".mv_gift_card_request_summary
-      WHERE request_source != 'Test'
+			${whereClause}
       GROUP BY
         EXTRACT(YEAR FROM created_at)::int,
         EXTRACT(MONTH FROM created_at)::int
@@ -430,9 +491,11 @@ export const getGiftCardSources = async (req: Request, res: Response) => {
     `;
 
 		const summaryRows: any[] = await sequelize.query(summaryQuery, {
+			replacements,
 			type: QueryTypes.SELECT,
 		});
 		const monthlyRows: any[] = await sequelize.query(monthlyQuery, {
+			replacements,
 			type: QueryTypes.SELECT,
 		});
 
@@ -604,6 +667,19 @@ export const getGiftCardTreeDistribution = async (
 	const schema = process.env.POSTGRES_SCHEMA || '14trees';
 
 	try {
+		const yearFilter = parseYearFilter(req.query.year);
+		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
+		const whereClauses = ["request_source != 'Test'"];
+		const replacements: Record<string, any> = {};
+		if (yearFilter !== null) {
+			whereClauses.push('year = :year');
+			replacements.year = yearFilter;
+		}
+		if (requestTypeFilter) {
+			whereClauses.push('request_type = :requestType');
+			replacements.requestType = requestTypeFilter;
+		}
+		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
 		const buckets = [
 			'1',
 			'2-5',
@@ -630,11 +706,13 @@ export const getGiftCardTreeDistribution = async (
         COUNT(*) AS request_count,
         COALESCE(SUM(no_of_cards), 0) AS total_trees
       FROM "${schema}".mv_gift_card_request_summary
+			${whereClause}
       GROUP BY bucket, request_type
       ORDER BY MIN(no_of_cards)
     `;
 
 		const rows: any[] = await sequelize.query(query, {
+			replacements,
 			type: QueryTypes.SELECT,
 		});
 
@@ -811,31 +889,69 @@ export const getGiftCardLeaderboard = async (req: Request, res: Response) => {
 		const limit = Number.isNaN(limitRaw)
 			? 10
 			: Math.min(Math.max(limitRaw, 1), 50);
+		const yearFilter = parseYearFilter(req.query.year);
+		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
 		const orderColumn = sortBy === 'cards' ? 'total_cards' : 'total_trees';
-
+		const filterClauses = ["request_source != 'Test'"];
+		const filterReplacements: Record<string, any> = {};
+		if (yearFilter !== null) {
+			filterClauses.push('year = :year');
+			filterReplacements.year = yearFilter;
+		}
+		if (requestTypeFilter) {
+			filterClauses.push('request_type = :requestType');
+			filterReplacements.requestType = requestTypeFilter;
+		}
+		const filterWhere = `WHERE ${filterClauses.join(' AND ')}`;
+		const requestTypeCase = `
+			CASE
+				WHEN g.type IN ('corporate', 'ngo', 'alumni') THEN 'Corporate'
+				ELSE 'Personal'
+			END
+		`;
 		const query = `
-      SELECT
-        user_id,
-        requester_name,
-        group_id,
-        group_name,
-        request_type,
-        total_requests,
-        total_cards,
-        fulfilled_cards,
-        pending_cards,
-        total_trees,
-        total_amount_received,
-        occasion_types,
-        first_request_at,
-        last_request_at
-      FROM "${schema}".mv_requester_leaderboard
-      ORDER BY ${orderColumn} DESC, total_requests DESC
-      LIMIT :limit
-    `;
+			WITH filtered_requests AS (
+				SELECT DISTINCT request_id
+				FROM "${schema}".mv_gift_card_request_summary
+				${filterWhere}
+			),
+			gift_card_stats AS (
+				SELECT
+					gift_card_request_id,
+					COUNT(id) AS total_cards,
+					COUNT(id) FILTER (WHERE assigned_to IS NOT NULL) AS fulfilled_cards,
+					COUNT(id) FILTER (WHERE assigned_to IS NULL) AS pending_cards,
+					COUNT(tree_id) AS total_trees
+				FROM "${schema}".gift_cards
+				GROUP BY gift_card_request_id
+			)
+			SELECT
+				gcr.user_id,
+				u.name AS requester_name,
+				COALESCE(g.id, -1) AS group_id,
+				g.name AS group_name,
+				${requestTypeCase} AS request_type,
+				COUNT(DISTINCT gcr.id) AS total_requests,
+				COALESCE(SUM(gc_stats.total_cards), 0) AS total_cards,
+				COALESCE(SUM(gc_stats.fulfilled_cards), 0) AS fulfilled_cards,
+				COALESCE(SUM(gc_stats.pending_cards), 0) AS pending_cards,
+				COALESCE(SUM(gc_stats.total_trees), 0) AS total_trees,
+				COALESCE(SUM(gcr.amount_received), 0) AS total_amount_received,
+				ARRAY_REMOVE(ARRAY_AGG(DISTINCT gcr.event_type), NULL) AS occasion_types,
+				MIN(gcr.created_at) AS first_request_at,
+				MAX(gcr.created_at) AS last_request_at
+			FROM "${schema}".gift_card_requests gcr
+			JOIN filtered_requests fr ON fr.request_id = gcr.id
+			LEFT JOIN "${schema}".users u ON u.id = gcr.user_id
+			LEFT JOIN "${schema}".groups g ON g.id = gcr.group_id
+			LEFT JOIN gift_card_stats gc_stats ON gc_stats.gift_card_request_id = gcr.id
+			GROUP BY gcr.user_id, u.name, g.id, g.name, g.type
+			ORDER BY ${orderColumn} DESC, total_requests DESC
+			LIMIT :limit
+		`;
 
 		const rows: any[] = await sequelize.query(query, {
-			replacements: { limit },
+			replacements: { ...filterReplacements, limit },
 			type: QueryTypes.SELECT,
 		});
 		const toNullableInt = (value: any) =>
@@ -1062,15 +1178,17 @@ export const getGiftCardAISummary = async (
 				// 2. Monthly breakdown
 				sequelize.query<Record<string, unknown>>(
 					`SELECT
-           TO_CHAR(month_bucket, 'Mon')  AS month,
-           month::int                    AS month_num,
-           COUNT(*)                      AS requests,
-           COALESCE(SUM(no_of_cards), 0) AS trees
-         FROM "14trees".mv_gift_card_request_summary
-         WHERE year = :year
-           AND request_source != 'Test'
-         GROUP BY month_bucket, month
-         ORDER BY month_num`,
+  TO_CHAR(month_bucket, 'Mon')  AS month,
+  month::int                    AS month_num,
+  COUNT(*)                      AS requests,
+  COALESCE(SUM(no_of_cards), 0) AS trees,
+  LAG(COUNT(*)) OVER (ORDER BY month::int)                      AS prev_requests,
+  LAG(COALESCE(SUM(no_of_cards), 0)) OVER (ORDER BY month::int) AS prev_trees
+FROM "14trees".mv_gift_card_request_summary
+WHERE year = :year
+  AND request_source != 'Test'
+GROUP BY month_bucket, month
+ORDER BY month_num`,
 					{ type: QueryTypes.SELECT, replacements: { year } },
 				),
 
@@ -1129,10 +1247,18 @@ OVERALL KPIs:
 - Pending: ${kpi['pending_requests'] ?? 'N/A'}
 - Total trees planted: ${kpi['total_trees_planted'] ?? 'N/A'}
 
-MONTHLY BREAKDOWN FOR ${year}:
-${monthlyRows
-	.map((r) => `  ${r['month']}: ${r['requests']} requests, ${r['trees']} trees`)
-	.join('\n')}
+MONTHLY BREAKDOWN FOR ${year} (with month-over-month change):
+${monthlyRows.map((r) => {
+  const reqDelta = r['prev_requests']
+    ? (((Number(r['requests']) - Number(r['prev_requests'])) / Number(r['prev_requests'])) * 100).toFixed(0)
+    : null;
+  const treeDelta = r['prev_trees']
+    ? (((Number(r['trees']) - Number(r['prev_trees'])) / Number(r['prev_trees'])) * 100).toFixed(0)
+    : null;
+  const reqChange = reqDelta ? ` (${Number(reqDelta) >= 0 ? '+' : ''}${reqDelta}% vs prev month)` : '';
+  const treeChange = treeDelta ? ` (${Number(treeDelta) >= 0 ? '+' : ''}${treeDelta}% vs prev month)` : '';
+  return `  ${r['month']}: ${r['requests']} requests${reqChange}, ${r['trees']} trees${treeChange}`;
+}).join('\n')}
 
 TOP OCCASIONS:
 ${occasionRows
@@ -1182,7 +1308,9 @@ TREND:
 HIGHLIGHT:
 ACTION:
 Rules: plain text only, no markdown, no bullet points, no numbering, English only.
-Keep each insight to one sentence (max 25 words).`,
+Keep each insight to one sentence (max 25 words).
+Focus on month-over-month changes and recent trends, not just all-time totals.
+Today's date is ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}.`,
 			messages: [{ role: 'user', content: analyticsContext }],
 		});
 
