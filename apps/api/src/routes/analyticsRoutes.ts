@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as analytics from '../controllers/analyticsController';
+
 import { verifyToken } from '../auth/verifyToken';
 
 const routes = Router();
@@ -21,5 +22,6 @@ routes.get('/giftcards/requester/:userId', verifyToken, analytics.getGiftCardReq
 
 routes.post('/page-visits/track', analytics.trackPageVisit);
 routes.get('/page-visits/summary', verifyToken, analytics.pageVisitsSummary);
+routes.get('/giftcards/ai-summary', verifyToken, analytics.getGiftCardAISummary);
 
 export default routes;
