@@ -15,6 +15,7 @@ routes.get('/summary', verifyToken, analytics.summary);
 routes.get('/giftcards/summary', verifyToken, analytics.getGiftCardSummaryKPIs);
 routes.get('/giftcards/sources', verifyToken, analytics.getGiftCardSources);
 routes.get('/giftcards/monthly', verifyToken, analytics.getGiftCardMonthly);
+routes.get('/giftcards/yearly', verifyToken, analytics.getGiftCardYearly);
 routes.get('/giftcards/tree-distribution', verifyToken, analytics.getGiftCardTreeDistribution);
 routes.get('/giftcards/occasions', verifyToken, analytics.getGiftCardOccasions);
 routes.get('/giftcards/leaderboard', verifyToken, analytics.getGiftCardLeaderboard);

@@ -53,6 +53,22 @@ const parseRequestTypeFilter = (
 	return null;
 };
 
+const parseRequestSourceFilter = (
+	value: unknown,
+): 'Website' | 'Manual' | null => {
+	if (typeof value !== 'string') {
+		return null;
+	}
+	const normalized = value.trim().toLowerCase();
+	if (normalized === 'website') {
+		return 'Website';
+	}
+	if (normalized === 'manual') {
+		return 'Manual';
+	}
+	return null;
+};
+
 function checkDailyLimit(): boolean {
 	const today = new Date().toDateString();
 	if (dailyGenerationDate !== today) {
@@ -653,6 +669,66 @@ export const getGiftCardMonthly = async (req: Request, res: Response) => {
 		await Logger.logError(
 			'analyticsController',
 			'getGiftCardMonthly',
+			error,
+			req,
+		);
+		return res.status(status.error).send({ error: error });
+	}
+};
+
+export const getGiftCardYearly = async (req: Request, res: Response) => {
+	const schema = process.env.POSTGRES_SCHEMA || '14trees';
+
+	try {
+		const requestTypeFilter = parseRequestTypeFilter(req.query.type);
+		const requestSourceFilter = parseRequestSourceFilter(req.query.source);
+		const whereClauses = ["request_source != 'Test'"];
+		const replacements: Record<string, any> = {};
+		if (requestTypeFilter) {
+			whereClauses.push('request_type = :requestType');
+			replacements.requestType = requestTypeFilter;
+		}
+		if (requestSourceFilter) {
+			whereClauses.push('request_source = :requestSource');
+			replacements.requestSource = requestSourceFilter;
+		}
+		const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
+
+		const query = `
+      SELECT
+        year::int AS year,
+        COUNT(*) FILTER (WHERE request_type = 'Corporate') AS corporate,
+        COUNT(*) FILTER (WHERE request_type = 'Personal') AS personal,
+        COUNT(*) AS total,
+        COALESCE(SUM(no_of_cards) FILTER (WHERE request_type = 'Corporate'), 0) AS corporate_trees,
+        COALESCE(SUM(no_of_cards) FILTER (WHERE request_type = 'Personal'), 0) AS personal_trees,
+        COALESCE(SUM(no_of_cards), 0) AS total_trees
+      FROM "${schema}".mv_gift_card_request_summary
+      ${whereClause}
+      GROUP BY year
+      ORDER BY year ASC
+    `;
+
+		const rows: any[] = await sequelize.query(query, {
+			replacements,
+			type: QueryTypes.SELECT,
+		});
+
+		const responsePayload = rows.map((row) => ({
+			year: parseInt(row.year, 10) || 0,
+			corporate: parseInt(row.corporate, 10) || 0,
+			personal: parseInt(row.personal, 10) || 0,
+			total: parseInt(row.total, 10) || 0,
+			corporate_trees: parseInt(row.corporate_trees, 10) || 0,
+			personal_trees: parseInt(row.personal_trees, 10) || 0,
+			total_trees: parseInt(row.total_trees, 10) || 0,
+		}));
+
+		return res.status(status.success).send(responsePayload);
+	} catch (error) {
+		await Logger.logError(
+			'analyticsController',
+			'getGiftCardYearly',
 			error,
 			req,
 		);
