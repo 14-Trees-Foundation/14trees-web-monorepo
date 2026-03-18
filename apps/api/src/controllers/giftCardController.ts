@@ -1284,7 +1284,14 @@ export const createGiftCardPlots = async (req: Request, res: Response) => {
 }
 
 export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
-    const { gift_card_request_id: giftCardRequestId, gift_card_trees: trees, diversify, book_non_giftable, book_all_habits } = req.body;
+    const {
+        gift_card_request_id: giftCardRequestId,
+        gift_card_trees: trees,
+        diversify,
+        book_non_giftable,
+        book_all_habits,
+        plot_auto_book_rules: plotAutoBookRules
+    } = req.body;
     if (!giftCardRequestId) {
         res.status(status.bad).json({
             message: 'Please provide valid input details!'
@@ -1308,7 +1315,40 @@ export const bookTreesForGiftRequest = async (req: Request, res: Response) => {
         let treeIds: number[] = [];
         const treesCount = giftCardRequest.no_of_cards - Number((giftCardRequest as any).booked);
         if (!trees || trees.length === 0) {
-            treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.sponsor_id, giftCardRequest.group_id, plotIds, treesCount, book_non_giftable, diversify, book_all_habits);
+            if (Array.isArray(plotAutoBookRules) && plotAutoBookRules.length > 0) {
+                const normalizedRules = plotAutoBookRules.map((rule: any) => ({
+                    plot_id: Number(rule.plot_id),
+                    tree_count: Number(rule.tree_count),
+                }));
+                const requestedPlots = new Set(plotIds);
+                const validRules = normalizedRules.every((rule: any) =>
+                    requestedPlots.has(rule.plot_id) &&
+                    Number.isInteger(rule.tree_count) &&
+                    rule.tree_count >= 0
+                );
+                const totalRuleTrees = normalizedRules.reduce((sum: number, rule: any) => sum + rule.tree_count, 0);
+
+                if (!validRules || totalRuleTrees !== treesCount) {
+                    res.status(status.bad).json({
+                        message: 'Per-plot reservation configuration is invalid for this request!'
+                    })
+                    return;
+                }
+
+                treeIds = await TreeRepository.mapTreesByPlotRulesToUserAndGroup(
+                    giftCardRequest.user_id,
+                    giftCardRequest.sponsor_id,
+                    giftCardRequest.group_id,
+                    normalizedRules,
+                    treesCount,
+                    book_non_giftable,
+                    diversify,
+                    book_all_habits
+                );
+            } else {
+                treeIds = await TreeRepository.mapTreesInPlotToUserAndGroup(giftCardRequest.user_id, giftCardRequest.sponsor_id, giftCardRequest.group_id, plotIds, treesCount, book_non_giftable, diversify, book_all_habits);
+            }
+
             if (treeIds.length === 0) {
                 res.status(status.bad).json({
                     message: 'Enough trees not available for this request!'
