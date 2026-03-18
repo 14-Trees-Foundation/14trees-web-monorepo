@@ -34,8 +34,8 @@ class ApiClient {
     return response.data;
   }
 
-  async createPaymentHistory(payment_id: number, payment_type: string, amount: number, payment_proof: string): Promise<any> {
-    const response = await this.api.post('/payments/history', { payment_id, payment_type, amount, payment_proof });
+  async createPaymentHistory(payment_id: number, payment_method: string, amount: number, payment_proof: string): Promise<any> {
+    const response = await this.api.post('/payments/history', { payment_id, payment_method, amount, payment_proof });
     return response.data;
   }
 

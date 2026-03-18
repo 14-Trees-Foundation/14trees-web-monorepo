@@ -581,41 +581,29 @@ function GiftTrees() {
             "Gift Request Id": responseData.id,
           },
           handler: async (response: any) => {
-            setRpPaymentSuccess(true);
             if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
               alert('Payment verification failed - incomplete response');
               return;
             }
             try {
-              setShowSuccessDialog(true);
-              const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'verify',
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                  user_email: formData.email
-                })
-              });
-              if (!verificationResponse.ok) throw new Error("Verification failed");
-              // alert("Payment successful!");
-            } catch (err) {
-              console.error("Verification error:", err);
-            }
-
-            try {
-              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests/payment-success`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests/payment-success`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   gift_request_id: responseData.id,
                   remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  user_email: formData.email,
                 })
               });
+              if (!res.ok) throw new Error("Payment verification failed");
+              setRpPaymentSuccess(true);
+              setShowSuccessDialog(true);
             } catch (err) {
-              // 
+              console.error("Payment error:", err);
+              alert('Payment verification failed. Please contact support with your payment details.');
             }
           },
           prefill: {
@@ -804,27 +792,29 @@ function GiftTrees() {
         description: `Gifting ${formData.numberOfTrees} trees`,
         order_id: orderId,
         handler: async (response: any) => {
-          setRpPaymentSuccess(true);
           if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
             alert('Payment verification failed - incomplete response');
             return;
           }
           try {
-            const verificationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/verify`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/gift-cards/requests/payment-success`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                action: 'verify',
-                payment_id: response.razorpay_payment_id,
-                order_id: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-                user_email: formData.email
+                gift_request_id: responseData.id,
+                remaining_trees: parseInt(formData.numberOfTrees) - users.map(user => Number(user.trees_count)).reduce((prev, curr) => prev + curr, 0),
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                user_email: formData.email,
               })
             });
-            if (!verificationResponse.ok) throw new Error("Verification failed");
-            // alert("Payment successful!");
+            if (!res.ok) throw new Error("Payment verification failed");
+            setRpPaymentSuccess(true);
+            setShowSuccessDialog(true);
           } catch (err) {
-            console.error("Verification error:", err);
+            console.error("Payment error:", err);
+            alert('Payment verification failed. Please contact support with your payment details.');
           }
         },
         prefill: {
