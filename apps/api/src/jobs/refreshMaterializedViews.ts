@@ -9,7 +9,7 @@ async function refreshView(viewName: string): Promise<void> {
 
     try {
         await sequelize.query(
-            `REFRESH MATERIALIZED VIEW CONCURRENTLY "${schema}".${viewName}`
+            `REFRESH MATERIALIZED VIEW "${schema}".${viewName}`
         );
         console.log(`[MV] ✅ ${viewName} — ${Date.now() - startTime}ms`);
     } catch (error: any) {

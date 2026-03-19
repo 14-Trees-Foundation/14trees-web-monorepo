@@ -425,14 +425,113 @@ export const getGiftCardSummaryKPIs = async (req: Request, res: Response) => {
 		const toFloat = (value: any) =>
 			value === null || value === undefined ? 0 : parseFloat(value);
 
+		const currentTotalRequests = toInt(row.total_requests);
+		const currentTotalTrees = toInt(row.total_trees);
+		const currentFulfilled = toInt(row.fulfilled_count);
+		const currentPending = toInt(row.pending_count);
+		const currentCorporate = toInt(row.corporate_count);
+		const currentPersonal = toInt(row.personal_count);
+
+		// Only compute MoM deltas when viewing the current calendar year.
+		// For past years the data is complete and "vs last month" is misleading.
+		const currentCalendarYear = new Date().getFullYear();
+		const isMoMApplicable =
+			yearFilter === null || yearFilter === currentCalendarYear;
+
+		let deltasPayload: Record<string, number | null> = {
+			total_requests_delta: null,
+			total_trees_delta: null,
+			fulfilled_delta: null,
+			pending_delta: null,
+			corporate_delta: null,
+			personal_delta: null,
+		};
+
+		if (isMoMApplicable) {
+			// Determine current month and previous month (handles January → December of prev year)
+			const now = new Date();
+			const curMonth = now.getMonth() + 1; // 1-based
+			const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
+			const prevMonthYear = curMonth === 1 ? currentCalendarYear - 1 : currentCalendarYear;
+
+			// Current month within the selected year context
+			const curWhereClauses = [
+				"request_source != 'Test'",
+				'year = :curYear',
+				'month = :curMonth',
+			];
+			if (requestTypeFilter) {
+				curWhereClauses.push('request_type = :requestType');
+			}
+			const curMonthReplacements: Record<string, any> = {
+				...replacements,
+				curYear: currentCalendarYear,
+				curMonth,
+			};
+
+			const prevWhereClauses = [
+				"request_source != 'Test'",
+				'year = :prevYear',
+				'month = :prevMonth',
+			];
+			if (requestTypeFilter) {
+				prevWhereClauses.push('request_type = :requestType');
+			}
+			const prevMonthReplacements: Record<string, any> = {
+				...replacements,
+				prevYear: prevMonthYear,
+				prevMonth,
+			};
+
+			const momSelect = `
+        SELECT
+          COUNT(DISTINCT request_id) AS total_requests,
+          COUNT(*) FILTER (WHERE request_type = 'Corporate') AS corporate_count,
+          COUNT(*) FILTER (WHERE request_type = 'Personal') AS personal_count,
+          COALESCE(SUM(fulfilled_cards), 0) AS fulfilled_count,
+          COALESCE(SUM(pending_cards), 0) AS pending_count,
+          COALESCE(SUM(total_trees), 0) AS total_trees
+        FROM "${schema}".mv_gift_card_request_summary
+      `;
+
+			const [curMonthResult, prevMonthResult] = await Promise.all([
+				sequelize.query(
+					`${momSelect} WHERE ${curWhereClauses.join(' AND ')}`,
+					{ replacements: curMonthReplacements, type: QueryTypes.SELECT },
+				),
+				sequelize.query(
+					`${momSelect} WHERE ${prevWhereClauses.join(' AND ')}`,
+					{ replacements: prevMonthReplacements, type: QueryTypes.SELECT },
+				),
+			]);
+
+			const cur: any = curMonthResult[0];
+			const prev: any = prevMonthResult[0];
+
+			const calcDelta = (curVal: number, prevVal: number): number | null => {
+				if (!prev || prevVal === 0) return null;
+				return Math.round(((curVal - prevVal) / prevVal) * 1000) / 10;
+			};
+
+			deltasPayload = {
+				total_requests_delta: calcDelta(toInt(cur?.total_requests), toInt(prev?.total_requests)),
+				total_trees_delta: calcDelta(toInt(cur?.total_trees), toInt(prev?.total_trees)),
+				fulfilled_delta: calcDelta(toInt(cur?.fulfilled_count), toInt(prev?.fulfilled_count)),
+				pending_delta: calcDelta(toInt(cur?.pending_count), toInt(prev?.pending_count)),
+				corporate_delta: calcDelta(toInt(cur?.corporate_count), toInt(prev?.corporate_count)),
+				personal_delta: calcDelta(toInt(cur?.personal_count), toInt(prev?.personal_count)),
+			};
+		}
+
 		const responsePayload = {
-			total_requests: toInt(row.total_requests),
-			corporate_count: toInt(row.corporate_count),
-			personal_count: toInt(row.personal_count),
-			fulfilled_count: toInt(row.fulfilled_count),
-			pending_count: toInt(row.pending_count),
-			total_trees: toInt(row.total_trees),
+			total_requests: currentTotalRequests,
+			corporate_count: currentCorporate,
+			personal_count: currentPersonal,
+			fulfilled_count: currentFulfilled,
+			pending_count: currentPending,
+			total_trees: currentTotalTrees,
 			avg_trees_per_card: toFloat(row.avg_trees_per_card),
+			...deltasPayload,
 		};
 
 		return res.status(status.success).send(responsePayload);
@@ -1089,6 +1188,7 @@ export const getGiftCardLeaderboard = async (req: Request, res: Response) => {
 	}
 };
 
+
 export const getGiftCardRequesterProfile = async (
 	req: Request,
 	res: Response,
@@ -1096,35 +1196,74 @@ export const getGiftCardRequesterProfile = async (
 	const schema = process.env.POSTGRES_SCHEMA || '14trees';
 
 	try {
-		const userId = parseInt(req.params.userId, 10);
-		if (Number.isNaN(userId)) {
-			return res.status(status.bad).send({ error: 'Invalid userId' });
+		const profileTypeParam = (req.query.type as string) || 'user';
+		const profileType = profileTypeParam === 'group' ? 'group' : 'user';
+		const rawIdParam = (req.params.id ?? req.params.userId) as string;
+		const id = parseInt(rawIdParam, 10);
+		if (Number.isNaN(id)) {
+			return res.status(status.bad).send({ error: 'Invalid requester id' });
 		}
 
-		const statsQuery = `
-      SELECT
-        user_id,
-        requester_name,
-        group_id,
-        group_name,
-        request_type,
-        total_requests,
-        total_cards,
-        fulfilled_cards,
-        pending_cards,
-        total_trees,
-        total_amount_received,
-        occasion_types,
-        first_request_at,
-        last_request_at
-      FROM "${schema}".mv_requester_leaderboard
-      WHERE user_id = :userId
-      ORDER BY total_trees DESC, total_requests DESC
-      LIMIT 1
-    `;
+		const tagsFilterClause = `
+			AND (
+				gcr.tags IS NULL OR (
+					gcr.tags::text NOT ILIKE '%InternalTest%'
+					AND gcr.tags::text NOT ILIKE '%TestTransaction%'
+				)
+			)
+		`;
+
+		const statsQuery =
+			profileType === 'group'
+				? `
+		SELECT
+		  user_id,
+		  requester_name,
+		  group_id,
+		  group_name,
+		  group_type,
+		  request_type,
+		  total_requests,
+		  total_cards,
+		  fulfilled_cards,
+		  pending_cards,
+		  total_trees,
+		  total_amount_received,
+		  occasion_types,
+		  first_request_at,
+		  last_request_at
+		FROM "${schema}".mv_requester_leaderboard
+		WHERE group_id = :id
+		  AND request_type = 'Corporate'
+		ORDER BY total_trees DESC, total_requests DESC
+		LIMIT 1
+	`
+				: `
+		SELECT
+		  user_id,
+		  requester_name,
+		  group_id,
+		  group_name,
+		  group_type,
+		  request_type,
+		  total_requests,
+		  total_cards,
+		  fulfilled_cards,
+		  pending_cards,
+		  total_trees,
+		  total_amount_received,
+		  occasion_types,
+		  first_request_at,
+		  last_request_at
+		FROM "${schema}".mv_requester_leaderboard
+		WHERE user_id = :id
+		  AND request_type = 'Personal'
+		ORDER BY total_trees DESC, total_requests DESC
+		LIMIT 1
+	`;
 
 		const statsRows: any[] = await sequelize.query(statsQuery, {
-			replacements: { userId },
+			replacements: { id },
 			type: QueryTypes.SELECT,
 		});
 
@@ -1132,23 +1271,56 @@ export const getGiftCardRequesterProfile = async (
 			return res.status(status.notfound).send({ error: 'Requester not found' });
 		}
 
-		const historyQuery = `
-      SELECT
-        id,
-        request_id,
-        event_type AS occasion,
-        no_of_cards,
-        status,
-        gifted_on,
-        created_at
-      FROM "${schema}".gift_card_requests
-      WHERE created_by = :userId
-      ORDER BY created_at DESC
-      LIMIT 20
-    `;
+		const historyQuery =
+			profileType === 'group'
+				? `
+		SELECT
+		  gcr.id,
+		  gcr.request_id,
+		  CASE gcr.event_type
+		    WHEN '1' THEN 'Birthday'
+		    WHEN '2' THEN 'Memorial'
+		    WHEN '3' THEN 'General gift'
+		    WHEN '4' THEN 'Wedding'
+		    WHEN '5' THEN 'Anniversary'
+		    WHEN '6' THEN 'Festival Celebration'
+		    WHEN '7' THEN 'Retirement'
+		    ELSE 'Unassigned'
+		  END AS occasion,
+		  gcr.no_of_cards,
+		  gcr.status,
+		  gcr.gifted_on,
+		  gcr.created_at,
+		  u.name AS requester_name
+		FROM "${schema}".gift_card_requests gcr
+		JOIN "${schema}".users u ON u.id = gcr.created_by
+		WHERE gcr.group_id = :id
+		  AND gcr.request_type = 'Gift Cards'
+		  ${tagsFilterClause}
+		ORDER BY gcr.created_at DESC
+		LIMIT 20
+	`
+				: `
+		SELECT
+		  gcr.id,
+		  gcr.request_id,
+		  gcr.event_type AS occasion,
+		  gcr.no_of_cards,
+		  gcr.status,
+		  gcr.gifted_on,
+		  gcr.created_at,
+		  u.name AS requester_name
+		FROM "${schema}".gift_card_requests gcr
+		JOIN "${schema}".users u ON u.id = gcr.created_by
+		WHERE gcr.created_by = :id
+		  AND gcr.request_type = 'Gift Cards'
+		  ${tagsFilterClause}
+		ORDER BY gcr.created_at DESC
+		LIMIT 20
+	`;
 
 		const historyRows: any[] = await sequelize.query(historyQuery, {
-			replacements: { userId },
+			replacements: { id },
 			type: QueryTypes.SELECT,
 		});
 		const toNullableInt = (value: any) =>
@@ -1162,6 +1334,7 @@ export const getGiftCardRequesterProfile = async (
 			requester_name: rawStats.requester_name,
 			group_id: toNullableInt(rawStats.group_id),
 			group_name: rawStats.group_name,
+			group_type: rawStats.group_type,
 			request_type: rawStats.request_type,
 			total_requests: parseInt(rawStats.total_requests, 10) || 0,
 			total_cards: parseInt(rawStats.total_cards, 10) || 0,
@@ -1182,6 +1355,7 @@ export const getGiftCardRequesterProfile = async (
 			status: row.status,
 			gifted_on: row.gifted_on,
 			created_at: row.created_at,
+			requester_name: row.requester_name,
 		}));
 
 		return res.status(status.success).send({

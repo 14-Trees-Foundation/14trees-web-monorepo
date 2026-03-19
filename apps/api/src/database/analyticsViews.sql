@@ -121,25 +121,83 @@ SELECT
             ELSE NULL
         END IS NOT NULL
     )								AS occasion_types
-FROM "__SCHEMA__".gift_card_requests gcr
-LEFT JOIN "__SCHEMA__".users u
-    ON u.id = gcr.created_by
-LEFT JOIN "__SCHEMA__".groups g
-    ON g.id = gcr.group_id
-LEFT JOIN "__SCHEMA__".gift_cards gc
-    ON gc.gift_card_request_id = gcr.id
-WHERE
-    gcr.request_type = 'Gift Cards'
-    AND (
-        gcr.tags IS NULL
-        OR (
-            gcr.tags::text NOT ILIKE '%InternalTest%'
-            AND gcr.tags::text NOT ILIKE '%TestTransaction%'
+    FROM __SCHEMA__.gift_card_requests gcr
+    JOIN __SCHEMA__.groups g ON g.id = gcr.group_id
+    WHERE gcr.request_type = 'Gift Cards'
+        AND g.type IN ('corporate', 'ngo', 'alumni')
+        AND (
+            gcr.tags IS NULL OR (
+                gcr.tags::text NOT ILIKE '%InternalTest%'
+                AND gcr.tags::text NOT ILIKE '%TestTransaction%'
+            )
         )
-    )
-GROUP BY
-    gcr.created_by, u.name,
-    g.id, g.name, g.type;
+    GROUP BY g.id, g.name, g.type
+
+    UNION ALL
+
+    SELECT
+        gcr.created_by                             AS user_id,
+        u.name                                     AS requester_name,
+        COALESCE(g.id, -1)                         AS group_id,
+        g.name                                     AS group_name,
+        g.type                                     AS group_type,
+        'Personal'::text                           AS request_type,
+        COUNT(DISTINCT gcr.id)                     AS total_requests,
+        SUM(gcr.no_of_cards)                       AS total_cards,
+        SUM(gcr.no_of_cards)
+            FILTER (WHERE gcr.status = 'completed')  AS fulfilled_cards,
+        SUM(gcr.no_of_cards)
+            FILTER (WHERE gcr.status != 'completed') AS pending_cards,
+        SUM(gcr.no_of_cards)                       AS total_trees,
+        COALESCE(SUM(gcr.amount_received), 0)      AS total_amount_received,
+        MIN(gcr.created_at)                        AS first_request_at,
+        MAX(gcr.created_at)                        AS last_request_at,
+        ARRAY_AGG(DISTINCT
+            CASE gcr.event_type
+                WHEN '1' THEN 'Birthday'
+                WHEN '2' THEN 'Memorial'
+                WHEN '3' THEN 'General gift'
+                WHEN '4' THEN 'Wedding'
+                WHEN '5' THEN 'Anniversary'
+                WHEN '6' THEN 'Festival Celebration'
+                WHEN '7' THEN 'Retirement'
+                ELSE NULL
+            END
+        ) FILTER (WHERE
+            CASE gcr.event_type
+                WHEN '1' THEN 'Birthday'
+                WHEN '2' THEN 'Memorial'
+                WHEN '3' THEN 'General gift'
+                WHEN '4' THEN 'Wedding'
+                WHEN '5' THEN 'Anniversary'
+                WHEN '6' THEN 'Festival Celebration'
+                WHEN '7' THEN 'Retirement'
+                ELSE NULL
+            END IS NOT NULL
+        )                                          AS occasion_types
+    FROM __SCHEMA__.gift_card_requests gcr
+    JOIN __SCHEMA__.users u ON u.id = gcr.created_by
+    LEFT JOIN __SCHEMA__.groups g ON g.id = gcr.group_id
+    WHERE gcr.request_type = 'Gift Cards'
+        AND (
+            g.id IS NULL
+            OR g.type NOT IN ('corporate', 'ngo', 'alumni')
+        )
+        AND (
+            gcr.tags IS NULL OR (
+                gcr.tags::text NOT ILIKE '%InternalTest%'
+                AND gcr.tags::text NOT ILIKE '%TestTransaction%'
+            )
+        )
+    GROUP BY gcr.created_by, u.name, g.id, g.name, g.type
+
+) combined;
+
+CREATE UNIQUE INDEX idx_mv_requester_lb_uid
+    ON __SCHEMA__.mv_requester_leaderboard (
+        COALESCE(user_id, -1),
+        COALESCE(group_id, -1)
+    );
 
 CREATE UNIQUE INDEX idx_mv_requester_lb_uid
     ON "__SCHEMA__".mv_requester_leaderboard (user_id, group_id);
