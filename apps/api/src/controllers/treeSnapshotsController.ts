@@ -2,10 +2,12 @@ import { status } from "../helpers/status";
 import { Request, Response } from "express";
 import { uploadBase64DataToS3 } from "./helper/uploadtos3";
 import { TreesSnapshotRepository } from "../repo/treesSnapshotsRepo";
+import TreeRepository from "../repo/treeRepo";
 import { getOffsetAndLimitFromRequest } from "./helper/request";
 import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
 import { isValidDateString } from "../helpers/utils";
 import { Logger } from "../helpers/logger";
+import { ActivityLogService } from "../services/activityLogService";
 
 /*
     Model - Tree Snapshots
@@ -49,6 +51,7 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
     }
 
     try {
+        const tree = await TreeRepository.getTreeBySaplingId(sapling_id);
         const requests: TreesSnapshotCreationAttributes[] = []
         for (let image of images) {
             let imageUrl: string | null = null;
@@ -77,6 +80,29 @@ export const addTreeSnapshots = async (req: Request, res: Response) => {
             })
         }
         let result = await TreesSnapshotRepository.bulkAddTreesSnapshots(requests);
+
+        try {
+            await ActivityLogService.logActivity({
+                entity_type: 'tree',
+                action: 'update',
+                actor: userId,
+                sapling_id,
+                plot_id: tree?.plot_id ?? null,
+                plant_type_id: tree?.plant_type_id ?? null,
+                planted_by: null,
+                metadata: {
+                    source: 'tree_snapshots',
+                    snapshot_count: requests.length,
+                    statuses: requests.map((request) => request.tree_status),
+                    image_dates: requests.map((request) => request.image_date),
+                    uploaded_images: requests.filter((request) => Boolean(request.image)).length,
+                    snapshot_ids: Array.isArray(result) ? result.map((snapshot: any) => snapshot?.id).filter(Boolean) : [],
+                }
+            });
+        } catch (logErr) {
+            console.error('[activity_log] tree snapshot update log failed:', logErr);
+        }
+
         res.status(status.success).send(result);
     } catch (error: any) {
         console.log('[ERROR]', 'TreeSnapshots::addTreeSnapshots:', error);
