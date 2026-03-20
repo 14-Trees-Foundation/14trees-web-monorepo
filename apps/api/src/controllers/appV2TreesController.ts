@@ -30,7 +30,6 @@ import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 import { Visit } from "../models/visits";
 import { SyncRepo } from "../repo/syncRepo";
 import { syncTreeFromVisitorImages } from "./helper/treeSync";
-import { ActivityLogService } from "../services/activityLogService";
 
 // Parse a string/number/Date into a valid Date or return null
 function parseOptionalDate(value: any): Date | null {
