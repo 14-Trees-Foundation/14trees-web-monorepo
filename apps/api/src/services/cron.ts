@@ -25,6 +25,7 @@ import { updateAllUsersEngagementRoles } from '../helpers/engagementRolesCalcula
 
 export function startAppV2ErrorLogsCronJob() {
     const task = cron.schedule('0 * * * *', async () => {
+        console.log('[INFO] CRON::startAppV2ErrorLogsCronJob running at', new Date().toISOString());
         try {
             const logs = await LogsInfoRepository.getLogsInfo(Date.now() - 60 * 60 * 1000);
     
@@ -42,6 +43,7 @@ export function startAppV2ErrorLogsCronJob() {
 
 export function cleanUpGiftCardLiveTemplates() {
     const task = cron.schedule('0 20 * * *', async () => {
+        console.log('[INFO] CRON::cleanUpGiftCardLiveTemplates running at', new Date().toISOString());
         const livePresentationId = process.env.LIVE_GIFT_CARD_PRESENTATION_ID;
         if (!livePresentationId) {
             console.log('[ERROR]', 'CRON::cleanUpGiftCardLiveTemplates', 'Missing live gift card template presentation id in ENV variables.')
@@ -62,12 +64,14 @@ export function cleanUpGiftCardLiveTemplates() {
 
 export function recalculateAggregatedData() {
     const task = cron.schedule('*/10 4-14 * * *', async () => {
+        console.log('[INFO] CRON::recalculateAggregatedData running at', new Date().toISOString());
         await TreeCountAggregationsRepo.checkAndRecalculateData();
     });
 }
 
 export function updatePlotPlantTypes() {
     const task = cron.schedule('0 * * * *', async () => {
+        console.log('[INFO] CRON::updatePlotPlantTypes running at', new Date().toISOString());
         try {
 
             // fetch distinct plot plant types
@@ -134,6 +138,7 @@ export function updateTheAuditReport() {
     const auditedTreesSheetName = "Plot Audit Report"; // Updated sheet name
 
     const task = cron.schedule('0 * * * *', async () => {
+        console.log('[INFO] CRON::updateTheAuditReport running at', new Date().toISOString());
         try {
 
             const spreadSheetClient = new GoogleSpreadsheet();
@@ -202,6 +207,7 @@ export function updateTheAuditReport() {
 export function sendDonationMails() {
 
     const task = cron.schedule('*/5 * * * *', async () => {
+        console.log('[INFO] CRON::sendDonationMails running at', new Date().toISOString());
 
         let donations: Donation[] = [];
         try {
@@ -272,6 +278,7 @@ export function sendDonationMails() {
 
 export function sendGiftCardMails() {
     const task = cron.schedule('*/1 * * * *', async () => {
+        console.log('[INFO] CRON::sendGiftCardMails running at', new Date().toISOString());
         let giftCardRequests: GiftCardRequest[] = [];
         try {
             const filters: FilterItem[] = [
@@ -355,6 +362,7 @@ export function sendGiftCardMails() {
 export function updateUsersEngagementRoles() {
     // Run daily at 2 AM to recalculate engagement roles for all users
     const task = cron.schedule('0 2 * * *', async () => {
+        console.log('[INFO] CRON::updateUsersEngagementRoles running at', new Date().toISOString());
         try {
             console.log('[INFO] Starting user engagement roles update...');
             const result = await updateAllUsersEngagementRoles();
