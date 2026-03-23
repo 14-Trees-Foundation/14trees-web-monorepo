@@ -11,6 +11,7 @@ import { SortOrder } from "../models/common";
 import { GroupRepository } from "../repo/groupRepo";
 import { getSchema } from '../helpers/utils';
 import { GoogleSpreadsheet } from "../services/google";
+import { ActivityLogService } from "../services/activityLogService";
 
 /*
   Model - Tree
@@ -126,8 +127,28 @@ export const getTreeTypes = async (req: Request, res: Response) => {
 
 export const updateTree = async (req: Request, res: Response) => {
   try {
+    const oldTree = await TreeRepository.getTreeByTreeId(req.body.id);
     const tree = await TreeRepository.updateTree(req.body, Array.isArray(req.files) ? req.files : [])
     res.status(status.success).json(tree);
+
+    try {
+      await ActivityLogService.logActivity({
+        entity_type: 'tree',
+        action: 'update',
+        sapling_id: tree.sapling_id,
+        plot_id: tree.plot_id ?? null,
+        plant_type_id: tree.plant_type_id ?? null,
+        metadata: {
+          source: 'updateTree',
+          tree_id: tree.id,
+          old_sapling_id: oldTree?.sapling_id ?? null,
+          new_sapling_id: tree.sapling_id,
+          sapling_id_changed: oldTree?.sapling_id !== tree.sapling_id,
+        },
+      });
+    } catch (logErr) {
+      console.error('[activity_log] updateTree log failed:', logErr);
+    }
   } catch (error: any) {
     await Logger.logError('treesController', 'updateTree', error, req);
     res.status(status.error).send({ error: error });
