@@ -91,7 +91,7 @@ export const whatsAppFlowWebHook = async (req: Request, res: Response) => {
 
     const body = req.body;
 
-    const privateKey = fs.readFileSync(pemFile, 'utf8');
+    const privateKey = pemFile ? fs.readFileSync(pemFile, 'utf8') : '';
     const { decryptedBody, aesKeyBuffer, initialVectorBuffer } = decryptRequest(body, privateKey, passprase);
 
     // console.log(decryptedBody);

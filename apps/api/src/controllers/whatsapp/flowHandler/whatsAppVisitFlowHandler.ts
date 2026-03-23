@@ -2,11 +2,11 @@ import { logResponseError } from "../../../services/whatsapp/logResponseError";
 import { sendWhatsAppMessage } from "../../../services/whatsapp/messageHelper";
 import { WHATSAPP_SCREENS } from "../whatsAppConstants";
 import { WhatsAppDecryptedBody, WhatsAppFlowPayload } from "../whatsAppFlowTypes";
-import { VisitUsersRepository } from "../../../../src/repo/visitUsersRepo";
-import { UserRepository } from "../../../../src/repo/userRepo";
-import { User } from "../../../../src/models/user";
-import { VisitRepository } from "../../../../src/repo/visitsRepo";
-import { SiteRepository } from "../../../../src/repo/sitesRepo";
+import { VisitUsersRepository } from "../../../repo/visitUsersRepo";
+import { UserRepository } from "../../../repo/userRepo";
+import { User } from "../../../models/user";
+import { VisitRepository } from "../../../repo/visitsRepo";
+import { SiteRepository } from "../../../repo/sitesRepo";
 import { Op, WhereOptions } from "sequelize";
 
 const visitScreens = Object.values(WHATSAPP_SCREENS.VISIT_FLOW);

@@ -49,12 +49,14 @@ import referralRoutes from "./routes/referralRoutes";
 import autoPrsReqRoutes from "./routes/autoPrsReqRoutes"
 import swaggerJSDoc from "swagger-jsdoc";
 import { requestLogger } from "./middleware/requestLogging";
+import { sequelize } from "./config/postgreDB";
+import { initMaterializedViewJobs, refreshGiftCardViews } from "./jobs/refreshMaterializedViews";
 
 interface ResponseError extends Error {
   status?: number;
 }
 
-const port = process.env.SERVER_PORT ?? 8088;
+const port = process.env.PORT ?? process.env.SERVER_PORT ?? 8088;
 
 function swaggerSpecification() {
 
@@ -169,6 +171,8 @@ const initExpressApp = (app: express.Application) => {
 const app = express();
 
 const initServer = async () => {
+  await sequelize.authenticate().then(() => initMaterializedViewJobs());
+  refreshGiftCardViews();
   startAppV2ErrorLogsCronJob();
   recalculateAggregatedData();
   cleanUpGiftCardLiveTemplates();
