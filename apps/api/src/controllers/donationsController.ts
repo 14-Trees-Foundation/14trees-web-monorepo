@@ -190,7 +190,7 @@ export const createDonation = async (req: Request, res: Response) => {
 };
 
 export const paymentSuccessForDonation = async (req: Request, res: Response) => {
-    const { donation_id, is_corporate } = req.body;
+    const { donation_id, is_corporate, razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
     try {
         const donation = await DonationRepository.getDonation(donation_id.toString());
@@ -199,6 +199,16 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
             { columnField: 'id', operatorValue: 'equals', value: donation.user_id }
         ]);
         const sponsorUser = usersResp.results[0];
+
+        // Verify Razorpay signature when present (Razorpay payments).
+        // Bank transfers have no Razorpay response so they skip this block.
+        if (razorpay_payment_id && razorpay_order_id && razorpay_signature) {
+            const razorpay = new RazorpayService(sponsorUser?.email);
+            if (!razorpay.verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
+                res.status(status.bad).json({ message: 'Payment verification failed' });
+                return;
+            }
+        }
 
         let paymentId = "";
         if (donation.payment_id) {
@@ -216,7 +226,7 @@ export const paymentSuccessForDonation = async (req: Request, res: Response) => 
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
-                    if (payment.status !== 'payment_not_received') { amountReceived += Number(payment.amount)}
+                    if (payment.status === 'payment_received') { amountReceived += Number(payment.amount)}
                 });
             }
 

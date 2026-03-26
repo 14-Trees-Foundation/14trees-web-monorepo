@@ -656,24 +656,22 @@ function Donation() {
             return;
           }
           try {
-            await verifyRazorpayPayment(response);
-            // alert("Payment successful!");
-          } catch (err) {
-            console.error("Verification error:", err);
-          }
-
-          setShowSuccessDialog(true);
-
-          try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                donation_id: donId.toString()
+                donation_id: donId.toString(),
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                user_email: formData.email,
               })
             });
+            if (!res.ok) throw new Error("Payment verification failed");
+            setShowSuccessDialog(true);
           } catch (err) {
-            // 
+            console.error("Payment error:", err);
+            alert('Payment verification failed. Please contact support with your payment details.');
           }
         },
         prefill: {
@@ -902,24 +900,22 @@ function Donation() {
             return;
           }
           try {
-            await verifyRazorpayPayment(response);
-            // alert("Payment successful!");
-          } catch (err) {
-            console.error("Verification error:", err);
-          }
-
-          setShowSuccessDialog(true);
-
-          try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/donations/requests/payment-success`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                donation_id: responseData.id
+                donation_id: responseData.id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                user_email: formData.email,
               })
             });
+            if (!res.ok) throw new Error("Payment verification failed");
+            setShowSuccessDialog(true);
           } catch (err) {
-            // 
+            console.error("Payment error:", err);
+            alert('Payment verification failed. Please contact support with your payment details.');
           }
         },
         prefill: {

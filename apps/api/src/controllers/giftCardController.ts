@@ -267,26 +267,34 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
             presentation_ids: (giftCards.results[0] as any).presentation_ids.filter((presentation_id: any) => presentation_id !== null),
         });
 
-        if (giftCard.payment_id) {
-            const payment = await PaymentRepository.getPayment(giftCard.payment_id);
-            if (payment && payment.order_id) {
-                const razorpayService = new RazorpayService();
-                await razorpayService.updateOrder(payment.order_id, { "Gift Request Id": giftCard.id.toString() })
+        // Background operations — must not throw back into the outer catch after response is sent
+        setImmediate(async () => {
+            if (giftCard.payment_id) {
+                try {
+                    const payment = await PaymentRepository.getPayment(giftCard.payment_id);
+                    if (payment && payment.order_id) {
+                        const userResp = await UserRepository.getUsers(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: userId }]);
+                        const userEmail = userResp.results[0]?.email;
+                        const razorpayService = new RazorpayService(userEmail);
+                        await razorpayService.updateOrder(payment.order_id, { "Gift Request Id": giftCard.id.toString() });
+                    }
+                } catch (error: any) {
+                    console.log("[ERROR]", "GiftCardController::updateRazorpayOrder", error);
+                }
             }
-        }
 
-        if (giftCard.request_type === 'Gift Cards' && giftCard.tags?.includes('WebSite')) {
-            try {
-                const date = new Date();
-                const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
-                const donationReceiptNumber = FY + "/" + giftCard.id;
-                await GiftCardsRepository.updateGiftCardRequests({ donation_receipt_number: donationReceiptNumber, updated_at: new Date }, { id: giftCard.id })
-
-                await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
-            } catch (error: any) {
-                console.log("[ERROR]", "GiftCardController::addGiftRequestToGoogleSpreadsheet", error);
+            if (giftCard.request_type === 'Gift Cards' && giftCard.tags?.includes('WebSite')) {
+                try {
+                    const date = new Date();
+                    const FY = date.getMonth() < 3 ? date.getFullYear() : date.getFullYear() + 1;
+                    const donationReceiptNumber = FY + "/" + giftCard.id;
+                    await GiftCardsRepository.updateGiftCardRequests({ donation_receipt_number: donationReceiptNumber, updated_at: new Date }, { id: giftCard.id });
+                    await GiftCardsService.addGiftRequestToSpreadsheet(giftCards.results[0]);
+                } catch (error: any) {
+                    console.log("[ERROR]", "GiftCardController::addGiftRequestToGoogleSpreadsheet", error);
+                }
             }
-        }
+        });
 
     } catch (error: any) {
         console.log("[ERROR]", "GiftCardController::createGiftCardRequest", error);
@@ -298,11 +306,24 @@ export const createGiftCardRequest = async (req: Request, res: Response) => {
 
 export const paymentSuccessForGiftRequest = async (req: Request, res: Response) => {
 
-    const { gift_request_id, remaining_trees: remainingTrees, is_corporate } = req.body;
+    const { gift_request_id, remaining_trees: remainingTrees, is_corporate, razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
     try {
 
         const giftRequest = await GiftCardsService.getGiftCardsRequest(gift_request_id);
+
+        const userResp = await UserRepository.getUsers(0, 1, [{ columnField: 'id', operatorValue: 'equals', value: giftRequest.user_id }]);
+        const userEmail = userResp.results[0]?.email;
+
+        // Verify Razorpay signature when present (Razorpay payments).
+        // Bank transfers have no Razorpay response so they skip this block.
+        if (razorpay_payment_id && razorpay_order_id && razorpay_signature) {
+            const razorpay = new RazorpayService(userEmail);
+            if (!razorpay.verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
+                res.status(status.bad).json({ message: 'Payment verification failed' });
+                return;
+            }
+        }
 
         let razorpayPaymentId = ""
         if (giftRequest.payment_id) {
@@ -314,12 +335,12 @@ export const paymentSuccessForGiftRequest = async (req: Request, res: Response) 
             if (payment && payment.payment_history) {
                 const paymentHistory: PaymentHistory[] = payment.payment_history;
                 paymentHistory.forEach(payment => {
-                    if (payment.status !== 'payment_not_received') amountReceived += payment.amount;
+                    if (payment.status === 'payment_received') amountReceived += payment.amount;
                 })
             }
 
             if (payment?.order_id) {
-                const razorpayService = new RazorpayService();
+                const razorpayService = new RazorpayService(userEmail);
                 const payments = await razorpayService.getPayments(payment.order_id);
 
                 payments?.forEach(item => {
