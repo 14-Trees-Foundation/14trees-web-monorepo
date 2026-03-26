@@ -692,8 +692,12 @@ export const getGiftCardMonthly = async (req: Request, res: Response) => {
 		];
 
 		const requestSourceFilter = parseRequestSourceFilter(req.query.source);
-		const replacements: Record<string, any> = { year };
-		const whereClauses = ["request_source != 'Test'", 'year = :year'];
+		const replacements: Record<string, any> = {};
+		const whereClauses = ["request_source != 'Test'"];
+		if (year !== 0) {
+			whereClauses.push('year = :year');
+			replacements.year = year;
+		}
 		if (requestSourceFilter) {
 			whereClauses.push('request_source = :requestSource');
 			replacements.requestSource = requestSourceFilter;

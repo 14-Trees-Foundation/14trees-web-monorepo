@@ -15,8 +15,7 @@
     "test:api:env": "API_BASE_URL=http://localhost:8088 node postman/test-event-associations.js",
     "swagger-autogen": "npx ts-node src/swagger.ts",
     "migrate": "npx ts-node src/scripts/migrationRunner.ts migrate",
-    "migrate:analytics": "ts-node src/database/runAnalyticsMigration.ts",
-    "migrate:status": "npx ts-node src/scripts/migrationRunner.ts status",
+"migrate:status": "npx ts-node src/scripts/migrationRunner.ts status",
     "migrate:up": "npx ts-node src/scripts/migrationRunner.ts migrate",
     "migrate:verify": "npx ts-node src/scripts/migrationRunner.ts verify"
   },
