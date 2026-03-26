@@ -206,7 +206,7 @@ export function updateTheAuditReport() {
 
 export function sendDonationMails() {
 
-    const task = cron.schedule('*/5 * * * *', async () => {
+    const task = cron.schedule('*/5 9-18 * * *', async () => {
         console.log('[INFO] CRON::sendDonationMails running at', new Date().toISOString());
 
         let donations: Donation[] = [];
@@ -277,7 +277,7 @@ export function sendDonationMails() {
 }
 
 export function sendGiftCardMails() {
-    const task = cron.schedule('*/1 * * * *', async () => {
+    const task = cron.schedule('*/15 9-18 * * *', async () => {
         console.log('[INFO] CRON::sendGiftCardMails running at', new Date().toISOString());
         let giftCardRequests: GiftCardRequest[] = [];
         try {
