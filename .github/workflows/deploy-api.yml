@@ -95,9 +95,10 @@ jobs:
             rm -rf dist/
             mv dist-new/ dist/
 
-            # Pull latest non-build files
+            # Pull latest non-build files and install new dependencies
             cd /home/ubuntu/14trees-web-monorepo
             git pull origin ${{ github.ref_name }}
+            cd apps/api && npm install --omit=dev && cd /home/ubuntu/14trees-web-monorepo
 
             # Restart PM2
             cd /home/ubuntu/14trees-web-monorepo/apps/api
