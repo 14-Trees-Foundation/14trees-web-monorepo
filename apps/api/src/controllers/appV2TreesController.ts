@@ -13,6 +13,7 @@ import { GroupRepository } from "../repo/groupRepo";
 import { UserGroupRepository } from "../repo/userGroupRepo";
 import { PlantType } from "../models/plant_type";
 import { Plot } from "../models/plot";
+import { ActivityLogService } from "../services/activityLogService";
 import { ShiftRepository } from "../repo/shiftRepo";
 import { Shift, ShiftCreationAttributes } from "../models/shift";
 import { TreesSnapshotCreationAttributes } from "../models/trees_snapshots";
@@ -29,7 +30,6 @@ import { SyncHistoriesRepository } from "../repo/syncHistoryRepo";
 import { Visit } from "../models/visits";
 import { SyncRepo } from "../repo/syncRepo";
 import { syncTreeFromVisitorImages } from "./helper/treeSync";
-import { ActivityLogService } from "../services/activityLogService";
 
 // Parse a string/number/Date into a valid Date or return null
 function parseOptionalDate(value: any): Date | null {
@@ -333,6 +333,7 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
         // TODO: delete old image from S3?
         let response: any = null; 
         if (existingTree) {
+            const oldSaplingId = existingTree.sapling_id;
             sapling.tree.updated_at = new Date();
             sapling.tree.tags = JSON.parse((sapling.tree.tags as any) || '[]');
             sapling.tree.memory_images = JSON.parse((sapling.tree.memory_images as any) || '[]');
@@ -341,6 +342,26 @@ export const updateSaplingByAdmin = async (req: Request, res: Response) => {
             const json = JSON.parse(str);
             response = {
                 ...json,
+            }
+
+            try {
+                await ActivityLogService.logActivity({
+                    entity_type: 'tree',
+                    action: 'update',
+                    actor: !isNaN(parseInt(req.headers['user-id'] as string)) ? parseInt(req.headers['user-id'] as string) : null,
+                    sapling_id: savedData.sapling_id,
+                    plot_id: existingTree.plot_id ?? null,
+                    plant_type_id: existingTree.plant_type_id ?? null,
+                    metadata: {
+                        source: 'updateSaplingByAdmin',
+                        tree_id: existingTree.id,
+                        old_sapling_id: oldSaplingId,
+                        new_sapling_id: savedData.sapling_id,
+                        sapling_id_changed: oldSaplingId !== savedData.sapling_id,
+                    },
+                });
+            } catch (logErr) {
+                console.error('[activity_log] updateSaplingByAdmin log failed:', logErr);
             }
         } else {
             response = await TreeRepository.addTreeObject(sapling.tree);
