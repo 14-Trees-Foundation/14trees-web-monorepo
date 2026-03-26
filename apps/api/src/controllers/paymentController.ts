@@ -115,6 +115,7 @@ export const addPaymentHistory = async (req: Request, res: Response) => {
             payment_method: req.body.payment_method,
             payment_proof: req.body.payment_proof || null,
             amount_received: req.body.amount,
+            status: 'pending_verification',
             payment_date: new Date(),
             payment_received_date: new Date(),
             created_at: new Date(),
