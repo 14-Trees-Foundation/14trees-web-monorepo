@@ -4,6 +4,7 @@ import { sequelize } from '../config/postgreDB';
 
 const schema = process.env.POSTGRES_SCHEMA || '14trees';
 const giftCardViews = ['mv_gift_card_request_summary', 'mv_requester_leaderboard'];
+const donationViews = ['mv_donation_summary', 'mv_donor_leaderboard'];
 
 async function refreshView(viewName: string): Promise<void> {
     const startTime = Date.now();
@@ -36,11 +37,19 @@ export async function refreshGiftCardViews(): Promise<void> {
     await refreshAll(giftCardViews);
 }
 
+export async function refreshDonationViews(): Promise<void> {
+    await refreshAll(donationViews);
+}
 
 export function initMaterializedViewJobs(): void {
     cron.schedule('0 */4 * * *', async () => {
         console.log('[MV] Frequent refresh triggered');
         await refreshGiftCardViews();
+    });
+
+    cron.schedule('0 */4 * * *', async () => {
+        console.log('[MV] Donation views refresh triggered');
+        await refreshDonationViews();
     });
 
     console.log('[MV] Materialized view refresh jobs scheduled ✅');
