@@ -50,7 +50,7 @@ import autoPrsReqRoutes from "./routes/autoPrsReqRoutes"
 import swaggerJSDoc from "swagger-jsdoc";
 import { requestLogger } from "./middleware/requestLogging";
 import { sequelize } from "./config/postgreDB";
-import { initMaterializedViewJobs, refreshGiftCardViews } from "./jobs/refreshMaterializedViews";
+import { initMaterializedViewJobs, refreshGiftCardViews, refreshDonationViews } from "./jobs/refreshMaterializedViews";
 
 interface ResponseError extends Error {
   status?: number;
@@ -173,6 +173,7 @@ const app = express();
 const initServer = async () => {
   await sequelize.authenticate().then(() => initMaterializedViewJobs());
   refreshGiftCardViews();
+  refreshDonationViews();
   startAppV2ErrorLogsCronJob();
   recalculateAggregatedData();
   cleanUpGiftCardLiveTemplates();
