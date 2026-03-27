@@ -11,7 +11,7 @@ SELECT
     d.id                                                AS source_id,
     d.user_id,
     d.group_id,
-    d.sponsor_id                                        AS donor_id,
+    d.user_id                                           AS donor_id,
     COALESCE(d.amount_donated, 0)                       AS amount,
     COALESCE(d.amount_received, 0)                      AS amount_received,
     d.trees_count,
