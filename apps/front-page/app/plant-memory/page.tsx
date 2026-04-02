@@ -306,17 +306,20 @@ function GiftTrees() {
   // Handle input changes (existing unchanged)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    const normalizedValue = name === "panNumber"
+      ? value.toUpperCase().replace(/\s+/g, "")
+      : value;
 
     if (name === "numberOfTrees") {
       setErrors(prev => ({ ...prev, numberOfTrees: "" }));
     }
 
-    const error = validateField(name, value);
+    const error = validateField(name, normalizedValue);
     setErrors(prev => ({ ...prev, [name]: error }));
 
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: normalizedValue }));
     if (name === "fullName") {
-      setPlantedBy(prev => prev || value);
+      setPlantedBy(prev => prev || normalizedValue);
     }
   };
 
