@@ -12,6 +12,54 @@ import { getSqlQueryExpression } from "../controllers/helper/filters";
 import { getSchema } from '../helpers/utils';
 
 class TreeRepository {
+  private static buildTreeUpdateConfig(userId: number, sponsorId: number | null, groupId: number | null, donation_id?: number | null) {
+    return {
+      mapped_to_user: userId,
+      mapped_to_group: groupId,
+      sponsored_by_user: sponsorId,
+      sponsored_by_group: sponsorId ? groupId : null,
+      donation_id: donation_id,
+      mapped_at: new Date(),
+      updated_at: new Date(),
+    };
+  }
+
+  private static selectTreeIdsFromCandidates(
+    candidates: { tree_id: number; plant_type: string }[],
+    count: number
+  ): number[] {
+    const plantTypeTreesMap: Record<string, number[]> = {};
+    const finalTreeIds: number[] = [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      if (!plantTypeTreesMap[candidates[i].plant_type]) {
+        plantTypeTreesMap[candidates[i].plant_type] = [candidates[i].tree_id];
+      } else {
+        plantTypeTreesMap[candidates[i].plant_type].push(candidates[i].tree_id);
+      }
+    }
+
+    const treeIds2D = Object.values(plantTypeTreesMap);
+    let i = 0, remaining = count, noMoreTrees = false;
+    while (remaining > 0) {
+      noMoreTrees = true;
+      for (const treeIds of treeIds2D) {
+        if (treeIds.length > i) {
+          noMoreTrees = false;
+          finalTreeIds.push(treeIds[i]);
+          remaining--;
+        }
+
+        if (remaining === 0) break;
+      }
+
+      i++;
+      if (noMoreTrees) break;
+    }
+
+    return Array.from(new Set(finalTreeIds));
+  }
+
   public static async getTrees(offset: number = 0, limit: number = 20, filters: FilterItem[], orderBy?: SortOrder[]): Promise<PaginatedResponse<Tree>> {
 
     let whereCondition = "";
@@ -449,15 +497,7 @@ class TreeRepository {
   }
 
   public static async mapTreesInPlotToUserAndGroup(userId: number, sponsorId: number | null, groupId: number | null, plotIds: number[], count: number, bookNonGiftable: boolean = false, diversify: boolean = false, booAllHabitats: boolean = false, donation_id?: number | null) {
-    const updateConfig: any = {
-      mapped_to_user: userId,
-      mapped_to_group: groupId,
-      sponsored_by_user: sponsorId,
-      sponsored_by_group: sponsorId ? groupId : null,
-      donation_id: donation_id,
-      mapped_at: new Date(),
-      updated_at: new Date(),
-    }
+    const updateConfig: any = this.buildTreeUpdateConfig(userId, sponsorId, groupId, donation_id);
 
     let query = `
       SELECT t.id as tree_id, pt."name" as plant_type
@@ -478,35 +518,7 @@ class TreeRepository {
     const resp: any[] = await sequelize.query(query, {
       type: QueryTypes.SELECT
     })
-
-    const plantTypeTreesMap: Record<string, number[]> = {};
-    const finalTreeIds: number[] = [];
-
-    for (let i = 0; i < resp.length; i++) {
-      if (!plantTypeTreesMap[resp[i].plant_type]) {
-        plantTypeTreesMap[resp[i].plant_type] = [resp[i].tree_id];
-      } else {
-        plantTypeTreesMap[resp[i].plant_type].push(resp[i].tree_id);
-      }
-    }
-
-    const treeIds2D = Object.values(plantTypeTreesMap);
-    let i = 0, remaining = count, noMoreTrees = false;
-    while (remaining > 0) {
-      noMoreTrees = true;
-      for (const treeIds of treeIds2D) {
-        if (treeIds.length > i) {
-          noMoreTrees = false;
-          finalTreeIds.push(treeIds[i])
-          remaining--;
-        }
-
-        if (remaining === 0) break;
-      }
-
-      i++;
-      if (noMoreTrees) break;
-    }
+    const finalTreeIds = this.selectTreeIdsFromCandidates(resp, count);
 
     // Deduplicate tree IDs as a safety measure (should not happen but prevents DB constraint violations)
     const uniqueFinalTreeIds = Array.from(new Set(finalTreeIds));
@@ -521,6 +533,53 @@ class TreeRepository {
     });
 
     return uniqueFinalTreeIds;
+  }
+
+  public static async mapTreesByPlotRulesToUserAndGroup(
+    userId: number,
+    sponsorId: number | null,
+    groupId: number | null,
+    plotRules: { plot_id: number; tree_count: number }[],
+    count: number,
+    bookNonGiftable: boolean = false,
+    diversify: boolean = false,
+    booAllHabitats: boolean = false,
+    donation_id?: number | null
+  ) {
+    const requestedCount = plotRules.reduce((sum, rule) => sum + rule.tree_count, 0);
+    if (requestedCount !== count) return [];
+
+    const selectedTreeIds: number[] = [];
+    for (const rule of plotRules) {
+      if (rule.tree_count <= 0) continue;
+
+      const candidates = await this.fetchTreesForPlot(
+        rule.plot_id,
+        rule.tree_count,
+        bookNonGiftable,
+        booAllHabitats,
+        diversify
+      );
+      const plotTreeIds = this.selectTreeIdsFromCandidates(candidates, rule.tree_count);
+      if (plotTreeIds.length !== rule.tree_count) {
+        return [];
+      }
+
+      selectedTreeIds.push(...plotTreeIds);
+    }
+
+    const uniqueTreeIds = Array.from(new Set(selectedTreeIds));
+    if (uniqueTreeIds.length !== count) {
+      return [];
+    }
+
+    await Tree.update(this.buildTreeUpdateConfig(userId, sponsorId, groupId, donation_id), {
+      where: {
+        id: { [Op.in]: uniqueTreeIds },
+      },
+    });
+
+    return uniqueTreeIds;
   }
 
   /**
