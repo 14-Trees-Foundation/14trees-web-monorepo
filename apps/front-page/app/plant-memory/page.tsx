@@ -1006,7 +1006,7 @@ function GiftTrees() {
             </li>
             <li>You can also print the cards, the default size of the card is A5.</li>
             <li>
-              In case of any issues, please call <strong>+91 98458 05881</strong> or email{" "}
+              In case of any issues, please call <strong>+91 70583 46914</strong> or email{" "}
               <a href="mailto:contact@14trees.org" className="text-blue-600 underline">
                 contact@14trees.org
               </a>.
