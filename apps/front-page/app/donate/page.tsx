@@ -1182,7 +1182,7 @@ function Donation() {
           )}
           <p className="mb-4">The receipt and the certificate of appreciation have been sent to your email ID. (sometimes the email lands up in the spam/junk folder, please ensure to check it.)
           </p>
-          <p className="mb-5">In case of any issue, please call +91 98458 05881 or write to us at contact@14trees.org
+          <p className="mb-5">In case of any issue, please call +91 70583 46914 or write to us at contact@14trees.org
           </p>
 
           {(!updateSuccess && !skipped) ? (
