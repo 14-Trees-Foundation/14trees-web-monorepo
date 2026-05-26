@@ -5,14 +5,17 @@ const AnnualReports = () => {
     {
       href: "/documents/annual-reports/2020-21.pdf",
       title: "Annual Activity Report - FY 2020-21",
+      thumbnail: "/documents/thumbnails/annual-reports-2020-21-01.png",
     },
     {
       href: "/documents/annual-reports/2021-22.pdf",
       title: "Annual Activity Report - FY 2021-22",
+      thumbnail: "/documents/thumbnails/annual-reports-2021-22-01.png",
     },
     {
       href: "/documents/annual-reports/2022-23.pdf",
       title: "Annual Activity Report - FY 2022-23",
+      thumbnail: "/documents/thumbnails/annual-reports-2022-23-01.png",
     },
   ];
 
@@ -25,6 +28,7 @@ const AnnualReports = () => {
             key={index}
             title={report.title}
             href={report.href}
+            thumbnail={report.thumbnail}
           />
         ))}
       </div>
