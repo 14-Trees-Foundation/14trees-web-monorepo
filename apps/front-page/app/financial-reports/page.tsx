@@ -5,14 +5,17 @@ const FinancialReports = () => {
     {
       href: "/documents/financial-reports/2020-21.pdf",
       title: "Audited Financial Report FY 2020-21",
+      thumbnail: "/documents/thumbnails/financial-reports-2020-21-01.png",
     },
     {
       href: "/documents/financial-reports/2021-22.pdf",
       title: "Audited Financial Report FY 2021-22",
+      thumbnail: "/documents/thumbnails/financial-reports-2021-22-01.png",
     },
     {
       href: "/documents/financial-reports/2022-23.pdf",
       title: "Audited Financial Report FY 2022-23",
+      thumbnail: "/documents/thumbnails/financial-reports-2022-23-01.png",
     },
   ];
 
@@ -25,6 +28,7 @@ const FinancialReports = () => {
             key={index}
             title={report.title}
             href={report.href}
+            thumbnail={report.thumbnail}
           />
         ))}
       </div>
