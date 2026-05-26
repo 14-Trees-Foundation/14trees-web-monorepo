@@ -1,4 +1,4 @@
-import { DocCard } from "components/Partials/DocCard";
+import { PdfPreviewCard } from "components/Partials/PdfPreviewCard";
 
 const AnnualReports = () => {
   const reports = [
@@ -17,11 +17,11 @@ const AnnualReports = () => {
   ];
 
   return (
-    <div className="container min-h-screen max-w-screen-md bg-white py-32">
-      <h1 className="title-text mb-24 text-center">Activity Reports</h1>
-      <div>
+    <div className="container min-h-screen max-w-screen-lg bg-white py-32 px-6">
+      <h1 className="title-text mb-16 text-center">Activity Reports</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {reports.map((report, index) => (
-          <DocCard
+          <PdfPreviewCard
             key={index}
             title={report.title}
             href={report.href}
