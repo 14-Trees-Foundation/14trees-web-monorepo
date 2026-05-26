@@ -17,6 +17,21 @@ const AnnualReports = () => {
       title: "Annual Activity Report - FY 2022-23",
       thumbnail: "/documents/thumbnails/annual-reports-2022-23-01.png",
     },
+    {
+      href: "/documents/annual-reports/2023-24.pdf",
+      title: "Annual Activity Report - FY 2023-24",
+      thumbnail: "/documents/thumbnails/annual-reports-2023-24-01.png",
+    },
+    {
+      href: "/documents/annual-reports/2024-25.pdf",
+      title: "Annual Activity Report - FY 2024-25",
+      thumbnail: "/documents/thumbnails/annual-reports-2024-25-01.png",
+    },
+    {
+      href: "/documents/annual-reports/2025-26.pdf",
+      title: "Annual Activity Report - FY 2025-26",
+      thumbnail: "/documents/thumbnails/annual-reports-2025-26-01.png",
+    },
   ];
 
   return (

@@ -17,6 +17,16 @@ const FinancialReports = () => {
       title: "Audited Financial Report FY 2022-23",
       thumbnail: "/documents/thumbnails/financial-reports-2022-23-01.png",
     },
+    {
+      href: "/documents/financial-reports/2023-24.pdf",
+      title: "Audited Financial Report FY 2023-24",
+      thumbnail: "/documents/thumbnails/financial-reports-2023-24-01.png",
+    },
+    {
+      href: "/documents/financial-reports/2024-25.pdf",
+      title: "Audited Financial Report FY 2024-25",
+      thumbnail: "/documents/thumbnails/financial-reports-2024-25-01.png",
+    },
   ];
 
   return (
