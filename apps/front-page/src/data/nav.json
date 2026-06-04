@@ -27,6 +27,11 @@
         "name": "Activity Reports",
         "link": "/activity-reports",
         "external": false
+      },
+      {
+        "name": "Biodiversity Reports",
+        "link": "/biodiversity-reports",
+        "external": false
       }
     ]
   },

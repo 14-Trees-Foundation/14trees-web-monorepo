@@ -39,6 +39,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href={preserveReferralParams("/biodiversity-reports", searchParams)} className="hover:text-white">
+                  Biodiversity Reports
+                </Link>
+              </li>
+              <li>
                 <Link href={preserveReferralParams("/blogs", searchParams)} className="hover:text-white">
                   Blogs
                 </Link>
