@@ -12,6 +12,11 @@ const BiodiversityReports = () => {
       title: "Biodiversity Report FY 2024-25",
       thumbnail: "/documents/thumbnails/biodiversity-reports-2024-25-01.png",
     },
+    {
+      href: "/documents/biodiversity-reports/2025-26.pdf",
+      title: "Biodiversity Report FY 2025-26",
+      thumbnail: "/documents/thumbnails/biodiversity-reports-2025-26-01.png",
+    },
   ];
 
   return (
