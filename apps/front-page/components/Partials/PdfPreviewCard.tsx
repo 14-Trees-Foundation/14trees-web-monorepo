@@ -12,8 +12,11 @@ export function PdfPreviewCard({
 }) {
   return (
     <Link href={href} target="_blank" rel="noopener noreferrer">
-      <div className="group flex flex-col rounded-xl border border-gray-200 overflow-hidden cursor-pointer shadow-sm hover:shadow-lg transition-shadow duration-300 bg-white">
-        <div className="relative w-full overflow-hidden" style={{ height: 280 }}>
+      <div className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg">
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ height: 400 }}
+        >
           <Image
             src={thumbnail}
             alt={title}
@@ -22,8 +25,8 @@ export function PdfPreviewCard({
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </div>
-        <div className="px-4 py-3 bg-gray-800">
-          <p className="text-sm font-semibold text-white text-center leading-snug">
+        <div className="bg-gray-800 px-4 py-3">
+          <p className="text-center text-sm font-semibold leading-snug text-white">
             {title}
           </p>
         </div>
