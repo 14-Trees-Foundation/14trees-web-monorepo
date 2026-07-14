@@ -39,6 +39,11 @@ const InternalTestBanner = ({ userEmail }: { userEmail: string }) => {
   );
 };
 
+interface Campaign {
+  name: string;
+  c_key: string;
+}
+
 interface DedicatedName {
   recipient_name: string;
   recipient_email: string;
@@ -148,6 +153,10 @@ function Donation() {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [showReferralDialog, setShowReferralDialog] = useState(false);
   const [referralDetails, setReferralDetails] = useState<{ referred_by?: string, name?: string, c_key?: string, description?: string } | null>(null);
+  const [donateForCampaign, setDonateForCampaign] = useState(!!c_key);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaignKey, setSelectedCampaignKey] = useState(c_key || "");
+  const effectiveCampaignKey = c_key || (donateForCampaign ? selectedCampaignKey : "");
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
   const [validationAlertData, setValidationAlertData] = useState<{
@@ -199,18 +208,35 @@ function Donation() {
 
   useEffect(() => {
     const fetchReferralDetails = async () => {
-      if (rfr || c_key) {
+      if (rfr || effectiveCampaignKey) {
         try {
-          const details = await apiClient.getReferrelDetails(rfr, c_key);
+          const details = await apiClient.getReferrelDetails(rfr, effectiveCampaignKey);
           setReferralDetails(details);
         } catch (error) {
           console.error('Failed to fetch referral details:', error);
         }
+      } else {
+        setReferralDetails(null);
       }
     };
 
     fetchReferralDetails();
-  }, [rfr, c_key]);
+  }, [rfr, effectiveCampaignKey]);
+
+  useEffect(() => {
+    if (c_key || !donateForCampaign) return;
+
+    const fetchCampaigns = async () => {
+      try {
+        const response = await apiClient.listCampaigns();
+        setCampaigns(Array.isArray(response) ? response : []);
+      } catch (error) {
+        console.error('Failed to fetch campaigns:', error);
+      }
+    };
+
+    fetchCampaigns();
+  }, [donateForCampaign, c_key]);
 
   const containerVariants = {
     hidden: { opacity: 0, y: 10, scale: 1.05 },
@@ -595,7 +621,7 @@ function Donation() {
         users: users,
         tags: addInternalTestTags(["WebSite"], formData.email),
         rfr: rfr,
-        c_key: c_key,
+        c_key: effectiveCampaignKey || undefined,
         // Add internal test metadata if applicable
         ...getInternalTestMetadata(formData.email, originalAmount),
       };
@@ -1117,6 +1143,8 @@ function Donation() {
       setDonationTreeCount(3);
       setCurrentStep(1);
       setDonationId(null);
+      setDonateForCampaign(!!c_key);
+      setSelectedCampaignKey(c_key || "");
     }
 
     const handleUpdate = async () => {
@@ -1447,6 +1475,48 @@ function Donation() {
                     )}
 
                     <div className="mt-6 mb-8 h-px bg-gray-200"></div>
+
+                    {(treeLocation === "donate" || treeLocation === "adopt") && (
+                      <div className="space-y-3 bg-green-50 p-4 rounded-lg border border-gray-600">
+                        <label className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            className="h-5 w-5"
+                            checked={donateForCampaign}
+                            disabled={!!c_key}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setDonateForCampaign(checked);
+                              if (!checked) {
+                                setSelectedCampaignKey("");
+                              }
+                            }}
+                          />
+                          <span>I want to donate for an ongoing campaign</span>
+                        </label>
+
+                        {donateForCampaign && (
+                          !c_key ? (
+                            <select
+                              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-700"
+                              value={selectedCampaignKey}
+                              onChange={(e) => setSelectedCampaignKey(e.target.value)}
+                            >
+                              <option value="">Select a campaign</option>
+                              {campaigns.map((campaign) => (
+                                <option key={campaign.c_key} value={campaign.c_key}>
+                                  {campaign.name}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <p className="text-sm text-gray-600">
+                              Campaign: <span className="font-semibold">{referralDetails?.name || c_key}</span>
+                            </p>
+                          )
+                        )}
+                      </div>
+                    )}
 
                     {treeLocation === "donate" && (
                       <div className="space-y-6 bg-green-50 p-4 rounded-lg border border-gray-600">
