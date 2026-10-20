@@ -44,6 +44,14 @@ module.exports = {
   experimental: {
     optimizeCss: false,
   },
+  headers: async () => {
+    return [
+      {
+        source: "/g/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
+  },
   redirects: async () => {
     return [
       {

@@ -1,4 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
+import type {
+  GiftingConfirmResult,
+  GiftingOrder,
+  GiftingOrderInput,
+} from './giftingTypes';
 
 class ApiClient {
   private api: AxiosInstance;
@@ -320,6 +325,36 @@ class ApiClient {
         throw new Error(error.response.data.message);
       }
       throw new Error('Failed to fetch referrel details!');
+    }
+  }
+
+  // Gifting pages (public, no auth). Errors carry the server's message and,
+  // when present, its machine code (not_accepting, consent_required, ...).
+  private giftingError(error: any, fallback: string): Error {
+    const err: any = new Error(error?.response?.data?.error || fallback);
+    err.status = error?.response?.status;
+    err.code = error?.response?.data?.code;
+    return err;
+  }
+
+  async createGiftingOrder(slug: string, input: GiftingOrderInput): Promise<GiftingOrder> {
+    try {
+      const response = await this.api.post<GiftingOrder>(`/gifting-pages/by-slug/${encodeURIComponent(slug)}/orders`, input);
+      return response.data;
+    } catch (error: any) {
+      throw this.giftingError(error, 'Could not start your gift. Please try again.');
+    }
+  }
+
+  async confirmGiftingContribution(
+    slug: string,
+    body: { contribution_id: number; razorpay_payment_id: string; razorpay_signature: string },
+  ): Promise<GiftingConfirmResult> {
+    try {
+      const response = await this.api.post<GiftingConfirmResult>(`/gifting-pages/by-slug/${encodeURIComponent(slug)}/confirm`, body);
+      return response.data;
+    } catch (error: any) {
+      throw this.giftingError(error, 'Could not confirm your payment.');
     }
   }
 }
