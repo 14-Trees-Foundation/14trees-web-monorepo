@@ -357,5 +357,21 @@ class ApiClient {
       throw this.giftingError(error, 'Could not confirm your payment.');
     }
   }
+
+  async uploadGiftingPhoto(slug: string, contributionId: number, token: string, photo: File): Promise<void> {
+    const form = new FormData();
+    form.append('token', token);
+    form.append('photo', photo);
+    try {
+      await this.api.post(
+        `/gifting-pages/by-slug/${encodeURIComponent(slug)}/contributions/${contributionId}/photo`,
+        form,
+        // The client default is JSON, which axios would apply to the form data.
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+    } catch (error: any) {
+      throw this.giftingError(error, 'Could not upload your photo.');
+    }
+  }
 }
 export const apiClient = new ApiClient();

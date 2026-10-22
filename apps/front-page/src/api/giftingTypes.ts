@@ -60,4 +60,6 @@ export interface GiftingConfirmResult {
   trees_count: number;
   amount: number;
   outcome: GiftingOutcome;
+  // Present once the payment is confirmed and no photo is attached yet.
+  photo_upload_token?: string;
 }

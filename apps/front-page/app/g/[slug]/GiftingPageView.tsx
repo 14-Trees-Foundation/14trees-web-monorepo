@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "~/api/apiClient";
+import PostCard from "./PostCard";
 import type {
   GiftingConfirmResult,
   GiftingOrder,
@@ -18,6 +19,8 @@ const NAME_MAX = 100;
 const CONFIRM_POLLS = 8;
 const CONFIRM_POLL_MS = 3000;
 const RAZORPAY_GREEN = "#166534";
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type Phase =
   | { kind: "form" }
@@ -26,6 +29,8 @@ type Phase =
   | { kind: "success"; trees: number }
   | { kind: "processing" }
   | { kind: "problem" };
+
+type PhotoUpload = "idle" | "uploading" | "done" | "failed";
 
 // Event type codes shared with the dashboard (utils/eventTypes).
 const OCCASIONS: Record<string, { label: string; emoji: string }> = {
@@ -61,7 +66,8 @@ const initials = (name: string | null) =>
 // Why the page cannot take gifts right now, or null when it can.
 function closedReason(page: PublicGiftingPage): string | null {
   if (page.accepting) return null;
-  if (page.status === "closed") return "This page is no longer accepting gifts.";
+  if (page.status === "closed")
+    return "This page is no longer accepting gifts.";
   const now = Date.now();
   if (page.starts_at && new Date(page.starts_at).getTime() > now) {
     return `Gifting opens on ${formatDate(page.starts_at)}.`;
@@ -95,10 +101,68 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const [touched, setTouched] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [shared, setShared] = useState(false);
+  // One optional photo. It stays in the browser until the payment is confirmed, then is uploaded.
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoUpload, setPhotoUpload] = useState<PhotoUpload>("idle");
+  const photoTarget = useRef<{ contributionId: number; token: string } | null>(
+    null
+  );
 
   // An unpaid order can be reused if the guest retries with the same details,
   // instead of creating another pending order each time.
   const orderCache = useRef<{ key: string; order: GiftingOrder } | null>(null);
+
+  useEffect(() => {
+    if (!photo) {
+      setPhotoPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
+
+  const choosePhoto = (file: File | undefined) => {
+    setPhotoError(null);
+    if (!file) return;
+    if (!PHOTO_TYPES.includes(file.type)) {
+      setPhotoError("Please choose a JPEG, PNG or WebP photo");
+      return;
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      setPhotoError("Please choose a photo smaller than 5 MB");
+      return;
+    }
+    setPhoto(file);
+    setPhotoUpload("idle");
+  };
+
+  // Runs once the payment is confirmed (and again on "Try again"). The wish is already safe, so
+  // a failed photo never undoes the gift.
+  const uploadPhoto = async (file: File | null = photo) => {
+    const target = photoTarget.current;
+    if (!file || !target) return;
+    setPhotoUpload("uploading");
+    try {
+      await apiClient.uploadGiftingPhoto(
+        page.slug,
+        target.contributionId,
+        target.token,
+        file
+      );
+      setPhotoUpload("done");
+      photoTarget.current = null;
+    } catch (err: any) {
+      if (err.code === "photo_exists") {
+        setPhotoUpload("done");
+        photoTarget.current = null;
+      } else {
+        setPhotoUpload("failed");
+      }
+    }
+  };
 
   const closed = closedReason(page);
   const total = count * page.price_per_tree;
@@ -109,11 +173,16 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
-    if (!Number.isInteger(count) || count < 1 || count > page.max_trees_per_contribution) {
+    if (
+      !Number.isInteger(count) ||
+      count < 1 ||
+      count > page.max_trees_per_contribution
+    ) {
       e.count = `Choose between 1 and ${page.max_trees_per_contribution} trees`;
     }
     if (!name.trim()) e.name = "Please enter your name";
-    if (!EMAIL_PATTERN.test(email.trim())) e.email = "Please enter a valid email";
+    if (!EMAIL_PATTERN.test(email.trim()))
+      e.email = "Please enter a valid email";
     if (phone.trim() && !PHONE_PATTERN.test(phone.trim())) {
       e.phone = "Please enter a valid phone number";
     }
@@ -146,7 +215,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     contributionId: number,
     razorpayPaymentId: string,
     razorpaySignature: string,
-    trees: number,
+    trees: number
   ) => {
     setPhase({ kind: "confirming" });
     let result: GiftingConfirmResult | null = null;
@@ -172,6 +241,13 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       // Money was taken; the server finishes the job from Razorpay's webhook.
       setPhase({ kind: "processing" });
     } else if (result.outcome === "fulfilled" || result.outcome === "paid") {
+      if (result.photo_upload_token) {
+        photoTarget.current = {
+          contributionId,
+          token: result.photo_upload_token,
+        };
+        void uploadPhoto();
+      }
       setPhase({ kind: "success", trees });
     } else {
       setPhase({ kind: "problem" });
@@ -190,14 +266,20 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       amount: order.amount * 100,
       currency: order.currency,
       name: "14 Trees Foundation",
-      description: `${verb} ${order.trees_count} tree${order.trees_count > 1 ? "s" : ""} for ${recipient}`,
+      description: `${verb} ${order.trees_count} tree${
+        order.trees_count > 1 ? "s" : ""
+      } for ${recipient}`,
       order_id: order.order_id,
-      prefill: { name: name.trim(), email: email.trim(), contact: phone.trim() },
+      prefill: {
+        name: name.trim(),
+        email: email.trim(),
+        contact: phone.trim(),
+      },
       theme: { color: RAZORPAY_GREEN },
       modal: {
         ondismiss: () => {
           setPhase((current) =>
-            current.kind === "paying" ? { kind: "form" } : current,
+            current.kind === "paying" ? { kind: "form" } : current
           );
         },
       },
@@ -206,14 +288,14 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           order.contribution_id,
           response.razorpay_payment_id,
           response.razorpay_signature,
-          order.trees_count,
+          order.trees_count
         );
       },
     });
     rzp.on("payment.failed", (response: any) => {
       setPhase({ kind: "form" });
       setNotice(
-        `Payment failed: ${response?.error?.description ?? "please try again"}.`,
+        `Payment failed: ${response?.error?.description ?? "please try again"}.`
       );
     });
     rzp.open();
@@ -241,7 +323,8 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     setPhase({ kind: "paying" });
     try {
       const key = JSON.stringify(input);
-      let order = orderCache.current?.key === key ? orderCache.current.order : null;
+      let order =
+        orderCache.current?.key === key ? orderCache.current.order : null;
       if (!order) {
         order = await apiClient.createGiftingOrder(page.slug, input);
         orderCache.current = { key, order };
@@ -252,7 +335,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       setNotice(
         err.code === "not_accepting"
           ? "This page has stopped accepting gifts."
-          : err.message,
+          : err.message
       );
     }
   };
@@ -278,8 +361,12 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     if (lightbox === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setLightbox(null);
-      if (e.key === "ArrowRight") setLightbox((i) => (i === null ? i : (i + 1) % page.album.length));
-      if (e.key === "ArrowLeft") setLightbox((i) => (i === null ? i : (i - 1 + page.album.length) % page.album.length));
+      if (e.key === "ArrowRight")
+        setLightbox((i) => (i === null ? i : (i + 1) % page.album.length));
+      if (e.key === "ArrowLeft")
+        setLightbox((i) =>
+          i === null ? i : (i - 1 + page.album.length) % page.album.length
+        );
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -295,13 +382,11 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       ? Math.min(100, Math.round((page.trees_so_far / page.target_trees) * 100))
       : null;
 
-  const preview = message.trim()
-    ? `Dear ${nickname.trim() || recipient},\n${message
-        .trim()
-        .replace(/\{recipient\}/gi, nickname.trim() || recipient)}${
-        showName && name.trim() ? `\n— ${name.trim()}` : ""
-      }`
-    : null;
+  const wishText = message
+    .trim()
+    .replace(/\{recipient\}/gi, nickname.trim() || recipient);
+  const postCardFrom = showName && name.trim() ? name.trim() : null;
+  const postCardGreeting = `Dear ${nickname.trim() || recipient},`;
 
   const showForm = phase.kind === "form" || phase.kind === "paying";
 
@@ -365,7 +450,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
       <div className="mx-auto mt-10 grid max-w-5xl gap-8 px-4 lg:grid-cols-[1fr_420px] lg:items-start">
         {/* ── Checkout (first on mobile, sticky on desktop) ──── */}
-        <div className="order-1 lg:order-2 lg:sticky lg:top-24">
+        <div className="order-1 lg:sticky lg:top-24 lg:order-2">
           {phase.kind === "success" && (
             <Panel tone="green">
               <div className="text-5xl" aria-hidden>
@@ -381,6 +466,59 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 being planted for {recipient}. A confirmation is on its way to{" "}
                 <span className="font-medium">{email.trim()}</span>.
               </p>
+              {(photo || photoTarget.current) && (
+                <div className="mt-4 rounded-xl border border-green-200 bg-white/70 p-3 text-left text-sm text-gray-700">
+                  {photo && photoUpload === "uploading" && (
+                    <p className="flex items-center gap-2">
+                      <Spinner /> Uploading your photo…
+                    </p>
+                  )}
+                  {photo && photoUpload === "done" && (
+                    <p>
+                      Your photo was added. It will appear on the memories page
+                      once we have reviewed it.
+                    </p>
+                  )}
+                  {photo && photoUpload === "failed" && (
+                    <p>
+                      We could not upload your photo, but your gift is safe.{" "}
+                      <button
+                        type="button"
+                        onClick={() => uploadPhoto()}
+                        className="font-medium text-green-800 underline"
+                      >
+                        Try again
+                      </button>
+                    </p>
+                  )}
+                  {!photo && photoTarget.current && (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span>Want to add a photo to your wish?</span>
+                      <label className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-1.5 font-medium text-green-800 hover:bg-green-50">
+                        Choose photo
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            choosePhoto(file);
+                            if (
+                              file &&
+                              PHOTO_TYPES.includes(file.type) &&
+                              file.size <= PHOTO_MAX_BYTES
+                            ) {
+                              void uploadPhoto(file);
+                            }
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  {photoError && <Err text={photoError} />}
+                </div>
+              )}
               <div className="mt-5 flex flex-col gap-2">
                 <button
                   onClick={sharePage}
@@ -418,9 +556,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 Your payment is being confirmed
               </h2>
               <p className="mt-2 text-sm text-gray-700">
-                It went through but the bank is still confirming it. There&apos;s
-                no need to pay again; you&apos;ll get an email once it&apos;s
-                complete.
+                It went through but the bank is still confirming it.
+                There&apos;s no need to pay again; you&apos;ll get an email once
+                it&apos;s complete.
               </p>
             </Panel>
           )}
@@ -511,7 +649,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                       })}
                     </div>
                     <div className="mt-3 flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2">
-                      <span className="text-sm text-gray-600">Or choose your own</span>
+                      <span className="text-sm text-gray-600">
+                        Or choose your own
+                      </span>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -575,7 +715,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                       htmlFor="gift-nickname"
                     >
                       What do you call {recipient}?{" "}
-                      <span className="font-normal text-gray-400">optional</span>
+                      <span className="font-normal text-gray-400">
+                        optional
+                      </span>
                     </label>
                     <input
                       id="gift-nickname"
@@ -586,16 +728,60 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                       placeholder="e.g. Didi, Mama, Rahul"
                     />
 
-                    {preview && (
-                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
-                          How it reads on the card
-                        </p>
-                        <p className="mt-1.5 whitespace-pre-line font-serif text-[15px] italic leading-relaxed text-gray-800">
-                          {preview}
-                        </p>
+                    {message.trim() && (
+                      <div className="mt-3">
+                        <PostCard
+                          photoUrl={photoPreview}
+                          greeting={postCardGreeting}
+                          text={wishText}
+                          from={postCardFrom}
+                        />
                       </div>
                     )}
+
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        Add a photo{" "}
+                        <span className="font-normal text-gray-400">
+                          optional
+                        </span>
+                      </p>
+                      {message.trim() ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-3">
+                          <label className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-green-800 hover:bg-green-50">
+                            {photo ? "Change photo" : "Choose photo"}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="sr-only"
+                              onChange={(e) => {
+                                choosePhoto(e.target.files?.[0]);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          {photo && (
+                            <button
+                              type="button"
+                              onClick={() => setPhoto(null)}
+                              className="text-sm text-gray-500 underline hover:text-gray-700"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Write a wish above to add a photo to it.
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-500">
+                        Uploaded after your payment and shown on the memories
+                        page only once we have reviewed it. JPEG, PNG or WebP,
+                        up to 5 MB.
+                      </p>
+                      {photoError && <Err text={photoError} />}
+                    </div>
                   </Step>
 
                   {/* 3. Details */}
@@ -660,7 +846,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                           onChange={setConsent}
                           label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with ${recipient}.`}
                         />
-                        {touched && errors.consent && <Err text={errors.consent} />}
+                        {touched && errors.consent && (
+                          <Err text={errors.consent} />
+                        )}
                       </div>
                     </div>
                   </Step>
@@ -715,9 +903,21 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
             <h2 className="text-xl font-bold text-gray-900">How it works</h2>
             <ol className="mt-4 grid gap-3 sm:grid-cols-3">
               {[
-                ["🌱", "You gift", `Choose how many trees and add a wish for ${recipient}.`],
-                ["🌳", "We plant", "Your trees are planted and looked after by the 14 Trees team."],
-                ["💌", "They receive", "A gift card for their tree, carrying your wish."],
+                [
+                  "🌱",
+                  "You gift",
+                  `Choose how many trees and add a wish for ${recipient}.`,
+                ],
+                [
+                  "🌳",
+                  "We plant",
+                  "Your trees are planted and looked after by the 14 Trees team.",
+                ],
+                [
+                  "💌",
+                  "They receive",
+                  "A gift card for their tree, carrying your wish.",
+                ],
               ].map(([icon, title, body]) => (
                 <li
                   key={title}
@@ -750,7 +950,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                     >
                       ”
                     </span>
-                    <p className="whitespace-pre-line text-gray-800">{m.message}</p>
+                    <p className="whitespace-pre-line text-gray-800">
+                      {m.message}
+                    </p>
                     <div className="mt-4 flex items-center gap-2">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-xs font-semibold text-green-800">
                         {initials(m.name)}
@@ -775,7 +977,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                     type="button"
                     onClick={() => setLightbox(i)}
                     className={`group overflow-hidden rounded-xl ${
-                      i === 0 && page.album.length > 2 ? "col-span-2 row-span-2" : ""
+                      i === 0 && page.album.length > 2
+                        ? "col-span-2 row-span-2"
+                        : ""
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -797,7 +1001,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
               className="flex items-center justify-between rounded-2xl bg-green-800 px-5 py-4 text-white shadow hover:bg-green-900"
             >
               <span>
-                <span className="block font-semibold">See the memories page</span>
+                <span className="block font-semibold">
+                  See the memories page
+                </span>
                 <span className="text-sm text-green-100">
                   Photos, wishes and the trees planted so far
                 </span>
@@ -831,7 +1037,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full bg-white/20 text-2xl text-white hover:bg-white/30"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightbox((lightbox - 1 + page.album.length) % page.album.length);
+                  setLightbox(
+                    (lightbox - 1 + page.album.length) % page.album.length
+                  );
                 }}
               >
                 ‹
@@ -884,7 +1092,9 @@ function Panel({
     red: "bg-red-50 ring-red-200",
   };
   return (
-    <div className={`rounded-2xl p-6 text-center shadow-lg ring-1 ${tones[tone]}`}>
+    <div
+      className={`rounded-2xl p-6 text-center shadow-lg ring-1 ${tones[tone]}`}
+    >
       {children}
     </div>
   );
@@ -953,7 +1163,13 @@ function Spinner() {
 
 function LockIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
       <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z" />
     </svg>
   );
@@ -972,7 +1188,10 @@ function Field(props: {
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700" htmlFor={props.id}>
+      <label
+        className="block text-sm font-medium text-gray-700"
+        htmlFor={props.id}
+      >
         {props.label}
         {props.optional && (
           <span className="ml-1 font-normal text-gray-400">optional</span>
