@@ -26,13 +26,11 @@ export interface GiftingOrderInput {
   trees_count: number;
   guest_name: string;
   guest_email: string;
-  guest_phone?: string;
-  wants_80g: boolean;
-  pan_number?: string;
+  guest_phone: string;
+  pan_number: string;
   consent: boolean;
   message?: string;
   show_name: boolean;
-  recipient_nickname?: string;
   source: "qr" | "link";
 }
 

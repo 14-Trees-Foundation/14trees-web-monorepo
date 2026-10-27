@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "~/api/apiClient";
-import PostCard from "./PostCard";
 import type {
   GiftingConfirmResult,
   GiftingOrder,
@@ -14,7 +13,6 @@ import type {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+()\-\s]{7,20}$/;
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-const NICKNAME_MAX = 40;
 const NAME_MAX = 100;
 const CONFIRM_POLLS = 8;
 const CONFIRM_POLL_MS = 3000;
@@ -42,6 +40,34 @@ const OCCASIONS: Record<string, { label: string; emoji: string }> = {
   "6": { label: "Celebration", emoji: "🪔" },
   "7": { label: "Retirement", emoji: "🌿" },
 };
+
+// Wish pre-filled for each occasion; the guest can edit or clear it. Keys are the same event
+// type codes as OCCASIONS. {name} is replaced with the receiver's name.
+const DEFAULT_WISHES: Record<string, string> = {
+  "1": "Happy Birthday, {name}! May you grow stronger and happier every year, just like this tree. 🌳",
+  "2": "In loving memory of {name}. May these trees keep their memory alive for generations.",
+  "3": "A little gift of green for {name}. May this tree bring you joy for years to come.",
+  "4": "Congratulations, {name}! May your life together grow and flourish like these trees.",
+  "5": "Happy Anniversary, {name}! May your love keep growing, year after year.",
+  "6": "Wishing {name} a joyful celebration! May these trees bring light and green into your world.",
+  "7": "Happy retirement, {name}! May the years ahead be as peaceful and fruitful as these trees.",
+};
+
+// The page may allow short wishes; a default that does not fit is left out rather than cut.
+function defaultWish(page: PublicGiftingPage): string {
+  const text = (
+    DEFAULT_WISHES[page.occasion_type] ?? DEFAULT_WISHES["3"]
+  ).replace("{name}", page.recipient_display_name);
+  return text.length <= page.message_max_chars ? text : "";
+}
+
+// Soft tints so a long run of wishes does not look like a wall of white boxes.
+const WISH_TINTS = [
+  "bg-emerald-50 ring-emerald-100",
+  "bg-amber-50 ring-amber-100",
+  "bg-sky-50 ring-sky-100",
+  "bg-rose-50 ring-rose-100",
+];
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -78,6 +104,11 @@ function closedReason(page: PublicGiftingPage): string | null {
   return "This page is not accepting gifts right now.";
 }
 
+const INPUT_BASE =
+  "mt-1.5 w-full rounded-2xl border bg-white px-4 py-3 text-base outline-none transition focus:ring-4";
+const INPUT_OK = "border-gray-200 focus:border-green-700 focus:ring-green-100";
+const INPUT_BAD = "border-red-400 focus:border-red-500 focus:ring-red-100";
+
 export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const params = useSearchParams();
   const source: "qr" | "link" = params.get("s") === "qr" ? "qr" : "link";
@@ -87,13 +118,11 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     : page.suggested_counts[0] ?? 1;
   const [count, setCount] = useState<number>(defaultCount);
   const [countText, setCountText] = useState<string>(String(defaultCount));
-  const [message, setMessage] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [message, setMessage] = useState(() => defaultWish(page));
   const [showName, setShowName] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [wants80g, setWants80g] = useState(false);
   const [pan, setPan] = useState("");
   const [consent, setConsent] = useState(false);
   const [phase, setPhase] = useState<Phase>({ kind: "form" });
@@ -109,6 +138,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const photoTarget = useRef<{ contributionId: number; token: string } | null>(
     null
   );
+  const touchStartX = useRef<number | null>(null);
 
   // An unpaid order can be reused if the guest retries with the same details,
   // instead of creating another pending order each time.
@@ -165,11 +195,15 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   };
 
   const closed = closedReason(page);
-  const total = count * page.price_per_tree;
   const recipient = page.recipient_display_name;
   const memorial = page.occasion_type === "2";
   const occasion = OCCASIONS[page.occasion_type] ?? OCCASIONS["3"];
   const verb = memorial ? "Plant" : "Gift";
+  const countValid =
+    Number.isInteger(count) &&
+    count >= 1 &&
+    count <= page.max_trees_per_contribution;
+  const total = countValid ? count * page.price_per_tree : 0;
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -178,36 +212,36 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       count < 1 ||
       count > page.max_trees_per_contribution
     ) {
-      e.count = `Choose between 1 and ${page.max_trees_per_contribution} trees`;
+      e.count = `Enter a number between 1 and ${page.max_trees_per_contribution}`;
     }
     if (!name.trim()) e.name = "Please enter your name";
     if (!EMAIL_PATTERN.test(email.trim()))
       e.email = "Please enter a valid email";
-    if (phone.trim() && !PHONE_PATTERN.test(phone.trim())) {
+    if (!PHONE_PATTERN.test(phone.trim())) {
       e.phone = "Please enter a valid phone number";
     }
-    if (wants80g && !PAN_PATTERN.test(pan.trim().toUpperCase())) {
+    if (!PAN_PATTERN.test(pan.trim().toUpperCase())) {
       e.pan = "Enter a valid PAN (e.g. ABCDE1234F)";
     }
     if (message.length > page.message_max_chars) {
-      e.message = `Please keep your message within ${page.message_max_chars} characters`;
+      e.message = `Please keep your wish within ${page.message_max_chars} characters`;
     }
     if (!consent) e.consent = "Please accept to continue";
     return e;
-  }, [count, name, email, phone, wants80g, pan, message, consent, page]);
+  }, [count, name, email, phone, pan, message, consent, page]);
 
   const hasErrors = Object.keys(errors).length > 0;
 
+  // The free-text box: digits only, any number up to the page maximum.
   const setCountFromText = (text: string) => {
-    setCountText(text);
-    const n = Number(text);
-    setCount(Number.isInteger(n) ? n : 0);
+    const digits = text.replace(/\D/g, "").slice(0, 6);
+    setCountText(digits);
+    setCount(digits ? Number(digits) : 0);
   };
 
   const pickCount = (n: number) => {
-    const bounded = Math.max(1, Math.min(page.max_trees_per_contribution, n));
-    setCount(bounded);
-    setCountText(String(bounded));
+    setCount(n);
+    setCountText(String(n));
   };
 
   // Poll the idempotent confirm endpoint while the payment is still settling.
@@ -218,6 +252,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     trees: number
   ) => {
     setPhase({ kind: "confirming" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
     let result: GiftingConfirmResult | null = null;
     for (let attempt = 0; attempt < CONFIRM_POLLS; attempt++) {
       try {
@@ -301,22 +336,32 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     rzp.open();
   };
 
+  const scrollToFirstError = () => {
+    requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>('[aria-invalid="true"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
   const submit = async () => {
     setTouched(true);
     setNotice(null);
-    if (hasErrors || phase.kind !== "form") return;
+    if (phase.kind !== "form") return;
+    if (hasErrors) {
+      scrollToFirstError();
+      return;
+    }
 
     const input: GiftingOrderInput = {
       trees_count: count,
       guest_name: name.trim(),
       guest_email: email.trim(),
-      guest_phone: phone.trim() || undefined,
-      wants_80g: wants80g,
-      pan_number: wants80g ? pan.trim().toUpperCase() : undefined,
+      guest_phone: phone.trim(),
+      pan_number: pan.trim().toUpperCase(),
       consent,
       message: message.trim() || undefined,
       show_name: showName,
-      recipient_nickname: nickname.trim() || undefined,
       source,
     };
 
@@ -356,20 +401,22 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     }
   };
 
+  const goTo = (delta: number) =>
+    setLightbox((i) =>
+      i === null ? i : (i + delta + page.album.length) % page.album.length
+    );
+
   // Lightbox keyboard controls.
   useEffect(() => {
     if (lightbox === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setLightbox(null);
-      if (e.key === "ArrowRight")
-        setLightbox((i) => (i === null ? i : (i + 1) % page.album.length));
-      if (e.key === "ArrowLeft")
-        setLightbox((i) =>
-          i === null ? i : (i - 1 + page.album.length) % page.album.length
-        );
+      if (e.key === "ArrowRight") goTo(1);
+      if (e.key === "ArrowLeft") goTo(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox, page.album.length]);
 
   const memoriesUrl =
@@ -377,24 +424,21 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       ? `${process.env.NEXT_PUBLIC_DASHBOARD_URL}/events/${page.memories_link}`
       : null;
 
-  const progress =
-    page.target_trees && page.target_trees > 0
-      ? Math.min(100, Math.round((page.trees_so_far / page.target_trees) * 100))
-      : null;
-
-  const wishText = message
-    .trim()
-    .replace(/\{recipient\}/gi, nickname.trim() || recipient);
-  const postCardFrom = showName && name.trim() ? name.trim() : null;
-  const postCardGreeting = `Dear ${nickname.trim() || recipient},`;
-
   const showForm = phase.kind === "form" || phase.kind === "paying";
+  const showGiftBar = showForm && !closed;
+  const treesLabel = countValid
+    ? `${count} ${count === 1 ? "tree" : "trees"}`
+    : "trees";
 
   return (
-    // pt-16 clears the fixed site header (h-16) so the cover starts below it.
-    <main className="bg-gradient-to-b from-green-50 via-white to-white pb-20 pt-16">
+    // pt-16 clears the fixed site header (h-16); the bottom padding leaves room for the gift bar.
+    <main
+      className={`bg-[radial-gradient(60rem_28rem_at_50%_0%,theme(colors.emerald.100),transparent)] bg-white pt-16 ${
+        showGiftBar ? "pb-32 lg:pb-20" : "pb-20"
+      }`}
+    >
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden">
+      <section className="relative isolate overflow-hidden rounded-b-[2rem] sm:rounded-b-[3rem]">
         {page.cover_image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -403,60 +447,72 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
             className="absolute inset-0 -z-10 h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-green-800 via-green-700 to-emerald-600" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500" />
         )}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-        <div className="mx-auto flex min-h-[320px] max-w-5xl flex-col items-center justify-end px-5 pb-10 pt-16 text-center text-white sm:min-h-[420px] sm:pb-14">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium backdrop-blur">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
+        <div
+          aria-hidden
+          className="absolute -right-16 -top-16 -z-10 h-64 w-64 rounded-full bg-emerald-300/30 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-20 -left-16 -z-10 h-64 w-64 rounded-full bg-amber-200/20 blur-3xl"
+        />
+        <div className="mx-auto flex min-h-[380px] max-w-3xl flex-col items-center justify-end px-5 pb-14 pt-20 text-center text-white sm:min-h-[480px] sm:pb-20">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium ring-1 ring-white/30 backdrop-blur">
             <span aria-hidden>{occasion.emoji}</span>
             {occasion.label}
           </span>
-          <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight drop-shadow sm:text-5xl">
+          <h1 className="mt-5 text-[2.1rem] font-extrabold leading-[1.1] tracking-tight drop-shadow-lg sm:text-6xl">
             {page.title}
           </h1>
-          <p className="mt-3 text-base text-white/90 sm:text-lg">
-            {memorial ? "In memory of" : "A tree for"}{" "}
+          <p className="mt-4 text-base text-white/90 sm:text-lg">
+            {memorial ? "In memory of" : "For"}{" "}
             <span className="font-semibold">{recipient}</span>
-            <span className="mx-2 opacity-60">·</span>
+          </p>
+          <p className="mt-1 text-sm text-white/70">
             {formatDate(page.occasion_date)}
           </p>
+          {showGiftBar && (
+            <a
+              href="#gift"
+              className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-7 py-3 text-base font-bold text-green-900 shadow-xl shadow-black/20 transition active:scale-[0.97] hover:bg-green-50"
+            >
+              {verb} a tree <span aria-hidden>↓</span>
+            </a>
+          )}
         </div>
       </section>
 
-      {/* ── Stats strip ──────────────────────────────────────── */}
-      <section className="relative z-10 mx-auto -mt-6 max-w-3xl px-4">
-        <div className="grid grid-cols-3 divide-x divide-gray-100 rounded-2xl bg-white py-4 text-center shadow-lg ring-1 ring-black/5">
-          <Stat value={String(page.trees_so_far)} label="trees gifted" />
-          <Stat value={rupees(page.price_per_tree)} label="per tree" />
-          <Stat
-            value={page.target_trees ? String(page.target_trees) : "∞"}
-            label={page.target_trees ? "tree goal" : "every tree counts"}
-          />
-        </div>
-        {progress !== null && (
-          <div className="mt-4 px-1">
-            <div className="h-2.5 overflow-hidden rounded-full bg-green-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-green-600 to-emerald-400 transition-all duration-700"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="mt-1.5 text-center text-sm text-gray-600">
-              {progress}% of the way there
+      {page.description && (
+        <section className="relative z-10 mx-auto -mt-8 max-w-3xl px-4">
+          <div className="relative overflow-hidden rounded-3xl bg-white p-6 shadow-xl shadow-green-900/10 ring-1 ring-black/5 sm:p-8">
+            <span
+              aria-hidden
+              className="absolute -top-2 left-4 font-serif text-8xl leading-none text-green-100"
+            >
+              “
+            </span>
+            <p className="relative whitespace-pre-line text-[17px] leading-relaxed text-gray-700 sm:text-lg">
+              {page.description}
             </p>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      <div className="mx-auto mt-10 grid max-w-5xl gap-8 px-4 lg:grid-cols-[1fr_420px] lg:items-start">
-        {/* ── Checkout (first on mobile, sticky on desktop) ──── */}
-        <div className="order-1 lg:sticky lg:top-24 lg:order-2">
+      <div
+        className={`mx-auto grid max-w-5xl gap-10 px-4 lg:grid-cols-[1fr_420px] lg:items-start ${
+          page.description ? "mt-8" : "mt-6"
+        }`}
+      >
+        {/* ── Gift panel (first on mobile, sticky on desktop) ─── */}
+        <div className="order-1 lg:sticky lg:top-24 lg:order-2" id="gift">
           {phase.kind === "success" && (
             <Panel tone="green">
-              <div className="text-5xl" aria-hidden>
+              <div className="text-6xl" aria-hidden>
                 🌳
               </div>
-              <h2 className="mt-3 text-2xl font-bold text-gray-900">
+              <h2 className="mt-3 text-2xl font-extrabold text-gray-900">
                 Thank you, {name.trim().split(" ")[0] || "friend"}!
               </h2>
               <p className="mt-2 text-gray-700">
@@ -466,35 +522,39 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 being planted for {recipient}. A confirmation is on its way to{" "}
                 <span className="font-medium">{email.trim()}</span>.
               </p>
+
               {(photo || photoTarget.current) && (
-                <div className="mt-4 rounded-xl border border-green-200 bg-white/70 p-3 text-left text-sm text-gray-700">
+                <div className="mt-5 rounded-2xl border border-green-200 bg-white/80 p-4 text-left text-sm text-gray-700">
+                  <p className="font-semibold text-gray-900">
+                    Your memory for the event
+                  </p>
                   {photo && photoUpload === "uploading" && (
-                    <p className="flex items-center gap-2">
-                      <Spinner /> Uploading your photo…
+                    <p className="mt-1 flex items-center gap-2">
+                      <Spinner small /> Adding your photo…
                     </p>
                   )}
                   {photo && photoUpload === "done" && (
-                    <p>
-                      Your photo was added. It will appear on the memories page
+                    <p className="mt-1">
+                      Your photo was added. It will appear on the event page
                       once we have reviewed it.
                     </p>
                   )}
                   {photo && photoUpload === "failed" && (
-                    <p>
-                      We could not upload your photo, but your gift is safe.{" "}
+                    <p className="mt-1">
+                      We could not add your photo, but your gift is safe.{" "}
                       <button
                         type="button"
                         onClick={() => uploadPhoto()}
-                        className="font-medium text-green-800 underline"
+                        className="font-semibold text-green-800 underline"
                       >
                         Try again
                       </button>
                     </p>
                   )}
                   {!photo && photoTarget.current && (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span>Want to add a photo to your wish?</span>
-                      <label className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-1.5 font-medium text-green-800 hover:bg-green-50">
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <span>Want to add a photo to the event?</span>
+                      <label className="cursor-pointer rounded-full bg-green-800 px-4 py-2 font-semibold text-white shadow hover:bg-green-900">
                         Choose photo
                         <input
                           type="file"
@@ -519,19 +579,20 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   {photoError && <Err text={photoError} />}
                 </div>
               )}
-              <div className="mt-5 flex flex-col gap-2">
+
+              <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={sharePage}
-                  className="rounded-xl bg-green-800 px-5 py-3 font-medium text-white shadow hover:bg-green-900"
+                  className="min-h-12 rounded-full bg-green-800 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-green-900/20 transition hover:bg-green-900 active:scale-[0.98]"
                 >
                   {shared ? "Link copied ✓" : "Invite others to gift a tree"}
                 </button>
                 {memoriesUrl && (
                   <a
                     href={memoriesUrl}
-                    className="rounded-xl border border-green-800 px-5 py-3 text-center font-medium text-green-800 hover:bg-green-50"
+                    className="min-h-12 rounded-full border-2 border-green-800 px-6 py-3 text-center text-base font-semibold text-green-800 hover:bg-green-50"
                   >
-                    See the memories page
+                    See the event page
                   </a>
                 )}
               </div>
@@ -541,7 +602,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           {phase.kind === "confirming" && (
             <Panel tone="gray">
               <Spinner />
-              <h2 className="mt-3 text-lg font-semibold text-gray-900">
+              <h2 className="mt-4 text-lg font-semibold text-gray-900">
                 Confirming your payment…
               </h2>
               <p className="mt-1 text-sm text-gray-600">
@@ -578,329 +639,298 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           {showForm &&
             (closed ? (
               <Panel tone="gray">
-                <div className="text-4xl" aria-hidden>
+                <div className="text-5xl" aria-hidden>
                   🌱
                 </div>
                 <p className="mt-3 font-medium text-gray-800">{closed}</p>
                 {memoriesUrl && (
                   <a
                     href={memoriesUrl}
-                    className="mt-4 inline-block text-sm font-medium text-green-800 underline"
+                    className="mt-4 inline-block text-sm font-semibold text-green-800 underline"
                   >
-                    See the memories page
+                    See the event page
                   </a>
                 )}
               </Panel>
             ) : (
               <form
-                className="overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
+                id="gift-form"
+                className="space-y-4"
                 onSubmit={(e) => {
                   e.preventDefault();
                   submit();
                 }}
                 noValidate
               >
-                <div className="bg-green-800 px-5 py-4 text-white">
-                  <h2 className="text-lg font-semibold">
-                    {verb} trees for {recipient}
-                  </h2>
-                  <p className="text-sm text-green-100">
-                    {rupees(page.price_per_tree)} per tree · planted and cared
-                    for by 14 Trees
-                  </p>
-                </div>
-
-                <div className="space-y-6 p-5">
-                  {/* 1. Trees */}
-                  <Step n={1} title="How many trees?">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                      {page.suggested_counts.map((n) => {
-                        const selected = count === n;
-                        return (
-                          <button
-                            type="button"
-                            key={n}
-                            onClick={() => pickCount(n)}
-                            className={`rounded-xl border px-2 py-3 text-center transition ${
-                              selected
-                                ? "border-green-800 bg-green-800 text-white shadow"
-                                : "border-gray-200 bg-white hover:border-green-600"
+                {/* 1. Trees */}
+                <StepCard
+                  n={1}
+                  title={`How many trees for ${recipient}?`}
+                  hint={`${rupees(
+                    page.price_per_tree
+                  )} per tree · planted and cared for by 14 Trees`}
+                >
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
+                    {page.suggested_counts.slice(0, 4).map((n) => {
+                      const selected = count === n;
+                      return (
+                        <button
+                          type="button"
+                          key={n}
+                          onClick={() => pickCount(n)}
+                          aria-pressed={selected}
+                          className={`rounded-2xl border-2 px-2 py-3 text-center transition active:scale-[0.97] ${
+                            selected
+                              ? "border-green-800 bg-green-800 text-white shadow-lg shadow-green-900/20"
+                              : "border-gray-200 bg-white hover:border-green-600"
+                          }`}
+                        >
+                          <span className="block text-2xl font-extrabold leading-none">
+                            {n}
+                          </span>
+                          <span
+                            className={`mt-1 block text-xs ${
+                              selected ? "text-green-100" : "text-gray-500"
                             }`}
                           >
-                            <span className="block text-xl font-bold leading-none">
-                              {n}
-                            </span>
-                            <span
-                              className={`mt-1 block text-xs ${
-                                selected ? "text-green-100" : "text-gray-500"
-                              }`}
-                            >
-                              {n === 1 ? "tree" : "trees"}
-                            </span>
-                            <span
-                              className={`block text-xs font-medium ${
-                                selected ? "text-white" : "text-green-800"
-                              }`}
-                            >
-                              {rupees(n * page.price_per_tree)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2">
-                      <span className="text-sm text-gray-600">
-                        Or choose your own
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          aria-label="One less"
-                          onClick={() => pickCount((count || 1) - 1)}
-                          className="h-8 w-8 rounded-full border bg-white text-lg leading-none hover:bg-gray-100"
-                        >
-                          −
+                            {n === 1 ? "tree" : "trees"}
+                          </span>
+                          <span
+                            className={`mt-0.5 block text-xs font-semibold ${
+                              selected ? "text-white" : "text-green-800"
+                            }`}
+                          >
+                            {rupees(n * page.price_per_tree)}
+                          </span>
                         </button>
-                        <input
-                          aria-label="Number of trees"
-                          inputMode="numeric"
-                          value={countText}
-                          onChange={(e) =>
-                            setCountFromText(e.target.value.replace(/\D/g, ""))
-                          }
-                          className="h-8 w-14 rounded-lg border bg-white text-center"
-                        />
-                        <button
-                          type="button"
-                          aria-label="One more"
-                          onClick={() => pickCount((count || 0) + 1)}
-                          className="h-8 w-8 rounded-full border bg-white text-lg leading-none hover:bg-gray-100"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    {touched && errors.count && <Err text={errors.count} />}
-                  </Step>
+                      );
+                    })}
+                  </div>
 
-                  {/* 2. Wish */}
-                  <Step n={2} title={`A wish for ${recipient}`} optional>
-                    <textarea
-                      id="gift-message"
-                      rows={3}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100"
-                      placeholder="Write a few warm words…"
-                    />
-                    <div className="mt-1 flex items-start justify-between gap-3 text-xs text-gray-500">
-                      <span>
-                        Printed on their gift card and shown on the memories
-                        page after review. Use {"{recipient}"} for their name.
-                      </span>
-                      <span
-                        className={`shrink-0 tabular-nums ${
-                          message.length > page.message_max_chars
-                            ? "font-semibold text-red-600"
-                            : ""
-                        }`}
-                      >
-                        {message.length}/{page.message_max_chars}
-                      </span>
-                    </div>
-                    {touched && errors.message && <Err text={errors.message} />}
-
-                    <label
-                      className="mt-3 block text-sm font-medium text-gray-700"
-                      htmlFor="gift-nickname"
-                    >
-                      What do you call {recipient}?{" "}
-                      <span className="font-normal text-gray-400">
-                        optional
-                      </span>
-                    </label>
-                    <input
-                      id="gift-nickname"
-                      value={nickname}
-                      maxLength={NICKNAME_MAX}
-                      onChange={(e) => setNickname(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100"
-                      placeholder="e.g. Didi, Mama, Rahul"
-                    />
-
-                    {message.trim() && (
-                      <div className="mt-3">
-                        <PostCard
-                          photoUrl={photoPreview}
-                          greeting={postCardGreeting}
-                          text={wishText}
-                          from={postCardFrom}
-                        />
-                      </div>
-                    )}
-
-                    <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-700">
-                        Add a photo{" "}
-                        <span className="font-normal text-gray-400">
-                          optional
-                        </span>
-                      </p>
-                      {message.trim() ? (
-                        <div className="mt-1 flex flex-wrap items-center gap-3">
-                          <label className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-green-800 hover:bg-green-50">
-                            {photo ? "Change photo" : "Choose photo"}
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp"
-                              className="sr-only"
-                              onChange={(e) => {
-                                choosePhoto(e.target.files?.[0]);
-                                e.target.value = "";
-                              }}
-                            />
-                          </label>
-                          {photo && (
-                            <button
-                              type="button"
-                              onClick={() => setPhoto(null)}
-                              className="text-sm text-gray-500 underline hover:text-gray-700"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="mt-1 text-xs text-gray-500">
-                          Write a wish above to add a photo to it.
-                        </p>
-                      )}
-                      <p className="mt-1 text-xs text-gray-500">
-                        Uploaded after your payment and shown on the memories
-                        page only once we have reviewed it. JPEG, PNG or WebP,
-                        up to 5 MB.
-                      </p>
-                      {photoError && <Err text={photoError} />}
-                    </div>
-                  </Step>
-
-                  {/* 3. Details */}
-                  <Step n={3} title="Your details">
-                    <div className="grid gap-3">
-                      <Field
-                        id="gift-name"
-                        label="Your name"
-                        value={name}
-                        maxLength={NAME_MAX}
-                        onChange={setName}
-                        error={touched ? errors.name : undefined}
-                        autoComplete="name"
-                      />
-                      <Field
-                        id="gift-email"
-                        label="Email"
-                        type="email"
-                        value={email}
-                        onChange={setEmail}
-                        error={touched ? errors.email : undefined}
-                        autoComplete="email"
-                      />
-                      <Field
-                        id="gift-phone"
-                        label="Phone"
-                        optional
-                        type="tel"
-                        value={phone}
-                        onChange={setPhone}
-                        error={touched ? errors.phone : undefined}
-                        autoComplete="tel"
-                      />
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      <Check
-                        checked={showName}
-                        onChange={setShowName}
-                        label="Show my name with my wish (otherwise “Anonymous”)"
-                      />
-                      <Check
-                        checked={wants80g}
-                        onChange={setWants80g}
-                        label="I'd like an 80G tax receipt"
-                      />
-                      {wants80g && (
-                        <div className="ml-6 max-w-xs">
-                          <Field
-                            id="gift-pan"
-                            label="PAN"
-                            value={pan}
-                            maxLength={10}
-                            onChange={(v) => setPan(v.toUpperCase())}
-                            error={touched ? errors.pan : undefined}
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <Check
-                          checked={consent}
-                          onChange={setConsent}
-                          label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with ${recipient}.`}
-                        />
-                        {touched && errors.consent && (
-                          <Err text={errors.consent} />
-                        )}
-                      </div>
-                    </div>
-                  </Step>
-
-                  {notice && (
-                    <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                      {notice}
+                  <label
+                    htmlFor="gift-count"
+                    className="mt-4 block text-sm font-medium text-gray-700"
+                  >
+                    Or enter the number of trees
+                  </label>
+                  <input
+                    id="gift-count"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    placeholder="e.g. 7"
+                    value={countText}
+                    onChange={(e) => setCountFromText(e.target.value)}
+                    aria-invalid={touched && !!errors.count}
+                    className={`${INPUT_BASE} ${
+                      touched && errors.count ? INPUT_BAD : INPUT_OK
+                    }`}
+                  />
+                  {touched && errors.count ? (
+                    <Err text={errors.count} />
+                  ) : (
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      Up to {page.max_trees_per_contribution} trees in one gift
                     </p>
                   )}
 
-                  <div>
-                    <div className="mb-3 flex items-baseline justify-between rounded-xl bg-green-50 px-4 py-3">
-                      <span className="text-sm text-gray-600">
-                        {count > 0 ? count : 0} × {rupees(page.price_per_tree)}
-                      </span>
-                      <span className="text-xl font-bold text-green-900">
-                        {rupees(total > 0 ? total : 0)}
-                      </span>
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={phase.kind === "paying"}
-                      className="w-full rounded-xl bg-green-800 px-5 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-green-900 disabled:opacity-60"
-                    >
-                      {phase.kind === "paying"
-                        ? "Opening secure payment…"
-                        : `${verb} ${count > 0 ? count : ""} ${
-                            count === 1 ? "tree" : "trees"
-                          } · ${rupees(total > 0 ? total : 0)}`}
-                    </button>
-                    <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-500">
-                      <LockIcon /> Secure payment by Razorpay · UPI, cards,
-                      netbanking
-                    </p>
+                  <div className="mt-4 flex items-center justify-between rounded-2xl bg-green-50 px-4 py-3">
+                    <span className="text-sm text-gray-600">
+                      {countValid
+                        ? `${count} × ${rupees(page.price_per_tree)}`
+                        : "Choose a number of trees"}
+                    </span>
+                    <span className="text-2xl font-extrabold text-green-900">
+                      {rupees(total)}
+                    </span>
                   </div>
+                </StepCard>
+
+                {/* 2. Wish + memory */}
+                <StepCard
+                  n={2}
+                  title={`A wish for ${recipient}`}
+                  optional
+                  hint="Shown on the event page after a quick review."
+                >
+                  <textarea
+                    id="gift-message"
+                    rows={4}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    aria-invalid={touched && !!errors.message}
+                    className={`${INPUT_BASE} resize-none ${
+                      touched && errors.message ? INPUT_BAD : INPUT_OK
+                    }`}
+                    placeholder="Write a few warm words…"
+                  />
+                  <div className="mt-1 flex justify-end text-xs">
+                    <span
+                      className={`tabular-nums ${
+                        message.length > page.message_max_chars
+                          ? "font-semibold text-red-600"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {message.length}/{page.message_max_chars}
+                    </span>
+                  </div>
+                  {touched && errors.message && <Err text={errors.message} />}
+
+                  <div className="mt-4 rounded-2xl border border-dashed border-green-300 bg-green-50/60 p-4">
+                    <p className="flex items-center gap-2 font-semibold text-gray-900">
+                      <span aria-hidden>📸</span> Add a memory to the event
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Share a photo that goes with your wish. We add it after
+                      your payment, and it appears on the event page once
+                      reviewed.
+                    </p>
+                    {message.trim() ? (
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {photoPreview && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={photoPreview}
+                            alt="Your photo"
+                            className="h-14 w-14 rounded-xl object-cover ring-1 ring-green-200"
+                          />
+                        )}
+                        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-white px-5 text-sm font-semibold text-green-800 shadow-sm ring-1 ring-green-200 hover:bg-green-50">
+                          {photo ? "Change photo" : "Choose a photo"}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="sr-only"
+                            onChange={(e) => {
+                              choosePhoto(e.target.files?.[0]);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        {photo && (
+                          <button
+                            type="button"
+                            onClick={() => setPhoto(null)}
+                            className="min-h-11 text-sm text-gray-500 underline hover:text-gray-700"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-500">
+                        Write your wish above to add a photo to it.
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-gray-500">
+                      JPEG, PNG or WebP · up to 5 MB
+                    </p>
+                    {photoError && <Err text={photoError} />}
+                  </div>
+                </StepCard>
+
+                {/* 3. Details */}
+                <StepCard n={3} title="Your details">
+                  <div className="grid gap-4">
+                    <Field
+                      id="gift-name"
+                      label="Your name"
+                      value={name}
+                      maxLength={NAME_MAX}
+                      onChange={setName}
+                      error={touched ? errors.name : undefined}
+                      autoComplete="name"
+                    />
+                    <Field
+                      id="gift-email"
+                      label="Email"
+                      type="email"
+                      inputMode="email"
+                      value={email}
+                      onChange={setEmail}
+                      error={touched ? errors.email : undefined}
+                      autoComplete="email"
+                    />
+                    <Field
+                      id="gift-phone"
+                      label="Phone"
+                      type="tel"
+                      inputMode="tel"
+                      value={phone}
+                      onChange={setPhone}
+                      error={touched ? errors.phone : undefined}
+                      autoComplete="tel"
+                    />
+                    <div>
+                      <Field
+                        id="gift-pan"
+                        label="PAN"
+                        value={pan}
+                        maxLength={10}
+                        autoComplete="off"
+                        onChange={(v) => setPan(v.toUpperCase())}
+                        error={touched ? errors.pan : undefined}
+                      />
+                      <p className="mt-1.5 text-xs text-gray-500">
+                        Needed for your 80G tax receipt.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-4">
+                    <Check
+                      checked={showName}
+                      onChange={setShowName}
+                      label="Show my name with my wish (otherwise “Anonymous”)"
+                    />
+                    <div>
+                      <Check
+                        checked={consent}
+                        onChange={setConsent}
+                        invalid={touched && !!errors.consent}
+                        label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with ${recipient}.`}
+                      />
+                      {touched && errors.consent && (
+                        <Err text={errors.consent} />
+                      )}
+                    </div>
+                  </div>
+                </StepCard>
+
+                {notice && (
+                  <p
+                    role="alert"
+                    className="rounded-2xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200"
+                  >
+                    {notice}
+                  </p>
+                )}
+
+                {/* Desktop submit; on mobile the sticky bar below does this. */}
+                <div className="hidden lg:block">
+                  <button
+                    type="submit"
+                    disabled={phase.kind === "paying"}
+                    className="min-h-14 w-full rounded-full bg-green-800 px-6 py-3.5 text-base font-bold text-white shadow-xl shadow-green-900/25 transition hover:bg-green-900 disabled:opacity-60"
+                  >
+                    {phase.kind === "paying"
+                      ? "Opening secure payment…"
+                      : `${verb} ${treesLabel} · ${rupees(total)}`}
+                  </button>
                 </div>
+                <p className="flex items-center justify-center gap-1.5 text-xs text-gray-500">
+                  <LockIcon /> Secure payment by Razorpay · UPI, netbanking and
+                  more
+                </p>
               </form>
             ))}
         </div>
 
         {/* ── Story, wishes, album ───────────────────────────── */}
-        <div className="order-2 space-y-10 lg:order-1">
-          {page.description && (
-            <section>
-              <p className="whitespace-pre-line text-lg leading-relaxed text-gray-700">
-                {page.description}
-              </p>
-            </section>
-          )}
-
+        <div className="order-2 min-w-0 space-y-12 lg:order-1">
           <section>
-            <h2 className="text-xl font-bold text-gray-900">How it works</h2>
+            <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
             <ol className="mt-4 grid gap-3 sm:grid-cols-3">
               {[
                 [
@@ -916,18 +946,23 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 [
                   "💌",
                   "They receive",
-                  "A gift card for their tree, carrying your wish.",
+                  `${recipient} is told about the trees you gave, with your wish.`,
                 ],
-              ].map(([icon, title, body]) => (
+              ].map(([icon, title, body], i) => (
                 <li
                   key={title}
-                  className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
+                  className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
                 >
-                  <div className="text-2xl" aria-hidden>
-                    {icon}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+                    <span aria-hidden>{icon}</span>
                   </div>
-                  <p className="mt-2 font-semibold text-gray-900">{title}</p>
-                  <p className="mt-1 text-sm text-gray-600">{body}</p>
+                  <div className="sm:mt-3">
+                    <p className="font-bold text-gray-900">
+                      <span className="mr-1.5 text-green-700">{i + 1}.</span>
+                      {title}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">{body}</p>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -935,29 +970,29 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
           {page.messages.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold text-gray-900">
-                Wishes for {recipient}
-              </h2>
-              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              <SectionTitle eyebrow="Kind words">Wishes for {recipient}</SectionTitle>
+              <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
                 {page.messages.map((m, i) => (
                   <li
                     key={i}
-                    className="relative rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5"
+                    className={`relative w-[82%] shrink-0 snap-center rounded-3xl p-5 shadow-sm ring-1 sm:w-auto ${
+                      WISH_TINTS[i % WISH_TINTS.length]
+                    }`}
                   >
                     <span
                       aria-hidden
-                      className="absolute right-4 top-1 font-serif text-5xl leading-none text-green-100"
+                      className="absolute right-5 top-2 font-serif text-6xl leading-none text-green-100"
                     >
                       ”
                     </span>
-                    <p className="whitespace-pre-line text-gray-800">
+                    <p className="relative whitespace-pre-line text-gray-800">
                       {m.message}
                     </p>
-                    <div className="mt-4 flex items-center gap-2">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-xs font-semibold text-green-800">
+                    <div className="mt-4 flex items-center gap-2.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-emerald-200 text-xs font-bold text-green-900">
                         {initials(m.name)}
                       </span>
-                      <span className="text-sm font-medium text-gray-600">
+                      <span className="text-sm font-semibold text-gray-600">
                         {m.name ?? "Anonymous"}
                       </span>
                     </div>
@@ -969,14 +1004,15 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
           {page.album.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold text-gray-900">Album</h2>
+              <SectionTitle eyebrow="From the celebration">Memories</SectionTitle>
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {page.album.map((img, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => setLightbox(i)}
-                    className={`group overflow-hidden rounded-xl ${
+                    aria-label={`Open photo ${i + 1}`}
+                    className={`group overflow-hidden rounded-2xl ${
                       i === 0 && page.album.length > 2
                         ? "col-span-2 row-span-2"
                         : ""
@@ -998,17 +1034,17 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           {memoriesUrl && (
             <a
               href={memoriesUrl}
-              className="flex items-center justify-between rounded-2xl bg-green-800 px-5 py-4 text-white shadow hover:bg-green-900"
+              className="flex items-center justify-between rounded-3xl bg-gradient-to-r from-green-800 to-emerald-700 px-5 py-5 text-white shadow-lg shadow-green-900/20 transition active:scale-[0.99]"
             >
               <span>
-                <span className="block font-semibold">
-                  See the memories page
+                <span className="block text-lg font-bold">
+                  See the event page
                 </span>
                 <span className="text-sm text-green-100">
                   Photos, wishes and the trees planted so far
                 </span>
               </span>
-              <span aria-hidden className="text-2xl">
+              <span aria-hidden className="text-3xl">
                 →
               </span>
             </a>
@@ -1016,10 +1052,42 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
         </div>
       </div>
 
+      {/* ── Sticky gift bar (mobile) ─────────────────────────── */}
+      {showGiftBar && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/5 bg-white/90 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-md items-center gap-3">
+            <div className="min-w-0 leading-tight">
+              <p className="text-xs text-gray-500">{treesLabel}</p>
+              <p className="text-xl font-extrabold text-green-900">
+                {rupees(total)}
+              </p>
+            </div>
+            <button
+              type="submit"
+              form="gift-form"
+              disabled={phase.kind === "paying"}
+              className="min-h-12 flex-1 rounded-full bg-green-800 px-5 py-3 text-base font-bold text-white shadow-lg shadow-green-900/25 transition active:scale-[0.98] disabled:opacity-60"
+            >
+              {phase.kind === "paying" ? "Opening payment…" : `${verb} now`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {lightbox !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightbox(null)}
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null) return;
+            const dx = e.changedTouches[0].clientX - touchStartX.current;
+            touchStartX.current = null;
+            if (Math.abs(dx) > 50 && page.album.length > 1)
+              goTo(dx < 0 ? 1 : -1);
+          }}
           role="dialog"
           aria-modal="true"
         >
@@ -1027,38 +1095,39 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           <img
             src={page.album[lightbox].image_url}
             alt=""
-            className="max-h-full max-w-full rounded-lg object-contain"
+            className="max-h-full max-w-full rounded-2xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />
           {page.album.length > 1 && (
             <>
               <button
                 aria-label="Previous photo"
-                className="absolute left-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full bg-white/20 text-2xl text-white hover:bg-white/30"
+                className="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 rounded-full bg-white/20 text-2xl text-white hover:bg-white/30 sm:block"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightbox(
-                    (lightbox - 1 + page.album.length) % page.album.length
-                  );
+                  goTo(-1);
                 }}
               >
                 ‹
               </button>
               <button
                 aria-label="Next photo"
-                className="absolute right-3 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full bg-white/20 text-2xl text-white hover:bg-white/30"
+                className="absolute right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 rounded-full bg-white/20 text-2xl text-white hover:bg-white/30 sm:block"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightbox((lightbox + 1) % page.album.length);
+                  goTo(1);
                 }}
               >
                 ›
               </button>
+              <p className="absolute bottom-5 left-0 right-0 text-center text-sm text-white/70">
+                {lightbox + 1} / {page.album.length}
+              </p>
             </>
           )}
           <button
             aria-label="Close"
-            className="absolute right-3 top-3 h-10 w-10 rounded-full bg-white/20 text-xl text-white hover:bg-white/30"
+            className="absolute right-3 top-3 h-11 w-11 rounded-full bg-white/20 text-xl text-white hover:bg-white/30"
             onClick={() => setLightbox(null)}
           >
             ✕
@@ -1069,11 +1138,21 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function SectionTitle({
+  eyebrow,
+  children,
+}: {
+  eyebrow: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="px-2">
-      <p className="text-xl font-bold text-green-900 sm:text-2xl">{value}</p>
-      <p className="text-xs text-gray-500 sm:text-sm">{label}</p>
+    <div>
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+        {eyebrow}
+      </p>
+      <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
+        {children}
+      </h2>
     </div>
   );
 }
@@ -1093,33 +1172,49 @@ function Panel({
   };
   return (
     <div
-      className={`rounded-2xl p-6 text-center shadow-lg ring-1 ${tones[tone]}`}
+      className={`rounded-3xl p-6 text-center shadow-xl shadow-green-900/5 ring-1 ${tones[tone]}`}
     >
       {children}
     </div>
   );
 }
 
-function Step({
+function StepCard({
   n,
   title,
+  hint,
   optional,
   children,
 }: {
   n: number;
   title: string;
+  hint?: string;
   optional?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <fieldset>
-      <legend className="mb-3 flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-800 text-xs font-bold text-white">
+    <fieldset className="relative overflow-hidden rounded-3xl bg-white p-5 pt-6 shadow-lg shadow-green-900/5 ring-1 ring-black/5">
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-green-700 via-emerald-500 to-lime-400"
+      />
+      <legend className="sr-only">{title}</legend>
+      <div className="mb-4 flex items-start gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-700 to-emerald-500 text-sm font-bold text-white shadow">
           {n}
         </span>
-        <span className="font-semibold text-gray-900">{title}</span>
-        {optional && <span className="text-xs text-gray-400">optional</span>}
-      </legend>
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold leading-snug text-gray-900">
+            {title}
+            {optional && (
+              <span className="ml-2 align-middle text-xs font-medium text-gray-400">
+                optional
+              </span>
+            )}
+          </h2>
+          {hint && <p className="mt-0.5 text-sm text-gray-500">{hint}</p>}
+        </div>
+      </div>
       {children}
     </fieldset>
   );
@@ -1129,18 +1224,21 @@ function Check({
   checked,
   onChange,
   label,
+  invalid,
 }: {
   checked: boolean;
   onChange: (value: boolean) => void;
   label: string;
+  invalid?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 text-sm text-gray-700">
+    <label className="flex min-h-6 cursor-pointer items-start gap-3 text-sm text-gray-700">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 accent-green-800"
+        aria-invalid={invalid || undefined}
+        className="mt-0.5 h-5 w-5 shrink-0 accent-green-800"
       />
       <span>{label}</span>
     </label>
@@ -1148,13 +1246,15 @@ function Check({
 }
 
 function Err({ text }: { text: string }) {
-  return <p className="mt-1 text-sm text-red-600">{text}</p>;
+  return <p className="mt-1.5 text-sm text-red-600">{text}</p>;
 }
 
-function Spinner() {
+function Spinner({ small }: { small?: boolean }) {
   return (
     <div
-      className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-green-100 border-t-green-700"
+      className={`animate-spin rounded-full border-green-100 border-t-green-700 ${
+        small ? "inline-block h-4 w-4 border-2" : "mx-auto h-10 w-10 border-4"
+      }`}
       role="status"
       aria-label="Loading"
     />
@@ -1182,6 +1282,7 @@ function Field(props: {
   onChange: (value: string) => void;
   error?: string;
   type?: string;
+  inputMode?: "text" | "email" | "tel" | "numeric";
   maxLength?: number;
   autoComplete?: string;
   optional?: boolean;
@@ -1194,21 +1295,21 @@ function Field(props: {
       >
         {props.label}
         {props.optional && (
-          <span className="ml-1 font-normal text-gray-400">optional</span>
+          <span className="ml-1.5 text-xs font-normal text-gray-400">
+            optional
+          </span>
         )}
       </label>
       <input
         id={props.id}
         type={props.type ?? "text"}
+        inputMode={props.inputMode}
         value={props.value}
         maxLength={props.maxLength}
         autoComplete={props.autoComplete}
+        aria-invalid={!!props.error}
         onChange={(e) => props.onChange(e.target.value)}
-        className={`mt-1 w-full rounded-xl border px-3 py-2.5 outline-none focus:ring-2 ${
-          props.error
-            ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-            : "border-gray-200 focus:border-green-700 focus:ring-green-100"
-        }`}
+        className={`${INPUT_BASE} ${props.error ? INPUT_BAD : INPUT_OK}`}
       />
       {props.error && <Err text={props.error} />}
     </div>
