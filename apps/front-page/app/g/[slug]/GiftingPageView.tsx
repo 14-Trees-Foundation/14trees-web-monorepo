@@ -61,14 +61,6 @@ function defaultWish(page: PublicGiftingPage): string {
   return text.length <= page.message_max_chars ? text : "";
 }
 
-// Soft tints so a long run of wishes does not look like a wall of white boxes.
-const WISH_TINTS = [
-  "bg-emerald-50 ring-emerald-100",
-  "bg-amber-50 ring-amber-100",
-  "bg-sky-50 ring-sky-100",
-  "bg-rose-50 ring-rose-100",
-];
-
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const formatDate = (isoDate: string) =>
@@ -80,14 +72,6 @@ const formatDate = (isoDate: string) =>
   });
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-
-const initials = (name: string | null) =>
-  (name ?? "?")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "?";
 
 // Why the page cannot take gifts right now, or null when it can.
 function closedReason(page: PublicGiftingPage): string | null {
@@ -425,11 +409,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox, page.album.length]);
 
-  const memoriesUrl =
-    page.memories_link && process.env.NEXT_PUBLIC_DASHBOARD_URL
-      ? `${process.env.NEXT_PUBLIC_DASHBOARD_URL}/events/${page.memories_link}`
-      : null;
-
   const showForm = phase.kind === "form" || phase.kind === "paying";
   const showGiftBar = showForm && !closed;
   const treesLabel = countValid
@@ -641,14 +620,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   🌱
                 </div>
                 <p className="mt-3 font-medium text-gray-800">{closed}</p>
-                {memoriesUrl && (
-                  <a
-                    href={memoriesUrl}
-                    className="mt-4 inline-block text-sm font-semibold text-green-800 underline"
-                  >
-                    See the event page
-                  </a>
-                )}
               </Panel>
             ) : (
               <form
@@ -966,42 +937,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
             </ol>
           </section>
 
-          {page.messages.length > 0 && (
-            <section>
-              <SectionTitle eyebrow="Kind words">
-                Wishes for {recipient}
-              </SectionTitle>
-              <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
-                {page.messages.map((m, i) => (
-                  <li
-                    key={i}
-                    className={`relative w-[82%] shrink-0 snap-center rounded-3xl p-5 shadow-sm ring-1 sm:w-auto ${
-                      WISH_TINTS[i % WISH_TINTS.length]
-                    }`}
-                  >
-                    <span
-                      aria-hidden
-                      className="absolute right-5 top-2 font-serif text-6xl leading-none text-green-100"
-                    >
-                      ”
-                    </span>
-                    <p className="relative whitespace-pre-line text-gray-800">
-                      {m.message}
-                    </p>
-                    <div className="mt-4 flex items-center gap-2.5">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-emerald-200 text-xs font-bold text-green-900">
-                        {initials(m.name)}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-600">
-                        {m.name ?? "Anonymous"}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           {page.album.length > 0 && (
             <section>
               <SectionTitle eyebrow="From the celebration">
@@ -1031,25 +966,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 ))}
               </div>
             </section>
-          )}
-
-          {memoriesUrl && (
-            <a
-              href={memoriesUrl}
-              className="flex items-center justify-between rounded-3xl bg-gradient-to-r from-green-800 to-emerald-700 px-5 py-5 text-white shadow-lg shadow-green-900/20 transition active:scale-[0.99]"
-            >
-              <span>
-                <span className="block text-lg font-bold">
-                  See the event page
-                </span>
-                <span className="text-sm text-green-100">
-                  Photos, wishes and the trees planted so far
-                </span>
-              </span>
-              <span aria-hidden className="text-3xl">
-                →
-              </span>
-            </a>
           )}
         </div>
       </div>
