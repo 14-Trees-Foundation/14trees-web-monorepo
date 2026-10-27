@@ -275,7 +275,13 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     if (!result || result.outcome === "pending") {
       // Money was taken; the server finishes the job from Razorpay's webhook.
       setPhase({ kind: "processing" });
-    } else if (result.outcome === "fulfilled" || result.outcome === "paid") {
+    } else if (
+      result.outcome === "fulfilled" ||
+      result.outcome === "paid" ||
+      // The webhook can finish the gift first; the server then says "skipped" for a gift that is done.
+      result.status === "Fulfilled" ||
+      result.status === "Paid"
+    ) {
       if (result.photo_upload_token) {
         photoTarget.current = {
           contributionId,
@@ -433,7 +439,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   return (
     // pt-16 clears the fixed site header (h-16); the bottom padding leaves room for the gift bar.
     <main
-      className={`bg-[radial-gradient(60rem_28rem_at_50%_0%,theme(colors.emerald.100),transparent)] bg-white pt-16 ${
+      className={`bg-white bg-[radial-gradient(60rem_28rem_at_50%_0%,theme(colors.emerald.100),transparent)] pt-16 ${
         showGiftBar ? "pb-32 lg:pb-20" : "pb-20"
       }`}
     >
@@ -476,7 +482,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           {showGiftBar && (
             <a
               href="#gift"
-              className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-7 py-3 text-base font-bold text-green-900 shadow-xl shadow-black/20 transition active:scale-[0.97] hover:bg-green-50"
+              className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-7 py-3 text-base font-bold text-green-900 shadow-xl shadow-black/20 transition hover:bg-green-50 active:scale-[0.97]"
             >
               {verb} a tree <span aria-hidden>↓</span>
             </a>
@@ -962,7 +968,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
           {page.messages.length > 0 && (
             <section>
-              <SectionTitle eyebrow="Kind words">Wishes for {recipient}</SectionTitle>
+              <SectionTitle eyebrow="Kind words">
+                Wishes for {recipient}
+              </SectionTitle>
               <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
                 {page.messages.map((m, i) => (
                   <li
@@ -996,7 +1004,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
           {page.album.length > 0 && (
             <section>
-              <SectionTitle eyebrow="From the celebration">Memories</SectionTitle>
+              <SectionTitle eyebrow="From the celebration">
+                Memories
+              </SectionTitle>
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {page.album.map((img, i) => (
                   <button
