@@ -587,14 +587,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 >
                   {shared ? "Link copied ✓" : "Invite others to gift a tree"}
                 </button>
-                {memoriesUrl && (
-                  <a
-                    href={memoriesUrl}
-                    className="min-h-12 rounded-full border-2 border-green-800 px-6 py-3 text-center text-base font-semibold text-green-800 hover:bg-green-50"
-                  >
-                    See the event page
-                  </a>
-                )}
               </div>
             </Panel>
           )}
