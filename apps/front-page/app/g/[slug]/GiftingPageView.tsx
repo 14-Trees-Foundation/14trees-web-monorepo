@@ -97,13 +97,10 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const params = useSearchParams();
   const source: "qr" | "link" = params.get("s") === "qr" ? "qr" : "link";
 
-  const defaultCount = page.suggested_counts.includes(5)
-    ? 5
-    : page.suggested_counts[0] ?? 1;
+  const defaultCount = 1;
   const [count, setCount] = useState<number>(defaultCount);
   const [countText, setCountText] = useState<string>(String(defaultCount));
   const [message, setMessage] = useState(() => defaultWish(page));
-  const [showName, setShowName] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -351,7 +348,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       pan_number: pan.trim().toUpperCase(),
       consent,
       message: message.trim() || undefined,
-      show_name: showName,
+      show_name: true,
       source,
     };
 
@@ -415,6 +412,47 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     ? `${count} ${count === 1 ? "tree" : "trees"}`
     : "trees";
 
+  const howItWorks = (
+    <section>
+      <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+        {[
+          [
+            "🌱",
+            "You gift",
+            `Choose how many trees and add a wish for ${recipient}.`,
+          ],
+          [
+            "🌳",
+            "We plant",
+            "Your trees are planted and looked after by the 14 Trees team.",
+          ],
+          [
+            "💌",
+            "They receive",
+            `${recipient} is told about the trees you gave, with your wish.`,
+          ],
+        ].map(([icon, title, body], i) => (
+          <li
+            key={title}
+            className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+              <span aria-hidden>{icon}</span>
+            </div>
+            <div className="sm:mt-3">
+              <p className="font-bold text-gray-900">
+                <span className="mr-1.5 text-green-700">{i + 1}.</span>
+                {title}
+              </p>
+              <p className="mt-1 text-sm text-gray-600">{body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+
   return (
     // pt-16 clears the fixed site header (h-16); the bottom padding leaves room for the gift bar.
     <main
@@ -451,11 +489,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           <h1 className="mt-5 text-[2.1rem] font-extrabold leading-[1.1] tracking-tight drop-shadow-lg sm:text-6xl">
             {page.title}
           </h1>
-          <p className="mt-4 text-base text-white/90 sm:text-lg">
-            {memorial ? "In memory of" : "For"}{" "}
-            <span className="font-semibold">{recipient}</span>
-          </p>
-          <p className="mt-1 text-sm text-white/70">
+          <p className="mt-4 text-sm text-white/80">
             {formatDate(page.occasion_date)}
           </p>
           {showGiftBar && (
@@ -484,6 +518,8 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           </div>
         </section>
       )}
+
+      <div className="mx-auto mt-8 max-w-3xl px-4 lg:hidden">{howItWorks}</div>
 
       <div
         className={`mx-auto grid max-w-5xl gap-10 px-4 lg:grid-cols-[1fr_420px] lg:items-start ${
@@ -848,11 +884,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <Check
-                      checked={showName}
-                      onChange={setShowName}
-                      label="Show my name with my wish (otherwise “Anonymous”)"
-                    />
                     <div>
                       <Check
                         checked={consent}
@@ -898,50 +929,11 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
         {/* ── Story, wishes, album ───────────────────────────── */}
         <div className="order-2 min-w-0 space-y-12 lg:order-1">
-          <section>
-            <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
-            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-              {[
-                [
-                  "🌱",
-                  "You gift",
-                  `Choose how many trees and add a wish for ${recipient}.`,
-                ],
-                [
-                  "🌳",
-                  "We plant",
-                  "Your trees are planted and looked after by the 14 Trees team.",
-                ],
-                [
-                  "💌",
-                  "They receive",
-                  `${recipient} is told about the trees you gave, with your wish.`,
-                ],
-              ].map(([icon, title, body], i) => (
-                <li
-                  key={title}
-                  className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
-                >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
-                    <span aria-hidden>{icon}</span>
-                  </div>
-                  <div className="sm:mt-3">
-                    <p className="font-bold text-gray-900">
-                      <span className="mr-1.5 text-green-700">{i + 1}.</span>
-                      {title}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
+          <div className="hidden lg:block">{howItWorks}</div>
 
           {page.album.length > 0 && (
             <section>
-              <SectionTitle eyebrow="From the celebration">
-                Memories
-              </SectionTitle>
+              <SectionTitle eyebrow="Shared by guests">Memories</SectionTitle>
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {page.album.map((img, i) => (
                   <button
