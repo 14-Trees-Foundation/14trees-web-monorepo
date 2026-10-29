@@ -97,9 +97,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const params = useSearchParams();
   const source: "qr" | "link" = params.get("s") === "qr" ? "qr" : "link";
 
-  const defaultCount = page.suggested_counts.includes(5)
-    ? 5
-    : page.suggested_counts[0] ?? 1;
+  const defaultCount = 1;
+  // The backend decides which sections exist; hidden ones are simply not in the list.
+  const show = (key: string) => page.sections.includes(key);
   const [count, setCount] = useState<number>(defaultCount);
   const [countText, setCountText] = useState<string>(String(defaultCount));
   const [message, setMessage] = useState(() => defaultWish(page));
@@ -450,16 +450,16 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           <h1 className="mt-5 text-[2.1rem] font-extrabold leading-[1.1] tracking-tight drop-shadow-lg sm:text-6xl">
             {page.title}
           </h1>
-          {page.show_hero_subtitle && (
-            <>
-              <p className="mt-4 text-base text-white/90 sm:text-lg">
-                {memorial ? "In memory of" : "For"}{" "}
-                <span className="font-semibold">{recipient}</span>
-              </p>
-              <p className="mt-1 text-sm text-white/70">
-                {formatDate(page.occasion_date)}
-              </p>
-            </>
+          {show("hero_recipient_line") && (
+            <p className="mt-4 text-base text-white/90 sm:text-lg">
+              {memorial ? "In memory of" : "For"}{" "}
+              <span className="font-semibold">{recipient}</span>
+            </p>
+          )}
+          {show("hero_date") && (
+            <p className="mt-1 text-sm text-white/70">
+              {formatDate(page.occasion_date)}
+            </p>
           )}
           {showGiftBar && (
             <a
@@ -721,7 +721,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 {/* 2. Wish + memory */}
                 <StepCard
                   n={2}
-                  title={`A wish for ${recipient}`}
+                  title="Add a wish"
                   optional
                   hint="Shown on the event page after a quick review."
                 >
@@ -749,7 +749,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   </div>
                   {touched && errors.message && <Err text={errors.message} />}
 
-                  {page.allow_guest_photo && (
+                  {show("guest_photo") && (
                     <div className="mt-4 rounded-2xl border border-dashed border-green-300 bg-green-50/60 p-4">
                       <p className="flex items-center gap-2 font-semibold text-gray-900">
                         <span aria-hidden>📸</span> Add a memory to the event
@@ -858,7 +858,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                         checked={consent}
                         onChange={setConsent}
                         invalid={touched && !!errors.consent}
-                        label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with ${recipient}.`}
+                        label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with the receiver.`}
                       />
                       {touched && errors.consent && (
                         <Err text={errors.consent} />
@@ -898,44 +898,48 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
         {/* ── Story, wishes, album ───────────────────────────── */}
         <div className="order-2 min-w-0 space-y-12 lg:order-1">
-          <section>
-            <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
-            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-              {[
-                [
-                  "🌱",
-                  "You gift",
-                  `Choose how many trees and add a wish for ${recipient}.`,
-                ],
-                [
-                  "🌳",
-                  "We plant",
-                  "Your trees are planted and looked after by the 14 Trees team.",
-                ],
-                [
-                  "💌",
-                  "They receive",
-                  `${recipient} is told about the trees you gave, with your wish.`,
-                ],
-              ].map(([icon, title, body], i) => (
-                <li
-                  key={title}
-                  className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
-                >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
-                    <span aria-hidden>{icon}</span>
-                  </div>
-                  <div className="sm:mt-3">
-                    <p className="font-bold text-gray-900">
-                      <span className="mr-1.5 text-green-700">{i + 1}.</span>
-                      {title}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
+          {show("how_it_works") && (
+            <section>
+              <SectionTitle eyebrow="Simple and sweet">
+                How it works
+              </SectionTitle>
+              <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+                {[
+                  [
+                    "🌱",
+                    "You gift",
+                    `Choose how many trees and add a wish for ${recipient}.`,
+                  ],
+                  [
+                    "🌳",
+                    "We plant",
+                    "Your trees are planted and looked after by the 14 Trees team.",
+                  ],
+                  [
+                    "💌",
+                    "They receive",
+                    `${recipient} is told about the trees you gave, with your wish.`,
+                  ],
+                ].map(([icon, title, body], i) => (
+                  <li
+                    key={title}
+                    className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+                      <span aria-hidden>{icon}</span>
+                    </div>
+                    <div className="sm:mt-3">
+                      <p className="font-bold text-gray-900">
+                        <span className="mr-1.5 text-green-700">{i + 1}.</span>
+                        {title}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-600">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
           {page.album.length > 0 && (
             <section>
