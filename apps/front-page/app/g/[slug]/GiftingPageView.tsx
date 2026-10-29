@@ -97,13 +97,13 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const params = useSearchParams();
   const source: "qr" | "link" = params.get("s") === "qr" ? "qr" : "link";
 
-  const defaultCount = page.suggested_counts.includes(5)
-    ? 5
-    : page.suggested_counts[0] ?? 1;
+  const defaultCount = 1;
+  // The backend decides which sections exist; hidden ones are simply not in the list. An older
+  // backend sends no list at all, which shows everything.
+  const show = (key: string) => page.sections?.includes(key) ?? true;
   const [count, setCount] = useState<number>(defaultCount);
   const [countText, setCountText] = useState<string>(String(defaultCount));
   const [message, setMessage] = useState(() => defaultWish(page));
-  const [showName, setShowName] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -351,7 +351,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       pan_number: pan.trim().toUpperCase(),
       consent,
       message: message.trim() || undefined,
-      show_name: showName,
+      show_name: true,
       source,
     };
 
@@ -451,13 +451,17 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           <h1 className="mt-5 text-[2.1rem] font-extrabold leading-[1.1] tracking-tight drop-shadow-lg sm:text-6xl">
             {page.title}
           </h1>
-          <p className="mt-4 text-base text-white/90 sm:text-lg">
-            {memorial ? "In memory of" : "For"}{" "}
-            <span className="font-semibold">{recipient}</span>
-          </p>
-          <p className="mt-1 text-sm text-white/70">
-            {formatDate(page.occasion_date)}
-          </p>
+          {show("hero_recipient_line") && (
+            <p className="mt-4 text-base text-white/90 sm:text-lg">
+              {memorial ? "In memory of" : "For"}{" "}
+              <span className="font-semibold">{recipient}</span>
+            </p>
+          )}
+          {show("hero_date") && (
+            <p className="mt-1 text-sm text-white/70">
+              {formatDate(page.occasion_date)}
+            </p>
+          )}
           {showGiftBar && (
             <a
               href="#gift"
@@ -718,7 +722,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 {/* 2. Wish + memory */}
                 <StepCard
                   n={2}
-                  title={`A wish for ${recipient}`}
+                  title="Add a wish"
                   optional
                   hint="Shown on the event page after a quick review."
                 >
@@ -746,57 +750,59 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   </div>
                   {touched && errors.message && <Err text={errors.message} />}
 
-                  <div className="mt-4 rounded-2xl border border-dashed border-green-300 bg-green-50/60 p-4">
-                    <p className="flex items-center gap-2 font-semibold text-gray-900">
-                      <span aria-hidden>📸</span> Add a memory to the event
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Share a photo that goes with your wish. We add it after
-                      your payment, and it appears on the event page once
-                      reviewed.
-                    </p>
-                    {message.trim() ? (
-                      <div className="mt-3 flex flex-wrap items-center gap-3">
-                        {photoPreview && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={photoPreview}
-                            alt="Your photo"
-                            className="h-14 w-14 rounded-xl object-cover ring-1 ring-green-200"
-                          />
-                        )}
-                        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-white px-5 text-sm font-semibold text-green-800 shadow-sm ring-1 ring-green-200 hover:bg-green-50">
-                          {photo ? "Change photo" : "Choose a photo"}
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            className="sr-only"
-                            onChange={(e) => {
-                              choosePhoto(e.target.files?.[0]);
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
-                        {photo && (
-                          <button
-                            type="button"
-                            onClick={() => setPhoto(null)}
-                            className="min-h-11 text-sm text-gray-500 underline hover:text-gray-700"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-xs text-gray-500">
-                        Write your wish above to add a photo to it.
+                  {show("guest_photo") && (
+                    <div className="mt-4 rounded-2xl border border-dashed border-green-300 bg-green-50/60 p-4">
+                      <p className="flex items-center gap-2 font-semibold text-gray-900">
+                        <span aria-hidden>📸</span> Add a memory to the event
                       </p>
-                    )}
-                    <p className="mt-2 text-xs text-gray-500">
-                      JPEG, PNG or WebP · up to 5 MB
-                    </p>
-                    {photoError && <Err text={photoError} />}
-                  </div>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Share a photo that goes with your wish. We add it after
+                        your payment, and it appears on the event page once
+                        reviewed.
+                      </p>
+                      {message.trim() ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          {photoPreview && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={photoPreview}
+                              alt="Your photo"
+                              className="h-14 w-14 rounded-xl object-cover ring-1 ring-green-200"
+                            />
+                          )}
+                          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-white px-5 text-sm font-semibold text-green-800 shadow-sm ring-1 ring-green-200 hover:bg-green-50">
+                            {photo ? "Change photo" : "Choose a photo"}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="sr-only"
+                              onChange={(e) => {
+                                choosePhoto(e.target.files?.[0]);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          {photo && (
+                            <button
+                              type="button"
+                              onClick={() => setPhoto(null)}
+                              className="min-h-11 text-sm text-gray-500 underline hover:text-gray-700"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-gray-500">
+                          Write your wish above to add a photo to it.
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-gray-500">
+                        JPEG, PNG or WebP · up to 5 MB
+                      </p>
+                      {photoError && <Err text={photoError} />}
+                    </div>
+                  )}
                 </StepCard>
 
                 {/* 3. Details */}
@@ -848,17 +854,12 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <Check
-                      checked={showName}
-                      onChange={setShowName}
-                      label="Show my name with my wish (otherwise “Anonymous”)"
-                    />
                     <div>
                       <Check
                         checked={consent}
                         onChange={setConsent}
                         invalid={touched && !!errors.consent}
-                        label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with ${recipient}.`}
+                        label={`I agree that 14 Trees Foundation may use my details to process this gift, send me a receipt and share my wish with the receiver.`}
                       />
                       {touched && errors.consent && (
                         <Err text={errors.consent} />
@@ -898,44 +899,48 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
         {/* ── Story, wishes, album ───────────────────────────── */}
         <div className="order-2 min-w-0 space-y-12 lg:order-1">
-          <section>
-            <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
-            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-              {[
-                [
-                  "🌱",
-                  "You gift",
-                  `Choose how many trees and add a wish for ${recipient}.`,
-                ],
-                [
-                  "🌳",
-                  "We plant",
-                  "Your trees are planted and looked after by the 14 Trees team.",
-                ],
-                [
-                  "💌",
-                  "They receive",
-                  `${recipient} is told about the trees you gave, with your wish.`,
-                ],
-              ].map(([icon, title, body], i) => (
-                <li
-                  key={title}
-                  className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
-                >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
-                    <span aria-hidden>{icon}</span>
-                  </div>
-                  <div className="sm:mt-3">
-                    <p className="font-bold text-gray-900">
-                      <span className="mr-1.5 text-green-700">{i + 1}.</span>
-                      {title}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
+          {show("how_it_works") && (
+            <section>
+              <SectionTitle eyebrow="Simple and sweet">
+                How it works
+              </SectionTitle>
+              <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+                {[
+                  [
+                    "🌱",
+                    "You gift",
+                    `Choose how many trees and add a wish for ${recipient}.`,
+                  ],
+                  [
+                    "🌳",
+                    "We plant",
+                    "Your trees are planted and looked after by the 14 Trees team.",
+                  ],
+                  [
+                    "💌",
+                    "They receive",
+                    `${recipient} is told about the trees you gave, with your wish.`,
+                  ],
+                ].map(([icon, title, body], i) => (
+                  <li
+                    key={title}
+                    className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+                      <span aria-hidden>{icon}</span>
+                    </div>
+                    <div className="sm:mt-3">
+                      <p className="font-bold text-gray-900">
+                        <span className="mr-1.5 text-green-700">{i + 1}.</span>
+                        {title}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-600">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
           {page.album.length > 0 && (
             <section>

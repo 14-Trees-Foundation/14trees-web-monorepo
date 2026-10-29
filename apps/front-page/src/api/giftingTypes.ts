@@ -15,6 +15,8 @@ export interface PublicGiftingPage {
   suggested_counts: number[];
   max_trees_per_contribution: number;
   message_max_chars: number;
+  // Keys of the sections to render; set by the backend per page.
+  sections: string[];
   target_trees: number | null;
   trees_so_far: number;
   album: { image_url: string }[];
