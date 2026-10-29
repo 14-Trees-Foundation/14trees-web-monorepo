@@ -98,8 +98,9 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const source: "qr" | "link" = params.get("s") === "qr" ? "qr" : "link";
 
   const defaultCount = 1;
-  // The backend decides which sections exist; hidden ones are simply not in the list.
-  const show = (key: string) => page.sections.includes(key);
+  // The backend decides which sections exist; hidden ones are simply not in the list. An older
+  // backend sends no list at all, which shows everything.
+  const show = (key: string) => page.sections?.includes(key) ?? true;
   const [count, setCount] = useState<number>(defaultCount);
   const [countText, setCountText] = useState<string>(String(defaultCount));
   const [message, setMessage] = useState(() => defaultWish(page));
