@@ -685,7 +685,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 {/* 1. Trees */}
                 <StepCard
                   n={1}
-                  title={`How many trees for ${recipient}?`}
+                  title="How many trees?"
                   hint={`${rupees(
                     page.price_per_tree
                   )} per tree · planted and cared for by 14 Trees`}
