@@ -15,6 +15,8 @@ export interface PublicGiftingPage {
   suggested_counts: number[];
   max_trees_per_contribution: number;
   message_max_chars: number;
+  show_hero_subtitle: boolean;
+  allow_guest_photo: boolean;
   target_trees: number | null;
   trees_so_far: number;
   album: { image_url: string }[];

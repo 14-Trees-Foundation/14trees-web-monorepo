@@ -103,7 +103,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
   const [count, setCount] = useState<number>(defaultCount);
   const [countText, setCountText] = useState<string>(String(defaultCount));
   const [message, setMessage] = useState(() => defaultWish(page));
-  const [showName, setShowName] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -351,7 +350,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       pan_number: pan.trim().toUpperCase(),
       consent,
       message: message.trim() || undefined,
-      show_name: showName,
+      show_name: true,
       source,
     };
 
@@ -451,13 +450,17 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           <h1 className="mt-5 text-[2.1rem] font-extrabold leading-[1.1] tracking-tight drop-shadow-lg sm:text-6xl">
             {page.title}
           </h1>
-          <p className="mt-4 text-base text-white/90 sm:text-lg">
-            {memorial ? "In memory of" : "For"}{" "}
-            <span className="font-semibold">{recipient}</span>
-          </p>
-          <p className="mt-1 text-sm text-white/70">
-            {formatDate(page.occasion_date)}
-          </p>
+          {page.show_hero_subtitle && (
+            <>
+              <p className="mt-4 text-base text-white/90 sm:text-lg">
+                {memorial ? "In memory of" : "For"}{" "}
+                <span className="font-semibold">{recipient}</span>
+              </p>
+              <p className="mt-1 text-sm text-white/70">
+                {formatDate(page.occasion_date)}
+              </p>
+            </>
+          )}
           {showGiftBar && (
             <a
               href="#gift"
@@ -746,57 +749,59 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   </div>
                   {touched && errors.message && <Err text={errors.message} />}
 
-                  <div className="mt-4 rounded-2xl border border-dashed border-green-300 bg-green-50/60 p-4">
-                    <p className="flex items-center gap-2 font-semibold text-gray-900">
-                      <span aria-hidden>📸</span> Add a memory to the event
-                    </p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Share a photo that goes with your wish. We add it after
-                      your payment, and it appears on the event page once
-                      reviewed.
-                    </p>
-                    {message.trim() ? (
-                      <div className="mt-3 flex flex-wrap items-center gap-3">
-                        {photoPreview && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={photoPreview}
-                            alt="Your photo"
-                            className="h-14 w-14 rounded-xl object-cover ring-1 ring-green-200"
-                          />
-                        )}
-                        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-white px-5 text-sm font-semibold text-green-800 shadow-sm ring-1 ring-green-200 hover:bg-green-50">
-                          {photo ? "Change photo" : "Choose a photo"}
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            className="sr-only"
-                            onChange={(e) => {
-                              choosePhoto(e.target.files?.[0]);
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
-                        {photo && (
-                          <button
-                            type="button"
-                            onClick={() => setPhoto(null)}
-                            className="min-h-11 text-sm text-gray-500 underline hover:text-gray-700"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-xs text-gray-500">
-                        Write your wish above to add a photo to it.
+                  {page.allow_guest_photo && (
+                    <div className="mt-4 rounded-2xl border border-dashed border-green-300 bg-green-50/60 p-4">
+                      <p className="flex items-center gap-2 font-semibold text-gray-900">
+                        <span aria-hidden>📸</span> Add a memory to the event
                       </p>
-                    )}
-                    <p className="mt-2 text-xs text-gray-500">
-                      JPEG, PNG or WebP · up to 5 MB
-                    </p>
-                    {photoError && <Err text={photoError} />}
-                  </div>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Share a photo that goes with your wish. We add it after
+                        your payment, and it appears on the event page once
+                        reviewed.
+                      </p>
+                      {message.trim() ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          {photoPreview && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={photoPreview}
+                              alt="Your photo"
+                              className="h-14 w-14 rounded-xl object-cover ring-1 ring-green-200"
+                            />
+                          )}
+                          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-white px-5 text-sm font-semibold text-green-800 shadow-sm ring-1 ring-green-200 hover:bg-green-50">
+                            {photo ? "Change photo" : "Choose a photo"}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="sr-only"
+                              onChange={(e) => {
+                                choosePhoto(e.target.files?.[0]);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          {photo && (
+                            <button
+                              type="button"
+                              onClick={() => setPhoto(null)}
+                              className="min-h-11 text-sm text-gray-500 underline hover:text-gray-700"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-gray-500">
+                          Write your wish above to add a photo to it.
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-gray-500">
+                        JPEG, PNG or WebP · up to 5 MB
+                      </p>
+                      {photoError && <Err text={photoError} />}
+                    </div>
+                  )}
                 </StepCard>
 
                 {/* 3. Details */}
@@ -848,11 +853,6 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <Check
-                      checked={showName}
-                      onChange={setShowName}
-                      label="Show my name with my wish (otherwise “Anonymous”)"
-                    />
                     <div>
                       <Check
                         checked={consent}
