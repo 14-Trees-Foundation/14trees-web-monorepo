@@ -293,7 +293,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       name: "14 Trees Foundation",
       description: `${verb} ${order.trees_count} tree${
         order.trees_count > 1 ? "s" : ""
-      } for ${recipient}`,
+      }`,
       order_id: order.order_id,
       prefill: {
         name: name.trim(),
@@ -377,7 +377,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
 
   const sharePage = async () => {
     const url = window.location.origin + window.location.pathname;
-    const text = `${verb} a tree for ${recipient}`;
+    const text = `${verb} a tree`;
     try {
       if (navigator.share) {
         await navigator.share({ title: page.title, text, url });
@@ -420,11 +420,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
       <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
       <ol className="mt-4 grid gap-3 sm:grid-cols-3">
         {[
-          [
-            "🌱",
-            "You gift",
-            `Choose how many trees and add a wish for ${recipient}.`,
-          ],
+          ["🌱", "You gift", "Choose how many trees and add a wish."],
           [
             "🌳",
             "We plant",
@@ -433,7 +429,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
           [
             "💌",
             "They receive",
-            `${recipient} is told about the trees you gave, with your wish.`,
+            "The receiver is told about the trees you gave, with your wish.",
           ],
         ].map(([icon, title, body], i) => (
           <li
@@ -555,7 +551,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 {phase.trees === 1
                   ? "Your tree is"
                   : `Your ${phase.trees} trees are`}{" "}
-                being planted for {recipient}. A confirmation is on its way to{" "}
+                being planted. A confirmation is on its way to{" "}
                 <span className="font-medium">{email.trim()}</span>.
               </p>
 
@@ -685,7 +681,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
                 {/* 1. Trees */}
                 <StepCard
                   n={1}
-                  title={`How many trees for ${recipient}?`}
+                  title="How many trees?"
                   hint={`${rupees(
                     page.price_per_tree
                   )} per tree · planted and cared for by 14 Trees`}
