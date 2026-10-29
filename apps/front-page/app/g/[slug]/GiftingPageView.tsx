@@ -415,6 +415,47 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
     ? `${count} ${count === 1 ? "tree" : "trees"}`
     : "trees";
 
+  const howItWorks = (
+    <section>
+      <SectionTitle eyebrow="Simple and sweet">How it works</SectionTitle>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+        {[
+          [
+            "🌱",
+            "You gift",
+            `Choose how many trees and add a wish for ${recipient}.`,
+          ],
+          [
+            "🌳",
+            "We plant",
+            "Your trees are planted and looked after by the 14 Trees team.",
+          ],
+          [
+            "💌",
+            "They receive",
+            `${recipient} is told about the trees you gave, with your wish.`,
+          ],
+        ].map(([icon, title, body], i) => (
+          <li
+            key={title}
+            className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+              <span aria-hidden>{icon}</span>
+            </div>
+            <div className="sm:mt-3">
+              <p className="font-bold text-gray-900">
+                <span className="mr-1.5 text-green-700">{i + 1}.</span>
+                {title}
+              </p>
+              <p className="mt-1 text-sm text-gray-600">{body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+
   return (
     // pt-16 clears the fixed site header (h-16); the bottom padding leaves room for the gift bar.
     <main
@@ -487,6 +528,12 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
             </p>
           </div>
         </section>
+      )}
+
+      {show("how_it_works") && (
+        <div className="mx-auto mt-8 max-w-3xl px-4 lg:hidden">
+          {howItWorks}
+        </div>
       )}
 
       <div
@@ -900,46 +947,7 @@ export default function GiftingPageView({ page }: { page: PublicGiftingPage }) {
         {/* ── Story, wishes, album ───────────────────────────── */}
         <div className="order-2 min-w-0 space-y-12 lg:order-1">
           {show("how_it_works") && (
-            <section>
-              <SectionTitle eyebrow="Simple and sweet">
-                How it works
-              </SectionTitle>
-              <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-                {[
-                  [
-                    "🌱",
-                    "You gift",
-                    `Choose how many trees and add a wish for ${recipient}.`,
-                  ],
-                  [
-                    "🌳",
-                    "We plant",
-                    "Your trees are planted and looked after by the 14 Trees team.",
-                  ],
-                  [
-                    "💌",
-                    "They receive",
-                    `${recipient} is told about the trees you gave, with your wish.`,
-                  ],
-                ].map(([icon, title, body], i) => (
-                  <li
-                    key={title}
-                    className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:block"
-                  >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl">
-                      <span aria-hidden>{icon}</span>
-                    </div>
-                    <div className="sm:mt-3">
-                      <p className="font-bold text-gray-900">
-                        <span className="mr-1.5 text-green-700">{i + 1}.</span>
-                        {title}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-600">{body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </section>
+            <div className="hidden lg:block">{howItWorks}</div>
           )}
 
           {page.album.length > 0 && (
