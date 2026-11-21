@@ -3,32 +3,32 @@ import { PdfPreviewCard } from "components/Partials/PdfPreviewCard";
 const AnnualReports = () => {
   const reports = [
     {
-      href: "/documents/annual-reports/2020-21.pdf",
+      href: "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/reports/annual/2020-21.pdf",
       title: "Annual Activity Report - FY 2020-21",
       thumbnail: "/documents/thumbnails/annual-reports-2020-21-01.png",
     },
     {
-      href: "/documents/annual-reports/2021-22.pdf",
+      href: "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/reports/annual/2021-22.pdf",
       title: "Annual Activity Report - FY 2021-22",
       thumbnail: "/documents/thumbnails/annual-reports-2021-22-01.png",
     },
     {
-      href: "/documents/annual-reports/2022-23.pdf",
+      href: "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/reports/annual/2022-23.pdf",
       title: "Annual Activity Report - FY 2022-23",
       thumbnail: "/documents/thumbnails/annual-reports-2022-23-01.png",
     },
     {
-      href: "/documents/annual-reports/2023-24.pdf",
+      href: "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/reports/annual/2023-24.pdf",
       title: "Annual Activity Report - FY 2023-24",
       thumbnail: "/documents/thumbnails/annual-reports-2023-24-01.png",
     },
     {
-      href: "/documents/annual-reports/2024-25.pdf",
+      href: "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/reports/annual/2024-25.pdf",
       title: "Annual Activity Report - FY 2024-25",
       thumbnail: "/documents/thumbnails/annual-reports-2024-25-01.png",
     },
     {
-      href: "/documents/annual-reports/2025-26.pdf",
+      href: "https://14trees-public-assets.s3.ap-south-1.amazonaws.com/reports/annual/2025-26.pdf",
       title: "Annual Activity Report - FY 2025-26",
       thumbnail: "/documents/thumbnails/annual-reports-2025-26-01.png",
     },
